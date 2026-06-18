@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
-import type { TmuxRunResult } from "../../../../../src/v11/ports/tmuxSessions.js";
+import type { TmuxRunOptions, TmuxRunResult } from "../../../../../src/v11/ports/tmuxSessions.js";
 import { describe, expect, it } from "vitest";
 import {
   postEmitInterruptCodexPane,
@@ -100,9 +100,11 @@ describe("postEmitInterruptCodexPane", () => {
     );
 
     try {
+      let capturedOptions: { allowFailure?: boolean } | undefined;
       const tmuxCalls: string[][] = [];
-      function mockRunner(args: string[]): Promise<TmuxRunResult> {
+      function mockRunner(args: string[], opts?: TmuxRunOptions): Promise<TmuxRunResult> {
         tmuxCalls.push(args);
+        capturedOptions = opts ?? {};
         return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
       }
 
@@ -120,6 +122,10 @@ describe("postEmitInterruptCodexPane", () => {
         `${sessionName}:0.1`,
         "C-c"
       ]);
+
+      // Verify allowFailure:true is used so non-zero exit codes resolve rather than throw.
+      expect(capturedOptions).toBeDefined();
+      expect(capturedOptions!.allowFailure).toBe(true);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }
@@ -161,6 +167,53 @@ describe("postEmitInterruptCodexPane", () => {
 
       // Should not attempt any tmux operations when registry is unreadable.
       expect(tmuxCalls).toHaveLength(0);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it("should handle non-zero tmuxRunner exit codes via allowFailure:true path", async () => {
+    const tmpDir = `/tmp/pf-test-sessions-${randomUUID().slice(0, 8)}`;
+    const sessionsPath = `${tmpDir}/sessions.json`;
+    const bubbleId = "test-bubble-2";
+    const sessionName = "pf-nonzero-test";
+    const nowIso = new Date().toISOString();
+
+    await mkdir(tmpDir, { recursive: true });
+    await writeFile(
+      sessionsPath,
+      JSON.stringify({
+        [bubbleId]: {
+          bubbleId,
+          repoPath: "/home/user/repo",
+          worktreePath: `/tmp/worktrees/${bubbleId}`,
+          tmuxSessionName: sessionName,
+          updatedAt: nowIso
+        }
+      })
+    );
+
+    try {
+      let capturedOptions: { allowFailure?: boolean } | undefined;
+      function mockRunner(args: string[], opts?: TmuxRunOptions): Promise<TmuxRunResult> {
+        // Verify options are passed through (allowFailure:true)
+        capturedOptions = opts ?? {};
+        // Simulate tmux returning non-zero exit code — with allowFailure:true this
+        // should resolve rather than throw, and the function should still complete.
+        return Promise.resolve({ stdout: "", stderr: "pane not found", exitCode: 2 });
+      }
+
+      await expect(
+        postEmitInterruptCodexPane({
+          sessionsPath,
+          bubbleId,
+          tmuxRunner: mockRunner,
+        })
+      ).resolves.toBeUndefined();
+
+      // Verify allowFailure:true was used (non-zero exit should not throw).
+      expect(capturedOptions).toBeDefined();
+      expect(capturedOptions!.allowFailure).toBe(true);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }

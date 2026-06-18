@@ -285,13 +285,15 @@ async function handleAgentEmitCommand(args: string[]): Promise<number> {
 
   // Post-emit interruption: interrupt the calling codex process to prevent
   // concurrent workers. Best-effort — never throws on failure.
-  const meta = result._meta;
-  if (meta?.bubbleId && meta.repo) {
-    const sessionsPath = resolveSessionsPath(meta.repo);
+  // _meta is intentionally optional on all ActorEmitResult variants so callers
+  // can read it uniformly without branching on result.kind.
+  const bubbleContext = result._meta;
+  if (bubbleContext?.bubbleId && bubbleContext.repo) {
+    const sessionsPath = resolveSessionsPath(bubbleContext.repo);
     try {
-      await postEmitInterruptCodexPane({ sessionsPath, bubbleId: meta.bubbleId });
+      await postEmitInterruptCodexPane({ sessionsPath, bubbleId: bubbleContext.bubbleId });
     } catch (error) {
-      console.error(`[postEmitInterrupt] failed for bubble ${meta.bubbleId}:`, error);
+      console.error(`[postEmitInterrupt] failed for bubble ${bubbleContext.bubbleId}:`, error);
     }
   }
 
