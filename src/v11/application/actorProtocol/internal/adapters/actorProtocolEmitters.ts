@@ -33,22 +33,35 @@ import type { EmitConvergedResult } from "../../../converged/convergedCommandOrc
 import type { MetaReviewSubmitResult } from "../../../../shared/metaReview/metaReviewCommandContract.js";
 import type { EmitPassResult } from "../../../pass/passCommandOrchestration.js";
 
+/**
+ * Result of an actor protocol emit. Each union variant includes an optional
+ * readonly _meta enrichment (bubbleId, repo) — this is intentional because all
+ * dispatch paths flow through emitActorProtocolFromWorkspace which attaches the
+ * authoritative context metadata uniformly before returning to callers. The field
+ * is optional on every variant so existing code that does not access it remains
+ * unaffected. Callers can safely read result._meta?.bubbleId without guards on
+ * each individual branch.
+ */
 export type ActorEmitResult =
   | {
       kind: "pass";
       pass: EmitPassResult;
+      readonly _meta?: { bubbleId: string; repo: string };
     }
   | {
       kind: "human_question";
       human_question: EmitAskHumanResult;
+      readonly _meta?: { bubbleId: string; repo: string };
     }
   | {
       kind: "convergence";
       convergence: EmitConvergedResult;
+      readonly _meta?: { bubbleId: string; repo: string };
     }
   | {
       kind: "meta_review_result";
       meta_review_result: MetaReviewSubmitResult;
+      readonly _meta?: { bubbleId: string; repo: string };
     };
 
 export function assertActorEmitInputMatchesContext(input: {

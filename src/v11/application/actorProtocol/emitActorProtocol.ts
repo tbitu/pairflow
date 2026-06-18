@@ -36,10 +36,11 @@ export async function emitActorProtocolFromWorkspace(
     expectedRole: resolvedInput.authoritativeContext.expected_role,
     inputKind: resolvedInput.input.kind
   });
-  return executeActorRuntimeDispatchPlan({
+  const result = await executeActorRuntimeDispatchPlan({
     actorInput: resolvedInput.input,
     authoritativeContext: resolvedInput.authoritativeContext,
     plan,
     dependencies
   });
+  return { ...result, _meta: { bubbleId: resolvedInput.authoritativeContext.bubble_id, repo: resolvedInput.authoritativeContext.repo } };
 }

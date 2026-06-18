@@ -26,6 +26,7 @@ import {
 } from "../../../../src/v11/domain/state/execution/executionContext.js";
 import { readStateSnapshot } from "../../../../src/v11/infrastructure/state/stateStore.js";
 import * as actorProtocolModule from "../../../../src/v11/application/actorProtocol/emitActorProtocol.js";
+import type { ActorEmitResult } from "../../../../src/v11/application/actorProtocol/emitActorProtocol.js";
 import { metaReviewDefaults } from "../../../../src/v11/defaults/metaReview/metaReviewDefaults.js";
 import { notifyMetaReviewerSubmissionRequest } from "../../../../src/v11/defaults/metaReviewGate/metaReviewGateApi.js";
 import { metaReviewGateDependencyDefaults } from "../../../../src/v11/defaults/metaReviewGate/metaReviewGateCommandDefaults.js";
@@ -1123,5 +1124,40 @@ describe("emitActorProtocol runtime", () => {
       message:
         "ACTOR_EMIT_CONTEXT_INVALID: meta_reviewer authority only supports meta_review_result emits."
     } satisfies Partial<ActorEmitContextError>);
+  });
+});
+describe("emitActorProtocol _meta enrichment", () => {
+  it("attaches _meta with bubbleId and repo to all emit result variants", async () => {
+    const repoPath = await createTempRepo();
+    const bubble = await setupRunningBubbleFixture({
+      repoPath,
+      bubbleId: "b_meta_test_01",
+      task: "_meta enrichment should carry authoritative context"
+    });
+
+    vi.spyOn(actorRuntimeKernelModule, "executeActorRuntimeDispatchPlan")
+      .mockResolvedValue({ kind: "pass" } as unknown as ActorEmitResult);
+
+    const authoritativeContext = await resolveActorEmitContextByBubbleId({
+      bubbleId: bubble.bubbleId,
+      repoPath
+    });
+
+    const result = await actorProtocolModule.emitActorProtocolFromWorkspace({
+      input: {
+        kind: "pass",
+        repo: repoPath,
+        bubble_id: bubble.bubbleId,
+        handoff_id: authoritativeContext.handoff_id,
+        execution_id: authoritativeContext.execution_id,
+        summary: "_meta enrichment test"
+      },
+      authoritativeContext
+    });
+
+    expect(result._meta).toEqual({
+      bubbleId: bubble.bubbleId,
+      repo: repoPath
+    });
   });
 });

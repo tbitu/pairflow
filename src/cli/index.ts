@@ -168,6 +168,7 @@ import {
 } from "./commands/plan/watch.js";
 import { isMainCliEntrypoint } from "./isMainCliEntrypoint.js";
 import type { ActorEmitResult } from "../v11/application/actorProtocol/emitActorProtocol.js";
+import { postEmitInterruptCodexPane, resolveSessionsPath } from "../v11/infrastructure/channel/tmux/postEmitInterruption.js";
 
 async function handlePassCommand(args: string[]): Promise<number> {
   const result = await runPassCommand(args);
@@ -281,6 +282,19 @@ async function handleAgentEmitCommand(args: string[]): Promise<number> {
   }
 
   writeAgentEmitResult(result);
+
+  // Post-emit interruption: interrupt the calling codex process to prevent
+  // concurrent workers. Best-effort — never throws on failure.
+  const meta = result._meta;
+  if (meta?.bubbleId && meta.repo) {
+    const sessionsPath = resolveSessionsPath(meta.repo);
+    try {
+      await postEmitInterruptCodexPane({ sessionsPath, bubbleId: meta.bubbleId });
+    } catch (error) {
+      console.error(`[postEmitInterrupt] failed for bubble ${meta.bubbleId}:`, error);
+    }
+  }
+
   return 0;
 }
 
