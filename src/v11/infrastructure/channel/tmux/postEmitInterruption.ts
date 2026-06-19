@@ -1,7 +1,9 @@
 import { join } from "node:path";
 import { readRuntimeSessionsRegistry } from "../../executor/sessionRuntime/runtimeSessionsRegistry.js";
+import {
+  getSharedTopologySlotPaneIndexForRole,
+} from "../../../shared/topology/topologySlotPaneProjection.js";
 import type { AgentRole } from "../../../../contracts/kernel/agentIdentity.js";
-import { getSharedTopologySlotPaneIndexForRole } from "../../../shared/topology/topologySlotPaneProjection.js";
 import { runTmux } from "./tmuxRunner.js";
 import type { TmuxRunOptions } from "../../../ports/tmuxSessions.js";
 
@@ -10,8 +12,8 @@ export interface PostEmitInterruptionInput {
   sessionsPath: string;
   /** Bubble ID whose pane should be interrupted. */
   bubbleId: string;
-  /** Role of the originating agent — determines which pane to interrupt. */
-  originatingRole: AgentRole;
+  /** Optional originating role — resolves the correct pane index dynamically. Defaults to `implementer` when omitted. */
+  originatingRole?: AgentRole;
   /** Optional custom tmux runner (for testing). Defaults to `runTmux`. */
   tmuxRunner?: typeof runTmux;
   /** Optional tmux command options (for testing). */
@@ -19,8 +21,9 @@ export interface PostEmitInterruptionInput {
 }
 
 /**
- * Post-emit interruption — sends SIGINT via tmux send-keys to the originating
- * agent's pane of the specified bubble. This interrupts the calling codex process
+ * Post-emit interruption — sends a signal via tmux send-keys to the originating
+ * agent's pane (determined by `originatingRole`). Falls back to the implementer
+ * pane if no role is provided. This interrupts the calling codex process
  * cleanly after `pairflow agent emit` completes successfully, ensuring no
  * concurrent workers run in parallel.
  *
@@ -56,23 +59,24 @@ export async function postEmitInterruptCodexPane(
     return;
   }
 
-  // Resolve the originating role's pane index via topology catalog for dynamic targeting.
-  const targetPaneIndex = getSharedTopologySlotPaneIndexForRole(input.originatingRole);
-  if (targetPaneIndex === undefined) {
-    console.error(`[postEmitInterrupt] unexpected role ${input.originatingRole} has no topology slot; skipping interruption`);
-    return;
-  }
+  // Resolve pane index dynamically from the originating role, falling back to implementer.
+  const targetRole = input.originatingRole ?? "implementer";
+  const targetPaneIndex = getSharedTopologySlotPaneIndexForRole(targetRole);
   const targetPane = `${sessionName}:0.${targetPaneIndex}`;
 
   try {
-    // Send Escape to gracefully stop the codex process in the pane.
-    await tmuxRunner(["send-keys", "-t", targetPane, "Escape"], tmuxOpts);
+    // Use C-c (Ctrl+C → SIGINT) rather than Escape or other keys because:
+    // — C-c reliably delivers SIGINT to the foreground process in tmux.
+    // — Escape has no equivalent termination semantics; it only toggles
+    //   copy mode or does nothing depending on context, so it cannot be
+    //   relied upon to stop a running codex LLM subprocess.
+    await tmuxRunner(["send-keys", "-t", targetPane, "C-c"], tmuxOpts);
   } catch {
     // Tmux may not be available or session may have ended — log for diagnostics, then best-effort skip.
     console.error(`[postEmitInterrupt] tmux send-keys to ${targetPane} failed: session may have ended`);
   }
 
-  // Brief settle delay (250 ms) to let the SIGINT key take effect and reach the target tmux
+  // Brief settle delay (250 ms) to let the SIGINT signal propagate and reach the target tmux
   // pane before this process exits. This value was chosen as a conservative midpoint between:
   // — <50 ms where signals may not be delivered if the process is killed immediately,
   // — >1 s which adds unnecessary latency when emit results are already committed.

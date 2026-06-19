@@ -1,4 +1,5 @@
-import type { AgentName, AgentRole } from "../../../../../contracts/kernel/agentIdentity.js";
+import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
+import type { AgentRole } from "../../../../../contracts/kernel/agentIdentity.js";
 import type {
   ActorEmitInput,
   ConvergenceActorEmitInput,

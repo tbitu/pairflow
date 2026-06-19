@@ -291,7 +291,14 @@ async function handleAgentEmitCommand(args: string[]): Promise<number> {
   if (bubbleContext?.bubbleId && bubbleContext.repo) {
     const sessionsPath = resolveSessionsPath(bubbleContext.repo);
     try {
-      await postEmitInterruptCodexPane({ sessionsPath, bubbleId: bubbleContext.bubbleId, originatingRole: bubbleContext.originatingRole });
+      // _meta fields are always populated together by emitActorProtocolFromWorkspace.
+      // Use nullish coalescing to default to "implementer" if originatingRole is missing
+      // (e.g., pre-existing emit results without this field).
+      await postEmitInterruptCodexPane({
+        sessionsPath,
+        bubbleId: bubbleContext.bubbleId,
+        originatingRole: bubbleContext.originatingRole ?? "implementer",
+      });
     } catch (error) {
       console.error(`[postEmitInterrupt] failed for bubble ${bubbleContext.bubbleId}:`, error);
     }
