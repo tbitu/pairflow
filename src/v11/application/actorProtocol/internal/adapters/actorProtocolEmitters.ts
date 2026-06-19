@@ -1,4 +1,5 @@
 import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
+import type { AgentRole } from "../../../../../contracts/kernel/agentIdentity.js";
 import type {
   ActorEmitInput,
   ConvergenceActorEmitInput,
@@ -35,7 +36,7 @@ import type { EmitPassResult } from "../../../pass/passCommandOrchestration.js";
 
 /**
  * Result of an actor protocol emit. Each union variant includes an optional
- * readonly _meta enrichment (bubbleId, repo) — this is intentional because all
+ * readonly _meta enrichment (bubbleId, repo, originatingRole) — this is intentional because all
  * dispatch paths flow through emitActorProtocolFromWorkspace which attaches the
  * authoritative context metadata uniformly before returning to callers. The field
  * is optional on every variant so existing code that does not access it remains
@@ -46,22 +47,22 @@ export type ActorEmitResult =
   | {
       kind: "pass";
       pass: EmitPassResult;
-      readonly _meta?: { bubbleId: string; repo: string };
+      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole };
     }
   | {
       kind: "human_question";
       human_question: EmitAskHumanResult;
-      readonly _meta?: { bubbleId: string; repo: string };
+      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole };
     }
   | {
       kind: "convergence";
       convergence: EmitConvergedResult;
-      readonly _meta?: { bubbleId: string; repo: string };
+      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole };
     }
   | {
       kind: "meta_review_result";
       meta_review_result: MetaReviewSubmitResult;
-      readonly _meta?: { bubbleId: string; repo: string };
+      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole };
     };
 
 export function assertActorEmitInputMatchesContext(input: {

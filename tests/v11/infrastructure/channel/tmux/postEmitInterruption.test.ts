@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import type { TmuxRunOptions, TmuxRunResult } from "../../../../../src/v11/ports/tmuxSessions.js";
 import { describe, expect, it } from "vitest";
+import type { AgentRole } from "../../../../../src/contracts/kernel/agentIdentity.js";
+import { getSharedTopologySlotPaneIndexForRole } from "../../../../../src/v11/shared/topology/topologySlotPaneProjection.js";
 import {
   postEmitInterruptCodexPane,
   resolveSessionsPath
@@ -24,6 +26,61 @@ describe("resolveSessionsPath", () => {
 });
 
 describe("postEmitInterruptCodexPane", () => {
+  it.each([
+    ["reviewer", "reviewer"],
+    ["meta_reviewer", "meta_reviewer"],
+  ] as const)(
+    "should target %s pane for originatingRole=%s",
+    async (_label, role) => {
+      const tmpDir = `/tmp/pf-test-sessions-${randomUUID().slice(0, 8)}`;
+      const sessionsPath = `${tmpDir}/sessions.json`;
+      const bubbleId = "test-bubble-role";
+      const sessionName = "pf-test-session";
+      const nowIso = new Date().toISOString();
+
+      await mkdir(tmpDir, { recursive: true });
+      await writeFile(
+        sessionsPath,
+        JSON.stringify({
+          [bubbleId]: {
+            bubbleId,
+            repoPath: "/home/user/repo",
+            worktreePath: `/tmp/worktrees/${bubbleId}`,
+            tmuxSessionName: sessionName,
+            updatedAt: nowIso,
+          },
+        })
+      );
+
+      const tmuxCalls: string[][] = [];
+        function mockRunner(args: string[]): Promise<TmuxRunResult> {
+          tmuxCalls.push(args);
+          return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+        }
+
+        await postEmitInterruptCodexPane({
+          sessionsPath,
+          bubbleId,
+          originatingRole: role as AgentRole,
+          tmuxRunner: mockRunner,
+        });
+
+        expect(tmuxCalls.length).toBeGreaterThanOrEqual(1);
+        const sendKeysCall = tmuxCalls[0];
+        const expectedIndex = getSharedTopologySlotPaneIndexForRole(
+          role as AgentRole,
+        );
+        expect(sendKeysCall).toEqual([
+          "send-keys",
+          "-t",
+          `${sessionName}:0.${expectedIndex}`,
+          "C-c",
+        ]);
+
+        await rm(tmpDir, { recursive: true, force: true });
+    },
+  );
+
   it("should be no-op when sessions registry is missing", async () => {
     const tmuxCalls: string[][] = [];
     function mockRunner(args: string[]): Promise<TmuxRunResult> {

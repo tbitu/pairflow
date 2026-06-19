@@ -291,7 +291,11 @@ async function handleAgentEmitCommand(args: string[]): Promise<number> {
   if (bubbleContext?.bubbleId && bubbleContext.repo) {
     const sessionsPath = resolveSessionsPath(bubbleContext.repo);
     try {
-      await postEmitInterruptCodexPane({ sessionsPath, bubbleId: bubbleContext.bubbleId });
+      await postEmitInterruptCodexPane({
+        sessionsPath,
+        bubbleId: bubbleContext.bubbleId,
+        originatingRole: bubbleContext.originatingRole,
+      });
     } catch (error) {
       console.error(`[postEmitInterrupt] failed for bubble ${bubbleContext.bubbleId}:`, error);
     }

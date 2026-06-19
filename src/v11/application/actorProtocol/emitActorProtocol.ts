@@ -42,5 +42,12 @@ export async function emitActorProtocolFromWorkspace(
     plan,
     dependencies
   });
-  return { ...result, _meta: { bubbleId: resolvedInput.authoritativeContext.bubble_id, repo: resolvedInput.authoritativeContext.repo } };
+  return {
+      ...result,
+      _meta: {
+        bubbleId: resolvedInput.authoritativeContext.bubble_id,
+        repo: resolvedInput.authoritativeContext.repo,
+        originatingRole: resolvedInput.authoritativeContext.expected_role,
+      },
+    };
 }
