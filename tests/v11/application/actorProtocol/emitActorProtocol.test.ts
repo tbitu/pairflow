@@ -1157,7 +1157,8 @@ describe("emitActorProtocol _meta enrichment", () => {
 
     expect(result._meta).toEqual({
       bubbleId: bubble.bubbleId,
-      repo: repoPath
+      originatingRole: "implementer",
+      repo: repoPath,
     });
   });
 });

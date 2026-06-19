@@ -1,7 +1,8 @@
+import type { AgentRole } from "../../../../../src/contracts/kernel/agentIdentity.js";
 import { randomUUID } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import type { TmuxRunOptions, TmuxRunResult } from "../../../../../src/v11/ports/tmuxSessions.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   postEmitInterruptCodexPane,
   resolveSessionsPath
@@ -34,6 +35,7 @@ describe("postEmitInterruptCodexPane", () => {
     await postEmitInterruptCodexPane({
       sessionsPath: "/tmp/nonexistent-sessions.json",
       bubbleId: "test-bubble-1",
+      originatingRole: "implementer",
       tmuxRunner: mockRunner,
     });
 
@@ -69,6 +71,7 @@ describe("postEmitInterruptCodexPane", () => {
       await postEmitInterruptCodexPane({
         sessionsPath,
         bubbleId: "my-bubble",
+        originatingRole: "implementer",
         tmuxRunner: mockRunner,
       });
 
@@ -78,7 +81,7 @@ describe("postEmitInterruptCodexPane", () => {
     }
   });
 
-  it("should send C-c to implementer pane when session is found", async () => {
+  it("should send Escape to implementer pane when session is found", async () => {
     const tmpDir = `/tmp/pf-test-sessions-${randomUUID().slice(0, 8)}`;
     const sessionsPath = `${tmpDir}/sessions.json`;
     const bubbleId = "test-bubble-1";
@@ -111,6 +114,7 @@ describe("postEmitInterruptCodexPane", () => {
       await postEmitInterruptCodexPane({
         sessionsPath,
         bubbleId,
+        originatingRole: "implementer",
         tmuxRunner: mockRunner,
       });
 
@@ -120,12 +124,63 @@ describe("postEmitInterruptCodexPane", () => {
         "send-keys",
         "-t",
         `${sessionName}:0.1`,
-        "C-c"
+        "Escape"
       ]);
 
       // Verify allowFailure:true is used so non-zero exit codes resolve rather than throw.
       expect(capturedOptions).toBeDefined();
       expect(capturedOptions!.allowFailure).toBe(true);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    ["reviewer", 2],
+    ["meta_reviewer", 3]
+  ])("should send Escape to %s pane (index %d) when session is found", async (role, expectedIndex) => {
+    const tmpDir = `/tmp/pf-test-sessions-${randomUUID().slice(0, 8)}`;
+    const sessionsPath = `${tmpDir}/sessions.json`;
+    const bubbleId = "test-bubble-1";
+    const sessionName = "pf-test-session";
+    const nowIso = new Date().toISOString();
+
+    await mkdir(tmpDir, { recursive: true });
+    await writeFile(
+      sessionsPath,
+      JSON.stringify({
+        [bubbleId]: {
+          bubbleId,
+          repoPath: "/home/user/repo",
+          worktreePath: `/tmp/worktrees/${bubbleId}`,
+          tmuxSessionName: sessionName,
+          updatedAt: nowIso
+        }
+      })
+    );
+
+    try {
+      const tmuxCalls: string[][] = [];
+      function mockRunner(args: string[]): Promise<TmuxRunResult> {
+        tmuxCalls.push(args);
+        return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+      }
+
+      await postEmitInterruptCodexPane({
+        sessionsPath,
+        bubbleId,
+        originatingRole: role as AgentRole,
+        tmuxRunner: mockRunner,
+      });
+
+      expect(tmuxCalls.length).toBeGreaterThanOrEqual(1);
+      const sendKeysCall = tmuxCalls[0];
+      expect(sendKeysCall).toEqual([
+        "send-keys",
+        "-t",
+        `${sessionName}:0.${expectedIndex}`,
+        "Escape"
+      ]);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }
@@ -140,10 +195,12 @@ describe("postEmitInterruptCodexPane", () => {
       postEmitInterruptCodexPane({
         sessionsPath: "/tmp/sessions.json",
         bubbleId: "test-bubble",
+        originatingRole: "implementer",
         tmuxRunner: mockRunner,
       })
     ).resolves.toBeUndefined();
   });
+
   it("should be no-op when sessions registry contains malformed JSON", async () => {
     const tmpDir = `/tmp/pf-test-sessions-${randomUUID().slice(0, 8)}`;
     const sessionsPath = `${tmpDir}/sessions.json`;
@@ -162,6 +219,7 @@ describe("postEmitInterruptCodexPane", () => {
       await postEmitInterruptCodexPane({
         sessionsPath,
         bubbleId: "malformed-bubble",
+        originatingRole: "implementer",
         tmuxRunner: mockRunner,
       });
 
@@ -207,6 +265,7 @@ describe("postEmitInterruptCodexPane", () => {
         postEmitInterruptCodexPane({
           sessionsPath,
           bubbleId,
+          originatingRole: "implementer",
           tmuxRunner: mockRunner,
         })
       ).resolves.toBeUndefined();
@@ -214,6 +273,51 @@ describe("postEmitInterruptCodexPane", () => {
       // Verify allowFailure:true was used (non-zero exit should not throw).
       expect(capturedOptions).toBeDefined();
       expect(capturedOptions!.allowFailure).toBe(true);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+  it("should not log errors when all steps succeed (valid role)", async () => {
+    const tmpDir = `/tmp/pf-test-sessions-${randomUUID().slice(0, 8)}`;
+    const sessionsPath = `${tmpDir}/sessions.json`;
+    const bubbleId = "test-bubble-1";
+    const sessionName = "pf-test-session";
+    const nowIso = new Date().toISOString();
+
+    await mkdir(tmpDir, { recursive: true });
+    await writeFile(
+      sessionsPath,
+      JSON.stringify({
+        [bubbleId]: {
+          bubbleId,
+          repoPath: "/home/user/repo",
+          worktreePath: `/tmp/worktrees/${bubbleId}`,
+          tmuxSessionName: sessionName,
+          updatedAt: nowIso
+        }
+      })
+    );
+
+    try {
+      const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const tmuxCalls: string[][] = [];
+      function mockRunner(args: string[]): Promise<TmuxRunResult> {
+        tmuxCalls.push(args);
+        return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+      }
+
+      await postEmitInterruptCodexPane({
+        sessionsPath,
+        bubbleId,
+        originatingRole: "implementer",
+        tmuxRunner: mockRunner,
+      });
+
+      expect(tmuxCalls.length).toBeGreaterThanOrEqual(1);
+      // No errors should be logged when the path is valid.
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+
+      consoleErrorSpy.mockRestore();
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }
