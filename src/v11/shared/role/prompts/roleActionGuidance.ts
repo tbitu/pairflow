@@ -44,6 +44,17 @@ export function buildImplementerValidationCommandGuidance(
   ].join(" ");
 }
 
+/**
+ * Build handoff guidance with an emit directive that applies uniformly across all agent roles.
+ *
+ * Lifecycle contract (role-agnostic): the emit directive always applies at the conclusion
+ * of an agent's active execution window — i.e., after completing implementation work or a review,
+ * but never while idle, waiting for orchestration signals, or in a passive state. This ensures
+ * consistent handoff semantics regardless of whether the agent is an implementer (code changes),
+ * reviewer (assessment output), or meta-reviewer (structured submit command). The directive uses
+ * role-appropriate terminology ("implementation or review session") to avoid confusing agents about
+ * when they should emit while maintaining a single underlying lifecycle policy.
+ */
 export function buildImplementerEvidenceHandoffGuidance(
   reviewArtifactType: ReviewArtifactType,
   validationCommands?: BubbleCommandsConfig
@@ -56,7 +67,10 @@ export function buildImplementerEvidenceHandoffGuidance(
     ? "Run the bubble-level validation commands listed above when local feedback is useful, and let PASS produce the authoritative evidence."
     : "Run validation via `pnpm lint`, `pnpm typecheck`, `pnpm test`, or `pnpm check` so evidence logs are written to `.pairflow/evidence/`.";
   if (reviewArtifactType === "document") {
+    const emitDirective = "Always execute the canonical actor emit command (`pairflow agent emit`) as the mandatory final step before stopping work or ending your turn. Do not stop work without emitting first. This directive applies at the end of an active implementation or review session — do not emit while idle or waiting for orchestration signals.";
+
     return [
+      emitDirective,
       validationGuidance,
       "This bubble is docs-only (`review_artifact_type=document`), so runtime checks are not required in this round.",
       buildDocumentBubbleSourceEditGuard(),
@@ -68,7 +82,10 @@ export function buildImplementerEvidenceHandoffGuidance(
     ].join(" ");
   }
 
+  const emitDirective = "Always execute the canonical actor emit command (`pairflow agent emit`) as the mandatory final step before stopping work or ending your turn. Do not stop work without emitting first. This directive applies at the end of an active implementation or review session — do not emit while idle or waiting for orchestration signals.";
+
   return [
+    emitDirective,
     validationGuidance,
     localValidationGuidance,
     "If evidence logs exist, include them as `--ref` when running `pairflow agent emit --kind pass`.",
