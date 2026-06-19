@@ -178,7 +178,8 @@ function buildMetaReviewerIdleContract(
   return [
     `Pairflow meta-reviewer start for bubble ${input.bubbleId}.`,
     "This is a dedicated static worker pane for autonomous meta-review tasks.",
-    "Stay idle until orchestration signals a meta-review run."
+    "Stay idle until orchestration signals a meta-review run.",
+    "Always execute the final structured submit/decision command before finishing your turn. Do not stop work or wait for human intervention to emit. This directive applies at the end of an active session — do not emit while idle or waiting for signals."
   ];
 }
 
@@ -189,7 +190,8 @@ function buildMetaReviewerResumeActivationContract(
     `Pairflow meta-reviewer resume for bubble ${input.bubbleId}.`,
     "This pane is static across rounds; do not restart unless explicitly instructed.",
     "Stay idle until orchestration signals a meta-review run.",
-    "When signaled, return result only through structured Pairflow submit command (no pane marker output parsing)."
+    "When signaled, return result only through structured Pairflow submit command (no pane marker output parsing).",
+    "Always execute the final structured submit/decision command before finishing your turn. Do not stop work or wait for human intervention to emit. This directive applies at the end of an active session — do not emit while idle or waiting for signals."
   ];
 }
 

@@ -101,9 +101,12 @@ export async function sendAndSubmitTmuxPaneMessage(
   }
 
   // Brief gap lets the TUI process and render the pasted text before receiving
-  // the Enter key as a distinct input event.  500ms was verified against Claude
-  // Code v2.1.50 with messages up to 550 chars.
-  const submitDelayMs = options.submitDelayMs ?? 500;
+  // the Enter key as a distinct input event. The base delay of 500ms was verified
+  // against Claude Code v2.1.50 with messages up to ~550 chars. For longer merged
+  // payloads (e.g., bootstrap + kickoff combined in tmuxManagerPaneSeed.ts), the
+  // delay scales proportionally so that a 2000-char message gets ~1600ms, preventing
+  // the TUI from receiving Enter before it finishes processing all pasted characters.
+  const submitDelayMs = options.submitDelayMs ?? Math.max(500, Math.ceil(message.length * 0.8));
   if (submitDelayMs > 0) {
     const sleepForDelayMs = options.sleepForDelayMs ?? sleep;
     await sleepForDelayMs(submitDelayMs);
