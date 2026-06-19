@@ -320,7 +320,7 @@ run_quality_suite() {
   lint_pid=$!
   run_quality_child "typecheck" "ci:local typecheck" pnpm exec tsc --noEmit &
   typecheck_pid=$!
-  run_quality_child "test" "ci:local test" bash -lc 'root_exit=0; ui_exit=0; pnpm exec vitest run --maxWorkers=8 & root_pid=$!; pnpm --dir ui test --maxWorkers=2 & ui_pid=$!; wait $root_pid || root_exit=$?; wait $ui_pid || ui_exit=$?; test $root_exit -eq 0 -a $ui_exit -eq 0' &
+  run_quality_child "test" "ci:local test" bash -c 'root_exit=0; ui_exit=0; pnpm exec vitest run --maxWorkers=8 & root_pid=$!; pnpm --dir ui test --maxWorkers=2 & ui_pid=$!; wait $root_pid || root_exit=$?; wait $ui_pid || ui_exit=$?; test $root_exit -eq 0 -a $ui_exit -eq 0' &
   test_pid=$!
 
   wait "$lint_pid" || lint_exit=$?
@@ -370,7 +370,7 @@ run_final_validation_suite() {
 
   run_step "fitness" "fitness gate" pnpm fitness:check:ci &
   fitness_pid=$!
-  run_step "smoke" "almost-e2e smoke suite" bash -lc 'pnpm exec tsc -p tsconfig.build.json && pnpm --dir ui build && pnpm exec vitest run --config vitest.smoke.config.ts' &
+  run_step "smoke" "almost-e2e smoke suite" bash -c 'pnpm exec tsc -p tsconfig.build.json && pnpm --dir ui build && pnpm exec vitest run --config vitest.smoke.config.ts' &
   smoke_pid=$!
 
   wait "$fitness_pid" || fitness_exit=$?
@@ -473,7 +473,7 @@ else
   echo
 fi
 
-run_step "install" "dependency lock validation" bash -lc 'pnpm install --frozen-lockfile && pnpm --dir ui install --frozen-lockfile'
+run_step "install" "dependency lock validation" bash -c 'pnpm install --frozen-lockfile && pnpm --dir ui install --frozen-lockfile'
 run_validation_suites
 
 echo "ci:local passed"
