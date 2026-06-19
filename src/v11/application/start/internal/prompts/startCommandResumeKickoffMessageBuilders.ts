@@ -13,7 +13,7 @@ import type {
 } from "../../../../shared/config/bubbleConfigVocabulary.js";
 import {
   buildCanonicalActorEmitLookupGuidance,
-  buildImplementerEvidenceHandoffGuidance
+  buildAgentEvidenceHandoffGuidance
 } from "../../../../shared/role/prompts/rolePromptConcerns.js";
 import { buildDocumentBubbleSourceEditGuard } from "../../../../shared/document/documentBubbleSourceEditGuard.js";
 
@@ -78,7 +78,7 @@ export function buildResumeImplementerKickoffMessage(input: {
       bubbleId: input.bubbleId,
       repoPath: input.repoPath
     }),
-    buildImplementerEvidenceHandoffGuidance(input.reviewArtifactType),
+    buildAgentEvidenceHandoffGuidance(input.reviewArtifactType),
     buildResumeImplementerHandoffInstruction(input.reviewArtifactType)
   ].join(" ");
 }

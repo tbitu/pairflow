@@ -6,6 +6,7 @@ import type {
   ReviewArtifactType
 } from "../../config/bubbleConfigVocabulary.js";
 
+import { IMPLEMENTER_EMIT_DIRECTIVE } from "./sharedPromptDirectives.js";
 export type ImplementerDeliveryEvent =
   | "TASK"
   | "PASS"
@@ -55,7 +56,7 @@ export function buildImplementerValidationCommandGuidance(
  * role-appropriate terminology ("implementation or review session") to avoid confusing agents about
  * when they should emit while maintaining a single underlying lifecycle policy.
  */
-export function buildImplementerEvidenceHandoffGuidance(
+export function buildAgentEvidenceHandoffGuidance(
   reviewArtifactType: ReviewArtifactType,
   validationCommands?: BubbleCommandsConfig
 ): string {
@@ -67,7 +68,7 @@ export function buildImplementerEvidenceHandoffGuidance(
     ? "Run the bubble-level validation commands listed above when local feedback is useful, and let PASS produce the authoritative evidence."
     : "Run validation via `pnpm lint`, `pnpm typecheck`, `pnpm test`, or `pnpm check` so evidence logs are written to `.pairflow/evidence/`.";
   if (reviewArtifactType === "document") {
-    const emitDirective = "Always execute the canonical actor emit command (`pairflow agent emit`) as the mandatory final step before stopping work or ending your turn. Do not stop work without emitting first. This directive applies at the end of an active implementation or review session — do not emit while idle or waiting for orchestration signals.";
+    const emitDirective = IMPLEMENTER_EMIT_DIRECTIVE;
 
     return [
       emitDirective,
@@ -82,7 +83,7 @@ export function buildImplementerEvidenceHandoffGuidance(
     ].join(" ");
   }
 
-  const emitDirective = "Always execute the canonical actor emit command (`pairflow agent emit`) as the mandatory final step before stopping work or ending your turn. Do not stop work without emitting first. This directive applies at the end of an active implementation or review session — do not emit while idle or waiting for orchestration signals.";
+  const emitDirective = IMPLEMENTER_EMIT_DIRECTIVE;
 
   return [
     emitDirective,
@@ -172,3 +173,9 @@ export function buildImplementerDeliveryActionGuidance(input: {
   }
   return "Continue protocol from this event.";
 }
+
+/**
+ * @deprecated Use `buildAgentEvidenceHandoffGuidance` instead. This function was renamed to
+ * reflect its role-agnostic nature (the emit directive applies uniformly across all agent roles).
+ */
+export const buildImplementerEvidenceHandoffGuidance = buildAgentEvidenceHandoffGuidance;

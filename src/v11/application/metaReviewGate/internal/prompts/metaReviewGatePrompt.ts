@@ -2,6 +2,7 @@ import {
   buildMetaReviewSubmitApproveParityNote,
   buildMetaReviewSubmitCommandTemplate
 } from "../../../../shared/metaReview/metaReviewSubmitGuidance.js";
+import { META_REVIEWER_SUBMIT_DIRECTIVE } from "../../../../shared/role/prompts/sharedPromptDirectives.js";
 
 /**
  * Build meta-review gate prompt with emit directive.
@@ -11,7 +12,7 @@ import {
  * but never while idle or waiting for orchestration signals. The "meta-review session" here
  * refers to the period from receiving this prompt until submitting results through the
  * structured Pairflow CLI. This matches the unified lifecycle policy documented in
- * roleActionGuidance.ts buildImplementerEvidenceHandoffGuidance, ensuring that whether an
+ * roleActionGuidance.ts buildAgentEvidenceHandoffGuidance, ensuring that whether an
  * agent is implementing code, conducting a review, or performing meta-review, it always
  * submits before stopping work.
  */
@@ -23,7 +24,7 @@ export function buildMetaReviewGateRunPrompt(input: {
 }): string {
   return [
     `# [pairflow] bubble=${input.bubbleId} meta-review request round=${input.round}.`,
-    "Always execute the final structured submit/decision command before finishing your turn. Do not stop work without emitting first. This directive applies at the end of an active meta-review session - do not emit while idle or waiting for signals.",
+    META_REVIEWER_SUBMIT_DIRECTIVE,
     "Perform autonomous meta-review now, then submit through structured Pairflow CLI (no pane markers).",
     `Repository: ${input.repoPath}.`,
     `Task: ${input.taskArtifactPath}.`,

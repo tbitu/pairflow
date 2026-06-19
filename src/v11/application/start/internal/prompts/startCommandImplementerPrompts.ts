@@ -1,6 +1,6 @@
 import {
   buildCanonicalActorEmitLookupGuidance,
-  buildImplementerEvidenceHandoffGuidance as buildImplementerEvidenceHandoffGuidanceFromRegistry,
+  buildAgentEvidenceHandoffGuidance as buildAgentEvidenceHandoffGuidanceFromRegistry,
   buildRolePromptConcernLines
 } from "../../../../shared/role/prompts/rolePromptConcerns.js";
 import { buildDocumentBubbleSourceEditGuard } from "../../../../shared/document/documentBubbleSourceEditGuard.js";
@@ -46,7 +46,7 @@ export function buildImplementerKickoffMessage(input: {
       input.workspacePath,
       input.pairflowCommandProfile
     ),
-    buildImplementerEvidenceHandoffGuidance(
+    buildAgentEvidenceHandoffGuidance(
       input.reviewArtifactType,
       input.validationCommands
     ),
@@ -87,11 +87,11 @@ export function buildImplementerIdeationKickoffMessage(input: {
   ].join(" ");
 }
 
-export function buildImplementerEvidenceHandoffGuidance(
+export function buildAgentEvidenceHandoffGuidance(
   reviewArtifactType: ReviewArtifactType,
   validationCommands?: BubbleCommandsConfig
 ): string {
-  return buildImplementerEvidenceHandoffGuidanceFromRegistry(
+  return buildAgentEvidenceHandoffGuidanceFromRegistry(
     reviewArtifactType,
     validationCommands
   );

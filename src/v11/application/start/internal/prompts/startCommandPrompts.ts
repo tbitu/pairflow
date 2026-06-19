@@ -15,7 +15,7 @@ import {
   buildRolePromptConcernLines
 } from "../../../../shared/role/prompts/rolePromptConcerns.js";
 export {
-  buildImplementerEvidenceHandoffGuidance,
+  buildAgentEvidenceHandoffGuidance,
   buildImplementerIdeationKickoffMessage,
   buildImplementerKickoffMessage,
   buildImplementerStartupPrompt

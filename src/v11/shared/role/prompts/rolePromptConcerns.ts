@@ -4,7 +4,7 @@ import type {
 } from "../../config/bubbleConfigVocabulary.js";
 import { buildPairflowCommandGuidance } from "../../command/pairflowCommandBootstrap.js";
 import {
-  buildImplementerEvidenceHandoffGuidance as buildImplementerEvidenceHandoffGuidanceFromPolicy,
+  buildAgentEvidenceHandoffGuidance as buildAgentEvidenceHandoffGuidanceFromPolicy,
   buildImplementerValidationCommandGuidance as buildImplementerValidationCommandGuidanceFromPolicy
 } from "./roleActionGuidance.js";
 import {
@@ -48,6 +48,7 @@ import {
   isResumePromptConcernBuildInput,
   isStartupPromptConcernBuildInput
 } from "./rolePromptConcernIdeation.js";
+import { META_REVIEWER_IDLE_EMIT_DIRECTIVE } from "./sharedPromptDirectives.js";
 import type {
   NonReviewerRole,
   PromptConcernBuildInput,
@@ -73,7 +74,7 @@ export type {
 } from "./rolePromptConcernTypes.js";
 
 export {
-  buildImplementerEvidenceHandoffGuidanceFromPolicy as buildImplementerEvidenceHandoffGuidance,
+  buildAgentEvidenceHandoffGuidanceFromPolicy as buildAgentEvidenceHandoffGuidance,
   buildImplementerValidationCommandGuidanceFromPolicy as buildImplementerValidationCommandGuidance
 };
 type PromptConcernOutput = string | readonly string[] | undefined;
@@ -179,7 +180,7 @@ function buildMetaReviewerIdleContract(
     `Pairflow meta-reviewer start for bubble ${input.bubbleId}.`,
     "This is a dedicated static worker pane for autonomous meta-review tasks.",
     "Stay idle until orchestration signals a meta-review run.",
-    "Always execute the final structured submit/decision command before finishing your turn. Do not stop work or wait for human intervention to emit. This directive applies at the end of an active session — do not emit while idle or waiting for signals."
+    META_REVIEWER_IDLE_EMIT_DIRECTIVE,
   ];
 }
 
@@ -191,7 +192,7 @@ function buildMetaReviewerResumeActivationContract(
     "This pane is static across rounds; do not restart unless explicitly instructed.",
     "Stay idle until orchestration signals a meta-review run.",
     "When signaled, return result only through structured Pairflow submit command (no pane marker output parsing).",
-    "Always execute the final structured submit/decision command before finishing your turn. Do not stop work or wait for human intervention to emit. This directive applies at the end of an active session — do not emit while idle or waiting for signals."
+    META_REVIEWER_IDLE_EMIT_DIRECTIVE,
   ];
 }
 
@@ -249,7 +250,7 @@ const promptConcernCatalog: Readonly<
             "Use transcript state, the PASS summary, and evidence refs as the handoff boundary; do not create or depend on a prose handoff artifact."
           ]
         : []),
-      buildImplementerEvidenceHandoffGuidanceFromPolicy(
+      buildAgentEvidenceHandoffGuidanceFromPolicy(
         input.reviewArtifactType ?? "code",
         input.validationCommands
       )

@@ -15,7 +15,7 @@ import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
  * whitespace is treated as a true duplicate. The resulting merged message uses
  * single \n line separators with no extra blank lines between entries.
  */
-function mergeAndDeduplicateMessages(bootstrap: string | undefined, kickoff: string | undefined): string | undefined {
+export function mergeAndDeduplicateMessages(bootstrap: string | undefined, kickoff: string | undefined): string | undefined {
   const bootstrapText = (bootstrap ?? "").trim();
   const kickoffText = (kickoff ?? "").trim();
   if ((bootstrapText.length + kickoffText.length) === 0) {
@@ -119,31 +119,31 @@ export async function seedBubbleTmuxPaneMessages(
     input.metaReviewerPaneId,
     input.metaReviewerSubmitStartupPrompt
   );
-  // Merging bootstrap + kickoff into a single per-pane send preserves confirmation semantics:
-  // Each sendPaneMessage call independently handles copy-mode exit, trust-prompt acceptance,
-  // paste-and-submit, and marker-submission confirmation. By combining both message sources
-  // before calling sendPaneMessage, we ensure the agent receives all instructions in one
-  // paste operation — the pane's input buffer processes them sequentially from a single
-  // submit event, and confirmTmuxPaneMarkerSubmission verifies the bubble marker appears
-  // after the combined content has been processed. This avoids the race-condition risk of
-  // sending two separate messages where the second could overwrite or interfere with the
-  // first's confirmation check.
-  // Deduplication removes exact-line duplicates across both message sources to avoid
-  // redundant content in the pasted prompt while preserving ordering from the original
-  // bootstrap-first, kickoff-second sequence.
-  await sendPaneMessage(
-    input.runner,
-    input.implementerPaneId,
-    mergeAndDeduplicateMessages(input.implementerBootstrapMessage, input.implementerKickoffMessage)
-  );
-  await sendPaneMessage(
-    input.runner,
-    input.reviewerPaneId,
-    mergeAndDeduplicateMessages(input.reviewerBootstrapMessage, input.reviewerKickoffMessage)
-  );
-  await sendPaneMessage(
-    input.runner,
-    input.metaReviewerPaneId,
-    mergeAndDeduplicateMessages(input.metaReviewerBootstrapMessage, input.metaReviewerKickoffMessage)
-  );
+  // When a startup prompt was submitted for an agent (e.g. Codex), the agent
+  // already received its full context via the CLI argument that launched it.
+  // Sending a separate bootstrap+kickoff message through tmux paste would
+  // deliver semi-duplicate content as a second input, causing "double input"
+  // steering confusion. Skip the pasted message for agents whose startup
+  // prompt was already submitted.
+  if (input.implementerSubmitStartupPrompt !== true) {
+    await sendPaneMessage(
+      input.runner,
+      input.implementerPaneId,
+      mergeAndDeduplicateMessages(input.implementerBootstrapMessage, input.implementerKickoffMessage)
+    );
+  }
+  if (input.reviewerSubmitStartupPrompt !== true) {
+    await sendPaneMessage(
+      input.runner,
+      input.reviewerPaneId,
+      mergeAndDeduplicateMessages(input.reviewerBootstrapMessage, input.reviewerKickoffMessage)
+    );
+  }
+  if (input.metaReviewerSubmitStartupPrompt !== true) {
+    await sendPaneMessage(
+      input.runner,
+      input.metaReviewerPaneId,
+      mergeAndDeduplicateMessages(input.metaReviewerBootstrapMessage, input.metaReviewerKickoffMessage)
+    );
+  }
 }

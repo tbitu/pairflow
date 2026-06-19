@@ -864,7 +864,7 @@ describe("launchBubbleSessionAck orchestration", () => {
     }
   });
 
-  it("submits codex startup prompt before sending kickoff when requested", async () => {
+  it("skips kickoff message when codex startup prompt was submitted", async () => {
     vi.useFakeTimers();
     const calls: string[][] = [];
     const runner: TmuxRunner = (args: string[]) => {
@@ -894,19 +894,21 @@ describe("launchBubbleSessionAck orchestration", () => {
     const implementerSendKeys = calls.filter(
       (call) => call[0] === "send-keys" && call[2] === "%11"
     );
+    // Startup prompt Enter is still sent to submit the CLI-arg context.
     expect(implementerSendKeys[0]).toEqual([
       "send-keys",
       "-t",
       "%11",
       "Enter"
     ]);
-    expect(implementerSendKeys).toContainEqual([
-      "send-keys",
-      "-t",
-      "%11",
-      "-l",
-      "kickoff message"
-    ]);
+    // No kickoff message should be pasted: Codex already received its full
+    // context from the startup prompt passed as a CLI argument. Sending a
+    // separate kickoff via tmux paste would deliver semi-duplicate content,
+    // causing "double input" steering confusion.
+    const kickoffSends = calls.filter(
+      (call) => call[0] === "send-keys" && call[2] === "%11" && call.includes("-l")
+    );
+    expect(kickoffSends).toHaveLength(0);
   });
 
   it("fails when session already exists", async () => {
