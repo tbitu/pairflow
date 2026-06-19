@@ -1,7 +1,7 @@
 ---
 artifact_type: Task
 artifact_id: 2-codex-emit-interruption-fix
-status: draft
+status: archived
 phase: E
 target_files:
   - src/cli/index.ts
