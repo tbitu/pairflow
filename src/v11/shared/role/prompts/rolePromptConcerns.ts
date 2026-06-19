@@ -48,7 +48,10 @@ import {
   isResumePromptConcernBuildInput,
   isStartupPromptConcernBuildInput
 } from "./rolePromptConcernIdeation.js";
-import { META_REVIEWER_IDLE_EMIT_DIRECTIVE } from "./sharedPromptDirectives.js";
+import {
+  META_REVIEWER_IDLE_EMIT_DIRECTIVE,
+  REVIEWER_ENTER_DIRECTIVE
+} from "./sharedPromptDirectives.js";
 import type {
   NonReviewerRole,
   PromptConcernBuildInput,
@@ -140,7 +143,8 @@ function buildReviewerStartActivationContract(
   return [
     `Pairflow reviewer start for bubble ${input.bubbleId}.`,
     "Stand by first. Do not start reviewing until implementer handoff (`PASS`) arrives.",
-    "When PASS arrives, run a fresh review."
+    "When PASS arrives, run a fresh review.",
+    REVIEWER_ENTER_DIRECTIVE
   ];
 }
 
@@ -149,7 +153,8 @@ function buildReviewerResumeArtifactContext(
 ): readonly string[] {
   return [
     `Pairflow reviewer resume for bubble ${input.bubbleId}.`,
-    `Task: ${requirePromptValue(input.taskArtifactPath, "taskArtifactPath", "reviewer_resume_artifact_context")}.`
+    `Task: ${requirePromptValue(input.taskArtifactPath, "taskArtifactPath", "reviewer_resume_artifact_context")}.`,
+    REVIEWER_ENTER_DIRECTIVE
   ];
 }
 

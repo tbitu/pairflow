@@ -5,7 +5,7 @@ task_family_id: reviewer-always-press-enter
 sequence_key: "3"
 task_id: 3-reviewer-always-press-enter
 title: "Reviewer Always Press Enter"
-status: draft
+status: archived
 phase: phase1
 target_files:
   - "src/v11/shared/role/prompts/sharedPromptDirectives.ts"
@@ -16,10 +16,10 @@ system_context_ref: docs/pairflow-initial-design.md
 owners:
   - "antigravity"
 doc_bubble_id: null
-impl_bubble_id: null
+impl_bubble_id: "3-reviewer-always-press-enter"
 supersedes: []
 superseded_by: null
-archive_group: null
+archive_group: "reviewer-gating"
 ---
 
 # Task: Reviewer Always Press Enter
