@@ -1,8 +1,8 @@
 /**
  * Shared prompt directive constants used across role prompts.
  *
- * These directives enforce consistent lifecycle semantics: agents must always
- * emit or submit their results before stopping work, regardless of role.
+ * These directives enforce consistent lifecycle and execution semantics: agents must always
+ * emit or submit their results before stopping work, and reviewers must always press Enter after typing commands in the terminal prompt — regardless of role.
  */
 
 /**
