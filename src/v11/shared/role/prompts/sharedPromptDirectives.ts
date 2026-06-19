@@ -33,3 +33,13 @@ export const META_REVIEWER_SUBMIT_DIRECTIVE =
  */
 export const META_REVIEWER_IDLE_EMIT_DIRECTIVE =
   "Always execute the final structured submit/decision command before finishing your turn. Do not stop work or wait for human intervention to emit. This directive applies at the end of an active session — do not emit while idle or waiting for signals.";
+
+/**
+ * Enter-execute directive for reviewers.
+ *
+ * Lifecycle contract (reviewer-specific): the reviewer must always press Enter
+ * after typing a command in the terminal prompt, avoiding situations where a
+ * command is typed but left unsent.
+ */
+export const REVIEWER_ENTER_DIRECTIVE =
+  "Always execute commands by pressing Enter — never leave a typed command unsent at the terminal prompt.";
