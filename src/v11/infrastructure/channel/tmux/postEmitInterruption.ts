@@ -65,7 +65,11 @@ export async function postEmitInterruptCodexPane(
   const targetPane = `${sessionName}:0.${targetPaneIndex}`;
 
   try {
-    // Send SIGINT (Ctrl+C) to gracefully stop the codex process in the pane.
+    // Use C-c (Ctrl+C → SIGINT) rather than Escape or other keys because:
+    // — C-c reliably delivers SIGINT to the foreground process in tmux.
+    // — Escape has no equivalent termination semantics; it only toggles
+    //   copy mode or does nothing depending on context, so it cannot be
+    //   relied upon to stop a running codex LLM subprocess.
     await tmuxRunner(["send-keys", "-t", targetPane, "C-c"], tmuxOpts);
   } catch {
     // Tmux may not be available or session may have ended — log for diagnostics, then best-effort skip.

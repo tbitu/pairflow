@@ -2,8 +2,7 @@ import { randomUUID } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import type { TmuxRunOptions, TmuxRunResult } from "../../../../../src/v11/ports/tmuxSessions.js";
 import { describe, expect, it } from "vitest";
-import type { AgentRole } from "../../../../../src/contracts/kernel/agentIdentity.js";
-import { getSharedTopologySlotPaneIndexForRole } from "../../../../../src/v11/shared/topology/topologySlotPaneProjection.js";
+import { topologySlotPaneIndexCatalog} from "../../../../../src/v11/shared/topology/topologySlotPaneProjection.js";
 import {
   postEmitInterruptCodexPane,
   resolveSessionsPath
@@ -27,11 +26,12 @@ describe("resolveSessionsPath", () => {
 
 describe("postEmitInterruptCodexPane", () => {
   it.each([
-    ["reviewer", "reviewer"],
-    ["meta_reviewer", "meta_reviewer"],
+    ["implementer", "implementer", topologySlotPaneIndexCatalog.implementer],
+    ["reviewer", "reviewer", topologySlotPaneIndexCatalog.reviewer],
+    ["meta_reviewer", "meta_reviewer", topologySlotPaneIndexCatalog.meta_reviewer],
   ] as const)(
-    "should target %s pane for originatingRole=%s",
-    async (_label, role) => {
+    "should target %s pane (index %d) for originatingRole=%s",
+    async (_label, role, expectedIndex) => {
       const tmpDir = `/tmp/pf-test-sessions-${randomUUID().slice(0, 8)}`;
       const sessionsPath = `${tmpDir}/sessions.json`;
       const bubbleId = "test-bubble-role";
@@ -61,15 +61,13 @@ describe("postEmitInterruptCodexPane", () => {
         await postEmitInterruptCodexPane({
           sessionsPath,
           bubbleId,
-          originatingRole: role as AgentRole,
+          originatingRole: role,
           tmuxRunner: mockRunner,
         });
 
         expect(tmuxCalls.length).toBeGreaterThanOrEqual(1);
         const sendKeysCall = tmuxCalls[0];
-        const expectedIndex = getSharedTopologySlotPaneIndexForRole(
-          role as AgentRole,
-        );
+        // expectedIndex comes from it.each data, pre-validated against the catalog.
         expect(sendKeysCall).toEqual([
           "send-keys",
           "-t",
