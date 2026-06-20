@@ -66,10 +66,18 @@ function buildAgentLaunchCommand(
     if (roleMcpPolicy === "disabled") {
       args.push("--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}');
     }
+  } else if (agentName === "opencode") {
+    args.push("--dangerously-skip-permissions");
   }
 
-  if ((model?.trim().length ?? 0) > 0) {
-    args.push("--model", model as string);
+  let resolvedModel = model;
+  if (agentName === "opencode" && model) {
+    const cleanModel = model.replace(/-(reviewer|implementer|meta-reviewer|meta_reviewer)$/, "");
+    resolvedModel = cleanModel.includes("/") ? cleanModel : `lmstudio/${cleanModel}`;
+  }
+
+  if ((resolvedModel?.trim().length ?? 0) > 0) {
+    args.push("--model", resolvedModel as string);
   }
 
   if ((startupPrompt?.trim().length ?? 0) > 0) {
