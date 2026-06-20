@@ -106,7 +106,7 @@ export async function sendAndSubmitTmuxPaneMessage(
   // payloads (e.g., bootstrap + kickoff combined in tmuxManagerPaneSeed.ts), the
   // delay scales proportionally so that a 2000-char message gets ~1600ms, preventing
   // the TUI from receiving Enter before it finishes processing all pasted characters.
-  const submitDelayMs = options.submitDelayMs ?? Math.max(500, Math.ceil(message.length * 0.8));
+  const submitDelayMs = options.submitDelayMs ?? Math.min(5000, Math.max(500, Math.ceil(message.length * 0.8)));
   if (submitDelayMs > 0) {
     const sleepForDelayMs = options.sleepForDelayMs ?? sleep;
     await sleepForDelayMs(submitDelayMs);
