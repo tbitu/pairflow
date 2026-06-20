@@ -2,7 +2,8 @@ import {
   confirmTmuxPaneMarkerSubmission,
   maybeAcceptClaudeTrustPrompt,
   sendAndSubmitTmuxPaneMessage,
-  submitTmuxPaneInput
+  submitTmuxPaneInput,
+  waitForTuiReady
 } from "./tmuxInput.js";
 import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
 
@@ -90,8 +91,17 @@ async function sendPaneMessage(
 
   await maybeAcceptClaudeTrustPrompt(runner, targetPane).catch(() => undefined);
   const concreteMessage = message as string;
-  await sendAndSubmitTmuxPaneMessage(runner, targetPane, concreteMessage);
   const marker = resolvePairflowPaneMessageMarker(concreteMessage);
+  const isStructuredPairflowEnvelope = marker !== undefined;
+  // Give the TUI time to initialize during very early pane bootstrap
+  // before submitting the whole prompt as one tmux input.
+  // Fail closed on write/submit failures so launch does not report success
+  // with a silently missing startup handoff.
+  await waitForTuiReady(runner, targetPane);
+  await sendAndSubmitTmuxPaneMessage(runner, targetPane, concreteMessage, {
+    requireSuccess: !isStructuredPairflowEnvelope,
+    maxChunkLength: 1024
+  });
   if (marker !== undefined) {
     await confirmTmuxPaneMarkerSubmission({
       runner,
@@ -119,8 +129,9 @@ export async function seedBubbleTmuxPaneMessages(
     input.metaReviewerPaneId,
     input.metaReviewerSubmitStartupPrompt
   );
-  // When a startup prompt was submitted for an agent (e.g. Codex), the agent
-  // already received its full context via the CLI argument that launched it.
+  // When a startup prompt was submitted for an agent (currently Codex), the
+  // agent already received its full context via the CLI argument that launched
+  // it.
   // Sending a separate bootstrap+kickoff message through tmux paste would
   // deliver semi-duplicate content as a second input, causing "double input"
   // steering confusion. Skip the pasted message for agents whose startup

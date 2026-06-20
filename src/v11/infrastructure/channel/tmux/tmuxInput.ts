@@ -10,6 +10,7 @@ export interface SendAndSubmitTmuxPaneMessageOptions {
   requireSuccess?: boolean;
   submitDelayMs?: number;
   sleepForDelayMs?: (delayMs: number) => Promise<void>;
+  maxChunkLength?: number;
 }
 
 export type TmuxPaneMarkerStatus = "submitted" | "stuck_in_input" | "not_found";
@@ -22,6 +23,29 @@ export interface ConfirmTmuxPaneMarkerSubmissionInput {
   settleDelayMs?: number;
   retryDelayMs?: number;
   sleepForDelayMs?: (delayMs: number) => Promise<void>;
+}
+
+function resolveDynamicSubmitDelayMs(message: string): number {
+  const minimumDelayMs = 500;
+  const maximumDelayMs = 20000;
+  const lineCount = message.split("\n").length;
+  const lengthDelayMs = Math.ceil(message.length * 1.6);
+  const structureDelayMs = Math.max(0, lineCount - 1) * 20;
+  return Math.min(
+    maximumDelayMs,
+    Math.max(minimumDelayMs, lengthDelayMs + structureDelayMs)
+  );
+}
+
+function splitForTmuxLiteralSend(message: string, maxChunkLength: number): string[] {
+  if (message.length <= maxChunkLength) {
+    return [message];
+  }
+  const chunks: string[] = [];
+  for (let index = 0; index < message.length; index += maxChunkLength) {
+    chunks.push(message.slice(index, index + maxChunkLength));
+  }
+  return chunks;
 }
 
 async function maybeExitTmuxCopyMode(input: {
@@ -87,26 +111,30 @@ export async function sendAndSubmitTmuxPaneMessage(
     targetPane,
     requireSuccess: options.requireSuccess ?? false
   });
-  const writeResult = await runner(
-    ["send-keys", "-t", targetPane, "-l", message],
-    { allowFailure: true }
-  );
-  if (writeResult.exitCode !== 0) {
-    if (options.requireSuccess) {
-      throw new Error(
-        `TMUX_MESSAGE_WRITE_FAILED: context operation_id=tmux_input_send target_pane=${targetPane}.`
-      );
+  const maxChunkLength =
+    options.maxChunkLength !== undefined
+      ? Math.max(1, Math.floor(options.maxChunkLength))
+      : Number.POSITIVE_INFINITY;
+  for (const messageChunk of splitForTmuxLiteralSend(message, maxChunkLength)) {
+    const writeResult = await runner(
+      ["send-keys", "-t", targetPane, "-l", messageChunk],
+      { allowFailure: true }
+    );
+    if (writeResult.exitCode !== 0) {
+      if (options.requireSuccess) {
+        throw new Error(
+          `TMUX_MESSAGE_WRITE_FAILED: context operation_id=tmux_input_send target_pane=${targetPane}.`
+        );
+      }
+      return;
     }
-    return;
+    await sleep(200);
   }
 
   // Brief gap lets the TUI process and render the pasted text before receiving
-  // the Enter key as a distinct input event. The base delay of 500ms was verified
-  // against Claude Code v2.1.50 with messages up to ~550 chars. For longer merged
-  // payloads (e.g., bootstrap + kickoff combined in tmuxManagerPaneSeed.ts), the
-  // delay scales proportionally so that a 2000-char message gets ~1600ms, preventing
-  // the TUI from receiving Enter before it finishes processing all pasted characters.
-  const submitDelayMs = options.submitDelayMs ?? Math.min(5000, Math.max(500, Math.ceil(message.length * 0.8)));
+  // the Enter key as a distinct input event. Use a dynamic delay that scales
+  // with payload size and line structure to handle heavier local-LLM terminals.
+  const submitDelayMs = options.submitDelayMs ?? resolveDynamicSubmitDelayMs(message);
   if (submitDelayMs > 0) {
     const sleepForDelayMs = options.sleepForDelayMs ?? sleep;
     await sleepForDelayMs(submitDelayMs);
@@ -149,6 +177,29 @@ function isAgentPromptLine(line: string): boolean {
   return /^\s*(?:[|│┃]\s*)*[>❯]/u.test(line);
 }
 
+export async function waitForTuiReady(
+  runner: TmuxRunner,
+  targetPane: string
+): Promise<boolean> {
+  const attempts = 30; // 15 seconds
+  for (let i = 0; i < attempts; i++) {
+    const capture = await runner(["capture-pane", "-p", "-t", targetPane], {
+      allowFailure: true
+    });
+    if (capture.exitCode === 0) {
+      const lines = capture.stdout.split("\n");
+      const hasPrompt = lines.some((line) => isAgentPromptLine(line) || /^\s*╹▀▀▀/u.test(line));
+      if (hasPrompt) {
+        // Extra settle time to ensure the TUI's internal event loop is ready
+        await sleep(2000);
+        return true;
+      }
+    }
+    await sleep(500);
+  }
+  return false;
+}
+
 export async function checkTmuxPaneMarkerStatus(
   runner: TmuxRunner,
   targetPane: string,
@@ -167,7 +218,19 @@ export async function checkTmuxPaneMarkerStatus(
   }
 
   const lines = output.split("\n");
-  const lastPromptIdx = findLastIndex(lines, isAgentPromptLine);
+  let lastPromptIdx = findLastIndex(lines, isAgentPromptLine);
+  if (lastPromptIdx < 0) {
+    // Opencode (Antigravity) fallback: find the bottom boundary of the input box
+    const bottomBarIdx = findLastIndex(lines, (line) => /^\s*╹▀▀▀/u.test(line));
+    if (bottomBarIdx > 0) {
+      let topOfInputIdx = bottomBarIdx - 1;
+      while (topOfInputIdx >= 0 && /^\s*┃/u.test(lines[topOfInputIdx]!)) {
+        topOfInputIdx -= 1;
+      }
+      lastPromptIdx = topOfInputIdx + 1;
+    }
+  }
+
   if (lastPromptIdx < 0) {
     // A promptless marker can be a wrapped TUI input buffer with the prompt
     // scrolled off-capture. Treat it as unsubmitted so delivery fails closed
