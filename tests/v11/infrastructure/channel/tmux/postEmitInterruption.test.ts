@@ -65,14 +65,21 @@ describe("postEmitInterruptCodexPane", () => {
           tmuxRunner: mockRunner,
         });
 
-        expect(tmuxCalls.length).toBeGreaterThanOrEqual(1);
-        const sendKeysCall = tmuxCalls[0];
+        expect(tmuxCalls.length).toBeGreaterThanOrEqual(2);
+        const firstSendKeysCall = tmuxCalls[0];
+        const secondSendKeysCall = tmuxCalls[1];
         // expectedIndex comes from it.each data, pre-validated against the catalog.
-        expect(sendKeysCall).toEqual([
+        expect(firstSendKeysCall).toEqual([
           "send-keys",
           "-t",
           `${sessionName}:0.${expectedIndex}`,
-          "C-c",
+          "Escape",
+        ]);
+        expect(secondSendKeysCall).toEqual([
+          "send-keys",
+          "-t",
+          `${sessionName}:0.${expectedIndex}`,
+          "Escape",
         ]);
 
         await rm(tmpDir, { recursive: true, force: true });
@@ -133,7 +140,7 @@ describe("postEmitInterruptCodexPane", () => {
     }
   });
 
-  it("should send C-c to implementer pane when session is found", async () => {
+  it("should send two Escape keys to implementer pane when session is found", async () => {
     const tmpDir = `/tmp/pf-test-sessions-${randomUUID().slice(0, 8)}`;
     const sessionsPath = `${tmpDir}/sessions.json`;
     const bubbleId = "test-bubble-1";
@@ -169,13 +176,20 @@ describe("postEmitInterruptCodexPane", () => {
         tmuxRunner: mockRunner,
       });
 
-      expect(tmuxCalls.length).toBeGreaterThanOrEqual(1);
-      const sendKeysCall = tmuxCalls[0];
-      expect(sendKeysCall).toEqual([
+      expect(tmuxCalls.length).toBeGreaterThanOrEqual(2);
+      const firstSendKeysCall = tmuxCalls[0];
+      const secondSendKeysCall = tmuxCalls[1];
+      expect(firstSendKeysCall).toEqual([
         "send-keys",
         "-t",
         `${sessionName}:0.1`,
-        "C-c"
+        "Escape"
+      ]);
+      expect(secondSendKeysCall).toEqual([
+        "send-keys",
+        "-t",
+        `${sessionName}:0.1`,
+        "Escape"
       ]);
 
       // Verify allowFailure:true is used so non-zero exit codes resolve rather than throw.

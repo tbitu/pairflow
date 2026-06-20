@@ -43,7 +43,7 @@ The execution of `pairflow agent emit` must ensure that its caller (the codex pr
 ### Execution & Interruption Matrix
 | ID | Contract Element | Acceptance Criteria / Rule |
 |----|------------------|----------------------------|
-| AC1 | Discovery & Mechanism | Implement a reliable way to interrupt the codex process running the `agent emit` tool call. Prefer sending a graceful termination signal (SIGTERM/SIGINT) over a force kill (SIGKILL) to allow the codex to clean up state. |
+| AC1 | Discovery & Mechanism | Implement a reliable way to interrupt the codex process running the `agent emit` tool call. Use two Escape key presses (`Escape`, `Escape`) in the originating tmux pane after emit completes, instead of signal-based termination. |
 | AC2 | Post-Emit Interruption | The interruption must occur strictly *after* the emit has successfully registered, ensuring no data or state is lost. |
 | AC3 | No Concurrent Workers | The interruption mechanism must ensure the previous pane is fully idle, preventing the next pane from starting concurrently. |
 

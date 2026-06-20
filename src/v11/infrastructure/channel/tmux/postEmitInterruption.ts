@@ -21,11 +21,11 @@ export interface PostEmitInterruptionInput {
 }
 
 /**
- * Post-emit interruption — sends a signal via tmux send-keys to the originating
- * agent's pane (determined by `originatingRole`). Falls back to the implementer
- * pane if no role is provided. This interrupts the calling codex process
- * cleanly after `pairflow agent emit` completes successfully, ensuring no
- * concurrent workers run in parallel.
+ * Post-emit interruption — sends two Escape key presses via tmux send-keys to
+ * the originating agent's pane (determined by `originatingRole`). Falls back
+ * to the implementer pane if no role is provided. This triggers the agent's
+ * terminal-side stop behavior after `pairflow agent emit` completes
+ * successfully, ensuring no concurrent workers run in parallel.
  *
  * Best-effort: all failures are silently logged and never thrown. The emit
  * result is already committed at this point — interruption is a side effect.
@@ -65,21 +65,16 @@ export async function postEmitInterruptCodexPane(
   const targetPane = `${sessionName}:0.${targetPaneIndex}`;
 
   try {
-    // Use C-c (Ctrl+C → SIGINT) rather than Escape or other keys because:
-    // — C-c reliably delivers SIGINT to the foreground process in tmux.
-    // — Escape has no equivalent termination semantics; it only toggles
-    //   copy mode or does nothing depending on context, so it cannot be
-    //   relied upon to stop a running codex LLM subprocess.
-    await tmuxRunner(["send-keys", "-t", targetPane, "C-c"], tmuxOpts);
+    // The agent-side termination contract requires two Escape presses after emit.
+    await tmuxRunner(["send-keys", "-t", targetPane, "Escape"], tmuxOpts);
+    await tmuxRunner(["send-keys", "-t", targetPane, "Escape"], tmuxOpts);
   } catch {
     // Tmux may not be available or session may have ended — log for diagnostics, then best-effort skip.
     console.error(`[postEmitInterrupt] tmux send-keys to ${targetPane} failed: session may have ended`);
   }
 
-  // Brief settle delay (250 ms) to let the SIGINT signal propagate and reach the target tmux
-  // pane before this process exits. This value was chosen as a conservative midpoint between:
-  // — <50 ms where signals may not be delivered if the process is killed immediately,
-  // — >1 s which adds unnecessary latency when emit results are already committed.
+  // Brief settle delay (250 ms) to let the key sequence reach the target pane
+  // before this process exits.
   await new Promise((resolve) => setTimeout(resolve, 250));
 }
 
