@@ -43,3 +43,40 @@ export const META_REVIEWER_IDLE_EMIT_DIRECTIVE =
  */
 export const REVIEWER_ENTER_DIRECTIVE =
   "Always execute commands by pressing Enter — never leave a typed command unsent at the terminal prompt.";
+
+/**
+ * Handoff instruction: canonical emit before stopping.
+ *
+ * Used inline in delivery-action guidance to tell agents how to hand off
+ * after completing their work.  All role contracts reference this single
+ * constant so wording stays consistent across implementer, reviewer and
+ * meta-reviewer prompts.
+ */
+export const CANONICAL_EMIT_HANDOFF_INSTRUCTION =
+  "hand off with canonical actor emit (`pairflow agent emit --kind pass ...`) directly";
+
+/**
+ * Evidence-ref instruction for implementation bubbles.
+ *
+ * Tells agents to attach `.pairflow/evidence/*.log` refs when evidence logs exist.
+ */
+export const EVIDENCE_REF_INSTRUCTION =
+  "If `.pairflow/evidence/*.log` files exist, include them as `--ref` (lint/typecheck/test). If only a subset ran, attach refs for that subset and state what was intentionally not executed.";
+
+/**
+ * Evidence-ref instruction for implementation bubbles — short form.
+ */
+export const EVIDENCE_REF_INSTRUCTION_SHORT =
+  "Include available `.pairflow/evidence/*.log` refs on PASS.";
+
+/**
+ * Docs-only Mode A (skip-claim) description.
+ */
+export const DOC_BUBBLE_MODE_A_SKIP_CLAIM =
+  "Mode A (skip-claim): summary says runtime checks were intentionally not executed -> attach no `.pairflow/evidence/*.log` refs.";
+
+/**
+ * Docs-only Mode B (checks executed) description — placeholder for variable guidance.
+ */
+export const DOC_BUBBLE_MODE_B_CHECKS_SUFFIX =
+  "attach refs only for commands you actually ran, and do not claim checks were intentionally not executed.";

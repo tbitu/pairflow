@@ -6,7 +6,12 @@ import type {
   ReviewArtifactType
 } from "../../config/bubbleConfigVocabulary.js";
 
-import { IMPLEMENTER_EMIT_DIRECTIVE } from "./sharedPromptDirectives.js";
+import {
+  IMPLEMENTER_EMIT_DIRECTIVE,
+  EVIDENCE_REF_INSTRUCTION_SHORT,
+  DOC_BUBBLE_MODE_A_SKIP_CLAIM,
+  DOC_BUBBLE_MODE_B_CHECKS_SUFFIX
+} from "./sharedPromptDirectives.js";
 export type ImplementerDeliveryEvent =
   | "TASK"
   | "PASS"
@@ -78,8 +83,8 @@ export function buildAgentEvidenceHandoffGuidance(
       "Primary artifact rule (docs-only): when the task references an existing source document/task file, refine that file directly (in-place) as the main output.",
       "Do not replace primary artifact refinement with a new standalone review/synthesis document unless the task explicitly requests creating a new file path.",
       "Docs-only scope: choose one mode and keep it consistent in the same PASS.",
-      "Mode A (skip-claim): summary says runtime checks were intentionally not executed -> attach no `.pairflow/evidence/*.log` refs.",
-      `Mode B (checks executed): ${localValidationGuidance} Attach only refs for commands you actually ran, and do not claim checks were intentionally not executed.`
+      DOC_BUBBLE_MODE_A_SKIP_CLAIM,
+      `Mode B (checks executed): ${localValidationGuidance} ${DOC_BUBBLE_MODE_B_CHECKS_SUFFIX}`
     ].join(" ");
   }
 
@@ -89,8 +94,7 @@ export function buildAgentEvidenceHandoffGuidance(
     emitDirective,
     validationGuidance,
     localValidationGuidance,
-    "If evidence logs exist, include them as `--ref` when running `pairflow agent emit --kind pass`.",
-    "If only a subset of validation commands ran, attach refs for the commands that actually ran and state what was intentionally not executed.",
+    EVIDENCE_REF_INSTRUCTION_SHORT,
     "Missing expected evidence logs should be treated as incomplete validation packaging."
   ].join(" ");
 }
