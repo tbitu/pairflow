@@ -116,7 +116,8 @@ async function ensureOpencodePaneReady(input: {
   const quickProbe = await waitForOpencodePaneReady({
     runner: input.runner,
     targetPane: input.targetPane,
-    attempts: 1,
+    attempts: 3,
+    retryDelayMs: 300,
     ...(input.sleepForDelayMs !== undefined
       ? { sleepForDelayMs: input.sleepForDelayMs }
       : {})
@@ -183,6 +184,7 @@ export async function attemptTmuxDelivery(input: {
     await maybeAcceptClaudeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
     await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
       requireSuccess: true,
+      maxChunkLength: 1024,
       ...(input.timing?.submitDelayMs !== undefined
         ? { submitDelayMs: input.timing.submitDelayMs }
         : {}),

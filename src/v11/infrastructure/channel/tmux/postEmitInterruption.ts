@@ -57,7 +57,7 @@ export async function postEmitInterruptCodexPane(
 ): Promise<void> {
   const tmuxRunner = input.tmuxRunner ?? runTmux;
   const tmuxOpts = input.tmuxOptions ?? { allowFailure: true };
-  const interEscapeDelayMs = Math.max(0, input.interEscapeDelayMs ?? 1000);
+  const interEscapeDelayMs = Math.max(0, input.interEscapeDelayMs ?? 150);
   const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
   const invokingPane = process.env.TMUX_PANE?.trim();
 
