@@ -181,14 +181,14 @@ export async function waitForTuiReady(
   runner: TmuxRunner,
   targetPane: string
 ): Promise<boolean> {
-  const attempts = 30; // 15 seconds
+  const attempts = 60; // 30 seconds
   for (let i = 0; i < attempts; i++) {
     const capture = await runner(["capture-pane", "-p", "-t", targetPane], {
       allowFailure: true
     });
     if (capture.exitCode === 0) {
       const lines = capture.stdout.split("\n");
-      const hasPrompt = lines.some((line) => isAgentPromptLine(line) || /^\s*╹▀▀▀/u.test(line));
+      const hasPrompt = lines.some((line) => isAgentPromptLine(line) || /▀▀▀▀/u.test(line));
       if (hasPrompt) {
         // Extra settle time to ensure the TUI's internal event loop is ready
         await sleep(2000);
@@ -221,7 +221,7 @@ export async function checkTmuxPaneMarkerStatus(
   let lastPromptIdx = findLastIndex(lines, isAgentPromptLine);
   if (lastPromptIdx < 0) {
     // Opencode (Antigravity) fallback: find the bottom boundary of the input box
-    const bottomBarIdx = findLastIndex(lines, (line) => /^\s*╹▀▀▀/u.test(line));
+    const bottomBarIdx = findLastIndex(lines, (line) => /▀▀▀▀/u.test(line));
     if (bottomBarIdx > 0) {
       let topOfInputIdx = bottomBarIdx - 1;
       while (topOfInputIdx >= 0 && /^\s*┃/u.test(lines[topOfInputIdx]!)) {
