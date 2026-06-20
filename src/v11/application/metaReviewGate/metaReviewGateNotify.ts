@@ -56,7 +56,19 @@ function detectSubmittedMarker(text: string, marker: string): MarkerStatus {
   }
 
   const lines = text.split("\n");
-  const lastPromptIndex = findLastIndex(lines, isAgentPromptLine);
+  let lastPromptIndex = findLastIndex(lines, isAgentPromptLine);
+  if (lastPromptIndex < 0) {
+    // Opencode (Antigravity) fallback: find the bottom boundary of the input box
+    const bottomBarIdx = findLastIndex(lines, (line) => /^\s*╹▀▀▀/u.test(line));
+    if (bottomBarIdx > 0) {
+      let topOfInputIdx = bottomBarIdx - 1;
+      while (topOfInputIdx >= 0 && /^\s*┃/u.test(lines[topOfInputIdx]!)) {
+        topOfInputIdx -= 1;
+      }
+      lastPromptIndex = topOfInputIdx + 1;
+    }
+  }
+
   if (lastPromptIndex < 0) {
     return "submitted";
   }

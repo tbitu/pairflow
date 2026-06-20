@@ -844,7 +844,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       statusCommand: "status",
       implementerCommand: "codex",
       reviewerCommand: "claude",
-      implementerKickoffMessage: "kickoff message",
+      implementerKickoffMessage: "# [pairflow] bubble=b_start_kickoff_fail kickoff message",
       runner
     });
 

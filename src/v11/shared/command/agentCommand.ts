@@ -55,6 +55,7 @@ function buildAgentLaunchCommand(
   roleMcpPolicy: RoleMcpPolicy
 ): string {
   const args: string[] = [agentName];
+  const hasStartupPrompt = (startupPrompt?.trim().length ?? 0) > 0;
 
   if (agentName === "codex") {
     if (roleMcpPolicy === "disabled") {
@@ -67,18 +68,16 @@ function buildAgentLaunchCommand(
       args.push("--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}');
     }
   } else if (agentName === "opencode") {
-    args.push("--dangerously-skip-permissions");
+    // OpenCode "yolo" behavior is configured via config permission policy.
   }
 
   if ((model?.trim().length ?? 0) > 0) {
     args.push("--model", model as string);
   }
 
-  if ((startupPrompt?.trim().length ?? 0) > 0) {
+  if (hasStartupPrompt) {
     if (agentName === "claude" && roleMcpPolicy === "disabled") {
       args.push("--");
-    } else if (agentName === "opencode") {
-      args.push("--prompt");
     }
     args.push(startupPrompt as string);
   }
@@ -235,6 +234,30 @@ export async function resolveCodexMcpDisableArgs(
   });
 }
 
+function buildOpencodePreparation(agentName: AgentName): string[] {
+  if (agentName !== "opencode") {
+    return [];
+  }
+  return [
+    `export OPENCODE_CONFIG_CONTENT=${shellQuote(
+      JSON.stringify({
+        $schema: "https://opencode.ai/config.json",
+        permission: "allow",
+        provider: {
+          lmstudio: {
+            options: {
+              baseURL: "http://127.0.0.1:1235/v1",
+              headerTimeout: 60_000,
+              chunkTimeout: 120_000,
+              timeout: 900_000
+            }
+          }
+        }
+      })
+    )}`
+  ];
+}
+
 function buildCodexMcpDisablePreparation(input: {
   args: string[];
 }): string[] {
@@ -265,6 +288,7 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
         })()
       })
       : [];
+  const opencodePreparation = buildOpencodePreparation(agentName);
   const launchCommand = buildAgentLaunchCommand(
     agentName,
     input.model,
@@ -288,6 +312,7 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
     ...pairflowBootstrap,
     `if command -v ${agentName} >/dev/null 2>&1; then`,
     ...mcpPreparation,
+    ...opencodePreparation,
     `  ${launchCommand}`,
     "  agent_exit_code=$?",
     `  printf '%s\\n' ${shellQuote(agentExitedMessage)}`,

@@ -190,7 +190,7 @@ function mockUnmappedMetaReviewerPane(): {
 }
 
 function createSharedAgentConfig(
-  agent: "codex" | "claude"
+  agent: "codex" | "claude" | "opencode"
 ): BubbleConfig {
   return {
     ...baseConfig,
@@ -777,6 +777,212 @@ describe("emitDeliveryNotificationAck", () => {
     expect(result.message).toContain(
       "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."
     );
+  });
+
+  it("respawns the target opencode pane before delivery when opencode is not running", async () => {
+    const calls: string[][] = [];
+    let respawned = false;
+    let captureCount = 0;
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "respawn-pane") {
+        respawned = true;
+        return Promise.resolve({
+          stdout: "",
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      if (args[0] === "capture-pane") {
+        captureCount += 1;
+        if (!respawned && captureCount === 1) {
+          return Promise.resolve({
+            stdout: "sh prompt",
+            stderr: "",
+            exitCode: 0
+          });
+        }
+        if (respawned && captureCount === 2) {
+          return Promise.resolve({
+            stdout: [
+              "Ask anything...",
+              "Build · Qwen3.6 35B a3b-mtp Q6 XL (Reviewer) LM Studio (local)",
+              "tab agents  ctrl+p commands"
+            ].join("\n"),
+            stderr: "",
+            exitCode: 0
+          });
+        }
+        return Promise.resolve({
+          stdout:
+            submittedPaneOutput("# [pairflow] r1 PASS codex->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      return Promise.resolve({
+        stdout: "",
+        stderr: "",
+        exitCode: 0
+      });
+    };
+
+    const result = await emitDeliveryNotificationAck({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          implementer: "codex",
+          reviewer: "opencode",
+          meta_reviewer: "codex"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      envelope: createEnvelope({
+        recipient: "opencode"
+      }),
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry())
+    });
+
+    expect(result.status).toBe("accepted");
+    expect(
+      calls.some(
+        (call) =>
+          call[0] === "respawn-pane"
+          && call[3] === "pf-b_delivery_01:0.2"
+      )
+    ).toBe(true);
+    expect(
+      calls.some(
+        (call) => call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.2"
+      )
+    ).toBe(true);
+  });
+
+  it("accepts delivery when opencode pane capture indicates live OpenCode despite shell command name", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout:
+            [
+              "Ask anything...",
+              "Build · Qwen3.6 35B a3b-mtp Q6 XL (Reviewer) LM Studio (local)",
+              "tab agents  ctrl+p commands",
+              submittedPaneOutput("# [pairflow] r1 PASS codex->opencode msg=msg_20260222_101 ref=artifact://handoff.md.")
+            ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      return Promise.resolve({
+        stdout: "",
+        stderr: "",
+        exitCode: 0
+      });
+    };
+
+    const result = await emitDeliveryNotificationAck({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          implementer: "codex",
+          reviewer: "opencode",
+          meta_reviewer: "codex"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      envelope: createEnvelope({
+        recipient: "opencode"
+      }),
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry())
+    });
+
+    expect(result.status).toBe("accepted");
+    expect(
+      calls.some(
+        (call) => call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.2"
+      )
+    ).toBe(true);
+  });
+
+  it("continues delivery after successful opencode respawn when pane identity probes remain stale", async () => {
+    const calls: string[][] = [];
+    let respawned = false;
+    let captureCount = 0;
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "respawn-pane") {
+        respawned = true;
+        return Promise.resolve({
+          stdout: "",
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      if (args[0] === "capture-pane") {
+        captureCount += 1;
+        if (!respawned && captureCount === 1) {
+          return Promise.resolve({
+            stdout: "sh prompt",
+            stderr: "",
+            exitCode: 0
+          });
+        }
+        if (respawned && captureCount === 2) {
+          return Promise.resolve({
+            stdout: [
+              "Ask anything...",
+              "Build · Qwen3.6 35B a3b-mtp Q6 XL (Reviewer) LM Studio (local)",
+              "tab agents  ctrl+p commands"
+            ].join("\n"),
+            stderr: "",
+            exitCode: 0
+          });
+        }
+        return Promise.resolve({
+          stdout:
+            submittedPaneOutput("# [pairflow] r1 PASS codex->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      return Promise.resolve({
+        stdout: "",
+        stderr: "",
+        exitCode: 0
+      });
+    };
+
+    const result = await emitDeliveryNotificationAck({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          implementer: "codex",
+          reviewer: "opencode",
+          meta_reviewer: "codex"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      envelope: createEnvelope({
+        recipient: "opencode"
+      }),
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry())
+    });
+
+    expect(respawned).toBe(true);
+    expect(result.status).toBe("accepted");
+    expect(
+      calls.some(
+        (call) => call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.2"
+      )
+    ).toBe(true);
   });
 });
 

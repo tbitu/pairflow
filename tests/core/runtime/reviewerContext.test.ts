@@ -160,6 +160,121 @@ describe("refreshReviewerContext", () => {
     ]);
   });
 
+  it("sends Opencode reviewer startup prompt via tmux input after pane respawn", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      return Promise.resolve({
+        stdout: "",
+        stderr: "",
+        exitCode: 0
+      });
+    };
+    const startupPrompt = "Reviewer brief: verify the current handoff.";
+
+    const result = await refreshReviewerContext({
+      bubbleId: "b_reviewer_ctx_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "opencode"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      reviewerStartupPrompt: startupPrompt,
+      runner,
+      startupSubmitDelayMs: 0,
+      readSessionsRegistry: () =>
+        Promise.resolve({
+          b_reviewer_ctx_01: createRuntimeSessionRecord({
+            workspacePath: "/tmp/runtime-workspace",
+            workspaceKind: "worktree"
+          })
+        })
+    });
+
+    const reviewerTargetPane =
+      `pf-b_reviewer_ctx_01:0.${String(getTopologySlotPaneIndexForRole("reviewer"))}`;
+
+    expect(result).toEqual({
+      refreshed: true
+    });
+    const reviewerCommand = calls[0]?.[6];
+    expect(typeof reviewerCommand).toBe("string");
+    expect(String(reviewerCommand)).not.toContain(startupPrompt);
+    expect(calls).toContainEqual([
+      "send-keys",
+      "-t",
+      reviewerTargetPane,
+      "-l",
+      startupPrompt
+    ]);
+    expect(calls).toContainEqual([
+      "send-keys",
+      "-t",
+      reviewerTargetPane,
+      "Enter"
+    ]);
+  });
+
+  it("chunks long Opencode reviewer startup prompts before submitting", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      return Promise.resolve({
+        stdout: "",
+        stderr: "",
+        exitCode: 0
+      });
+    };
+    const startupPrompt = "x".repeat(4200);
+
+    const result = await refreshReviewerContext({
+      bubbleId: "b_reviewer_ctx_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "opencode"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      reviewerStartupPrompt: startupPrompt,
+      runner,
+      startupSubmitDelayMs: 0,
+      readSessionsRegistry: () =>
+        Promise.resolve({
+          b_reviewer_ctx_01: createRuntimeSessionRecord({
+            workspacePath: "/tmp/runtime-workspace",
+            workspaceKind: "worktree"
+          })
+        })
+    });
+
+    const reviewerTargetPane =
+      `pf-b_reviewer_ctx_01:0.${String(getTopologySlotPaneIndexForRole("reviewer"))}`;
+
+    expect(result).toEqual({
+      refreshed: true
+    });
+    expect(
+      calls.filter(
+        (call) =>
+          call[0] === "send-keys" &&
+          call[1] === "-t" &&
+          call[2] === reviewerTargetPane &&
+          call[3] === "-l"
+      )
+    ).toHaveLength(5);
+    expect(calls).toContainEqual([
+      "send-keys",
+      "-t",
+      reviewerTargetPane,
+      "Enter"
+    ]);
+  });
+
   it("uses bubble-local reviewer MCP opt-in when refreshing a Codex reviewer", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {

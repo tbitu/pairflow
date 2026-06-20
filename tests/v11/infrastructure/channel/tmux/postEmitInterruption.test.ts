@@ -287,4 +287,54 @@ describe("postEmitInterruptCodexPane", () => {
       await rm(tmpDir, { recursive: true, force: true });
     }
   });
+
+  it("applies an inter-escape delay between the two Escape key presses", async () => {
+    const tmpDir = `/tmp/pf-test-sessions-${randomUUID().slice(0, 8)}`;
+    const sessionsPath = `${tmpDir}/sessions.json`;
+    const bubbleId = "test-bubble-delay";
+    const sessionName = "pf-delay-test";
+    const nowIso = new Date().toISOString();
+
+    await mkdir(tmpDir, { recursive: true });
+    await writeFile(
+      sessionsPath,
+      JSON.stringify({
+        [bubbleId]: {
+          bubbleId,
+          repoPath: "/home/user/repo",
+          worktreePath: `/tmp/worktrees/${bubbleId}`,
+          tmuxSessionName: sessionName,
+          updatedAt: nowIso
+        }
+      })
+    );
+
+    try {
+      const tmuxCalls: string[][] = [];
+      const delayCalls: number[] = [];
+      function mockRunner(args: string[]): Promise<TmuxRunResult> {
+        tmuxCalls.push(args);
+        return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+      }
+      const sleepForDelayMs = async (delayMs: number): Promise<void> => {
+        delayCalls.push(delayMs);
+      };
+
+      await postEmitInterruptCodexPane({
+        sessionsPath,
+        bubbleId,
+        tmuxRunner: mockRunner,
+        interEscapeDelayMs: 100,
+        sleepForDelayMs
+      });
+
+      expect(tmuxCalls.slice(0, 2)).toEqual([
+        ["send-keys", "-t", `${sessionName}:0.1`, "Escape"],
+        ["send-keys", "-t", `${sessionName}:0.1`, "Escape"]
+      ]);
+      expect(delayCalls).toContain(100);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
 });

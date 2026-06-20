@@ -1,5 +1,6 @@
 import type { readRuntimeSessionsRegistry } from "../../executor/sessionRuntime/runtimeSessionsRegistry.js";
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../shared/runtimeSessionWorkspaceAuthority.js";
+import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import type {
   DeliveryAck,
   DeliveryAckReasonCode,
@@ -11,6 +12,7 @@ import {
   maybeAcceptClaudeTrustPrompt,
   sendAndSubmitTmuxPaneMessage
 } from "./tmuxInput.js";
+import { waitForOpencodePaneReady } from "./tmuxOpencodeReadiness.js";
 import type { TmuxRunner } from "./tmuxManager.js";
 
 export interface DeliverySessionContext {
@@ -105,6 +107,37 @@ export interface TmuxDeliveryTimingOptions {
   markerRetryDelayMs?: number;
 }
 
+async function ensureOpencodePaneReady(input: {
+  runner: TmuxRunner;
+  targetPane: string;
+  respawnExpectedPaneAgent?: () => Promise<void>;
+  sleepForDelayMs?: (delayMs: number) => Promise<void>;
+}): Promise<boolean> {
+  const quickProbe = await waitForOpencodePaneReady({
+    runner: input.runner,
+    targetPane: input.targetPane,
+    attempts: 1,
+    ...(input.sleepForDelayMs !== undefined
+      ? { sleepForDelayMs: input.sleepForDelayMs }
+      : {})
+  });
+  if (quickProbe) {
+    return true;
+  }
+  if (input.respawnExpectedPaneAgent === undefined) {
+    return false;
+  }
+
+  await input.respawnExpectedPaneAgent();
+  return await waitForOpencodePaneReady({
+    runner: input.runner,
+    targetPane: input.targetPane,
+    ...(input.sleepForDelayMs !== undefined
+      ? { sleepForDelayMs: input.sleepForDelayMs }
+      : {})
+  });
+}
+
 export async function attemptTmuxDelivery(input: {
   runner: TmuxRunner;
   targetPane: string;
@@ -114,6 +147,8 @@ export async function attemptTmuxDelivery(input: {
   deliveryAttempts?: number;
   sessionName: string;
   targetPaneIndex: number;
+  expectedPaneAgent?: AgentName;
+  respawnExpectedPaneAgent?: () => Promise<void>;
   deliveryTargetReasonCode?: DeliveryTargetReasonCode;
   timing?: TmuxDeliveryTimingOptions;
 }): Promise<DeliveryAck> {
@@ -121,6 +156,29 @@ export async function attemptTmuxDelivery(input: {
     if ((input.initialDelayMs ?? 0) > 0) {
       const sleepForDelayMs = input.timing?.sleepForDelayMs ?? sleep;
       await sleepForDelayMs(input.initialDelayMs as number);
+    }
+    if (input.expectedPaneAgent === "opencode") {
+      const opencodePaneReady = await ensureOpencodePaneReady({
+        runner: input.runner,
+        targetPane: input.targetPane,
+        ...(input.respawnExpectedPaneAgent !== undefined
+          ? { respawnExpectedPaneAgent: input.respawnExpectedPaneAgent }
+          : {}),
+        ...(input.timing?.sleepForDelayMs !== undefined
+          ? { sleepForDelayMs: input.timing.sleepForDelayMs }
+          : {})
+      });
+      if (!opencodePaneReady) {
+        return createRejectedDeliveryAck({
+          reason: "command_failed",
+          message: input.message,
+          sessionName: input.sessionName,
+          targetPaneIndex: input.targetPaneIndex,
+          ...(input.deliveryTargetReasonCode !== undefined
+            ? { deliveryTargetReasonCode: input.deliveryTargetReasonCode }
+            : {})
+        });
+      }
     }
     await maybeAcceptClaudeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
     await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
