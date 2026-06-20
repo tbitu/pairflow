@@ -7,7 +7,7 @@ import type {
 } from "../../config/bubbleConfigVocabulary.js";
 
 import {
-  IMPLEMENTER_EMIT_DIRECTIVE,
+  AGENT_EMIT_DIRECTIVE,
   EVIDENCE_REF_INSTRUCTION_SHORT,
   DOC_BUBBLE_MODE_A_SKIP_CLAIM,
   DOC_BUBBLE_MODE_B_CHECKS_SUFFIX
@@ -73,7 +73,7 @@ export function buildAgentEvidenceHandoffGuidance(
     ? "Run the bubble-level validation commands listed above when local feedback is useful, and let PASS produce the authoritative evidence."
     : "Run validation via `pnpm lint`, `pnpm typecheck`, `pnpm test`, or `pnpm check` so evidence logs are written to `.pairflow/evidence/`.";
   if (reviewArtifactType === "document") {
-    const emitDirective = IMPLEMENTER_EMIT_DIRECTIVE;
+    const emitDirective = AGENT_EMIT_DIRECTIVE;
 
     return [
       emitDirective,
@@ -88,7 +88,7 @@ export function buildAgentEvidenceHandoffGuidance(
     ].join(" ");
   }
 
-  const emitDirective = IMPLEMENTER_EMIT_DIRECTIVE;
+  const emitDirective = AGENT_EMIT_DIRECTIVE;
 
   return [
     emitDirective,

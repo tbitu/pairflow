@@ -209,6 +209,26 @@ export async function confirmTmuxPaneMarkerSubmission(
       return true;
     }
     if (attempt < attempts - 1) {
+      // Guard: only resend Enter when an active agent prompt line is visible.
+      // If tmux hasn't yet reflected the initial submission in capture, blindly
+      // sending Enter can duplicate keystrokes at a stale input buffer. A
+      // visible prompt confirms the pane has settled and is ready for more input.
+      const promptCheck = await input.runner(
+        ["capture-pane", "-p", "-S", "-200", "-t", input.targetPane],
+        { allowFailure: true }
+      );
+      if (promptCheck.exitCode === 0) {
+        const hasPromptLine = /\s*(?:[|│┃]\s*)*[>❯]/u.test(promptCheck.stdout);
+        if (!hasPromptLine) {
+          // Pane is still processing previous input; wait longer instead of
+          // blindly resending Enter.
+          if (retryDelayMs > 0) {
+            await sleepForDelayMs(retryDelayMs);
+          }
+
+          continue;
+        }
+      }
       if (retryDelayMs > 0) {
         await sleepForDelayMs(retryDelayMs);
       }

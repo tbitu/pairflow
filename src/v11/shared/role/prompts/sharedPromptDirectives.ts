@@ -12,7 +12,7 @@
  * of an agent's active execution window — i.e., after completing implementation work
  * or a review, but never while idle, waiting for orchestration signals, or in a passive state.
  */
-export const IMPLEMENTER_EMIT_DIRECTIVE =
+export const AGENT_EMIT_DIRECTIVE =
   "Always execute the canonical actor emit command (`pairflow agent emit`) as the mandatory final step before stopping work or ending your turn. Do not stop work without emitting first. This directive applies at the end of an active implementation or review session — do not emit while idle or waiting for orchestration signals.";
 
 /**

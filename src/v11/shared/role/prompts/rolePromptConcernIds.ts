@@ -19,6 +19,7 @@ const implementerResumePromptConcernIds = [
   "repository_launch_workspace_line",
   "resume_state_context_line",
   "transcript_context_line",
+  "canonical_actor_emit_lookup_guidance",
   "implementer_evidence_handoff_guidance",
   "implementer_resume_role_instruction",
   "kickoff_diagnostic_line"
@@ -52,6 +53,7 @@ const reviewerResumePromptConcernIds = [
   "pairflow_command_guidance",
   "resume_state_context_line",
   "transcript_context_line",
+  "canonical_actor_emit_lookup_guidance",
   "reviewer_test_execution_directive",
   "reviewer_severity_ontology_reminder",
   "reviewer_policy_snapshot_contract",
@@ -86,6 +88,7 @@ const metaReviewerResumePromptConcernIds = [
   "repository_launch_workspace_line",
   "resume_state_context_line",
   "transcript_context_line",
+  "canonical_actor_emit_lookup_guidance",
   "kickoff_diagnostic_line"
 ] as const satisfies readonly PromptConcernId[];
 
