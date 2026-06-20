@@ -75,6 +75,8 @@ function buildAgentLaunchCommand(
   if ((startupPrompt?.trim().length ?? 0) > 0) {
     if (agentName === "claude" && roleMcpPolicy === "disabled") {
       args.push("--");
+    } else if (agentName === "opencode") {
+      args.push("--prompt");
     }
     args.push(startupPrompt as string);
   }
