@@ -191,7 +191,7 @@ observer = "enabled"
 
     expect(result.errors).toContainEqual({
       path: "agents.meta_reviewer",
-      message: "Must be one of: codex, claude"
+      message: "Must be one of: codex, claude, opencode"
     });
   });
 

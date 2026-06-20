@@ -78,7 +78,7 @@ function validateRoundRoleEntry(
   if (!isAgentName(implementer)) {
     errors.push({
       path: `${pathPrefix}.implementer`,
-      message: "Must be one of: codex, claude"
+      message: "Must be one of: codex, claude, opencode"
     });
   }
 
@@ -86,7 +86,7 @@ function validateRoundRoleEntry(
   if (!isAgentName(reviewer)) {
     errors.push({
       path: `${pathPrefix}.reviewer`,
-      message: "Must be one of: codex, claude"
+      message: "Must be one of: codex, claude, opencode"
     });
   }
 
@@ -169,7 +169,7 @@ export function validateBubbleStateActivityFields(
   if (!(activeAgent === null || isAgentName(activeAgent))) {
     errors.push({
       path: "active_agent",
-      message: "Must be null or one of: codex, claude"
+      message: "Must be null or one of: codex, claude, opencode"
     });
   }
 

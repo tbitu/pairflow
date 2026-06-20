@@ -50,6 +50,7 @@ import { setupRunningBubbleFixture } from "../../helpers/bubble.js";
 import type {
   PassProtocolEnvelopePayload
 } from "../../../src/v11/shared/protocol/protocolEnvelopeContract.js";
+import type { AgentName } from "../../../src/contracts/kernel/agentIdentity.js";
 
 const tempDirs: string[] = [];
 let sharedRepoPathPromise: Promise<string> | undefined;
@@ -153,7 +154,7 @@ async function createTempRepo(): Promise<string> {
   return sharedRepoPathPromise;
 }
 
-async function setReviewerActive(worktreeStatePath: string, reviewerAgent: "codex" | "claude"): Promise<void> {
+async function setReviewerActive(worktreeStatePath: string, reviewerAgent: AgentName): Promise<void> {
   const loaded = await readStateSnapshot(worktreeStatePath);
   await writeStateSnapshot(
     worktreeStatePath,
@@ -284,12 +285,12 @@ async function seedReviewerRoundTwoWithHistory(input: {
 
 function buildRoundRoleHistoryThroughRound(input: {
   throughRound: number;
-  implementer: "codex" | "claude";
-  reviewer: "codex" | "claude";
+  implementer: AgentName;
+  reviewer: AgentName;
 }): Array<{
   round: number;
-  implementer: "codex" | "claude";
-  reviewer: "codex" | "claude";
+  implementer: AgentName;
+  reviewer: AgentName;
   switched_at: string;
 }> {
   return Array.from({ length: input.throughRound }, (_, index) => {

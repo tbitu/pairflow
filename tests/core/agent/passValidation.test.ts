@@ -36,6 +36,7 @@ import { writeEvidenceLog } from "../../helpers/evidence.js";
 import type {
   PassProtocolEnvelopePayload
 } from "../../../src/v11/shared/protocol/protocolEnvelopeContract.js";
+import type { AgentName } from "../../../src/contracts/kernel/agentIdentity.js";
 
 const tempDirs: string[] = [];
 const defaultWatchdogTimeoutMinutes = 60;
@@ -220,7 +221,7 @@ async function setupRunningBubbleFixture(input: {
   return bubble;
 }
 
-async function setReviewerActive(worktreeStatePath: string, reviewerAgent: "codex" | "claude"): Promise<void> {
+async function setReviewerActive(worktreeStatePath: string, reviewerAgent: AgentName): Promise<void> {
   const loaded = await readStateSnapshot(worktreeStatePath);
   await writeStateSnapshot(
     worktreeStatePath,

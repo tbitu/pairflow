@@ -1,4 +1,7 @@
-import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
+import {
+  isAgentName,
+  type AgentName
+} from "../../../../../contracts/kernel/agentIdentity.js";
 import type {
   ReviewVerificationArtifact,
   ReviewVerificationValidationError
@@ -50,11 +53,11 @@ function validateArtifactMeta(
   }
 
   const reviewer = metaRecord.reviewer;
-  if (reviewer !== "codex" && reviewer !== "claude") {
+  if (!isAgentName(reviewer)) {
     errors.push({
       code: "meta_reviewer_invalid",
       path: "meta.reviewer",
-      message: "meta.reviewer must be one of: codex, claude."
+      message: "meta.reviewer must be one of: codex, claude, opencode."
     });
   }
 
@@ -70,7 +73,7 @@ function validateArtifactMeta(
   return {
     bubbleId: typeof bubbleId === "string" ? bubbleId.trim() : undefined,
     round: Number.isInteger(round) ? (round as number) : undefined,
-    reviewer: reviewer === "codex" || reviewer === "claude" ? reviewer : undefined,
+    reviewer: isAgentName(reviewer) ? reviewer : undefined,
     generatedAt: typeof generatedAt === "string" ? generatedAt : undefined
   };
 }

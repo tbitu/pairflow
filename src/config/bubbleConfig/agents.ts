@@ -1,5 +1,8 @@
 import type { BubbleConfig } from "../../v11/shared/config/bubbleConfigTypes.js";
-import { isAgentName } from "../../contracts/kernel/agentIdentity.js";
+import {
+  isAgentName,
+  type AgentName
+} from "../../contracts/kernel/agentIdentity.js";
 import type { ValidationError } from "../../v11/shared/validation/primitives.js";
 import { readString } from "./readers.js";
 
@@ -41,7 +44,7 @@ export function validateBubbleAgents(
   if (implementer !== undefined && !isAgentName(implementer)) {
     errors.push({
       path: "agents.implementer",
-      message: "Must be one of: codex, claude"
+      message: "Must be one of: codex, claude, opencode"
     });
   }
 
@@ -51,7 +54,7 @@ export function validateBubbleAgents(
   if (reviewer !== undefined && !isAgentName(reviewer)) {
     errors.push({
       path: "agents.reviewer",
-      message: "Must be one of: codex, claude"
+      message: "Must be one of: codex, claude, opencode"
     });
   }
 
@@ -70,7 +73,7 @@ export function validateBubbleAgents(
   if (metaReviewerCandidate !== undefined && !isAgentName(metaReviewerCandidate)) {
     errors.push({
       path: "agents.meta_reviewer",
-      message: "Must be one of: codex, claude"
+      message: "Must be one of: codex, claude, opencode"
     });
   }
 
@@ -94,11 +97,11 @@ export function validateBubbleAgents(
   });
 
   return {
-    implementer: implementer as "codex" | "claude",
+    implementer: implementer as AgentName,
     ...(implementerModel !== undefined ? { implementer_model: implementerModel } : {}),
-    reviewer: reviewer as "codex" | "claude",
+    reviewer: reviewer as AgentName,
     ...(reviewerModel !== undefined ? { reviewer_model: reviewerModel } : {}),
-    meta_reviewer: metaReviewer as "codex" | "claude",
+    meta_reviewer: metaReviewer as AgentName,
     ...(metaReviewerModel !== undefined
       ? { meta_reviewer_model: metaReviewerModel }
       : {})

@@ -25,6 +25,7 @@ import {
 import type {
   PassProtocolEnvelopePayload
 } from "../../../src/v11/shared/protocol/protocolEnvelopeContract.js";
+import type { AgentName } from "../../../src/contracts/kernel/agentIdentity.js";
 import { upsertRuntimeSession } from "../../../src/v11/infrastructure/executor/sessionRuntime/runtimeSessionsRegistry.js";
 import {
   buildRunningExecutionContext,
@@ -197,8 +198,8 @@ async function setupConvergedCandidateBubble(
   const lockPath = join(bubble.paths.locksDir, `${bubble.bubbleId}.lock`);
   const passEvents: Array<{
     now: string;
-    sender: "codex" | "claude";
-    recipient: "codex" | "claude";
+    sender: AgentName;
+    recipient: AgentName;
     round: number;
     payload: PassProtocolEnvelopePayload;
   }> = [

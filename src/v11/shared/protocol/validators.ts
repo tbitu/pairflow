@@ -10,6 +10,7 @@ import {
   type ValidationResult
 } from "../validation/primitives.js";
 import {
+  protocolParticipants,
   protocolMessageTypes,
   isProtocolMessageType,
   isProtocolParticipant
@@ -53,7 +54,7 @@ export function validateProtocolEnvelope(
   if (!isProtocolParticipant(sender)) {
     errors.push({
       path: "sender",
-      message: "Must be one of: codex, claude, orchestrator, human"
+      message: `Must be one of: ${protocolParticipants.join(", ")}`
     });
   }
 
@@ -61,7 +62,7 @@ export function validateProtocolEnvelope(
   if (!isProtocolParticipant(recipient)) {
     errors.push({
       path: "recipient",
-      message: "Must be one of: codex, claude, orchestrator, human"
+      message: `Must be one of: ${protocolParticipants.join(", ")}`
     });
   }
 
