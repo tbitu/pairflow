@@ -188,7 +188,9 @@ export async function waitForTuiReady(
     });
     if (capture.exitCode === 0) {
       const lines = capture.stdout.split("\n");
-      const hasPrompt = lines.some((line) => isAgentPromptLine(line) || /▀▀▀▀/u.test(line));
+      const isOpencode = lines.some((line) => /▀▀▀▀/u.test(line));
+      const hasOpencodeReady = capture.stdout.toLowerCase().includes("ask anything") || capture.stdout.toLowerCase().includes("tab agents") || capture.stdout.toLowerCase().includes("ctrl+p commands");
+      const hasPrompt = isOpencode ? hasOpencodeReady : lines.some((line) => isAgentPromptLine(line));
       if (hasPrompt) {
         // Extra settle time to ensure the TUI's internal event loop is ready
         await sleep(2000);
