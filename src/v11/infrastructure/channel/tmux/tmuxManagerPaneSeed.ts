@@ -84,10 +84,15 @@ async function submitStartupPrompt(
   // Opencode readiness gate: poll for visual prompt indicator or fall back
   // to a timeout sentinel before submitting the startup prompt via tmux.
   if (agentName === "opencode") {
-    await detectOpencodeReadiness(runner, targetPane).catch((err) => {
-    const message = err instanceof Error ? err.message : String(err);
-    console.warn('[opencode-readiness]', message);
-  });
+    try {
+      await detectOpencodeReadiness(runner, targetPane);
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      console.error('[opencode-readiness] readiness detection failed:', message);
+      const error = new Error(`opencode readiness check failed: ${message}`);
+      Object.assign(error, { code: "OPENCODE_READINESS_FAILED" });
+      throw error;
+    }
   }
 
   await new Promise<void>((resolvePromise) => {

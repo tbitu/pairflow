@@ -198,15 +198,16 @@ export async function detectOpencodeReadiness(
   targetPane: string,
   options?: DetectOpencodeReadinessOptions
 ): Promise<boolean> {
-  const pollingTimeout = options?.timeoutMs ?? 5000;
+  // Since isOpencodePromptLine() is a placeholder that always returns false,
+  // skip the long polling loop and use a minimal poll phase. This eliminates
+  // wasted ~5s startup latency while keeping the API future-proof for when
+  // a real visual indicator regex is added (see TODO in isOpencodePromptLine).
+  const maxPolls = options?.maxPolls ?? 2;
   const fallbackDelay = OPENCODE_READINESS_FALLBACK_DELAY_MS;
   const sleepForDelayMs = options?.sleepForDelayMs ?? sleep;
 
-  const deadline = Date.now() + pollingTimeout;
-  const maxPolls = options?.maxPolls ?? 50;
-  let pollCount = 0;
-
-  while (pollCount < maxPolls && Date.now() < deadline) {
+  // Quick poll window: up to maxPolls captures with brief pauses.
+  for (let pollCount = 0; pollCount < maxPolls; pollCount += 1) {
     const capture = await runner(["capture-pane", "-p", "-S", "-200", "-t", targetPane], {
       allowFailure: true
     });
@@ -216,8 +217,7 @@ export async function detectOpencodeReadiness(
     }
 
     // Brief pause between polls to avoid excessive tmux queries.
-    await sleepForDelayMs(250);
-    pollCount += 1;
+    await sleepForDelayMs(150);
   }
 
   // Fallback: opencode has no reliable visual indicator, so trust that the process

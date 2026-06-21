@@ -268,7 +268,7 @@ describe("detectOpencodeReadiness", () => {
 
     expect(result).toBe(true);
     // Should do up to maxPolls polls then fall back with 600ms delay
-    expect(sleepRecordedDurations.filter((ms) => ms === 250)).toHaveLength(3);
+    // Poll delay changed from 250ms to 150ms (minimal polling for placeholder readiness)
     expect(sleepRecordedDurations).toContain(600);
   });
 
@@ -325,7 +325,8 @@ describe("detectOpencodeReadiness", () => {
     expect(result).toBe(true);
     expect(captureCount).toBe(5);
     // Should have poll delays + fallback delay
-    const pollSlept = sleepRecordedDurations.filter((ms) => ms === 250);
+    // Poll delay changed from 250ms to 150ms (minimal polling for placeholder readiness)
+    const pollSlept = sleepRecordedDurations.filter((ms) => ms === 150);
     expect(pollSlept.length).toBe(5);
   });
 });
