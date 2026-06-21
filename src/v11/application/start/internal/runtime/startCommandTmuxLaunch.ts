@@ -20,13 +20,7 @@ import { DEFAULT_REVIEW_POLICY_REVIEWER_BLOCKING_MIN_SEVERITY } from "../../../.
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
 import type { PairflowRemoteWorkspaceAuthority } from "../../../../shared/command/pairflowCommandBootstrap.js";
 import type { RoleMcpPolicy } from "../../../../shared/config/bubbleConfigVocabulary.js";
-
-function shouldSubmitStartupPrompt(
-  agentName: AgentName,
-  startupPrompt: string | undefined
-): boolean {
-  return agentName === "codex" && (startupPrompt?.trim().length ?? 0) > 0;
-}
+import { shouldSubmitStartupPrompt } from "../../../../shared/command/startupPromptGate.js";
 
 function buildStatusPaneLabel(bubbleId: string): string {
   return `[orchestrator/status]-[${bubbleId}]`;
@@ -227,6 +221,9 @@ export async function launchFreshTmuxSession(input: {
     ),
     reviewerSubmitStartupPrompt: false,
     metaReviewerSubmitStartupPrompt: false,
+    implementerAgentName: input.context.resolved.bubbleConfig.agents.implementer,
+    reviewerAgentName: input.context.resolved.bubbleConfig.agents.reviewer,
+    metaReviewerAgentName: metaReviewerAgent,
     implementerCommand: await buildAgentLaunchCommand({
       agentName: input.context.resolved.bubbleConfig.agents.implementer,
       roleName: "implementer",
@@ -351,6 +348,9 @@ export async function launchResumeTmuxSession(input: {
       metaReviewerAgent,
       metaReviewerStartupPrompt
     ),
+    implementerAgentName: input.context.resolved.bubbleConfig.agents.implementer,
+    reviewerAgentName: input.context.resolved.bubbleConfig.agents.reviewer,
+    metaReviewerAgentName: metaReviewerAgent,
     launchImplementerAgent,
     launchReviewerAgent,
     launchMetaReviewerAgent,

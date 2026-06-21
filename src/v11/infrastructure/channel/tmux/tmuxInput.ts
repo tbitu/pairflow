@@ -6,6 +6,8 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
+/** Fallback delay for opencode readiness detection (timeout sentinel). */
+export const OPENCODE_READINESS_FALLBACK_DELAY_MS = 600;
 export interface SendAndSubmitTmuxPaneMessageOptions {
   requireSuccess?: boolean;
   submitDelayMs?: number;
@@ -148,6 +150,83 @@ function isAgentPromptLine(line: string): boolean {
   // (for example `│ ❯`). Treat those as prompt lines too.
   return /^\s*(?:[|│┃]\s*)*[>❯]/u.test(line);
 }
+
+
+/**
+ * Detect whether a line looks like an opencode TUI prompt.
+ *
+ * Currently returns `false` because opencode's exact prompt character is not yet
+ * reliably identified across versions.  When the pattern becomes known (for example
+ * a dedicated Unicode arrow or ASCII symbol), replace the body with a regex match
+ * and document the exact pattern used.
+ *
+ * @returns {false} Always returns false — this is an intentional placeholder until a real
+ *                  opencode prompt character regex is identified in a future version.
+ * @see https://github.com/opencode-ai/opencode for upstream prompt changes.
+ */
+export function isOpencodePromptLine(): boolean {
+  // TODO: Replace with an opencode-specific prompt character regex when available.
+  return false;
+}
+
+/**
+ * Optional override parameters for opencode readiness detection.
+ * These are positional in the function signature; this interface only holds
+ * overridable defaults (timeouts and sleep injection for testing).
+ */
+export interface DetectOpencodeReadinessOptions {
+  timeoutMs?: number;
+  sleepForDelayMs?: (ms: number) => Promise<void>;
+  maxPolls?: number;
+}
+
+/**
+ * Opencode readiness detection via timeout sentinel.
+ *
+ * Unlike codex (which shows `[pairflow]` markers) and claude (whose prompt-line
+ * pattern is detectable), opencode does not currently expose a reliable visual
+ * indicator that can be matched in tmux pane captures.  This function polls for an
+ * `isOpencodePromptLine` match within the configured timeout, then falls back to a
+ * short delay-based sentinel when no visual signal appears — trusting that opencode
+ * processes input quickly enough even without a visible prompt change.
+ *
+ * The fallback delay defaults to **600 ms**, which is sufficient for the agent TUI
+ * to acknowledge pasted keystrokes and be ready for the next message.
+ */
+export async function detectOpencodeReadiness(
+  runner: TmuxRunner,
+  targetPane: string,
+  options?: DetectOpencodeReadinessOptions
+): Promise<boolean> {
+  // Since isOpencodePromptLine() is a placeholder that always returns false,
+  // skip the long polling loop and use a minimal poll phase. This eliminates
+  // wasted ~5s startup latency while keeping the API future-proof for when
+  // a real visual indicator regex is added (see TODO in isOpencodePromptLine).
+  const maxPolls = options?.maxPolls ?? 2;
+  const fallbackDelay = OPENCODE_READINESS_FALLBACK_DELAY_MS;
+  const sleepForDelayMs = options?.sleepForDelayMs ?? sleep;
+
+  // Quick poll window: up to maxPolls captures with brief pauses.
+  for (let pollCount = 0; pollCount < maxPolls; pollCount += 1) {
+    const capture = await runner(["capture-pane", "-p", "-S", "-200", "-t", targetPane], {
+      allowFailure: true
+    });
+
+    if (capture.exitCode === 0 && isOpencodePromptLine()) {
+      return true;
+    }
+
+    // Brief pause between polls to avoid excessive tmux queries.
+    await sleepForDelayMs(150);
+  }
+
+  // Fallback: opencode has no reliable visual indicator, so trust that the process
+  // is ready after a short settling delay (the timeout sentinel).
+  await sleepForDelayMs(fallbackDelay);
+  return true;
+}
+
+
 
 export async function checkTmuxPaneMarkerStatus(
   runner: TmuxRunner,

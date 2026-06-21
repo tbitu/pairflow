@@ -1,3 +1,5 @@
+import type { AgentName } from "../../contracts/kernel/agentIdentity.js";
+
 export interface TmuxRunResult {
   stdout: string;
   stderr: string;
@@ -39,6 +41,9 @@ export interface LaunchBubbleSessionInput {
   implementerKickoffMessage?: string;
   reviewerKickoffMessage?: string;
   metaReviewerKickoffMessage?: string;
+  implementerAgentName?: AgentName | undefined;
+  reviewerAgentName?: AgentName | undefined;
+  metaReviewerAgentName?: AgentName | undefined;
 }
 
 export type LaunchBubbleSessionAckStatus = "running" | "failed_to_start";

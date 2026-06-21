@@ -66,6 +66,10 @@ function buildAgentLaunchCommand(
     if (roleMcpPolicy === "disabled") {
       args.push("--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}');
     }
+  } else if (agentName === "opencode") {
+    // Opencode manages its own configuration via local config files; Pairflow does not inject
+    // CLI flags for permissions or MCP policy. The launch is the bare agent name plus optional
+    // model and startup-prompt arguments resolved by downstream callers.
   }
 
   if ((model?.trim().length ?? 0) > 0) {
