@@ -6,6 +6,8 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
+/** Fallback delay for opencode readiness detection (timeout sentinel). */
+export const OPENCODE_READINESS_FALLBACK_DELAY_MS = 600;
 export interface SendAndSubmitTmuxPaneMessageOptions {
   requireSuccess?: boolean;
   submitDelayMs?: number;
@@ -160,8 +162,7 @@ function isAgentPromptLine(line: string): boolean {
  *
  * @see https://github.com/opencode-ai/opencode for upstream prompt changes.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function isOpencodePromptLine(line: string): boolean {
+export function isOpencodePromptLine(): boolean {
   // TODO: Replace with an opencode-specific prompt character regex when available.
   return false;
 }
@@ -196,7 +197,7 @@ export async function detectOpencodeReadiness(
   options?: DetectOpencodeReadinessOptions
 ): Promise<boolean> {
   const pollingTimeout = options?.timeoutMs ?? 5000;
-  const fallbackDelay = 600;
+  const fallbackDelay = OPENCODE_READINESS_FALLBACK_DELAY_MS;
   const sleepForDelayMs = options?.sleepForDelayMs ?? sleep;
 
   const deadline = Date.now() + pollingTimeout;
@@ -208,7 +209,7 @@ export async function detectOpencodeReadiness(
       allowFailure: true
     });
 
-    if (capture.exitCode === 0 && isOpencodePromptLine(capture.stdout)) {
+    if (capture.exitCode === 0 && isOpencodePromptLine()) {
       return true;
     }
 
