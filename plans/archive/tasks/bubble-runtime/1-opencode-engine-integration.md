@@ -5,7 +5,7 @@ task_family_id: opencode-engine-integration
 sequence_key: "1"
 task_id: 1-opencode-engine-integration
 title: Opencode Local Engine Integration
-status: draft
+status: completed
 phase: phase1
 target_files:
   - src/v11/shared/command/agentCommand.ts
@@ -22,7 +22,7 @@ doc_bubble_id: null
 impl_bubble_id: null
 supersedes: []
 superseded_by: null
-archive_group: null
+archive_group: bubble-runtime
 ---
 
 # Task: Opencode Local Engine Integration
