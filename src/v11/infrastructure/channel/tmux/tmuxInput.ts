@@ -160,6 +160,8 @@ function isAgentPromptLine(line: string): boolean {
  * a dedicated Unicode arrow or ASCII symbol), replace the body with a regex match
  * and document the exact pattern used.
  *
+ * @returns {false} Always returns false — this is an intentional placeholder until a real
+ *                  opencode prompt character regex is identified in a future version.
  * @see https://github.com/opencode-ai/opencode for upstream prompt changes.
  */
 export function isOpencodePromptLine(): boolean {
