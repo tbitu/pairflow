@@ -10,6 +10,8 @@ import {
 import { submitTmuxPaneInput } from "./tmuxInput.js";
 import { buildAgentCommand } from "../../../shared/command/agentCommand.js";
 import { resolveCodexMcpDisableArgs } from "../../../shared/command/agentCommand.js";
+import { shouldSubmitStartupPrompt } from "../../../shared/command/startupPromptGate.js";
+import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../shared/runtimeSessionWorkspaceAuthority.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../config/defaults.js";
 import type {
@@ -36,19 +38,8 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
-function shouldSubmitStartupPrompt(
-  agentName: string,
-  startupPrompt: string | undefined
-): boolean {
-  if (agentName === "claude") {
-    return false;
-  }
-  // codex and opencode receive their startup prompt via tmux paste after launch.
-  return (startupPrompt?.trim().length ?? 0) > 0;
-}
-
 async function maybeSubmitReviewerStartupPrompt(input: {
-  agentName: string;
+  agentName: AgentName;
   startupPrompt?: string | undefined;
   runner: TmuxRunner;
   sessionName: string;
