@@ -25,7 +25,11 @@ function shouldSubmitStartupPrompt(
   agentName: AgentName,
   startupPrompt: string | undefined
 ): boolean {
-  return agentName === "codex" && (startupPrompt?.trim().length ?? 0) > 0;
+  if (agentName === "claude") {
+    return false;
+  }
+  // codex and opencode receive their startup prompt via tmux paste after launch.
+  return (startupPrompt?.trim().length ?? 0) > 0;
 }
 
 function buildStatusPaneLabel(bubbleId: string): string {

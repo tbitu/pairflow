@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   sendAndSubmitTmuxPaneMessage,
   maybeAcceptClaudeTrustPrompt,
-  checkTmuxPaneMarkerStatus
+  checkTmuxPaneMarkerStatus,
+  isOpencodePromptLine,
+  detectOpencodeReadiness
 } from "../../../src/v11/infrastructure/channel/tmux/tmuxInput.js";
 
 describe("sendAndSubmitTmuxPaneMessage", () => {
@@ -233,5 +235,97 @@ describe("maybeAcceptClaudeTrustPrompt", () => {
       ["send-keys", "-t", "pane-1", "Enter"],
       ["capture-pane", "-pt", "pane-1"]
     ]);
+  });
+});
+
+describe("isOpencodePromptLine", () => {
+  it("returns false by default until an opencode-specific pattern is defined", () => {
+    expect(isOpencodePromptLine("❯ some opencode output")).toBe(false);
+    expect(isOpencodePromptLine("> regular prompt")).toBe(false);
+    expect(isOpencodePromptLine("│ ❯ Claude Code v2.1")).toBe(false);
+  });
+});
+
+describe("detectOpencodeReadiness", () => {
+  it("falls back to timeout sentinel when no visual indicator is found within timeout", async () => {
+    const sleepRecordedDurations: number[] = [];
+    const mockSleep = (ms: number) => {
+      sleepRecordedDurations.push(ms);
+      return Promise.resolve();
+    };
+    const testRunner = async (args: string[]) => {
+      if (args[0] === "capture-pane") {
+        return { stdout: "# pane output", stderr: "", exitCode: 0 };
+      }
+      return { stdout: "", stderr: "", exitCode: 1 };
+    };
+
+    const result = await detectOpencodeReadiness(testRunner as never, "test-pane-01", {
+      timeoutMs: 50,
+      maxPolls: 3,
+      sleepForDelayMs: mockSleep
+    });
+
+    expect(result).toBe(true);
+    // Should do up to maxPolls polls then fall back with 600ms delay
+    expect(sleepRecordedDurations.filter((ms) => ms === 250)).toHaveLength(3);
+    expect(sleepRecordedDurations).toContain(600);
+  });
+
+  it("exits after maxPolls and applies fallback sentinel", async () => {
+    // isOpencodePromptLine currently always returns false (TODO placeholder),
+    // so the function exhausts polls then falls back to the delay sentinel.
+    const sleepRecordedDurations: number[] = [];
+    let captureCount = 0;
+    const mockSleep = (ms: number) => {
+      sleepRecordedDurations.push(ms);
+      return Promise.resolve();
+    };
+    const testRunner = async (args: string[]) => {
+      if (args[0] === "capture-pane") {
+        captureCount += 1;
+        return { stdout: "# [opencode/implementer]\n> ready", stderr: "", exitCode: 0 };
+      }
+      return { stdout: "", stderr: "", exitCode: 1 };
+    };
+
+    const result = await detectOpencodeReadiness(testRunner as never, "test-pane-02", {
+      timeoutMs: 5000,
+      maxPolls: 1,
+      sleepForDelayMs: mockSleep
+    });
+
+    expect(result).toBe(true);
+    expect(captureCount).toBe(1);
+    // Fallback delay is always applied after polling exhausts or times out
+    expect(sleepRecordedDurations.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("polls multiple times before falling back to timeout sentinel", async () => {
+    const sleepRecordedDurations: number[] = [];
+    let captureCount = 0;
+    const mockSleep = (ms: number) => {
+      sleepRecordedDurations.push(ms);
+      return Promise.resolve();
+    };
+    const testRunner = async (args: string[]) => {
+      if (args[0] === "capture-pane") {
+        captureCount += 1;
+        return { stdout: `# pane output #${captureCount}`, stderr: "", exitCode: 0 };
+      }
+      return { stdout: "", stderr: "", exitCode: 1 };
+    };
+
+    const result = await detectOpencodeReadiness(testRunner as never, "test-pane-03", {
+      timeoutMs: 5000,
+      maxPolls: 5,
+      sleepForDelayMs: mockSleep
+    });
+
+    expect(result).toBe(true);
+    expect(captureCount).toBe(5);
+    // Should have poll delays + fallback delay
+    const pollSlept = sleepRecordedDurations.filter((ms) => ms === 250);
+    expect(pollSlept.length).toBe(5);
   });
 });
