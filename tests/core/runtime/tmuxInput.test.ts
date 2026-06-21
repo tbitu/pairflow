@@ -240,9 +240,9 @@ describe("maybeAcceptClaudeTrustPrompt", () => {
 
 describe("isOpencodePromptLine", () => {
   it("returns false by default until an opencode-specific pattern is defined", () => {
-    expect(isOpencodePromptLine("❯ some opencode output")).toBe(false);
-    expect(isOpencodePromptLine("> regular prompt")).toBe(false);
-    expect(isOpencodePromptLine("│ ❯ Claude Code v2.1")).toBe(false);
+    expect(isOpencodePromptLine()).toBe(false);
+    expect(isOpencodePromptLine()).toBe(false);
+    expect(isOpencodePromptLine()).toBe(false);
   });
 });
 

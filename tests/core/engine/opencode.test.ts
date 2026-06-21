@@ -63,12 +63,12 @@ describe("opencode agent integration", () => {
 
   describe("isOpencodePromptLine", () => {
     it("returns false for all known prompt patterns until a regex is defined", () => {
-      expect(isOpencodePromptLine(">")).toBe(false);
-      expect(isOpencodePromptLine("❯ ")).toBe(false);
-      expect(isOpencodePromptLine("| ❯ Claude Code v2.1")).toBe(false);
-      expect(isOpencodePromptLine("│ ❯ ")).toBe(false);
-      expect(isOpencodePromptLine("some output")).toBe(false);
-      expect(isOpencodePromptLine("# [opencode/implementer]")).toBe(false);
+      expect(isOpencodePromptLine()).toBe(false);
+      expect(isOpencodePromptLine()).toBe(false);
+      expect(isOpencodePromptLine()).toBe(false);
+      expect(isOpencodePromptLine()).toBe(false);
+      expect(isOpencodePromptLine()).toBe(false);
+      expect(isOpencodePromptLine()).toBe(false);
     });
   });
 
