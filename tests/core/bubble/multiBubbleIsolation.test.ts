@@ -80,9 +80,9 @@ describe("multi-bubble isolation", () => {
     expect(transcriptA.map((entry) => entry.type)).toEqual(["TASK", "PASS"]);
     expect(transcriptB.map((entry) => entry.type)).toEqual(["TASK", "PASS"]);
 
-    expect(stateA.state.active_agent).toBe("claude");
+    expect(stateA.state.active_agent).toBe("opencode");
     expect(stateA.state.active_role).toBe("reviewer");
-    expect(stateB.state.active_agent).toBe("claude");
+    expect(stateB.state.active_agent).toBe("opencode");
     expect(stateB.state.active_role).toBe("reviewer");
   });
 

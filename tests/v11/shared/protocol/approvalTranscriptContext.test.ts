@@ -68,7 +68,7 @@ describe("approvalTranscriptContext", () => {
     expect(
       resolveApprovalRecommendationFromRequest({
         ...createApprovalRequest("env_wrong_type", 2, "2026-04-11T20:05:00.000Z"),
-        recipient: "claude"
+        recipient: "opencode"
       })
     ).toBeUndefined();
   });

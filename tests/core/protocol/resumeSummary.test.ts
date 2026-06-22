@@ -26,8 +26,8 @@ function createEnvelope(
     id: `msg_20260224_${String(sequence).padStart(3, "0")}`,
     ts: `2026-02-24T12:${String(sequence % 60).padStart(2, "0")}:00.000Z`,
     bubble_id: "b_resume_summary_01",
-    sender: "codex",
-    recipient: "claude",
+    sender: "opencode",
+    recipient: "opencode",
     type: "PASS",
     round: 1,
     payload: {
@@ -107,8 +107,8 @@ describe("buildResumeTranscriptSummary", () => {
         }
       }),
       createEnvelope(2, {
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         payload: {
           summary: "review feedback",
           findings_claim_state: "open_findings",

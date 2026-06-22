@@ -91,11 +91,11 @@ function parseSkills(value: string): PairflowSkillName[] {
 }
 
 function parseTargetDir(value: string): SkillInstallTargetDir {
-  if (value === ".claude" || value === ".codex") {
+  if (value === ".opencode" || value === ".opencode") {
     return value;
   }
   throw new SkillsInstallError(
-    `Unsupported target dir: ${value}. Supported target dirs: .claude, .codex`
+    `Unsupported target dir: ${value}. Supported target dirs: .opencode, .opencode`
   );
 }
 
@@ -103,7 +103,7 @@ export function parseSkillsInstallCommandOptions(
   args: string[]
 ): SkillsInstallCommandOptions {
   let skills: PairflowSkillName[] = [...supportedPairflowSkillNames];
-  let targetDir: SkillInstallTargetDir = ".claude";
+  let targetDir: SkillInstallTargetDir = ".opencode";
   let linkOther = false;
   let dryRun = false;
   let force = false;
@@ -181,7 +181,7 @@ export function parseSkillsInstallCommandOptions(
 function defaultSourceRootCandidates(): string[] {
   const moduleDir = dirname(fileURLToPath(import.meta.url));
   const packageRoot = resolve(moduleDir, "../../../..");
-  return [join(packageRoot, ".claude", "skills")];
+  return [join(packageRoot, ".opencode", "skills")];
 }
 
 export async function runSkillsInstallCommand(
@@ -210,8 +210,8 @@ export function getSkillsInstallHelpText(): string {
     "Options:",
     "  --skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan[,<name>...]",
     "      Skills to install. Default: all",
-    "  --target-dir .claude|.codex",
-    "      Global agent directory under $HOME. Default: .claude",
+    "  --target-dir .opencode|.opencode",
+    "      Global agent directory under $HOME. Default: .opencode",
     "  --link-other [true|false]",
     "      Link selected skills into the other agent directory. Default: false",
     "  --force",
@@ -223,7 +223,7 @@ export function getSkillsInstallHelpText(): string {
     "  --help",
     "      Show this help.",
     "",
-    "Source roots are package-local or checkout-local .claude/skills directories; global installed skill directories are never used as source."
+    "Source roots are package-local or checkout-local .opencode/skills directories; global installed skill directories are never used as source."
   ].join("\n");
 }
 

@@ -105,7 +105,7 @@ describe("state store", () => {
         bubble_id: "b_store_legacy_meta_strip_01",
         state: "WAITING_HUMAN",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-03-08T10:00:00.000Z",
         active_role: "reviewer",
         round_role_history: [],
@@ -206,7 +206,7 @@ describe("state store", () => {
         bubble_id: "b_store_legacy_meta_01",
         state: "RUNNING",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-03-08T10:00:00.000Z",
         active_role: "meta_reviewer",
         round_role_history: [],
@@ -247,7 +247,7 @@ describe("state store", () => {
         bubble_id: "b_store_runtime_delivery_01",
         state: "RUNNING",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-03-08T10:00:00.000Z",
         active_role: "meta_reviewer",
         round_role_history: [],
@@ -322,7 +322,7 @@ describe("state store", () => {
         bubble_id: "b_store_runtime_delivery_partial_01",
         state: "RUNNING",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-03-08T10:00:00.000Z",
         active_role: "meta_reviewer",
         round_role_history: [],
@@ -397,7 +397,7 @@ describe("state store", () => {
         bubble_id: "b_store_runtime_delivery_partial_02",
         state: "RUNNING",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-03-08T10:00:00.000Z",
         active_role: "meta_reviewer",
         round_role_history: [],
@@ -472,7 +472,7 @@ describe("state store", () => {
         bubble_id: "b_store_pre_e1_inspect_01",
         state: "RUNNING",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-03-08T10:00:00.000Z",
         active_role: "implementer",
         execution_context: {
@@ -574,8 +574,8 @@ describe("state store", () => {
         round_role_history: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-03-08T10:00:00.000Z"
           }
         ],
@@ -584,7 +584,7 @@ describe("state store", () => {
           intent_id: "intent_waiting_human_01",
           message: "Need canonical authority follow-up",
           refs: ["artifacts/review.md"],
-          requested_by: "claude",
+          requested_by: "opencode",
           requested_at: "2026-03-08T10:05:00.000Z",
           status: "pending"
         },
@@ -592,7 +592,7 @@ describe("state store", () => {
           {
             intent_id: "intent_applied_01",
             message: "Previous follow-up",
-            requested_by: "claude",
+            requested_by: "opencode",
             requested_at: "2026-03-08T09:30:00.000Z",
             status: "applied"
           }
@@ -606,8 +606,8 @@ describe("state store", () => {
     expect(inspected.state.round_role_history).toEqual([
       {
         round: 1,
-        implementer: "codex",
-        reviewer: "claude",
+        implementer: "opencode",
+        reviewer: "opencode",
         switched_at: "2026-03-08T10:00:00.000Z"
       }
     ]);
@@ -615,7 +615,7 @@ describe("state store", () => {
       intent_id: "intent_waiting_human_01",
       message: "Need canonical authority follow-up",
       refs: ["artifacts/review.md"],
-      requested_by: "claude",
+      requested_by: "opencode",
       requested_at: "2026-03-08T10:05:00.000Z",
       status: "pending"
     });
@@ -623,7 +623,7 @@ describe("state store", () => {
       {
         intent_id: "intent_applied_01",
         message: "Previous follow-up",
-        requested_by: "claude",
+        requested_by: "opencode",
         requested_at: "2026-03-08T09:30:00.000Z",
         status: "applied"
       }

@@ -1,25 +1,25 @@
 import type { StructuredAgentRunnerOutput } from "../../../../shared/planWatchRunner/agentRunnerBridgeContract.js";
 import { parseStructuredAgentRunnerRecord } from "../../../../shared/planWatchRunner/agentRunnerBridgeResult.js";
 
-export interface ParsedCodexStream {
+export interface ParsedOpencodeStream {
   rawLines: readonly string[];
-  events: readonly CodexJsonEvent[];
+  events: readonly OpencodeJsonEvent[];
   malformed: boolean;
   finalOutput: StructuredAgentRunnerOutput | null;
-  codexSessionId?: string | undefined;
+  opencodeSessionId?: string | undefined;
 }
 
-export interface CodexJsonEvent {
+export interface OpencodeJsonEvent {
   line: string;
   value: Record<string, unknown>;
 }
 
-export function parseCodexJsonlStream(stdout: string): ParsedCodexStream {
+export function parseOpencodeJsonlStream(stdout: string): ParsedOpencodeStream {
   const rawLines = stdout.split(/\r?\n/u).filter((line) => line.length > 0);
-  const events: CodexJsonEvent[] = [];
+  const events: OpencodeJsonEvent[] = [];
   let malformed = false;
   let finalOutput: StructuredAgentRunnerOutput | null = null;
-  let codexSessionId: string | undefined;
+  let opencodeSessionId: string | undefined;
 
   for (const line of rawLines) {
     const parsed = parseJsonObject(line);
@@ -28,7 +28,7 @@ export function parseCodexJsonlStream(stdout: string): ParsedCodexStream {
       continue;
     }
     events.push({ line, value: parsed });
-    codexSessionId ??= extractCodexSessionId(parsed);
+    opencodeSessionId ??= extractOpencodeSessionId(parsed);
     const messageText = extractAgentMessageText(parsed);
     if (messageText === undefined) {
       continue;
@@ -44,7 +44,7 @@ export function parseCodexJsonlStream(stdout: string): ParsedCodexStream {
     events,
     malformed,
     finalOutput: malformed ? null : finalOutput,
-    ...(codexSessionId !== undefined ? { codexSessionId } : {})
+    ...(opencodeSessionId !== undefined ? { opencodeSessionId } : {})
   };
 }
 
@@ -90,7 +90,7 @@ function extractAgentMessageText(event: Record<string, unknown>): string | undef
   return undefined;
 }
 
-function extractCodexSessionId(event: Record<string, unknown>): string | undefined {
+function extractOpencodeSessionId(event: Record<string, unknown>): string | undefined {
   if (event.type !== "thread.started") {
     return undefined;
   }

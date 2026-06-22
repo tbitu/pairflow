@@ -112,7 +112,7 @@ describe("startCommandImplementerPrompts", () => {
       bubble_id: "bubble_prompt_doc_resume_01",
       state: "RUNNING",
       round: 1,
-      active_agent: "codex",
+      active_agent: "opencode",
       active_since: "2026-04-25T21:00:42.033Z",
       active_role: "implementer",
       execution_context: null,
@@ -169,7 +169,7 @@ describe("startCommandImplementerPrompts", () => {
       bubble_id: "bubble_prompt_validation_01",
       state: "RUNNING",
       round: 2,
-      active_agent: "codex",
+      active_agent: "opencode",
       active_since: "2026-04-25T21:00:42.033Z",
       active_role: "implementer",
       execution_context: null,
@@ -248,7 +248,7 @@ describe("startCommandImplementerPrompts", () => {
       bubble_id: "bubble_prompt_resume_01",
       state: "RUNNING",
       round: 3,
-      active_agent: "codex",
+      active_agent: "opencode",
       active_since: "2026-04-25T21:00:42.033Z",
       active_role: "implementer",
       execution_context: null,
@@ -285,7 +285,7 @@ describe("startCommandImplementerPrompts", () => {
       bubble_id: "bubble_prompt_resume_ideation_01",
       state: "RUNNING",
       round: 0,
-      active_agent: "codex",
+      active_agent: "opencode",
       active_since: "2026-04-25T21:00:42.033Z",
       active_role: "implementer",
       execution_context: null,
@@ -340,7 +340,7 @@ describe("startCommandImplementerPrompts", () => {
           bubble_id: "bubble_prompt_meta_resume_round0_guard_01",
           state: "RUNNING",
           round: 0,
-          active_agent: "codex",
+          active_agent: "opencode",
           active_since: "2026-04-25T21:00:42.033Z",
           active_role: "meta_reviewer",
           execution_context: null,
@@ -370,7 +370,7 @@ describe("startCommandImplementerPrompts", () => {
       bubble_id: "bubble_prompt_reviewer_resume_01",
       state: "RUNNING",
       round: 2,
-      active_agent: "claude",
+      active_agent: "opencode",
       active_since: "2026-04-25T21:00:42.033Z",
       active_role: "reviewer",
       execution_context: null,
@@ -380,7 +380,7 @@ describe("startCommandImplementerPrompts", () => {
     const metaReviewerState: PersistedBubbleStateSnapshot = {
       ...reviewerState,
       bubble_id: "bubble_prompt_meta_resume_01",
-      active_agent: "codex",
+      active_agent: "opencode",
       active_role: "meta_reviewer"
     };
 
@@ -453,7 +453,7 @@ describe("startCommandImplementerPrompts", () => {
     );
 
     expect(reviewerResumePrompt).toContain("Current directive: reuse trusted evidence");
-    expect(reviewerResumePrompt).toContain("State snapshot: state=RUNNING, round=2, active_agent=claude, active_role=reviewer.");
+    expect(reviewerResumePrompt).toContain("State snapshot: state=RUNNING, round=2, active_agent=opencode, active_role=reviewer.");
     expect(reviewerResumePrompt).toContain("You are currently active. Continue review now.");
     expect(
       reviewerResumePrompt.indexOf(
@@ -478,7 +478,7 @@ describe("startCommandImplementerPrompts", () => {
     expect(metaReviewerResumePrompt).toContain("Transcript context: resume-summary: meta-review active");
     expect(metaReviewerResumePrompt).toContain("Kickoff diagnostic: meta gate re-entered");
     expect(
-      metaReviewerResumePrompt.indexOf("State snapshot: state=RUNNING, round=2, active_agent=codex, active_role=meta_reviewer.")
+      metaReviewerResumePrompt.indexOf("State snapshot: state=RUNNING, round=2, active_agent=opencode, active_role=meta_reviewer.")
     ).toBeLessThan(
       metaReviewerResumePrompt.indexOf("Transcript context: resume-summary: meta-review active")
     );
@@ -494,7 +494,7 @@ describe("startCommandImplementerPrompts", () => {
       bubble_id: "bubble_prompt_resume_missing_transcript_01",
       state: "RUNNING",
       round: 2,
-      active_agent: "codex",
+      active_agent: "opencode",
       active_since: "2026-04-25T21:00:42.033Z",
       active_role: "implementer",
       execution_context: null,
@@ -537,7 +537,7 @@ describe("startCommandImplementerPrompts", () => {
             bubble_id: "bubble_prompt_resume_empty_transcript_01",
             state: "RUNNING",
             round: 2,
-            active_agent: "claude",
+            active_agent: "opencode",
             active_since: "2026-04-25T21:00:42.033Z",
             active_role: "reviewer",
             execution_context: null,
@@ -567,7 +567,7 @@ describe("startCommandImplementerPrompts", () => {
         bubble_id: "bubble_prompt_resume_missing_transcript_type_01",
         state: "RUNNING",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-04-25T21:00:42.033Z",
         active_role: "implementer",
         execution_context: null,
@@ -605,7 +605,7 @@ describe("startCommandImplementerPrompts", () => {
         bubble_id: "bubble_prompt_reviewer_missing_policy_02",
         state: "RUNNING",
         round: 2,
-        active_agent: "claude",
+        active_agent: "opencode",
         active_since: "2026-04-25T21:00:42.033Z",
         active_role: "reviewer",
         execution_context: null,

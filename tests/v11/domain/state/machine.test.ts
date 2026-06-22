@@ -56,7 +56,7 @@ describe("v11 domain state machine", () => {
     });
     const running = applyStateTransition(preparing, {
       to: "RUNNING",
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "implementer",
       activeSince: "2026-04-06T10:00:00.000Z",
       lastCommandAt: "2026-04-06T10:00:00.000Z"
@@ -70,7 +70,7 @@ describe("v11 domain state machine", () => {
     expect(waiting.state).toBe("WAITING_HUMAN");
     expect(waiting.last_command_at).toBe("2026-04-06T10:31:00.000Z");
     expect(waiting.execution_context).toBeNull();
-    expect(waiting.active_agent).toBe("codex");
+    expect(waiting.active_agent).toBe("opencode");
     expect(waiting.active_role).toBe("implementer");
   });
 
@@ -84,8 +84,8 @@ describe("v11 domain state machine", () => {
       preparingState: preparing,
       lastCommandAt: "2026-04-06T10:01:00.000Z",
       bubbleId: initial.bubble_id,
-      implementer: "codex",
-      reviewer: "claude",
+      implementer: "opencode",
+      reviewer: "opencode",
       watchdogTimeoutMinutes: 30,
       ideationPending: false
     });
@@ -93,14 +93,14 @@ describe("v11 domain state machine", () => {
     expect(preparing.state).toBe("PREPARING_WORKSPACE");
     expect(running.state).toBe("RUNNING");
     expect(running.round).toBe(1);
-    expect(running.active_agent).toBe("codex");
+    expect(running.active_agent).toBe("opencode");
     expect(running.active_role).toBe("implementer");
     expect(running.execution_context?.active_role).toBe("implementer");
     expect(running.round_role_history).toStrictEqual([
       {
         round: 1,
-        implementer: "codex",
-        reviewer: "claude",
+        implementer: "opencode",
+        reviewer: "opencode",
         switched_at: "2026-04-06T10:01:00.000Z"
       }
     ]);

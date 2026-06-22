@@ -653,12 +653,12 @@ describe("createBubble", () => {
         'reviewer_context_mode = "persistent"',
         "",
         "[defaults.agents]",
-        'implementer = "claude"',
-        'implementer_model = "claude-sonnet-4-5"',
-        'reviewer = "codex"',
+        'implementer = "opencode"',
+        'implementer_model = "opencode-sonnet-4-5"',
+        'reviewer = "opencode"',
         'reviewer_model = "gpt-5.2"',
-        'meta_reviewer = "claude"',
-        'meta_reviewer_model = "claude-opus-4-1"',
+        'meta_reviewer = "opencode"',
+        'meta_reviewer_model = "opencode-opus-4-1"',
         "",
         "[defaults.review_policy]",
         'review_loop_mode = "meta_only"',
@@ -689,12 +689,12 @@ describe("createBubble", () => {
       pairflow_command_profile: "self_host",
       reviewer_context_mode: "persistent",
       agents: {
-        implementer: "claude",
-        implementer_model: "claude-sonnet-4-5",
-        reviewer: "codex",
+        implementer: "opencode",
+        implementer_model: "opencode-sonnet-4-5",
+        reviewer: "opencode",
         reviewer_model: "gpt-5.2",
-        meta_reviewer: "claude",
-        meta_reviewer_model: "claude-opus-4-1"
+        meta_reviewer: "opencode",
+        meta_reviewer_model: "opencode-opus-4-1"
       },
       review_policy: {
         review_loop_mode: "meta_only",
@@ -717,12 +717,12 @@ describe("createBubble", () => {
     expect(reparsedConfig.severity_gate_round).toBe(5);
     expect(reparsedConfig.pairflow_command_profile).toBe("self_host");
     expect(reparsedConfig.reviewer_context_mode).toBe("persistent");
-    expect(reparsedConfig.agents.implementer).toBe("claude");
-    expect(reparsedConfig.agents.implementer_model).toBe("claude-sonnet-4-5");
-    expect(reparsedConfig.agents.reviewer).toBe("codex");
+    expect(reparsedConfig.agents.implementer).toBe("opencode");
+    expect(reparsedConfig.agents.implementer_model).toBe("opencode-sonnet-4-5");
+    expect(reparsedConfig.agents.reviewer).toBe("opencode");
     expect(reparsedConfig.agents.reviewer_model).toBe("gpt-5.2");
-    expect(reparsedConfig.agents.meta_reviewer).toBe("claude");
-    expect(reparsedConfig.agents.meta_reviewer_model).toBe("claude-opus-4-1");
+    expect(reparsedConfig.agents.meta_reviewer).toBe("opencode");
+    expect(reparsedConfig.agents.meta_reviewer_model).toBe("opencode-opus-4-1");
     expect(reparsedConfig.review_policy?.review_loop_mode).toBe("meta_only");
     expect(reparsedConfig.review_policy?.reviewer_blocking_min_severity).toBe("P2");
     expect(reparsedConfig.review_policy?.meta_review_auto_rework_min_severity).toBe("P1");
@@ -746,8 +746,8 @@ describe("createBubble", () => {
         'reviewer_context_mode = "persistent"',
         "",
         "[defaults.agents]",
-        'implementer = "claude"',
-        'reviewer = "codex"',
+        'implementer = "opencode"',
+        'reviewer = "opencode"',
         "",
         "[defaults.role_mcp]",
         'implementer = "enabled"',
@@ -774,8 +774,8 @@ describe("createBubble", () => {
       reviewArtifactType: "code",
       task: "Explicit wins",
       cwd: repoPath,
-      implementer: "codex",
-      reviewer: "claude",
+      implementer: "opencode",
+      reviewer: "opencode",
       watchdogTimeoutMinutes: 60,
       maxRounds: 12,
       severityGateRound: 6,
@@ -797,8 +797,8 @@ describe("createBubble", () => {
     });
 
     expect(result.config.base_branch).toBe("main");
-    expect(result.config.agents.implementer).toBe("codex");
-    expect(result.config.agents.reviewer).toBe("claude");
+    expect(result.config.agents.implementer).toBe("opencode");
+    expect(result.config.agents.reviewer).toBe("opencode");
     expect(result.config.watchdog_timeout_minutes).toBe(60);
     expect(result.config.max_rounds).toBe(12);
     expect(result.config.severity_gate_round).toBe(6);
@@ -827,7 +827,7 @@ describe("createBubble", () => {
         'base_branch = "main"',
         "",
         "[defaults.agents]",
-        'meta_reviewer = "claude"',
+        'meta_reviewer = "opencode"',
         "",
         "[defaults.review_policy]",
         'reviewer_blocking_min_severity = "P2"',
@@ -845,9 +845,9 @@ describe("createBubble", () => {
     });
 
     expect(result.config.agents).toEqual({
-      implementer: "codex",
-      reviewer: "claude",
-      meta_reviewer: "claude"
+      implementer: "opencode",
+      reviewer: "opencode",
+      meta_reviewer: "opencode"
     });
     expect(result.config.review_policy).toMatchObject({
       review_loop_mode: "full",
@@ -902,9 +902,9 @@ describe("createBubble", () => {
         'base_branch = "main"',
         "",
         "[defaults.agents]",
-        'implementer = "claude"',
-        'reviewer = "codex"',
-        'meta_reviewer = "claude"',
+        'implementer = "opencode"',
+        'reviewer = "opencode"',
+        'meta_reviewer = "opencode"',
         ""
       ].join("\n"),
       "utf8"
@@ -919,9 +919,9 @@ describe("createBubble", () => {
     });
 
     expect(result.config.agents).toEqual({
-      implementer: "claude",
-      reviewer: "codex",
-      meta_reviewer: "claude"
+      implementer: "opencode",
+      reviewer: "opencode",
+      meta_reviewer: "opencode"
     });
   });
 
@@ -999,7 +999,7 @@ describe("createBubble", () => {
         'base_branch = "main"',
         "",
         "[defaults.agents]",
-        'implementer = "claude"',
+        'implementer = "opencode"',
         ""
       ].join("\n"),
       "utf8"
@@ -1008,14 +1008,14 @@ describe("createBubble", () => {
     const result = await createBubble({
       id: bubbleId,
       repoPath,
-      reviewer: "claude",
+      reviewer: "opencode",
       reviewArtifactType: "code",
       task: "Same agent is allowed",
       cwd: repoPath
     });
 
-    expect(result.config.agents.implementer).toBe("claude");
-    expect(result.config.agents.reviewer).toBe("claude");
+    expect(result.config.agents.implementer).toBe("opencode");
+    expect(result.config.agents.reviewer).toBe("opencode");
   });
 
   it("allows repo-default reviewer to match the built-in implementer", async () => {
@@ -1028,7 +1028,7 @@ describe("createBubble", () => {
         'base_branch = "main"',
         "",
         "[defaults.agents]",
-        'reviewer = "codex"',
+        'reviewer = "opencode"',
         ""
       ].join("\n"),
       "utf8"
@@ -1042,8 +1042,8 @@ describe("createBubble", () => {
       cwd: repoPath
     });
 
-    expect(result.config.agents.implementer).toBe("codex");
-    expect(result.config.agents.reviewer).toBe("codex");
+    expect(result.config.agents.implementer).toBe("opencode");
+    expect(result.config.agents.reviewer).toBe("opencode");
   });
 
   it("keeps runtime status reads anchored to materialized bubble config after repo defaults change", async () => {

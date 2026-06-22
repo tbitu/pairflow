@@ -351,7 +351,7 @@ function validateRepoDefaultsConfig(
           path: `defaults.agents.${key}`,
           errors,
           isValid: isAgentName,
-          message: "Must be one of: codex, claude, opencode"
+          message: "Must be one of: opencode, opencode, opencode"
         });
         if (value !== undefined) {
           validatedAgents[key] = value;

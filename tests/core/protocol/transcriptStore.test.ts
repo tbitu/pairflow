@@ -25,8 +25,8 @@ async function createTempRoot(): Promise<string> {
 function createDraft(partial: Partial<ProtocolEnvelopeDraft> = {}): ProtocolEnvelopeDraft {
   return {
     bubble_id: "b_protocol_01",
-    sender: "codex",
-    recipient: "claude",
+    sender: "opencode",
+    recipient: "opencode",
     type: "PASS",
     round: 1,
     payload: {
@@ -61,7 +61,7 @@ describe("appendProtocolEnvelope", () => {
     const second = await appendProtocolEnvelope({
       transcriptPath,
       lockPath,
-      envelope: createDraft({ round: 2, sender: "claude", recipient: "codex" }),
+      envelope: createDraft({ round: 2, sender: "opencode", recipient: "opencode" }),
       now
     });
 
@@ -89,8 +89,8 @@ describe("appendProtocolEnvelope", () => {
         id: "msg_20260221_001",
         ts: "2026-02-21T12:00:00.000Z",
         bubble_id: "b_other",
-        sender: "codex",
-        recipient: "claude",
+        sender: "opencode",
+        recipient: "opencode",
         type: "PASS",
         round: 1,
         payload: { summary: "x" },
@@ -149,7 +149,7 @@ describe("appendProtocolEnvelope", () => {
       entries: [
         {
           envelope: createDraft({
-            sender: "claude",
+            sender: "opencode",
             recipient: "orchestrator",
             type: "CONVERGENCE",
             payload: {
@@ -279,8 +279,8 @@ describe("appendProtocolEnvelope", () => {
         id: "msg_20260221_001",
         ts: "2026-02-21T12:00:00.000Z",
         bubble_id: "b_protocol_01",
-        sender: "codex",
-        recipient: "claude",
+        sender: "opencode",
+        recipient: "opencode",
         type: "PASS",
         round: 1,
         payload: { summary: "valid" },
@@ -318,7 +318,7 @@ describe("appendProtocolEnvelope", () => {
         ts: "2026-02-21T12:00:00.000Z",
         bubble_id: "b_protocol_01",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "TASK",
         round: 0,
         payload: { summary: "Task" },
@@ -327,8 +327,8 @@ describe("appendProtocolEnvelope", () => {
         id: "msg_20260221_002",
         ts: "2026-02-21T12:05:00.000Z",
         bubble_id: "b_protocol_01",
-        sender: "codex",
-        recipient: "claude",
+        sender: "opencode",
+        recipient: "opencode",
         type: "PASS",
         round: 1,
         payload: {
@@ -376,7 +376,7 @@ describe("appendProtocolEnvelope", () => {
       ts: "2026-02-21T12:00:00.000Z",
       bubble_id: "b_protocol_01",
       sender: "orchestrator",
-      recipient: "codex",
+      recipient: "opencode",
       type: "TASK",
       round: 0,
       payload: { summary: "Task" },
@@ -386,8 +386,8 @@ describe("appendProtocolEnvelope", () => {
       id: "msg_20260221_002",
       ts: "2026-02-21T12:05:00.000Z",
       bubble_id: "b_protocol_01",
-      sender: "codex",
-      recipient: "claude",
+      sender: "opencode",
+      recipient: "opencode",
       type: "PASS",
       round: 1,
       payload: {

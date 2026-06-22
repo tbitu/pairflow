@@ -47,7 +47,7 @@ describe("getBubbleInbox", () => {
       now: new Date("2026-02-22T10:00:00.000Z"),
       envelope: {
         bubble_id: bubble.bubbleId,
-        sender: "codex",
+        sender: "opencode",
         recipient: "human",
         type: "HUMAN_QUESTION",
         round: 1,
@@ -65,7 +65,7 @@ describe("getBubbleInbox", () => {
       envelope: {
         bubble_id: bubble.bubbleId,
         sender: "human",
-        recipient: "codex",
+        recipient: "opencode",
         type: "HUMAN_REPLY",
         round: 1,
         payload: {
@@ -81,7 +81,7 @@ describe("getBubbleInbox", () => {
       now: new Date("2026-02-22T10:02:00.000Z"),
       envelope: {
         bubble_id: bubble.bubbleId,
-        sender: "claude",
+        sender: "opencode",
         recipient: "human",
         type: "HUMAN_QUESTION",
         round: 0,
@@ -182,7 +182,7 @@ describe("getBubbleInbox", () => {
       envelope: {
         bubble_id: bubble.bubbleId,
         sender: "human",
-        recipient: "codex",
+        recipient: "opencode",
         type: "HUMAN_REPLY",
         round: 1,
         payload: {
@@ -199,7 +199,7 @@ describe("getBubbleInbox", () => {
       envelope: {
         bubble_id: bubble.bubbleId,
         sender: "human",
-        recipient: "claude",
+        recipient: "opencode",
         type: "APPROVAL_DECISION",
         round: 1,
         payload: {

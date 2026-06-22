@@ -11,8 +11,8 @@ function buildEnvelope(id: string): ProtocolEnvelope {
     id,
     ts: "2026-02-21T12:00:00.000Z",
     bubble_id: "b_protocol_01",
-    sender: "codex",
-    recipient: "claude",
+    sender: "opencode",
+    recipient: "opencode",
     type: "PASS",
     round: 1,
     payload: {

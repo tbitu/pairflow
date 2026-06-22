@@ -71,7 +71,7 @@ describe("parallel bubbles smoke", () => {
       ]);
       expect(state.state.state).toBe("RUNNING");
       expect(state.state.active_role).toBe("reviewer");
-      expect(state.state.active_agent).toBe("claude");
+      expect(state.state.active_agent).toBe("opencode");
       expect(transcript).toHaveLength(2);
       expect(transcript.every((entry) => entry.bubble_id === bubble.bubbleId)).toBe(
         true

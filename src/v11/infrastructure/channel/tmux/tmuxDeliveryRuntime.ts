@@ -8,7 +8,7 @@ import type {
 } from "../../../shared/delivery/tmuxDeliveryContract.js";
 import {
   confirmTmuxPaneMarkerSubmission,
-  maybeAcceptClaudeTrustPrompt,
+  maybeAcceptOpencodeTrustPrompt,
   sendAndSubmitTmuxPaneMessage
 } from "./tmuxInput.js";
 import type { TmuxRunner } from "./tmuxManager.js";
@@ -122,7 +122,7 @@ export async function attemptTmuxDelivery(input: {
       const sleepForDelayMs = input.timing?.sleepForDelayMs ?? sleep;
       await sleepForDelayMs(input.initialDelayMs as number);
     }
-    await maybeAcceptClaudeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
+    await maybeAcceptOpencodeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
     await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
       requireSuccess: true,
       ...(input.timing?.submitDelayMs !== undefined

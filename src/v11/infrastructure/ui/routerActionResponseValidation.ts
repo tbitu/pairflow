@@ -17,15 +17,15 @@ type UiActionResponseName = "commit" | "delete" | "merge";
 
 const lifecycleStates = new Set<string>(bubbleLifecycleStates);
 
-const actionAgentNames = new Set<AgentName>(["codex", "claude", "opencode"]);
+const actionAgentNames = new Set<AgentName>(["opencode", "opencode", "opencode"]);
 const actionAgentRoles = new Set<AgentRole>([
   "implementer",
   "reviewer",
   "meta_reviewer"
 ]);
 const protocolParticipants = new Set<ProtocolParticipant>([
-  "codex",
-  "claude",
+  "opencode",
+  "opencode",
   "opencode",
   "orchestrator",
   "human"

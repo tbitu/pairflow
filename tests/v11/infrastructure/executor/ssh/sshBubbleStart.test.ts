@@ -293,8 +293,8 @@ type = "ssh"
 remote = "homelab"
 
 [agents]
-implementer = "codex"
-reviewer = "claude"
+implementer = "opencode"
+reviewer = "opencode"
 
 [commands]
 test = "pnpm test"
@@ -306,7 +306,7 @@ enabled = true
 [local_overlay]
 enabled = true
 mode = "symlink"
-entries = [".claude"]
+entries = [".opencode"]
 
 [doc_contract_gates]
 round_gate_applies_after = 2

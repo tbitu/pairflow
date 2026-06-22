@@ -43,7 +43,7 @@ describe("executeAskHumanExecution", () => {
           state: {
             state: "RUNNING",
             round: 2,
-            active_agent: "codex",
+            active_agent: "opencode",
             active_role: "implementer",
             active_since: "2026-02-21T12:00:00.000Z"
           } as never
@@ -140,7 +140,7 @@ describe("executeAskHumanExecution", () => {
             state: {
               state: "RUNNING",
               round: 2,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_role: "implementer",
               active_since: "2026-02-21T12:00:00.000Z"
             } as never
@@ -191,7 +191,7 @@ describe("executeAskHumanExecution", () => {
           state: {
             state: "RUNNING",
             round: 2,
-            active_agent: "codex",
+            active_agent: "opencode",
             active_role: "implementer",
             active_since: "2026-02-21T12:00:00.000Z"
           } as never

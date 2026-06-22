@@ -325,7 +325,7 @@ async function executeMetaReviewGateCase(input: {
     const notifyRunTmux = () => Promise.resolve(
       caseInput.notifyDelivery === "failed"
         ? {
-          stdout: "codex exited (code 1). Dropping to interactive shell.",
+          stdout: "opencode exited (code 1). Dropping to interactive shell.",
           stderr: "",
           exitCode: 0
         }
@@ -367,7 +367,7 @@ async function executeMetaReviewGateCase(input: {
         }
       },
       paneBinding: {
-        buildAgentCommand: () => "codex meta-review",
+        buildAgentCommand: () => "opencode meta-review",
         tmux: {
           runner: paneBindingRunTmux,
           respawnPaneCommand

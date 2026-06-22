@@ -105,7 +105,7 @@ describe("renderBubbleStatusText", () => {
       bubbleStartedAt: "2026-02-22T11:58:00.000Z",
       state: "RUNNING",
       round: 2,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "implementer",
       activeSince: "2026-02-22T12:00:00.000Z",
       lastCommandAt: "2026-02-22T12:05:00.000Z",
@@ -133,7 +133,7 @@ describe("renderBubbleStatusText", () => {
       stateValidation: null,
       watchdog: {
         monitored: true,
-        monitoredAgent: "codex",
+        monitoredAgent: "opencode",
         timeoutMinutes: 5,
         referenceTimestamp: "2026-02-22T12:05:00.000Z",
         deadlineTimestamp: "2026-02-22T12:10:00.000Z",
@@ -188,7 +188,7 @@ describe("renderBubbleStatusText", () => {
       createStatusView({
         watchdog: {
           monitored: true,
-          monitoredAgent: "codex",
+          monitoredAgent: "opencode",
           timeoutMinutes: 5,
           referenceTimestamp: "2026-02-22T12:05:00.000Z",
           deadlineTimestamp: "2026-02-22T12:10:00.000Z",
@@ -199,7 +199,7 @@ describe("renderBubbleStatusText", () => {
     );
 
     expect(rendered).toContain("Escalation: watchdog timeout exceeded");
-    expect(rendered).toContain("active agent codex");
+    expect(rendered).toContain("active agent opencode");
   });
 
   it("omits escalation line when watchdog has not expired", () => {
@@ -344,7 +344,7 @@ describe("renderBubbleStatusText", () => {
       createStatusView({
         watchdog: {
           monitored: true,
-          monitoredAgent: "codex",
+          monitoredAgent: "opencode",
           timeoutMinutes: 5,
           referenceTimestamp: "2026-02-22T12:05:00.000Z",
           deadlineTimestamp: "2026-02-22T12:10:00.000Z",
@@ -386,7 +386,7 @@ describe("renderBubbleStatusTable", () => {
       bubbleStartedAt: "2026-03-08T21:20:00.000Z",
       state: "RUNNING",
       round: 5,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "implementer",
       activeSince: "2026-03-08T21:29:15.948Z",
       lastCommandAt: "2026-03-08T21:29:15.948Z",
@@ -414,7 +414,7 @@ describe("renderBubbleStatusTable", () => {
       stateValidation: null,
       watchdog: {
         monitored: true,
-        monitoredAgent: "codex",
+        monitoredAgent: "opencode",
         timeoutMinutes: 20,
         referenceTimestamp: "2026-03-08T21:29:15.948Z",
         deadlineTimestamp: "2026-03-08T21:49:15.948Z",
@@ -512,7 +512,7 @@ describe("renderBubbleStatusTable", () => {
       createStatusView({
         watchdog: {
           monitored: true,
-          monitoredAgent: "codex",
+          monitoredAgent: "opencode",
           timeoutMinutes: 20,
           referenceTimestamp: "2026-03-08T21:29:15.948Z",
           deadlineTimestamp: "2026-03-08T21:49:15.948Z",
@@ -523,7 +523,7 @@ describe("renderBubbleStatusTable", () => {
     );
 
     expect(rendered).toContain("| Escalation");
-    expect(rendered).toContain("timeout for codex");
+    expect(rendered).toContain("timeout for opencode");
   });
 
   it("renders inactive runtime summary when watchdog monitoring is off", () => {

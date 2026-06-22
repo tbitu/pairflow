@@ -194,8 +194,8 @@ function createFlowDependencies(
         },
         bubbleConfig: {
           agents: {
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           },
           watchdog_timeout_minutes: 60
         }
@@ -203,8 +203,8 @@ function createFlowDependencies(
       ensureBubbleInstanceIdForMutation: vi.fn(async (input: {
         bubbleConfig: {
           agents: {
-            implementer: "codex";
-            reviewer: "claude";
+            implementer: "opencode";
+            reviewer: "opencode";
           };
           watchdog_timeout_minutes: number;
         };
@@ -329,8 +329,8 @@ function createRemoteFlowDependencies(
       },
       bubbleConfig: {
         agents: {
-          implementer: "codex",
-          reviewer: "claude"
+          implementer: "opencode",
+          reviewer: "opencode"
         },
         watchdog_timeout_minutes: 60,
         executor: {
@@ -385,8 +385,8 @@ function createRemoteFlowDependencies(
       bubbleInstanceId: "bi_remote_approval_01",
       bubbleConfig: {
         agents: {
-          implementer: "codex",
-          reviewer: "claude"
+          implementer: "opencode",
+          reviewer: "opencode"
         },
         watchdog_timeout_minutes: 60
       }
@@ -413,8 +413,8 @@ function createRemoteFlowDependencies(
           },
           bubbleConfig: {
             agents: {
-              implementer: "codex",
-              reviewer: "claude"
+              implementer: "opencode",
+              reviewer: "opencode"
             },
             watchdog_timeout_minutes: 60,
             executor: {
@@ -445,8 +445,8 @@ function createRemoteFlowDependencies(
           },
           bubbleConfig: {
             agents: {
-              implementer: "codex",
-              reviewer: "claude"
+              implementer: "opencode",
+              reviewer: "opencode"
             },
             watchdog_timeout_minutes: 60,
             executor: {
@@ -553,7 +553,7 @@ describe("runApprovalDecisionFlow delivery invariant", () => {
     });
     expect(flow.emittedDeliveries[1]).toMatchObject({
       envelope: {
-        recipient: "codex",
+        recipient: "opencode",
         payload: {
           metadata: {
             [deliveryTargetRoleMetadataKey]: "implementer"
@@ -910,7 +910,7 @@ describe("runApprovalDecisionFlow delivery invariant", () => {
         bubble_id: "b_remote_approval_01",
         state: "RUNNING",
         round: 3,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-04-17T09:06:00.000Z",
         active_role: "implementer",
         execution_context: null,

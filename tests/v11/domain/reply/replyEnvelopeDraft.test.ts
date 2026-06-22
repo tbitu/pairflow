@@ -7,7 +7,7 @@ describe("buildHumanReplyEnvelopeDraft", () => {
   it("builds HUMAN_REPLY envelope draft with delivery target metadata", () => {
     const draft = buildHumanReplyEnvelopeDraft({
       bubbleId: "b_reply_01",
-      recipient: "codex",
+      recipient: "opencode",
       recipientRole: "implementer",
       round: 2,
       message: "Proceed with fallback path.",
@@ -17,7 +17,7 @@ describe("buildHumanReplyEnvelopeDraft", () => {
     expect(draft).toEqual({
       bubble_id: "b_reply_01",
       sender: "human",
-      recipient: "codex",
+      recipient: "opencode",
       type: "HUMAN_REPLY",
       round: 2,
       payload: {
@@ -33,7 +33,7 @@ describe("buildHumanReplyEnvelopeDraft", () => {
   it("supports reviewer and meta-reviewer delivery roles", () => {
     const reviewerDraft = buildHumanReplyEnvelopeDraft({
       bubbleId: "b_reply_02",
-      recipient: "claude",
+      recipient: "opencode",
       recipientRole: "reviewer",
       round: 1,
       message: "Please verify finding severity.",
@@ -41,7 +41,7 @@ describe("buildHumanReplyEnvelopeDraft", () => {
     });
     const metaReviewerDraft = buildHumanReplyEnvelopeDraft({
       bubbleId: "b_reply_03",
-      recipient: "codex",
+      recipient: "opencode",
       recipientRole: "meta_reviewer",
       round: 3,
       message: "Re-evaluate the gate decision.",

@@ -189,7 +189,7 @@ async function seedWaitingHumanState(input: {
       {
         ...loaded.state,
         state: "RUNNING",
-        active_agent: loaded.state.active_agent ?? "codex",
+        active_agent: loaded.state.active_agent ?? "opencode",
         active_role: loaded.state.active_role ?? "implementer",
         active_since: startedAt,
         execution_context: buildRunningExecutionContext({
@@ -216,7 +216,7 @@ async function seedWaitingHumanState(input: {
       {
         ...loaded.state,
         state: "RUNNING",
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "meta_reviewer",
         active_since: "2026-03-20T10:00:00.000Z",
         last_command_at: "2026-03-20T10:00:00.000Z",
@@ -302,7 +302,7 @@ async function seedWaitingHumanState(input: {
       {
         ...loaded.state,
         state: "RUNNING",
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "meta_reviewer",
         active_since: "2026-03-20T12:44:00.000Z",
         last_command_at: "2026-03-20T12:44:30.000Z",

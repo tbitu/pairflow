@@ -30,7 +30,7 @@ describe("prepareConvergedValidation", () => {
         state: {
           round: 4
         } as never,
-        reviewer: "claude",
+        reviewer: "opencode",
         summary: "No runtime claims.",
         nowIso: "2026-03-19T19:00:00.000Z",
         createError: (input) => new Error(toErrorMessage(input))
@@ -112,7 +112,7 @@ describe("prepareConvergedValidation", () => {
         state: {
           round: 2
         } as never,
-        reviewer: "claude",
+        reviewer: "opencode",
         summary: "summary",
         nowIso: "2026-03-19T19:05:00.000Z",
         createError: (input) => new Error(toErrorMessage(input))
@@ -180,7 +180,7 @@ describe("prepareConvergedValidation", () => {
         state: {
           round: 7
         } as never,
-        reviewer: "claude",
+        reviewer: "opencode",
         summary: "summary",
         nowIso: "2026-03-19T19:06:00.000Z",
         createError: () => new Error("wrapped-custom-error")
@@ -243,7 +243,7 @@ describe("prepareConvergedValidation", () => {
         state: {
           round: 5
         } as never,
-        reviewer: "claude",
+        reviewer: "opencode",
         summary: "tests pass and typecheck clean",
         nowIso: "2026-03-19T19:10:00.000Z",
         createError: (input) => new Error(toErrorMessage(input))
@@ -314,7 +314,7 @@ describe("prepareConvergedValidation", () => {
         state: {
           round: 6
         } as never,
-        reviewer: "claude",
+        reviewer: "opencode",
         summary: "No runtime claims.",
         nowIso: "2026-03-19T19:15:00.000Z",
         createError: (input) => new Error(toErrorMessage(input))

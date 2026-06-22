@@ -25,17 +25,17 @@ describe("passWorkspaceContextPreparation", () => {
     const initialConfig = {
       id: "b_pass_ctx_01",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       }
     } as never;
     const backfilledConfig = {
       id: "b_pass_ctx_01",
       agents: {
-        implementer: "claude",
-        reviewer: "codex",
-        meta_reviewer: "claude"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       }
     } as never;
     const resolved = {
@@ -107,14 +107,14 @@ describe("passWorkspaceContextPreparation", () => {
 
     expect(prepared.resolved.bubbleConfig).toBe(backfilledConfig);
     expect(prepared.bubbleIdentity.bubbleConfig).toBe(backfilledConfig);
-    expect(prepared.implementer).toBe("claude");
-    expect(prepared.reviewer).toBe("codex");
-    expect(prepared.metaReviewer).toBe("claude");
-    expect(prepared.handoff.senderAgent).toBe("claude");
+    expect(prepared.implementer).toBe("opencode");
+    expect(prepared.reviewer).toBe("opencode");
+    expect(prepared.metaReviewer).toBe("opencode");
+    expect(prepared.handoff.senderAgent).toBe("opencode");
     expect(handoffInput).toEqual({
-      implementer: "claude",
-      reviewer: "codex",
-      metaReviewer: "claude",
+      implementer: "opencode",
+      reviewer: "opencode",
+      metaReviewer: "opencode",
       effectiveLoopMode: "full",
       nowIso
     });
@@ -139,9 +139,9 @@ describe("passWorkspaceContextPreparation", () => {
               bubbleConfig: {
                 id: "b_pass_ctx_02",
                 agents: {
-                  implementer: "codex",
-                  reviewer: "claude",
-                  meta_reviewer: "codex"
+                  implementer: "opencode",
+                  reviewer: "opencode",
+                  meta_reviewer: "opencode"
                 }
               },
               bubblePaths: {
@@ -157,9 +157,9 @@ describe("passWorkspaceContextPreparation", () => {
               bubbleConfig: {
                 id: "b_pass_ctx_02",
                 agents: {
-                  implementer: "codex",
-                  reviewer: "claude",
-                  meta_reviewer: "codex"
+                  implementer: "opencode",
+                  reviewer: "opencode",
+                  meta_reviewer: "opencode"
                 }
               },
               backfilled: false
@@ -213,9 +213,9 @@ describe("passWorkspaceContextPreparation", () => {
             bubbleConfig: {
               id: "b_pass_ctx_03",
               agents: {
-                implementer: "codex",
-                reviewer: "claude",
-                meta_reviewer: "codex"
+                implementer: "opencode",
+                reviewer: "opencode",
+                meta_reviewer: "opencode"
               }
             }
           } as never,
@@ -255,9 +255,9 @@ describe("passWorkspaceContextPreparation", () => {
             bubbleConfig: {
               id: "b_pass_ctx_03",
               agents: {
-                implementer: "codex",
-                reviewer: "claude",
-                meta_reviewer: "codex"
+                implementer: "opencode",
+                reviewer: "opencode",
+                meta_reviewer: "opencode"
               }
             },
             backfilled: false
@@ -318,9 +318,9 @@ describe("passWorkspaceContextPreparation", () => {
               bubbleConfig: {
                 id: "b_pass_ctx_04",
                 agents: {
-                  implementer: "codex",
-                  reviewer: "claude",
-                  meta_reviewer: "codex"
+                  implementer: "opencode",
+                  reviewer: "opencode",
+                  meta_reviewer: "opencode"
                 }
               }
             } as never,
@@ -399,9 +399,9 @@ describe("passWorkspaceContextPreparation", () => {
               bubbleConfig: {
                 id: "b_pass_ctx_05",
                 agents: {
-                  implementer: "codex",
-                  reviewer: "claude",
-                  meta_reviewer: "codex"
+                  implementer: "opencode",
+                  reviewer: "opencode",
+                  meta_reviewer: "opencode"
                 }
               }
             } as never,
@@ -472,9 +472,9 @@ describe("passWorkspaceContextPreparation", () => {
                   meta_review_consecutive_clean_runs_required: 1,
                 },
                 agents: {
-                  implementer: "codex",
-                  reviewer: "claude",
-                  meta_reviewer: "codex"
+                  implementer: "opencode",
+                  reviewer: "opencode",
+                  meta_reviewer: "opencode"
                 }
               }
             } as never,
@@ -484,7 +484,7 @@ describe("passWorkspaceContextPreparation", () => {
                 state: "RUNNING",
                 round: 2,
                 active_role: "reviewer",
-                active_agent: "claude",
+                active_agent: "opencode",
                 execution_context: {
                   handoff_id: "reviewer:b_pass_ctx_spoof_01:round:2:attempt:1",
                   execution_id: "exec_pass_ctx_spoof_01_round2_real",
@@ -570,9 +570,9 @@ describe("passWorkspaceContextPreparation", () => {
                 meta_review_consecutive_clean_runs_required: 1,
               },
               agents: {
-                implementer: "claude",
-                reviewer: "codex",
-                meta_reviewer: "codex"
+                implementer: "opencode",
+                reviewer: "opencode",
+                meta_reviewer: "opencode"
               }
             },
             bubblePaths: {
@@ -594,9 +594,9 @@ describe("passWorkspaceContextPreparation", () => {
                 meta_review_consecutive_clean_runs_required: 1,
               },
               agents: {
-                implementer: "claude",
-                reviewer: "codex",
-                meta_reviewer: "codex"
+                implementer: "opencode",
+                reviewer: "opencode",
+                meta_reviewer: "opencode"
               }
             },
             backfilled: false
@@ -607,7 +607,7 @@ describe("passWorkspaceContextPreparation", () => {
               bubble_id: "b_pass_ctx_04",
               state: "RUNNING",
               round: 2,
-              active_agent: "claude",
+              active_agent: "opencode",
               active_role: "implementer",
               execution_context: {
                 handoff_id: "implementer:b_pass_ctx_04:round:2:attempt:1",
@@ -630,9 +630,9 @@ describe("passWorkspaceContextPreparation", () => {
         resolvePassHandoff: (input) => {
           capturedEffectiveLoopMode = input.effectiveLoopMode;
           return {
-            senderAgent: "claude",
+            senderAgent: "opencode",
             senderRole: "implementer",
-            recipientAgent: "codex",
+            recipientAgent: "opencode",
             recipientRole: "meta_reviewer",
             envelopeRound: 2,
             nextRound: 2
@@ -685,9 +685,9 @@ describe("passWorkspaceContextPreparation", () => {
                 meta_review_consecutive_clean_runs_required: 1,
               },
               agents: {
-                implementer: "codex",
-                reviewer: "claude",
-                meta_reviewer: "codex"
+                implementer: "opencode",
+                reviewer: "opencode",
+                meta_reviewer: "opencode"
               }
             },
             bubblePaths: {
@@ -709,9 +709,9 @@ describe("passWorkspaceContextPreparation", () => {
                 meta_review_consecutive_clean_runs_required: 1,
               },
               agents: {
-                implementer: "codex",
-                reviewer: "claude",
-                meta_reviewer: "codex"
+                implementer: "opencode",
+                reviewer: "opencode",
+                meta_reviewer: "opencode"
               }
             },
             backfilled: false
@@ -722,7 +722,7 @@ describe("passWorkspaceContextPreparation", () => {
               bubble_id: "b_pass_ctx_05",
               state: "RUNNING",
               round: 2,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_role: "implementer",
               execution_context: {
                 handoff_id: "reviewer:b_pass_ctx_05:round:2:attempt:1",
@@ -745,9 +745,9 @@ describe("passWorkspaceContextPreparation", () => {
         resolvePassHandoff: (input) => {
           capturedEffectiveLoopMode = input.effectiveLoopMode;
           return {
-            senderAgent: "codex",
+            senderAgent: "opencode",
             senderRole: "implementer",
-            recipientAgent: "claude",
+            recipientAgent: "opencode",
             recipientRole: "reviewer",
             envelopeRound: 2,
             nextRound: 2
@@ -798,9 +798,9 @@ describe("passWorkspaceContextPreparation", () => {
                 meta_review_consecutive_clean_runs_required: 1,
               },
               agents: {
-                implementer: "codex",
-                reviewer: "claude",
-                meta_reviewer: "codex"
+                implementer: "opencode",
+                reviewer: "opencode",
+                meta_reviewer: "opencode"
               }
             },
             bubblePaths: {
@@ -822,9 +822,9 @@ describe("passWorkspaceContextPreparation", () => {
                 meta_review_consecutive_clean_runs_required: 1,
               },
               agents: {
-                implementer: "codex",
-                reviewer: "claude",
-                meta_reviewer: "codex"
+                implementer: "opencode",
+                reviewer: "opencode",
+                meta_reviewer: "opencode"
               }
             },
             backfilled: false
@@ -835,7 +835,7 @@ describe("passWorkspaceContextPreparation", () => {
               bubble_id: "b_pass_ctx_06",
               state: "RUNNING",
               round: 2,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_role: "implementer",
               execution_context: {
                 handoff_id: "implementer:b_pass_ctx_06:round:2:attempt:1",
@@ -858,9 +858,9 @@ describe("passWorkspaceContextPreparation", () => {
         resolvePassHandoff: (input) => {
           capturedEffectiveLoopMode = input.effectiveLoopMode;
           return {
-            senderAgent: "codex",
+            senderAgent: "opencode",
             senderRole: "implementer",
-            recipientAgent: "claude",
+            recipientAgent: "opencode",
             recipientRole: "reviewer",
             envelopeRound: 2,
             nextRound: 2

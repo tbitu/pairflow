@@ -9,12 +9,12 @@ describe("askHumanFinalizationArtifacts", () => {
   it("builds ask-human lifecycle metric metadata", () => {
     expect(
       buildAskHumanLifecycleMetricMetadata({
-        sender: "codex",
+        sender: "opencode",
         refs: ["artifact://a", "artifact://b"],
         question: "Need migration decision?"
       })
     ).toEqual({
-      sender: "codex",
+      sender: "opencode",
       refs_count: 2,
       question_length: 24
     });

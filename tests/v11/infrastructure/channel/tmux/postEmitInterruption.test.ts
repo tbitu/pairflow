@@ -4,7 +4,7 @@ import type { TmuxRunOptions, TmuxRunResult } from "../../../../../src/v11/ports
 import { describe, expect, it } from "vitest";
 import { topologySlotPaneIndexCatalog} from "../../../../../src/v11/shared/topology/topologySlotPaneProjection.js";
 import {
-  postEmitInterruptCodexPane,
+  postEmitInterruptOpencodePane,
   resolveSessionsPath
 } from "../../../../../src/v11/infrastructure/channel/tmux/postEmitInterruption.js";
 
@@ -24,7 +24,7 @@ describe("resolveSessionsPath", () => {
   });
 });
 
-describe("postEmitInterruptCodexPane", () => {
+describe("postEmitInterruptOpencodePane", () => {
   it.each([
     ["implementer", "implementer", topologySlotPaneIndexCatalog.implementer],
     ["reviewer", "reviewer", topologySlotPaneIndexCatalog.reviewer],
@@ -58,7 +58,7 @@ describe("postEmitInterruptCodexPane", () => {
           return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
         }
 
-        await postEmitInterruptCodexPane({
+        await postEmitInterruptOpencodePane({
           sessionsPath,
           bubbleId,
           originatingRole: role,
@@ -93,7 +93,7 @@ describe("postEmitInterruptCodexPane", () => {
       return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
     }
 
-    await postEmitInterruptCodexPane({
+    await postEmitInterruptOpencodePane({
       sessionsPath: "/tmp/nonexistent-sessions.json",
       bubbleId: "test-bubble-1",
       tmuxRunner: mockRunner,
@@ -128,7 +128,7 @@ describe("postEmitInterruptCodexPane", () => {
         return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
       }
 
-      await postEmitInterruptCodexPane({
+      await postEmitInterruptOpencodePane({
         sessionsPath,
         bubbleId: "my-bubble",
         tmuxRunner: mockRunner,
@@ -170,7 +170,7 @@ describe("postEmitInterruptCodexPane", () => {
         return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
       }
 
-      await postEmitInterruptCodexPane({
+      await postEmitInterruptOpencodePane({
         sessionsPath,
         bubbleId,
         tmuxRunner: mockRunner,
@@ -206,7 +206,7 @@ describe("postEmitInterruptCodexPane", () => {
     }
 
     await expect(
-      postEmitInterruptCodexPane({
+      postEmitInterruptOpencodePane({
         sessionsPath: "/tmp/sessions.json",
         bubbleId: "test-bubble",
         tmuxRunner: mockRunner,
@@ -228,7 +228,7 @@ describe("postEmitInterruptCodexPane", () => {
         return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
       }
 
-      await postEmitInterruptCodexPane({
+      await postEmitInterruptOpencodePane({
         sessionsPath,
         bubbleId: "malformed-bubble",
         tmuxRunner: mockRunner,
@@ -273,7 +273,7 @@ describe("postEmitInterruptCodexPane", () => {
       }
 
       await expect(
-        postEmitInterruptCodexPane({
+        postEmitInterruptOpencodePane({
           sessionsPath,
           bubbleId,
           tmuxRunner: mockRunner,

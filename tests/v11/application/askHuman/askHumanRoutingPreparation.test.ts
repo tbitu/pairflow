@@ -68,7 +68,7 @@ describe("prepareAskHumanRouting", () => {
             state: {
               state: "RUNNING",
               round: 3,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_role: "implementer",
               active_since: "2026-02-21T12:00:00.000Z"
             },
@@ -119,7 +119,7 @@ describe("prepareAskHumanRouting", () => {
               state: {
                 state: "WAITING_HUMAN",
                 round: 1,
-                active_agent: "codex",
+                active_agent: "opencode",
                 active_role: "implementer",
                 active_since: "2026-02-21T12:00:00.000Z"
               },
@@ -162,7 +162,7 @@ describe("prepareAskHumanRouting", () => {
             state: {
               state: "RUNNING",
               round: 2,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_role: "implementer",
               active_since: "2026-02-21T12:00:00.000Z",
               execution_context: {
@@ -212,7 +212,7 @@ describe("prepareAskHumanRouting", () => {
             state: {
               state: "RUNNING",
               round: 2,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_role: "implementer",
               active_since: "2026-02-21T12:00:00.000Z",
               execution_context: {
@@ -261,7 +261,7 @@ describe("prepareAskHumanRouting", () => {
             state: {
               state: "RUNNING",
               round: 2,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_role: "implementer",
               active_since: "2026-02-21T12:00:00.000Z",
               execution_context: {
@@ -319,7 +319,7 @@ describe("prepareAskHumanRouting", () => {
               bubble_id: "b_ask_human_authoritative",
               state: "RUNNING",
               round: 3,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_role: "implementer",
               active_since: "2026-02-21T12:00:00.000Z",
               execution_context: {
@@ -404,7 +404,7 @@ describe("prepareAskHumanRouting", () => {
               bubble_id: "b_ask_human_authoritative_mismatch",
               state: "RUNNING",
               round: 3,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_role: "implementer",
               active_since: "2026-02-21T12:00:00.000Z",
               execution_context: {
@@ -482,7 +482,7 @@ describe("prepareAskHumanRouting", () => {
             state: {
               state: "RUNNING",
               round: 2,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_role: "implementer",
               active_since: "2026-02-21T12:00:00.000Z",
               execution_context: {
@@ -533,7 +533,7 @@ describe("prepareAskHumanRouting", () => {
             state: {
               state: "RUNNING",
               round: 2,
-              active_agent: "claude",
+              active_agent: "opencode",
               active_role: "reviewer",
               active_since: "2026-02-21T12:00:00.000Z",
               execution_context: {
@@ -565,7 +565,7 @@ describe("prepareAskHumanRouting", () => {
       state: {
         state: "RUNNING",
         round: 0,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "implementer",
         active_since: "2026-02-21T12:00:00.000Z"
       },

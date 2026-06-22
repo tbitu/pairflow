@@ -20,9 +20,9 @@ describe("persistNormalPassPostAppend", () => {
         bubbleId: "b_123",
         handoff: {
           nextRound: 3,
-          senderAgent: "claude",
+          senderAgent: "opencode",
           envelopeRound: 2,
-          recipientAgent: "codex",
+          recipientAgent: "opencode",
           recipientRole: "implementer"
         },
         generatedAt: "2026-03-19T12:00:00.000Z",
@@ -78,9 +78,9 @@ describe("persistNormalPassPostAppend", () => {
         bubbleId: "b_123",
         handoff: {
           nextRound: 3,
-          senderAgent: "claude",
+          senderAgent: "opencode",
           envelopeRound: 2,
-          recipientAgent: "codex",
+          recipientAgent: "opencode",
           recipientRole: "implementer"
         },
         generatedAt: "2026-03-19T12:00:00.000Z",

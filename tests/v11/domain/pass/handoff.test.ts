@@ -10,9 +10,9 @@ import type { BubbleStateSnapshot } from "../../../../src/v11/domain/state/snaps
 import type { PersistedBubbleStateSnapshot } from "../../../../src/v11/domain/state/snapshot/persistedBubbleStateSnapshot.js";
 import { resolvePassHandoff } from "../../../../src/v11/domain/pass/handoff.js";
 
-const implementer: AgentName = "codex";
-const reviewer: AgentName = "claude";
-const metaReviewer: AgentName = "codex";
+const implementer: AgentName = "opencode";
+const reviewer: AgentName = "opencode";
+const metaReviewer: AgentName = "opencode";
 const nowIso = "2026-03-19T12:00:00.000Z";
 
 class TestPassError extends Error {

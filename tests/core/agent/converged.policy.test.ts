@@ -1159,7 +1159,7 @@ describe("emitConvergedFromWorkspace", () => {
       now: new Date("2026-02-22T10:05:00.000Z"),
       envelope: {
         bubble_id: bubble.bubbleId,
-        sender: "claude",
+        sender: "opencode",
         recipient: "human",
         type: "HUMAN_QUESTION",
         round: 2,

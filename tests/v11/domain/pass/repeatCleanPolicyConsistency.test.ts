@@ -27,9 +27,9 @@ describe("repeatClean policy consistency", () => {
       const envelopeDraft = buildPassEnvelopeDraft({
         bubbleId: "b_repeat_clean_policy_01",
         handoff: {
-          senderAgent: "claude",
+          senderAgent: "opencode",
           senderRole: "reviewer",
-          recipientAgent: "codex",
+          recipientAgent: "opencode",
           recipientRole: "implementer",
           envelopeRound: 3
         },
@@ -49,8 +49,8 @@ describe("repeatClean policy consistency", () => {
       const lifecycleMetadata = buildPassLifecycleMetricMetadata({
         passIntent: "review",
         inferredIntent: false,
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         recipientRole: "implementer",
         refsCount: 0,
         hasFindings: false,

@@ -26,7 +26,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:00:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_missing_builder/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex"
+      metaReviewerAgent: "opencode"
     });
 
     expect(result).toEqual({
@@ -45,7 +45,7 @@ describe("metaReviewGatePaneBinding", () => {
       notifySubmissionRequest: vi.fn(),
       runtime: {
         paneBinding: {
-          buildAgentCommand: vi.fn(() => "codex meta-review")
+          buildAgentCommand: vi.fn(() => "opencode meta-review")
         }
       },
       sessionsPath: "/repo/.pairflow/runtime/sessions.json",
@@ -54,7 +54,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:00:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_missing_respawn/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex"
+      metaReviewerAgent: "opencode"
     });
 
     expect(result).toEqual({
@@ -76,7 +76,7 @@ describe("metaReviewGatePaneBinding", () => {
       notifySubmissionRequest: vi.fn(),
       runtime: {
         paneBinding: {
-          buildAgentCommand: vi.fn(() => "codex meta-review"),
+          buildAgentCommand: vi.fn(() => "opencode meta-review"),
           tmux: {
             runner: vi.fn(),
             respawnPaneCommand: vi.fn(async () => undefined)
@@ -89,7 +89,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:00:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_no_runtime/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex"
+      metaReviewerAgent: "opencode"
     });
 
     expect(result).toEqual({
@@ -111,7 +111,7 @@ describe("metaReviewGatePaneBinding", () => {
       })),
       runtime: {
         paneBinding: {
-          buildAgentCommand: vi.fn(() => "codex meta-review"),
+          buildAgentCommand: vi.fn(() => "opencode meta-review"),
           tmux: {
             runner: vi.fn(),
             respawnPaneCommand
@@ -124,7 +124,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:00:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_durable_handoff/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex"
+      metaReviewerAgent: "opencode"
     });
 
     expect(result).toEqual({
@@ -149,7 +149,7 @@ describe("metaReviewGatePaneBinding", () => {
       notifySubmissionRequest,
       runtime: {
         paneBinding: {
-          buildAgentCommand: vi.fn(() => "codex meta-review"),
+          buildAgentCommand: vi.fn(() => "opencode meta-review"),
           tmux: {
             runner: vi.fn(),
             respawnPaneCommand: vi.fn(async () => undefined)
@@ -162,7 +162,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:00:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_invalid_updated_without_record/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex"
+      metaReviewerAgent: "opencode"
     });
 
     expect(result).toEqual({
@@ -181,7 +181,7 @@ describe("metaReviewGatePaneBinding", () => {
       (input: { roleName?: string; roleMcpPolicy?: string }) => {
         expect(input.roleName).toBe("meta_reviewer");
         expect(input.roleMcpPolicy).toBe("enabled");
-        return "codex meta-review";
+        return "opencode meta-review";
       }
     );
     const respawnPaneCommand = vi.fn(async () => undefined);
@@ -220,7 +220,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:00:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_mcp_policy/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex",
+      metaReviewerAgent: "opencode",
       metaReviewerMcpPolicy: "enabled"
     });
 
@@ -257,9 +257,9 @@ describe("metaReviewGatePaneBinding", () => {
             bubbleConfig: {
               pairflow_command_profile: "external",
               agents: {
-                implementer: "codex",
-                reviewer: "codex",
-                meta_reviewer: "codex"
+                implementer: "opencode",
+                reviewer: "opencode",
+                meta_reviewer: "opencode"
               },
               role_mcp: {
                 implementer: "disabled",
@@ -292,7 +292,7 @@ describe("metaReviewGatePaneBinding", () => {
     const buildAgentCommand = vi.fn(
       (input: { startupPrompt?: string | undefined }) => {
         void input;
-        return "codex meta-review";
+        return "opencode meta-review";
       }
     );
     const notifySubmissionRequest = vi.fn(async () => ({
@@ -335,7 +335,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:00:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_legacy_workspace/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex"
+      metaReviewerAgent: "opencode"
     });
 
     expect(result).toEqual({
@@ -381,7 +381,7 @@ describe("metaReviewGatePaneBinding", () => {
       notifySubmissionRequest,
       runtime: {
         paneBinding: {
-          buildAgentCommand: vi.fn(() => "codex meta-review"),
+          buildAgentCommand: vi.fn(() => "opencode meta-review"),
           tmux: {
             runner: vi.fn(),
             respawnPaneCommand
@@ -394,7 +394,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:05:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_clone_fallback_forbidden/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex"
+      metaReviewerAgent: "opencode"
     });
 
     expect(result).toEqual({
@@ -439,7 +439,7 @@ describe("metaReviewGatePaneBinding", () => {
       notifySubmissionRequest,
       runtime: {
         paneBinding: {
-          buildAgentCommand: vi.fn(() => "codex meta-review"),
+          buildAgentCommand: vi.fn(() => "opencode meta-review"),
           tmux: {
             runner: vi.fn(),
             respawnPaneCommand: vi.fn(async () => {
@@ -454,7 +454,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:10:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_respawn_fail/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex",
+      metaReviewerAgent: "opencode",
       metaReviewerMcpPolicy: "enabled"
     });
 
@@ -489,7 +489,7 @@ describe("metaReviewGatePaneBinding", () => {
       }),
       runtime: {
         paneBinding: {
-          buildAgentCommand: vi.fn(() => "codex meta-review"),
+          buildAgentCommand: vi.fn(() => "opencode meta-review"),
           tmux: {
             runner: vi.fn(),
             respawnPaneCommand: vi.fn(async () => undefined)
@@ -502,7 +502,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:12:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_notify_missing_after_respawn/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex",
+      metaReviewerAgent: "opencode",
       metaReviewerMcpPolicy: "enabled"
     });
 
@@ -521,7 +521,7 @@ describe("metaReviewGatePaneBinding", () => {
     const buildAgentCommand = vi.fn(
       (input: { startupPrompt?: string | undefined }) => {
         void input;
-        return "codex meta-review";
+        return "opencode meta-review";
       }
     );
     const respawnPaneCommand = vi.fn(async () => undefined);
@@ -566,7 +566,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:15:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_notify_forwarding/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex",
+      metaReviewerAgent: "opencode",
       metaReviewerMcpPolicy: "enabled"
     });
 
@@ -595,7 +595,7 @@ describe("metaReviewGatePaneBinding", () => {
       sessionName: "pf-b_meta_review_gate_notify_forwarding",
       paneIndex: getTopologySlotPaneIndexForRole("meta_reviewer"),
       cwd: "/workspace",
-      command: "codex meta-review",
+      command: "opencode meta-review",
       runner: paneRunner
     });
     expect(notifySubmissionRequest).not.toHaveBeenCalled();
@@ -637,7 +637,7 @@ describe("metaReviewGatePaneBinding", () => {
           }
         },
         paneBinding: {
-          buildAgentCommand: vi.fn(() => "codex meta-review"),
+          buildAgentCommand: vi.fn(() => "opencode meta-review"),
           tmux: {
             runner: paneRunner,
             respawnPaneCommand: vi.fn(async () => undefined)
@@ -650,7 +650,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:20:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_notify_runner_fallback/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex",
+      metaReviewerAgent: "opencode",
       metaReviewerMcpPolicy: "enabled"
     });
 

@@ -371,7 +371,7 @@ describe("getBubbleStatus", () => {
         bubble_id: bubble.bubbleId,
         state: "RUNNING",
         round: 1,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-02-22T14:10:00.000Z",
         active_role: "meta_reviewer",
         round_role_history: [],
@@ -610,7 +610,7 @@ describe("getBubbleStatus", () => {
           summary: "Meta-review parity guard blocked auto rework.",
           metadata: {
             actor: "meta-reviewer",
-            actor_agent: "codex",
+            actor_agent: "opencode",
             latest_recommendation: "rework",
             meta_review_gate_route: "human_gate_dispatch_failed"
           }
@@ -653,7 +653,7 @@ describe("getBubbleStatus", () => {
       {
         ...loaded.state,
         state: "RUNNING",
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "meta_reviewer",
         active_since: "2026-02-22T14:20:00.000Z",
         last_command_at: "2026-02-22T14:20:00.000Z",
@@ -711,7 +711,7 @@ describe("getBubbleStatus", () => {
       {
         ...loaded.state,
         state: "RUNNING",
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "meta_reviewer",
         active_since: "2026-02-22T14:20:00.000Z",
         last_command_at: "2026-02-22T14:20:00.000Z",
@@ -776,7 +776,7 @@ describe("getBubbleStatus", () => {
       `${JSON.stringify({
         ...loaded.state,
         state: "RUNNING",
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "meta_reviewer",
         active_since: "2026-02-22T14:20:00.000Z",
         last_command_at: "2026-02-22T14:20:00.000Z",
@@ -831,7 +831,7 @@ describe("getBubbleStatus", () => {
       `${JSON.stringify({
         ...loaded.state,
         state: "RUNNING",
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "meta_reviewer",
         active_since: "2026-02-22T14:20:00.000Z",
         last_command_at: "2026-02-22T14:20:00.000Z",
@@ -1356,7 +1356,7 @@ describe("getBubbleStatus", () => {
 
     expect(status.state).toBe("RUNNING");
     expect(status.watchdog.monitored).toBe(false);
-    expect(status.watchdog.monitoredAgent).toBe("codex");
+    expect(status.watchdog.monitoredAgent).toBe("opencode");
     expect(status.watchdog.timeoutMinutes).toBe(30);
     expect(status.watchdog.referenceTimestamp).toBe(
       status.lastCommandAt ?? status.activeSince
@@ -1455,7 +1455,7 @@ describe("getBubbleStatus", () => {
       bubbleStartedAt: "2026-04-16T09:40:00.000Z",
       state: "WAITING_HUMAN",
       round: 3,
-      activeAgent: "claude",
+      activeAgent: "opencode",
       activeRole: "reviewer",
       activeSince: "2026-04-16T09:50:00.000Z",
       lastCommandAt: "2026-04-16T09:58:00.000Z",
@@ -1473,7 +1473,7 @@ describe("getBubbleStatus", () => {
       executionContext: null,
       watchdog: {
         monitored: true,
-        monitoredAgent: "claude",
+        monitoredAgent: "opencode",
         timeoutMinutes: 30,
         referenceTimestamp: "2026-04-16T09:58:00.000Z",
         deadlineTimestamp: "2026-04-16T10:28:00.000Z",
@@ -1585,7 +1585,7 @@ describe("getBubbleStatus", () => {
       bubbleStartedAt: "2026-04-16T09:40:00.000Z",
       state: "WAITING_HUMAN",
       round: 3,
-      activeAgent: "claude",
+      activeAgent: "opencode",
       activeRole: "reviewer",
       activeSince: "2026-04-16T09:50:00.000Z",
       lastCommandAt: "2026-04-16T09:58:00.000Z",
@@ -1603,7 +1603,7 @@ describe("getBubbleStatus", () => {
       executionContext: null,
       watchdog: {
         monitored: true,
-        monitoredAgent: "claude",
+        monitoredAgent: "opencode",
         timeoutMinutes: 30,
         referenceTimestamp: "2026-04-16T09:58:00.000Z",
         deadlineTimestamp: "2026-04-16T10:28:00.000Z",
@@ -1708,7 +1708,7 @@ describe("getBubbleStatus", () => {
       bubbleStartedAt: "2026-04-16T09:40:00.000Z",
       state: "WAITING_HUMAN",
       round: 3,
-      activeAgent: "claude",
+      activeAgent: "opencode",
       activeRole: "reviewer",
       activeSince: "2026-04-16T09:50:00.000Z",
       lastCommandAt: "2026-04-16T09:58:00.000Z",
@@ -1726,7 +1726,7 @@ describe("getBubbleStatus", () => {
       executionContext: null,
       watchdog: {
         monitored: true,
-        monitoredAgent: "claude",
+        monitoredAgent: "opencode",
         timeoutMinutes: 30,
         referenceTimestamp: "2026-04-16T09:58:00.000Z",
         deadlineTimestamp: "2026-04-16T10:28:00.000Z",
@@ -1826,7 +1826,7 @@ describe("getBubbleStatus", () => {
       bubbleStartedAt: "2026-04-16T09:40:00.000Z",
       state: "WAITING_HUMAN",
       round: 3,
-      activeAgent: "claude",
+      activeAgent: "opencode",
       activeRole: "reviewer",
       activeSince: "2026-04-16T09:50:00.000Z",
       lastCommandAt: "2026-04-16T09:58:00.000Z",
@@ -1844,7 +1844,7 @@ describe("getBubbleStatus", () => {
       executionContext: null,
       watchdog: {
         monitored: true,
-        monitoredAgent: "claude",
+        monitoredAgent: "opencode",
         timeoutMinutes: 30,
         referenceTimestamp: "2026-04-16T09:58:00.000Z",
         deadlineTimestamp: "2026-04-16T10:28:00.000Z",
@@ -1955,7 +1955,7 @@ describe("getBubbleStatus", () => {
       bubbleStartedAt: "2026-04-16T09:40:00.000Z",
       state: "RUNNING",
       round: 3,
-      activeAgent: "claude",
+      activeAgent: "opencode",
       activeRole: "reviewer",
       activeSince: "2026-04-16T09:50:00.000Z",
       lastCommandAt: "2026-04-16T09:58:00.000Z",
@@ -1973,7 +1973,7 @@ describe("getBubbleStatus", () => {
       executionContext: null,
       watchdog: {
         monitored: true,
-        monitoredAgent: "claude",
+        monitoredAgent: "opencode",
         timeoutMinutes: 30,
         referenceTimestamp: "2026-04-16T09:58:00.000Z",
         deadlineTimestamp: "2026-04-16T10:28:00.000Z",
@@ -2083,7 +2083,7 @@ describe("getBubbleStatus", () => {
       bubbleStartedAt: "2026-04-16T09:45:00.000Z",
       state: "WAITING_HUMAN",
       round: 3,
-      activeAgent: "claude",
+      activeAgent: "opencode",
       activeRole: "reviewer",
       activeSince: "2026-04-16T09:50:00.000Z",
       lastCommandAt: "2026-04-16T09:58:00.000Z",
@@ -2101,7 +2101,7 @@ describe("getBubbleStatus", () => {
       executionContext: null,
       watchdog: {
         monitored: true,
-        monitoredAgent: "claude",
+        monitoredAgent: "opencode",
         timeoutMinutes: 30,
         referenceTimestamp: "2026-04-16T09:20:00.000Z",
         deadlineTimestamp: "2026-04-16T09:50:00.000Z",
@@ -2159,7 +2159,7 @@ describe("getBubbleStatus", () => {
     });
     expect(status.watchdog).toMatchObject({
       monitored: true,
-      monitoredAgent: "claude",
+      monitoredAgent: "opencode",
       expired: true
     });
     expect(status.remoteExecution?.reasonCode).toBeUndefined();
@@ -2409,7 +2409,7 @@ describe("getBubbleStatus", () => {
       bubbleStartedAt: "2026-04-16T09:40:00.000Z",
       state: "WAITING_HUMAN",
       round: 3,
-      activeAgent: "claude",
+      activeAgent: "opencode",
       activeRole: "reviewer",
       activeSince: "2026-04-16T09:50:00.000Z",
       lastCommandAt: "2026-04-16T09:58:00.000Z",
@@ -2427,7 +2427,7 @@ describe("getBubbleStatus", () => {
       executionContext: null,
       watchdog: {
         monitored: true,
-        monitoredAgent: "claude",
+        monitoredAgent: "opencode",
         timeoutMinutes: 30,
         referenceTimestamp: "2026-04-16T09:58:00.000Z",
         deadlineTimestamp: "2026-04-16T10:28:00.000Z",

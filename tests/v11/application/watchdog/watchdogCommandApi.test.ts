@@ -185,7 +185,7 @@ describe("watchdogCommandApi", () => {
         ...loaded.state,
         state: "RUNNING",
         round: input.round,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "meta_reviewer",
         active_since: input.activeSinceIso,
         last_command_at: input.lastCommandAtIso,
@@ -968,7 +968,7 @@ describe("watchdogCommandApi", () => {
     expect(result.escalated).toBe(true);
     expect(result.reason).toBe("escalated");
     expect(result.state.state).toBe("WAITING_HUMAN");
-    expect(result.state.active_agent).toBe("codex");
+    expect(result.state.active_agent).toBe("opencode");
     expect(result.state.active_role).toBe("meta_reviewer");
     expect(result.state.active_since).toBe("2026-02-22T12:00:00.000Z");
   });

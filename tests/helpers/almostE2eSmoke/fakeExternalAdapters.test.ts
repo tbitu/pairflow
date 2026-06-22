@@ -16,8 +16,8 @@ describe("almost e2e smoke fake external adapters", () => {
       bubbleId: "bubble-1",
       workspacePath: "/tmp/worktree",
       statusCommand: "pairflow bubble status",
-      implementerCommand: "codex",
-      reviewerCommand: "codex"
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode"
     });
     const terminate = await adapters.terminateBubbleTmuxSession({
       bubbleId: "bubble-1"
@@ -94,8 +94,8 @@ describe("almost e2e smoke fake external adapters", () => {
       bubbleId: "bubble-1",
       workspacePath: "/tmp/worktree",
       statusCommand: "pairflow bubble status",
-      implementerCommand: "codex",
-      reviewerCommand: "codex"
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode"
     };
     await adapters.launchBubbleSessionAck(launchInput);
 

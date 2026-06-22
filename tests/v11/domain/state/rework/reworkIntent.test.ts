@@ -13,7 +13,7 @@ describe("v11 domain reworkIntent", () => {
         bubble_id: "b_rework_queue_01",
         state: "WAITING_HUMAN",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-03-21T09:55:00.000Z",
         active_role: "implementer",
         execution_context: null,
@@ -56,7 +56,7 @@ describe("v11 domain reworkIntent", () => {
         bubble_id: "b_rework_intent_01",
         state: "WAITING_HUMAN",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-03-21T09:55:00.000Z",
         active_role: "implementer",
         execution_context: null,
@@ -79,8 +79,8 @@ describe("v11 domain reworkIntent", () => {
           consecutive_clean_runs: 0,
         }
       }),
-      implementer: "codex",
-      reviewer: "claude",
+      implementer: "opencode",
+      reviewer: "opencode",
       watchdogTimeoutMinutes: 60,
       now: new Date("2026-03-21T10:05:00.000Z")
     });
@@ -102,8 +102,8 @@ describe("v11 domain reworkIntent", () => {
     expect(result.state.round_role_history).toEqual([
       expect.objectContaining({
         round: 3,
-        implementer: "codex",
-        reviewer: "claude"
+        implementer: "opencode",
+        reviewer: "opencode"
       })
     ]);
   });
@@ -114,15 +114,15 @@ describe("v11 domain reworkIntent", () => {
         bubble_id: "b_rework_intent_02",
         state: "WAITING_HUMAN",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-03-21T09:55:00.000Z",
         active_role: "implementer",
         execution_context: null,
         round_role_history: [
           {
             round: 3,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-03-21T10:04:00.000Z"
           }
         ],
@@ -136,8 +136,8 @@ describe("v11 domain reworkIntent", () => {
         },
         rework_intent_history: []
       }),
-      implementer: "codex",
-      reviewer: "claude",
+      implementer: "opencode",
+      reviewer: "opencode",
       watchdogTimeoutMinutes: 60,
       now: new Date("2026-03-21T10:05:00.000Z")
     });
@@ -150,8 +150,8 @@ describe("v11 domain reworkIntent", () => {
     expect(result.state.round_role_history).toHaveLength(1);
     expect(result.state.round_role_history[0]).toMatchObject({
       round: 3,
-      implementer: "codex",
-      reviewer: "claude"
+      implementer: "opencode",
+      reviewer: "opencode"
     });
   });
 });

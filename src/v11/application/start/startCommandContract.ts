@@ -39,9 +39,7 @@ import type { BubbleStateSnapshot } from "../../domain/state/snapshot/bubbleStat
 import type {
   VerifyRemoteCloneStartAuthorityPort
 } from "../../ports/remoteCloneStartAuthority.js";
-import type {
-  ResolveCodexMcpDisableArgsInput
-} from "../../shared/command/agentCommand.js";
+
 
 export interface StartBubbleInput {
   bubbleId: string;
@@ -134,8 +132,6 @@ export interface StartBubbleDependencies {
   prepareRemoteStartActivationPackage?:
     | PrepareRemoteStartActivationPackagePort
     | undefined;
-  resolveCodexMcpDisableArgs?:
-    | ((input: ResolveCodexMcpDisableArgsInput) => Promise<string[]>)
-    | undefined;
+
   reportWarning?: ((message: string) => void) | undefined;
 }

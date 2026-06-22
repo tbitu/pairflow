@@ -175,7 +175,7 @@ describe("runCli", () => {
     expect(stdoutSpy).toHaveBeenCalled();
     const output = stdoutSpy.mock.calls.map((call) => String(call[0])).join("");
     expect(output).toContain("pairflow skills install");
-    expect(output).toContain("--target-dir .claude|.codex");
+    expect(output).toContain("--target-dir .opencode|.opencode");
   });
 
   it("routes top-level ask-human help to removal guidance", async () => {

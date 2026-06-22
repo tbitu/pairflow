@@ -28,9 +28,9 @@ function createBubbleConfig(
     commit_requires_approval: true,
     attach_launcher: "auto",
     agents: {
-      implementer: "codex",
-      reviewer: "claude",
-      meta_reviewer: "codex"
+      implementer: "opencode",
+      reviewer: "opencode",
+      meta_reviewer: "opencode"
     },
     commands: {
       test: "pnpm test",
@@ -50,8 +50,8 @@ function createEnvelope(): ProtocolEnvelope {
     id: "msg_20260319_002",
     ts: "2026-03-19T12:00:00.000Z",
     bubble_id: "b_test_directive_01",
-    sender: "codex",
-    recipient: "claude",
+    sender: "opencode",
+    recipient: "opencode",
     type: "PASS",
     round: 1,
     payload: {

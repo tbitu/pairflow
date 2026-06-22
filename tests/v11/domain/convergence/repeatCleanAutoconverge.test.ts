@@ -36,8 +36,8 @@ function createReviewerPass(input: {
     id: input.id,
     ts: input.ts,
     bubble_id: "b_repeat_clean_01",
-    sender: "claude",
-    recipient: "codex",
+    sender: "opencode",
+    recipient: "opencode",
     type: "PASS",
     round: input.round,
     payload,
@@ -52,8 +52,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "review",
       hasFindings: false,
       round: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: [
         createReviewerPass({
           id: "msg_001",
@@ -79,8 +79,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "review",
       hasFindings: false,
       round: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: []
     });
 
@@ -95,8 +95,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "fix_request",
       hasFindings: false,
       round: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: []
     });
 
@@ -111,8 +111,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "review",
       hasFindings: true,
       round: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: []
     });
 
@@ -127,8 +127,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "review",
       hasFindings: false,
       round: 1,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: [
         createReviewerPass({
           id: "msg_incomplete",
@@ -150,8 +150,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "review",
       hasFindings: false,
       round: 1,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: []
     });
 
@@ -166,8 +166,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "review",
       hasFindings: false,
       round: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: []
     });
 
@@ -182,8 +182,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "review",
       hasFindings: false,
       round: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: [
         createReviewerPass({
           id: "msg_prev_non_clean",
@@ -206,8 +206,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "review",
       hasFindings: false,
       round: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: [
         createReviewerPass({
           id: "msg_prev_incomplete",
@@ -229,8 +229,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "review",
       hasFindings: false,
       round: 3,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: [
         createReviewerPass({
           id: "msg_older_append_but_newer_ts",
@@ -263,8 +263,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "review",
       hasFindings: false,
       round: 3,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: [
         createReviewerPass({
           id: "msg_clean_but_not_most_recent",
@@ -294,8 +294,8 @@ describe("evaluateRepeatCleanAutoconvergeTrigger", () => {
       passIntent: "review",
       hasFindings: false,
       round: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       transcript: [
         createReviewerPass({
           id: "msg_prev_non_clean_r1",

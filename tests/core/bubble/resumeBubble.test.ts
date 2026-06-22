@@ -16,7 +16,7 @@ function createResumeResultFixture(): EmitHumanReplyResult {
       ts: "2026-02-22T12:00:00.000Z",
       bubble_id: "b_resume_01",
       sender: "human",
-      recipient: "codex",
+      recipient: "opencode",
       type: "HUMAN_REPLY",
       round: 1,
       payload: {
@@ -28,14 +28,14 @@ function createResumeResultFixture(): EmitHumanReplyResult {
       bubble_id: "b_resume_01",
       state: "RUNNING",
       round: 1,
-      active_agent: "codex",
+      active_agent: "opencode",
       active_since: "2026-02-22T11:50:00.000Z",
       active_role: "implementer",
       round_role_history: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:50:00.000Z"
         }
       ],

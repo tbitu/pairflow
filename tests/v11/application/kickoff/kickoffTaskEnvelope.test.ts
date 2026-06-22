@@ -6,7 +6,7 @@ describe("buildKickoffTaskEnvelope", () => {
   it("builds TASK envelope for inline kickoff input", () => {
     const envelope = buildKickoffTaskEnvelope({
       bubbleId: "b_kickoff_envelope_01",
-      implementer: "codex",
+      implementer: "opencode",
       task: {
         content: "Implement kickoff transition",
         source: "inline"
@@ -17,7 +17,7 @@ describe("buildKickoffTaskEnvelope", () => {
     expect(envelope).toEqual({
       bubble_id: "b_kickoff_envelope_01",
       sender: "orchestrator",
-      recipient: "codex",
+      recipient: "opencode",
       type: "TASK",
       round: 1,
       payload: {
@@ -33,7 +33,7 @@ describe("buildKickoffTaskEnvelope", () => {
   it("includes source_path when task input comes from file", () => {
     const envelope = buildKickoffTaskEnvelope({
       bubbleId: "b_kickoff_envelope_02",
-      implementer: "codex",
+      implementer: "opencode",
       task: {
         content: "Implement from file",
         source: "file",

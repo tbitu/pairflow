@@ -13,7 +13,7 @@ const baseState = {
   bubble_id: "b_test",
   state: "RUNNING" as const,
   round: 0,
-  active_agent: "codex",
+  active_agent: "opencode",
   active_role: "implementer" as const,
   active_since: "2026-03-19T12:00:00.000Z",
   last_command_at: "2026-03-19T12:00:00.000Z",

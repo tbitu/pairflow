@@ -58,7 +58,7 @@ function buildArtifact(): ReviewVerificationArtifact {
     meta: {
       bubble_id: "b_123",
       round: 2,
-      reviewer: "claude",
+      reviewer: "opencode",
       generated_at: "2026-03-19T12:00:00.000Z"
     },
     validation: {
@@ -76,7 +76,7 @@ describe("writePostAppendReviewVerificationArtifact", () => {
         reviewerVerification: undefined,
         bubbleId: "b_123",
         round: 2,
-        reviewer: "claude",
+        reviewer: "opencode",
         generatedAt: "2026-03-19T12:00:00.000Z",
         artifactPath: "/tmp/review-verification.json",
         envelopeId: "msg_1",
@@ -99,7 +99,7 @@ describe("writePostAppendReviewVerificationArtifact", () => {
         reviewerVerification: buildReviewerVerification(),
         bubbleId: "b_123",
         round: 2,
-        reviewer: "claude",
+        reviewer: "opencode",
         generatedAt: "2026-03-19T12:00:00.000Z",
         artifactPath: "/tmp/review-verification.json",
         envelopeId: "msg_1",
@@ -118,7 +118,7 @@ describe("writePostAppendReviewVerificationArtifact", () => {
       path: "/tmp/review-verification.json"
     });
     expect(writes[0]?.artifact.meta.round).toBe(2);
-    expect(writes[0]?.artifact.meta.reviewer).toBe("claude");
+    expect(writes[0]?.artifact.meta.reviewer).toBe("opencode");
   });
 
   it("wraps write failure with post-append failure message", async () => {
@@ -128,7 +128,7 @@ describe("writePostAppendReviewVerificationArtifact", () => {
           reviewerVerification: buildReviewerVerification(),
           bubbleId: "b_123",
           round: 2,
-          reviewer: "claude",
+          reviewer: "opencode",
           generatedAt: "2026-03-19T12:00:00.000Z",
           artifactPath: "/tmp/review-verification.json",
           envelopeId: "msg_1",

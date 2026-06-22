@@ -111,9 +111,9 @@ describe("runCommitCommandPipeline", () => {
       severity_gate_round: 2,
       commit_requires_approval: true,
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",

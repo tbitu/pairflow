@@ -186,14 +186,14 @@ describe("plan watch command", () => {
     expect(artifactText).toContain("plan watch: runner artifacts");
     expect(artifactText).toContain("dir=.pairflow/runtime/plan-watch/agent-runner/run");
     expect(eventText).toBe(
-      "runner: codex session - 019df063-d8b1-7631-9be8-191fe2eef27c"
+      "runner: opencode session - 019df063-d8b1-7631-9be8-191fe2eef27c"
     );
     expect(timelineText).toBe(
       "runner: completed PLAN_COMPLETE - done"
     );
   });
 
-  it("renders Codex session id on runner completion when available", () => {
+  it("renders Opencode session id on runner completion when available", () => {
     const text = renderPlanWatchEventText({
       kind: "runner_completed",
       repoPath: "/repo",
@@ -216,12 +216,12 @@ describe("plan watch command", () => {
         completedAt: "2026-05-01T09:01:00.000Z",
         reasonCode: asAgentRunnerBridgeRunnerReasonCode("PLAN_COMPLETE"),
         command: null,
-        codexSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c"
+        opencodeSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c"
       }
     });
 
     expect(text).toContain("plan watch: runner completed");
-    expect(text).toContain("codex_session=019df063-d8b1-7631-9be8-191fe2eef27c");
+    expect(text).toContain("opencode_session=019df063-d8b1-7631-9be8-191fe2eef27c");
   });
 
   it("overwrites idle progress on TTY and flushes before real events", () => {
@@ -486,7 +486,7 @@ describe("plan watch command", () => {
     const repoPath = await createTempDir();
     await writeFile(
       join(repoPath, "pairflow.toml"),
-      '[plan_watch.runner]\nbackend = "codex"\nidle_timeout_seconds = 42\n',
+      '[plan_watch.runner]\nbackend = "opencode"\nidle_timeout_seconds = 42\n',
       "utf8"
     );
     const dependencies: PlanWatchLoopDependencies = {
@@ -532,7 +532,7 @@ describe("plan watch command", () => {
     expect(dependencies.runExecutePairflowPlanContinuation).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        backend: "codex",
+        backend: "opencode",
         idleTimeoutMs: 42_000
       })
     );
@@ -542,7 +542,7 @@ describe("plan watch command", () => {
     const repoPath = await createTempDir();
     await writeFile(
       join(repoPath, "pairflow.toml"),
-      '[plan_watch.runner]\nbackend = "codex"\n',
+      '[plan_watch.runner]\nbackend = "opencode"\n',
       "utf8"
     );
 
@@ -568,7 +568,7 @@ describe("plan watch command", () => {
     const repoPath = await createTempDir();
     await writeFile(
       join(repoPath, "pairflow.toml"),
-      '[plan_watch.runner]\nbackend = "codex"\n',
+      '[plan_watch.runner]\nbackend = "opencode"\n',
       "utf8"
     );
 
@@ -594,7 +594,7 @@ describe("plan watch command", () => {
     const repoPath = await createTempDir();
     await writeFile(
       join(repoPath, "pairflow.toml"),
-      '[plan_watch.runner]\nbackend = "codex"\n',
+      '[plan_watch.runner]\nbackend = "opencode"\n',
       "utf8"
     );
 
@@ -620,7 +620,7 @@ describe("plan watch command", () => {
     const repoPath = await createTempDir();
     await writeFile(
       join(repoPath, "pairflow.toml"),
-      '[plan_watch.runner]\nbackend = "codex"\n',
+      '[plan_watch.runner]\nbackend = "opencode"\n',
       "utf8"
     );
 

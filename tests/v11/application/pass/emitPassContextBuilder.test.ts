@@ -79,15 +79,15 @@ describe("emitPassContextBuilder", () => {
             round: 2
           },
           handoff: {
-            senderAgent: "claude",
+            senderAgent: "opencode",
             senderRole: "reviewer",
-            recipientAgent: "codex",
+            recipientAgent: "opencode",
             recipientRole: "implementer",
             envelopeRound: 2,
             nextRound: 3
           },
-          implementer: "codex",
-          reviewer: "claude"
+          implementer: "opencode",
+          reviewer: "opencode"
         }) as never,
       preparePassRouting: async (routingInput, routingDependencies) => {
         capturedRoutingInput = routingInput;
@@ -179,15 +179,15 @@ describe("emitPassContextBuilder", () => {
             round: 1
           },
           handoff: {
-            senderAgent: "codex",
+            senderAgent: "opencode",
             senderRole: "implementer",
-            recipientAgent: "claude",
+            recipientAgent: "opencode",
             recipientRole: "reviewer",
             envelopeRound: 1,
             nextRound: 1
           },
-          implementer: "codex",
-          reviewer: "claude"
+          implementer: "opencode",
+          reviewer: "opencode"
         }) as never,
       preparePassRouting: async (routingInput) => {
         capturedRoutingInput = routingInput;
@@ -285,15 +285,15 @@ describe("emitPassContextBuilder", () => {
               round: 2
             },
             handoff: {
-              senderAgent: "claude",
+              senderAgent: "opencode",
               senderRole: "reviewer",
-              recipientAgent: "codex",
+              recipientAgent: "opencode",
               recipientRole: "implementer",
               envelopeRound: 2,
               nextRound: 3
             },
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           }) as never,
         preparePassRouting: async () =>
           ({
@@ -374,15 +374,15 @@ describe("emitPassContextBuilder", () => {
               round: 2
             },
             handoff: {
-              senderAgent: "claude",
+              senderAgent: "opencode",
               senderRole: "reviewer",
-              recipientAgent: "codex",
+              recipientAgent: "opencode",
               recipientRole: "implementer",
               envelopeRound: 2,
               nextRound: 3
             },
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           }) as never,
         preparePassRouting: async () =>
           ({
@@ -464,15 +464,15 @@ describe("emitPassContextBuilder", () => {
               round: 2
             },
             handoff: {
-              senderAgent: "claude",
+              senderAgent: "opencode",
               senderRole: "reviewer",
-              recipientAgent: "codex",
+              recipientAgent: "opencode",
               recipientRole: "implementer",
               envelopeRound: 2,
               nextRound: 3
             },
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           }) as never,
         preparePassRouting: async () =>
           ({
@@ -561,15 +561,15 @@ describe("emitPassContextBuilder", () => {
               round: 3
             },
             handoff: {
-              senderAgent: "claude",
+              senderAgent: "opencode",
               senderRole: "reviewer",
-              recipientAgent: "codex",
+              recipientAgent: "opencode",
               recipientRole: "implementer",
               envelopeRound: 3,
               nextRound: 4
             },
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           }) as never,
         preparePassRouting: async () =>
           ({
@@ -654,15 +654,15 @@ describe("emitPassContextBuilder", () => {
               active_role: "implementer"
             },
             handoff: {
-              senderAgent: "codex",
+              senderAgent: "opencode",
               senderRole: "implementer",
-              recipientAgent: "claude",
+              recipientAgent: "opencode",
               recipientRole: "reviewer",
               envelopeRound: 2,
               nextRound: 2
             },
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           }) as never,
         preparePassRouting: async () =>
           ({
@@ -747,15 +747,15 @@ describe("emitPassContextBuilder", () => {
               active_role: "implementer"
             },
             handoff: {
-              senderAgent: "codex",
+              senderAgent: "opencode",
               senderRole: "implementer",
-              recipientAgent: "claude",
+              recipientAgent: "opencode",
               recipientRole: "reviewer",
               envelopeRound: 2,
               nextRound: 2
             },
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           }) as never,
         preparePassRouting: async () =>
           ({
@@ -842,15 +842,15 @@ describe("emitPassContextBuilder", () => {
               meta_review_consecutive_clean_runs_required: 1,
             },
             handoff: {
-              senderAgent: "codex",
+              senderAgent: "opencode",
               senderRole: "implementer",
-              recipientAgent: "codex",
+              recipientAgent: "opencode",
               recipientRole: "meta_reviewer",
               envelopeRound: 2,
               nextRound: 2
             },
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           }) as never,
         preparePassRouting: async () =>
           ({

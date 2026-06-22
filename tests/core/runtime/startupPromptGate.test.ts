@@ -2,22 +2,22 @@ import { describe, expect, it } from "vitest";
 
 // Re-export and test the internal function via its behavior through the launch flow.
 // Since shouldSubmitStartupPrompt is not exported, we verify its behavior indirectly
-// by testing buildAgentCommand for codex/opencode (which include startupPrompt in CLI)
+// by testing buildAgentCommand for opencode/opencode (which include startupPrompt in CLI)
 // and the tmux pane seeding path which respects the gate.
 
 import { buildAgentCommand } from "../../../src/v11/shared/command/agentCommand.js";
 
 describe("startup prompt submission gate", () => {
-  it("codex with startup prompt produces a command that includes the prompt argument", () => {
+  it("opencode with startup prompt produces a command that includes the prompt argument", () => {
     const cmd = buildAgentCommand({
-      agentName: "codex",
-      bubbleId: "b_startup_gate_codex_01",
+      agentName: "opencode",
+      bubbleId: "b_startup_gate_opencode_01",
       worktreePath: "/tmp/worktree/startup-gate",
-      codexMcpDisableArgs: [],
+      opencodeMcpDisableArgs: [],
       startupPrompt: "Implement this task."
     });
 
-    // Codex should have the prompt embedded in the CLI command.
+    // Opencode should have the prompt embedded in the CLI command.
     expect(cmd).toContain("Implement this task.");
   });
 
@@ -26,31 +26,31 @@ describe("startup prompt submission gate", () => {
       agentName: "opencode",
       bubbleId: "b_startup_gate_opencode_01",
       worktreePath: "/tmp/worktree/startup-gate",
-      codexMcpDisableArgs: [],
+      opencodeMcpDisableArgs: [],
       startupPrompt: "Implement this task."
     });
 
     // Opencode should have the prompt embedded in the CLI command.
     expect(cmd).toContain("opencode");
     expect(cmd).toContain("Implement this task.");
-    // Opencode must NOT get codex-specific flags.
+    // Opencode must NOT get opencode-specific flags.
     expect(cmd).not.toContain("--dangerously-bypass-approvals-and-sandbox");
-    // Opencode must NOT get claude-specific flags.
+    // Opencode must NOT get opencode-specific flags.
     expect(cmd).not.toContain("--dangerously-skip-permissions");
   });
 
-  it("claude with startup prompt produces a command that includes the prompt argument", () => {
+  it("opencode with startup prompt produces a command that includes the prompt argument", () => {
     const cmd = buildAgentCommand({
-      agentName: "claude",
-      bubbleId: "b_startup_gate_claude_01",
+      agentName: "opencode",
+      bubbleId: "b_startup_gate_opencode_01",
       worktreePath: "/tmp/worktree/startup-gate",
-      codexMcpDisableArgs: [],
+      opencodeMcpDisableArgs: [],
       startupPrompt: "Implement this task."
     });
 
-    expect(cmd).toContain("claude");
+    expect(cmd).toContain("opencode");
     expect(cmd).toContain("Implement this task.");
-    // Claude gets its own permission flags.
+    // Opencode gets its own permission flags.
     expect(cmd).toContain("--dangerously-skip-permissions");
   });
 });

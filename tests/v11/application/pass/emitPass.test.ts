@@ -94,8 +94,8 @@ describe("emitPassFromWorkspace", () => {
 
     expect(v11).toEqual(legacy);
     expect(v11.envelopeType).toBe("PASS");
-    expect(v11.envelopeSender).toBe("codex");
-    expect(v11.envelopeRecipient).toBe("claude");
+    expect(v11.envelopeSender).toBe("opencode");
+    expect(v11.envelopeRecipient).toBe("opencode");
     expect(v11.resultEnvelopeKind).toBe("pass");
     expect(v11.transitionDecision).toBe("normal_pass");
     expect(v11.state).toBe("RUNNING");
@@ -120,8 +120,8 @@ describe("emitPassFromWorkspace", () => {
 
     expect(v11).toEqual(legacy);
     expect(v11.envelopeType).toBe("PASS");
-    expect(v11.envelopeSender).toBe("codex");
-    expect(v11.envelopeRecipient).toBe("claude");
+    expect(v11.envelopeSender).toBe("opencode");
+    expect(v11.envelopeRecipient).toBe("opencode");
     expect(v11.resultEnvelopeKind).toBe("pass");
     expect(v11.transitionDecision).toBe("normal_pass");
     expect(v11.state).toBe("RUNNING");

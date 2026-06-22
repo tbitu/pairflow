@@ -13,7 +13,7 @@ function createLoadedRunningState(): LoadedStateSnapshot {
     bubble_id: "b_meta_gate_human_route_01",
     state: "RUNNING",
     round: 4,
-    active_agent: "codex",
+    active_agent: "opencode",
     active_since: "2026-03-22T11:00:00.000Z",
     active_role: "meta_reviewer",
     execution_context: {
@@ -82,7 +82,7 @@ describe("persistHumanGateRoute", () => {
         bubbleId: loaded.state.bubble_id,
         summary: "Missing recommendation source should fail closed.",
         refs: [],
-        metaReviewerAgent: "codex",
+        metaReviewerAgent: "opencode",
         loaded,
         expectedState: "RUNNING",
         route: "human_gate_budget_exhausted"
@@ -124,7 +124,7 @@ describe("persistHumanGateRoute", () => {
       bubbleId: loaded.state.bubble_id,
       summary: "Fallback route preserved the rework target.",
       refs: [],
-      metaReviewerAgent: "codex",
+      metaReviewerAgent: "opencode",
       loaded,
       expectedState: "RUNNING",
       route: "human_gate_inconclusive",
@@ -150,7 +150,7 @@ describe("persistHumanGateRoute", () => {
     });
     expect(result.gateEnvelope.payload.metadata).toMatchObject({
       actor: "meta-reviewer",
-      actor_agent: "codex"
+      actor_agent: "opencode"
     });
   });
 });

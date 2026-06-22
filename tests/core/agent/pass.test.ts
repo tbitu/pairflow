@@ -412,8 +412,8 @@ describe("emitPassFromWorkspace", { timeout: 20_000 }, () => {
     expect(result.inferredIntent).toBe(true);
     expect(result.envelope.type).toBe("PASS");
     expect(result.envelope.round).toBe(1);
-    expect(result.envelope.sender).toBe("codex");
-    expect(result.envelope.recipient).toBe("claude");
+    expect(result.envelope.sender).toBe("opencode");
+    expect(result.envelope.recipient).toBe("opencode");
     expect(passPayload(result).pass_intent).toBe("review");
     expect(passPayload(result).metadata).toEqual(
       expect.objectContaining({
@@ -440,7 +440,7 @@ describe("emitPassFromWorkspace", { timeout: 20_000 }, () => {
     ]);
 
     const loaded = await readStateSnapshot(bubble.paths.statePath);
-    expect(loaded.state.active_agent).toBe("claude");
+    expect(loaded.state.active_agent).toBe("opencode");
     expect(loaded.state.active_role).toBe("reviewer");
     expect(loaded.state.round).toBe(1);
     expect(loaded.state.last_command_at).toBe(now.toISOString());
@@ -485,15 +485,15 @@ describe("emitPassFromWorkspace", { timeout: 20_000 }, () => {
       now
     });
 
-    expect(result.envelope.sender).toBe("claude");
-    expect(result.envelope.recipient).toBe("codex");
+    expect(result.envelope.sender).toBe("opencode");
+    expect(result.envelope.recipient).toBe("opencode");
     expect(result.envelope.round).toBe(1);
     expect(result.inferredIntent).toBe(true);
     expect(passPayload(result).pass_intent).toBe("fix_request");
 
     const updated = await readStateSnapshot(bubble.paths.statePath);
     expect(updated.state.round).toBe(2);
-    expect(updated.state.active_agent).toBe("codex");
+    expect(updated.state.active_agent).toBe("opencode");
     expect(updated.state.active_role).toBe("implementer");
     expect(updated.state.round_role_history.some((entry) => entry.round === 2)).toBe(true);
   });
@@ -649,7 +649,7 @@ describe("emitPassFromWorkspace", { timeout: 20_000 }, () => {
       cwd: bubble.paths.worktreePath,
       now: new Date("2026-02-21T12:08:00.000Z")
     });
-    expect(implementerPass.envelope.sender).toBe("codex");
+    expect(implementerPass.envelope.sender).toBe("opencode");
     expect("findings" in implementerPass.envelope.payload).toBe(false);
     expect("findings_claim_state" in implementerPass.envelope.payload).toBe(false);
     expect("findings_claim_source" in implementerPass.envelope.payload).toBe(false);
@@ -1408,18 +1408,18 @@ present`,
     ]);
 
     const implementerToReviewerDeliveries = deliveryCalls.filter(
-      (call) => call.sender === "codex" && call.recipient === "claude"
+      (call) => call.sender === "opencode" && call.recipient === "opencode"
     );
     expect(implementerToReviewerDeliveries).toEqual([
       {
-        sender: "codex",
-        recipient: "claude",
+        sender: "opencode",
+        recipient: "opencode",
         round: 1,
         initialDelayMs: 1500
       },
       {
-        sender: "codex",
-        recipient: "claude",
+        sender: "opencode",
+        recipient: "opencode",
         round: 2,
         initialDelayMs: 1500
       }

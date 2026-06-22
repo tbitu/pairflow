@@ -56,8 +56,8 @@ describe("normalPassFlowInvocationBuilders", () => {
         bubbleInstanceId: "bi_1"
       },
       handoff: {} as never,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       state: {} as never,
       loadedState: {
         fingerprint: "fp_1"

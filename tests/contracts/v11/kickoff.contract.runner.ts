@@ -439,7 +439,7 @@ async function setupKickoffFixture(
               watchdogTimeoutMinutes: 60,
               attempt: 1
             }),
-      active_agent: "codex",
+      active_agent: "opencode",
       active_role: "implementer",
       active_since: startedAt,
       last_command_at: startedAt,

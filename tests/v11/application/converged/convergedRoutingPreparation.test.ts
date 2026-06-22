@@ -24,8 +24,8 @@ describe("prepareConvergedRouting", () => {
       },
       bubbleConfig: {
         agents: {
-          implementer: "codex",
-          reviewer: "claude"
+          implementer: "opencode",
+          reviewer: "opencode"
         }
       }
     } as never;
@@ -33,8 +33,8 @@ describe("prepareConvergedRouting", () => {
       bubbleInstanceId: "bi_test_123",
       bubbleConfig: {
         agents: {
-          implementer: "codex",
-          reviewer: "claude"
+          implementer: "opencode",
+          reviewer: "opencode"
         },
         marker: "updated"
       }
@@ -46,7 +46,7 @@ describe("prepareConvergedRouting", () => {
         now,
         expectedStateFingerprint: "fp-1",
         expectedRound: 2,
-        expectedReviewer: "claude",
+        expectedReviewer: "opencode",
         createError: (input) => new Error(toErrorMessage(input))
       },
       {
@@ -70,7 +70,7 @@ describe("prepareConvergedRouting", () => {
               state: "RUNNING",
               round: 2,
               active_role: "reviewer",
-              active_agent: "claude",
+              active_agent: "opencode",
               active_since: "2026-03-19T09:55:00.000Z"
             }
           } as never;
@@ -91,8 +91,8 @@ describe("prepareConvergedRouting", () => {
       "readStateSnapshot",
       "resolveIdeationMetadata"
     ]);
-    expect(result.implementer).toBe("codex");
-    expect(result.reviewer).toBe("claude");
+    expect(result.implementer).toBe("opencode");
+    expect(result.reviewer).toBe("opencode");
     expect(result.effectiveLoopMode).toBe("full");
   });
 
@@ -117,8 +117,8 @@ describe("prepareConvergedRouting", () => {
               meta_review_consecutive_clean_runs_required: 1,
             },
             agents: {
-              implementer: "codex",
-              reviewer: "claude"
+              implementer: "opencode",
+              reviewer: "opencode"
             }
           }
         }) as never,
@@ -132,8 +132,8 @@ describe("prepareConvergedRouting", () => {
               meta_review_consecutive_clean_runs_required: 1,
             },
             agents: {
-              implementer: "codex",
-              reviewer: "claude"
+              implementer: "opencode",
+              reviewer: "opencode"
             }
           }
         }) as never,
@@ -144,7 +144,7 @@ describe("prepareConvergedRouting", () => {
             state: "RUNNING",
             round: 3,
             active_role: "implementer",
-            active_agent: "codex",
+            active_agent: "opencode",
             active_since: "2026-03-19T09:55:00.000Z",
             last_command_at: "2026-03-19T09:59:00.000Z",
             round_role_history: [],
@@ -167,8 +167,8 @@ describe("prepareConvergedRouting", () => {
       }
     );
 
-    expect(result.implementer).toBe("codex");
-    expect(result.reviewer).toBe("claude");
+    expect(result.implementer).toBe("opencode");
+    expect(result.reviewer).toBe("opencode");
     expect(result.effectiveLoopMode).toBe("meta_only");
   });
 
@@ -189,8 +189,8 @@ describe("prepareConvergedRouting", () => {
             },
             bubbleConfig: {
               agents: {
-                implementer: "codex",
-                reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode"
               }
             }
           }) as never,
@@ -198,8 +198,8 @@ describe("prepareConvergedRouting", () => {
             bubbleInstanceId: "bi_test_456",
             bubbleConfig: {
               agents: {
-                implementer: "codex",
-                reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode"
               }
             }
           }) as never,
@@ -209,7 +209,7 @@ describe("prepareConvergedRouting", () => {
               state: "RUNNING",
               round: 3,
               active_role: "reviewer",
-              active_agent: "claude",
+              active_agent: "opencode",
               active_since: "2026-03-19T09:50:00.000Z"
             }
           }) as never,
@@ -241,8 +241,8 @@ describe("prepareConvergedRouting", () => {
             },
             bubbleConfig: {
               agents: {
-                implementer: "codex",
-                reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode"
               }
             }
           }) as never,
@@ -250,8 +250,8 @@ describe("prepareConvergedRouting", () => {
             bubbleInstanceId: "bi_test_round_mismatch",
             bubbleConfig: {
               agents: {
-                implementer: "codex",
-                reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode"
               }
             }
           }) as never,
@@ -261,7 +261,7 @@ describe("prepareConvergedRouting", () => {
               state: "RUNNING",
               round: 3,
               active_role: "reviewer",
-              active_agent: "claude",
+              active_agent: "opencode",
               active_since: "2026-03-19T09:50:00.000Z"
             }
           }) as never,
@@ -293,8 +293,8 @@ describe("prepareConvergedRouting", () => {
             },
             bubbleConfig: {
               agents: {
-                implementer: "codex",
-                reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode"
               }
             }
           }) as never,
@@ -302,8 +302,8 @@ describe("prepareConvergedRouting", () => {
             bubbleInstanceId: "bi_test_reviewer_mismatch",
             bubbleConfig: {
               agents: {
-                implementer: "codex",
-                reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode"
               }
             }
           }) as never,
@@ -313,7 +313,7 @@ describe("prepareConvergedRouting", () => {
               state: "RUNNING",
               round: 3,
               active_role: "reviewer",
-              active_agent: "claude",
+              active_agent: "opencode",
               active_since: "2026-03-19T09:50:00.000Z"
             }
           }) as never,
@@ -324,7 +324,7 @@ describe("prepareConvergedRouting", () => {
         }
       )
     ).rejects.toThrow(
-      "AUTO_CONVERGE_STATE_STALE: Convergence validation failed: expected reviewer other-reviewer, got claude."
+      "AUTO_CONVERGE_STATE_STALE: Convergence validation failed: expected reviewer other-reviewer, got opencode."
     );
   });
 
@@ -350,8 +350,8 @@ describe("prepareConvergedRouting", () => {
                 meta_review_consecutive_clean_runs_required: 1,
               },
               agents: {
-                implementer: "codex",
-                reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode"
               }
             }
           }) as never,
@@ -365,8 +365,8 @@ describe("prepareConvergedRouting", () => {
                 meta_review_consecutive_clean_runs_required: 1,
               },
               agents: {
-                implementer: "codex",
-                reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode"
               }
             }
           }) as never,
@@ -377,7 +377,7 @@ describe("prepareConvergedRouting", () => {
               state: "RUNNING",
               round: 3,
               active_role: "implementer",
-              active_agent: "codex",
+              active_agent: "opencode",
               active_since: "2026-03-19T09:55:00.000Z",
               last_command_at: "2026-03-19T09:59:00.000Z",
               round_role_history: [],
@@ -420,8 +420,8 @@ describe("prepareConvergedRouting", () => {
             },
             bubbleConfig: {
               agents: {
-                implementer: "codex",
-                reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode"
               }
             }
           }) as never,
@@ -429,8 +429,8 @@ describe("prepareConvergedRouting", () => {
             bubbleInstanceId: "bi_test_789",
             bubbleConfig: {
               agents: {
-                implementer: "codex",
-                reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode"
               }
             }
           }) as never,
@@ -440,7 +440,7 @@ describe("prepareConvergedRouting", () => {
               state: "RUNNING",
               round: 0,
               active_role: "reviewer",
-              active_agent: "claude",
+              active_agent: "opencode",
               active_since: "2026-03-19T09:50:00.000Z"
             }
           }) as never,
@@ -479,8 +479,8 @@ describe("prepareConvergedRouting", () => {
             },
             bubbleConfig: {
               agents: {
-                implementer: "codex",
-                reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode"
               }
             }
           } as never,
@@ -490,7 +490,7 @@ describe("prepareConvergedRouting", () => {
               state: "RUNNING",
               round: 3,
               active_role: "reviewer",
-              active_agent: "claude",
+              active_agent: "opencode",
               active_since: "2026-03-19T09:55:00.000Z"
             }
           } as never,
@@ -502,7 +502,7 @@ describe("prepareConvergedRouting", () => {
         },
         expectedStateFingerprint: "fp_conv_ctx_01",
         expectedRound: 3,
-        expectedReviewer: "claude",
+        expectedReviewer: "opencode",
         createError: (input) => new Error(toErrorMessage(input))
       },
       {
@@ -514,8 +514,8 @@ describe("prepareConvergedRouting", () => {
           bubbleInstanceId: "bi_conv_ctx_01",
           bubbleConfig: {
             agents: {
-              implementer: "codex",
-              reviewer: "claude"
+              implementer: "opencode",
+              reviewer: "opencode"
             }
           }
         }) as never,
@@ -528,7 +528,7 @@ describe("prepareConvergedRouting", () => {
               state: "RUNNING",
               round: 3,
               active_role: "reviewer",
-              active_agent: "claude",
+              active_agent: "opencode",
               active_since: "2026-03-19T09:55:00.000Z"
             }
           } as never;

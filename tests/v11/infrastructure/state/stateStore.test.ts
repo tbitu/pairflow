@@ -53,7 +53,7 @@ describe("v11 infrastructure state store", () => {
         bubble_id: "b_v11_state_store_02",
         state: "RUNNING",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-04-06T10:00:00.000Z",
         active_role: "meta_reviewer",
         round_role_history: [],

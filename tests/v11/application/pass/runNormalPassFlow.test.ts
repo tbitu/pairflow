@@ -51,8 +51,8 @@ describe("runNormalPassFlow", () => {
         },
         handoff: {
           senderRole: "reviewer",
-          senderAgent: "claude",
-          recipientAgent: "codex",
+          senderAgent: "opencode",
+          recipientAgent: "opencode",
           recipientRole: "implementer",
           envelopeRound: 2,
           nextRound: 3
@@ -166,8 +166,8 @@ describe("runNormalPassFlow", () => {
         },
         handoff: {
           senderRole: "implementer",
-          senderAgent: "codex",
-          recipientAgent: "claude",
+          senderAgent: "opencode",
+          recipientAgent: "opencode",
           recipientRole: "reviewer",
           envelopeRound: 2,
           nextRound: 2

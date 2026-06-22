@@ -28,20 +28,20 @@ function buildState(): BubbleStateSnapshot {
     bubble_id: "b_123",
     state: "RUNNING",
     round: 2,
-    active_agent: "codex",
+    active_agent: "opencode",
     active_since: "2026-03-19T11:59:00.000Z",
     active_role: "implementer",
     round_role_history: [
       {
         round: 1,
-        implementer: "codex",
-        reviewer: "claude",
+        implementer: "opencode",
+        reviewer: "opencode",
         switched_at: "2026-03-19T11:00:00.000Z"
       },
       {
         round: 2,
-        implementer: "codex",
-        reviewer: "claude",
+        implementer: "opencode",
+        reviewer: "opencode",
         switched_at: "2026-03-19T11:30:00.000Z"
       }
     ],
@@ -58,7 +58,7 @@ describe("writePostAppendPassState", () => {
         state: buildState(),
         handoff: {
           nextRound: 2,
-          recipientAgent: "claude",
+          recipientAgent: "opencode",
           recipientRole: "reviewer"
         },
         nowIso: "2026-03-19T12:00:00.000Z",
@@ -88,7 +88,7 @@ describe("writePostAppendPassState", () => {
     });
     expect((writes[0] as { state: BubbleStateSnapshot }).state).toMatchObject({
       round: 2,
-      active_agent: "claude",
+      active_agent: "opencode",
       active_role: "reviewer",
       execution_context: {
         active_role: "reviewer",
@@ -113,12 +113,12 @@ describe("writePostAppendPassState", () => {
         state: buildState(),
         handoff: {
           nextRound: 3,
-          recipientAgent: "codex",
+          recipientAgent: "opencode",
           recipientRole: "implementer",
           appendRoundRoleEntry: {
             round: 3,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-03-19T12:00:00.000Z"
           }
         },
@@ -142,8 +142,8 @@ describe("writePostAppendPassState", () => {
     expect(capturedState?.round_role_history).toHaveLength(3);
     expect(capturedState?.round_role_history[2]).toEqual({
       round: 3,
-      implementer: "codex",
-      reviewer: "claude",
+      implementer: "opencode",
+      reviewer: "opencode",
       switched_at: "2026-03-19T12:00:00.000Z"
     });
   });
@@ -156,7 +156,7 @@ describe("writePostAppendPassState", () => {
         state: buildState(),
         handoff: {
           nextRound: 2,
-          recipientAgent: "codex",
+          recipientAgent: "opencode",
           recipientRole: "meta_reviewer"
         },
         nowIso: "2026-03-19T12:00:00.000Z",
@@ -178,7 +178,7 @@ describe("writePostAppendPassState", () => {
 
     expect(capturedState).toMatchObject({
       round: 2,
-      active_agent: "codex",
+      active_agent: "opencode",
       active_role: "meta_reviewer",
       execution_context: {
         active_role: "meta_reviewer",
@@ -197,7 +197,7 @@ describe("writePostAppendPassState", () => {
           state: buildState(),
           handoff: {
             nextRound: 2,
-            recipientAgent: "claude",
+            recipientAgent: "opencode",
             recipientRole: "reviewer"
           },
           nowIso: "2026-03-19T12:00:00.000Z",

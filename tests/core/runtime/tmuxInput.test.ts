@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   sendAndSubmitTmuxPaneMessage,
-  maybeAcceptClaudeTrustPrompt,
+  maybeAcceptOpencodeTrustPrompt,
   checkTmuxPaneMarkerStatus,
   isOpencodePromptLine,
   detectOpencodeReadiness
@@ -70,7 +70,7 @@ describe("checkTmuxPaneMarkerStatus", () => {
     const runner = async (args: string[]) => {
       if (args[0] === "capture-pane") {
         return {
-          stdout: "# [pairflow] r1 PASS codex->codex msg=msg_1 ref=artifact://handoff.md.",
+          stdout: "# [pairflow] r1 PASS opencode->opencode msg=msg_1 ref=artifact://handoff.md.",
           stderr: "",
           exitCode: 0
         };
@@ -88,8 +88,8 @@ describe("checkTmuxPaneMarkerStatus", () => {
   });
 });
 
-describe("maybeAcceptClaudeTrustPrompt", () => {
-  it("accepts Claude folder trust prompts with Enter", async () => {
+describe("maybeAcceptOpencodeTrustPrompt", () => {
+  it("accepts Opencode folder trust prompts with Enter", async () => {
     const calls: string[][] = [];
     let captureCount = 0;
     const runner = async (args: string[]) => {
@@ -111,7 +111,7 @@ describe("maybeAcceptClaudeTrustPrompt", () => {
           };
         }
         return {
-          stdout: "Claude Code is ready.",
+          stdout: "Opencode Code is ready.",
           stderr: "",
           exitCode: 0
         };
@@ -123,7 +123,7 @@ describe("maybeAcceptClaudeTrustPrompt", () => {
       };
     };
 
-    const accepted = await maybeAcceptClaudeTrustPrompt(runner, "pane-1");
+    const accepted = await maybeAcceptOpencodeTrustPrompt(runner, "pane-1");
 
     expect(accepted).toBe(true);
     expect(calls).toEqual([
@@ -133,7 +133,7 @@ describe("maybeAcceptClaudeTrustPrompt", () => {
     ]);
   });
 
-  it("accepts Codex workspace trust prompts", async () => {
+  it("accepts Opencode workspace trust prompts", async () => {
     const calls: string[][] = [];
     let captureCount = 0;
     const runner = async (args: string[]) => {
@@ -153,7 +153,7 @@ describe("maybeAcceptClaudeTrustPrompt", () => {
           };
         }
         return {
-          stdout: "Codex ready.",
+          stdout: "Opencode ready.",
           stderr: "",
           exitCode: 0
         };
@@ -165,7 +165,7 @@ describe("maybeAcceptClaudeTrustPrompt", () => {
       };
     };
 
-    const accepted = await maybeAcceptClaudeTrustPrompt(runner, "pane-1");
+    const accepted = await maybeAcceptOpencodeTrustPrompt(runner, "pane-1");
 
     expect(accepted).toBe(true);
     expect(calls).toEqual([
@@ -177,7 +177,7 @@ describe("maybeAcceptClaudeTrustPrompt", () => {
     ]);
   });
 
-  it("accepts chained Claude trust and bypass-permissions prompts", async () => {
+  it("accepts chained Opencode trust and bypass-permissions prompts", async () => {
     const calls: string[][] = [];
     let captureCount = 0;
     const runner = async (args: string[]) => {
@@ -201,7 +201,7 @@ describe("maybeAcceptClaudeTrustPrompt", () => {
         if (captureCount === 2) {
           return {
             stdout: [
-              "WARNING: Claude Code running in Bypass Permissions mode",
+              "WARNING: Opencode Code running in Bypass Permissions mode",
               "❯ 1. No, exit",
               "2. Yes, I accept",
               "Enter to confirm · Esc to cancel"
@@ -211,7 +211,7 @@ describe("maybeAcceptClaudeTrustPrompt", () => {
           };
         }
         return {
-          stdout: "Claude Code is ready.",
+          stdout: "Opencode Code is ready.",
           stderr: "",
           exitCode: 0
         };
@@ -223,7 +223,7 @@ describe("maybeAcceptClaudeTrustPrompt", () => {
       };
     };
 
-    const accepted = await maybeAcceptClaudeTrustPrompt(runner, "pane-1");
+    const accepted = await maybeAcceptOpencodeTrustPrompt(runner, "pane-1");
 
     expect(accepted).toBe(true);
     expect(calls).toEqual([

@@ -57,7 +57,7 @@ function validateArtifactMeta(
     errors.push({
       code: "meta_reviewer_invalid",
       path: "meta.reviewer",
-      message: "meta.reviewer must be one of: codex, claude, opencode."
+      message: "meta.reviewer must be one of: opencode, opencode, opencode."
     });
   }
 

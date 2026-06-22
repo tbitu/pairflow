@@ -1,7 +1,7 @@
 import type { StructuredAgentRunnerOutput } from "../../../../shared/planWatchRunner/agentRunnerBridgeContract.js";
-import type { CodexJsonEvent } from "./codexAgentRunnerStream.js";
+import type { OpencodeJsonEvent } from "./opencodeAgentRunnerStream.js";
 
-export interface CodexTimelineRow {
+export interface OpencodeTimelineRow {
   schemaVersion: 1;
   type: string;
   at: string;
@@ -11,12 +11,12 @@ export interface CodexTimelineRow {
 const OUTPUT_PREVIEW_LINE_LIMIT = 20;
 const MAX_UNRECOGNIZED_TIMELINE_ROWS = 20;
 
-export function normalizeCodexTimeline(input: {
-  events: readonly CodexJsonEvent[];
+export function normalizeOpencodeTimeline(input: {
+  events: readonly OpencodeJsonEvent[];
   finalOutput: StructuredAgentRunnerOutput | null;
   completedAt: string;
-}): readonly CodexTimelineRow[] {
-  const rows: CodexTimelineRow[] = [];
+}): readonly OpencodeTimelineRow[] {
+  const rows: OpencodeTimelineRow[] = [];
   let unrecognizedRows = 0;
   for (const event of input.events) {
     const row = normalizeEvent(event.value, input.completedAt, {
@@ -48,14 +48,14 @@ function normalizeEvent(
   event: Record<string, unknown>,
   fallbackAt: string,
   options: { allowUnrecognized: boolean }
-): CodexTimelineRow | undefined {
+): OpencodeTimelineRow | undefined {
   const at = eventTimestamp(event, fallbackAt);
   if (event.type === "thread.started" && typeof event.thread_id === "string") {
     return {
       schemaVersion: 1,
-      type: "codex_session_started",
+      type: "opencode_session_started",
       at,
-      codexSessionId: event.thread_id
+      opencodeSessionId: event.thread_id
     };
   }
   const item = isRecord(event.item) ? event.item : undefined;
@@ -104,7 +104,7 @@ function normalizeAgentMessageEvent(
   event: Record<string, unknown>,
   item: Record<string, unknown> | undefined,
   at: string
-): CodexTimelineRow | undefined {
+): OpencodeTimelineRow | undefined {
   const summary = agentMessageSummary(event, item);
   if (summary !== undefined) {
     return {

@@ -32,8 +32,8 @@ describe("preparePassRouting", () => {
         },
         worktreePath: "/tmp/worktree",
         transcriptPath: "/tmp/transcript.ndjson",
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         createError: (message: PairflowCommandErrorInput) => new Error(toErrorMessage(message))
       },
       {
@@ -136,8 +136,8 @@ describe("preparePassRouting", () => {
         },
         worktreePath: "/tmp/worktree",
         transcriptPath: "/tmp/transcript.ndjson",
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         createError: (message: PairflowCommandErrorInput) => new Error(toErrorMessage(message))
       },
       {

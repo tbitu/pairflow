@@ -124,7 +124,7 @@ describe("metaReviewGate V11 defaults", () => {
       bubbleId: "b_meta_review_notify_v11_runner_default",
       round: 4,
       targetPane: "pf-b_meta_review_notify_v11_runner_default:0.3",
-      metaReviewerAgent: "codex"
+      metaReviewerAgent: "opencode"
     }, {
       runtime
     });
@@ -303,7 +303,7 @@ describe("metaReviewGate V11 defaults", () => {
         }
       },
       paneBinding: {
-        buildAgentCommand: () => "codex meta-review",
+        buildAgentCommand: () => "opencode meta-review",
         tmux: {
           runner: async () => ({
             stdout: "",
@@ -453,7 +453,7 @@ describe("metaReviewGate V11 defaults", () => {
         },
         paneBinding: {
           buildAgentCommand: ({ startupPrompt }) =>
-            `codex meta-review ${startupPrompt ?? ""}`,
+            `opencode meta-review ${startupPrompt ?? ""}`,
           tmux: {
             runner: async () => ({
               stdout: "",

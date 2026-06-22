@@ -13,7 +13,7 @@ export const supportedPairflowSkillNames = [
 
 export type PairflowSkillName = (typeof supportedPairflowSkillNames)[number];
 
-export type SkillInstallTargetDir = ".claude" | ".codex";
+export type SkillInstallTargetDir = ".opencode" | ".opencode";
 
 export type SkillsInstallStatus =
   | "planned"

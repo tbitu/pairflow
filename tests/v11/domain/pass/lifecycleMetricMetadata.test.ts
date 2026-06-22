@@ -7,8 +7,8 @@ describe("buildPassLifecycleMetricMetadata", () => {
     const metadata = buildPassLifecycleMetricMetadata({
       passIntent: "review",
       inferredIntent: true,
-      sender: "codex",
-      recipient: "claude",
+      sender: "opencode",
+      recipient: "opencode",
       recipientRole: "reviewer",
       refsCount: 2,
       hasFindings: true,
@@ -32,8 +32,8 @@ describe("buildPassLifecycleMetricMetadata", () => {
     expect(metadata).toMatchObject({
       pass_intent: "review",
       inferred_intent: true,
-      sender: "codex",
-      recipient: "claude",
+      sender: "opencode",
+      recipient: "opencode",
       recipient_role: "reviewer",
       refs_count: 2,
       has_findings: true,
@@ -59,7 +59,7 @@ describe("buildPassLifecycleMetricMetadata", () => {
     const metadata = buildPassLifecycleMetricMetadata({
       passIntent: "review",
       inferredIntent: false,
-      sender: "claude",
+      sender: "opencode",
       recipient: "human",
       recipientRole: "human",
       refsCount: 0,
@@ -97,8 +97,8 @@ describe("buildPassLifecycleMetricMetadata", () => {
     const metadata = buildPassLifecycleMetricMetadata({
       passIntent: "review",
       inferredIntent: false,
-      sender: "claude",
-      recipient: "codex",
+      sender: "opencode",
+      recipient: "opencode",
       recipientRole: "meta_reviewer",
       refsCount: 1,
       hasFindings: false,
@@ -112,7 +112,7 @@ describe("buildPassLifecycleMetricMetadata", () => {
     });
 
     expect(metadata).toMatchObject({
-      recipient: "codex",
+      recipient: "opencode",
       recipient_role: "meta_reviewer",
       refs_count: 1,
       has_findings: false,

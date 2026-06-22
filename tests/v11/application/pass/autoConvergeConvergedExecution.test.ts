@@ -30,7 +30,7 @@ describe("executeAutoConvergeConverged", () => {
         now,
         expectedStateFingerprint: "fp_1",
         expectedRound: 2,
-        expectedReviewer: "claude",
+        expectedReviewer: "opencode",
         onDownstreamRejected: () => {
           throw new Error("unexpected");
         }
@@ -64,7 +64,7 @@ describe("executeAutoConvergeConverged", () => {
       now,
       expectedStateFingerprint: "fp_1",
       expectedRound: 2,
-      expectedReviewer: "claude"
+      expectedReviewer: "opencode"
     });
     expect(typeof capturedDependencies?.emitDeliveryNotificationAck).toBe("function");
     expect(typeof capturedDependencies?.emitBubbleNotification).toBe("function");
@@ -86,7 +86,7 @@ describe("executeAutoConvergeConverged", () => {
         now: new Date("2026-03-19T12:00:00.000Z"),
         expectedStateFingerprint: "fp_1",
         expectedRound: 2,
-        expectedReviewer: "claude",
+        expectedReviewer: "opencode",
         onDownstreamRejected: () => {
           throw new Error("unexpected");
         }
@@ -115,7 +115,7 @@ describe("executeAutoConvergeConverged", () => {
           now: new Date("2026-03-19T12:00:00.000Z"),
           expectedStateFingerprint: "fp_1",
           expectedRound: 2,
-          expectedReviewer: "claude",
+          expectedReviewer: "opencode",
           onDownstreamRejected: (reason) => {
             throw new Error(`wrapped:${reason}`);
           }
@@ -139,7 +139,7 @@ describe("executeAutoConvergeConverged", () => {
           now: new Date("2026-03-19T12:00:00.000Z"),
           expectedStateFingerprint: "fp_1",
           expectedRound: 2,
-          expectedReviewer: "claude",
+          expectedReviewer: "opencode",
           onDownstreamRejected: (reason) => {
             throw new Error(`wrapped:${reason}`);
           }

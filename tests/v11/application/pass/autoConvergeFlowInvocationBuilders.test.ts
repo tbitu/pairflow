@@ -47,15 +47,15 @@ function createAutoConvergeBaseInput(
       bubbleInstanceId: "bi_1234567890_abcdef0123456789"
     },
     handoff: {
-      senderAgent: "claude",
+      senderAgent: "opencode",
       senderRole: "reviewer",
-      recipientAgent: "codex",
+      recipientAgent: "opencode",
       recipientRole: "implementer",
       envelopeRound: 4,
       nextRound: 5
     },
-    reviewer: "claude",
-    implementer: "codex",
+    reviewer: "opencode",
+    implementer: "opencode",
     state: {
       state: "RUNNING",
       round: 4,
@@ -173,7 +173,7 @@ describe("autoConvergeFlowInvocationBuilders", () => {
       now: new Date("2026-03-19T22:20:00.000Z"),
       expectedStateFingerprint: "fp_auto_02",
       expectedRound: 4,
-      expectedReviewer: "claude",
+      expectedReviewer: "opencode",
       onDownstreamRejected: (reason) => {
         throw new Error(reason);
       }
@@ -245,7 +245,7 @@ describe("autoConvergeFlowInvocationBuilders", () => {
       now: new Date("2026-03-19T22:20:00.000Z"),
       expectedStateFingerprint: "fp_auto_03",
       expectedRound: 4,
-      expectedReviewer: "claude",
+      expectedReviewer: "opencode",
       onDownstreamRejected: (reason) => {
         throw new Error(reason);
       }
@@ -303,7 +303,7 @@ describe("autoConvergeFlowInvocationBuilders", () => {
       now: new Date("2026-03-19T22:20:00.000Z"),
       expectedStateFingerprint: "fp_auto_04",
       expectedRound: 4,
-      expectedReviewer: "claude",
+      expectedReviewer: "opencode",
       onDownstreamRejected: (reason) => {
         throw new Error(reason);
       }

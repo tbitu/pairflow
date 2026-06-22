@@ -300,7 +300,7 @@ describe("planWatchLoop", () => {
         routeLedgerSummary: "settled",
         artifactDir:
           ".pairflow/runtime/plan-watch/agent-runner/2026-05-01_10-00-00-plan_invocation-1",
-        codexSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c"
+        opencodeSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c"
       })
     });
 
@@ -331,7 +331,7 @@ describe("planWatchLoop", () => {
       routeLedgerSummary: "settled",
       artifactDir:
         ".pairflow/runtime/plan-watch/agent-runner/2026-05-01_10-00-00-plan_invocation-1",
-      codexSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c"
+      opencodeSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c"
     });
     expect(result.invocationId).toBe(ledger.records[0]?.invocationId);
   });
@@ -1375,7 +1375,7 @@ describe("planWatchLoop", () => {
     expect(call?.[0].stopSignal).toBe(controller.signal);
   });
 
-  it("emits runner artifact readiness when the bridge reports Codex files", async () => {
+  it("emits runner artifact readiness when the bridge reports Opencode files", async () => {
     const triggerCandidate = candidate();
     const dependencies = deps({ candidates: [triggerCandidate] });
     vi.mocked(dependencies.runExecutePairflowPlanContinuation).mockImplementation(
@@ -1443,7 +1443,7 @@ describe("planWatchLoop", () => {
             completedAt: "2026-05-01T09:01:00.000Z",
             runnerStatus: "settled_checkpoint",
             runnerReasonCode: asAgentRunnerBridgeRunnerReasonCode("DONE"),
-            codexSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c"
+            opencodeSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c"
           },
           {
             ...validBase,
@@ -1541,7 +1541,7 @@ describe("planWatchLoop", () => {
         ...validBase,
         runnerStatus: "settled_checkpoint",
         runnerReasonCode: asAgentRunnerBridgeRunnerReasonCode("DONE"),
-        codexSessionId: 42
+        opencodeSessionId: 42
       }
     ];
 
@@ -1731,7 +1731,7 @@ describe("planWatchLoop", () => {
       },
       { ...validBase, changedArtifacts: ["plans/a.md"] },
       { ...validBase, routeLedgerSummary: "settled" },
-      { ...validBase, codexSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c" }
+      { ...validBase, opencodeSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c" }
     ];
 
     for (const record of invalidRecords) {

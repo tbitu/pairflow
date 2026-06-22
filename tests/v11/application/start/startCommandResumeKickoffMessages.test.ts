@@ -4,7 +4,7 @@ import { resolveResumeKickoffMessages } from "../../../../src/v11/application/st
 import type { PersistedBubbleStateSnapshot } from "../../../../src/v11/domain/state/snapshot/persistedBubbleStateSnapshot.js";
 
 function createRunningMetaReviewerState(
-  activeAgent: "codex" | "claude"
+  activeAgent: "opencode" | "opencode"
 ): PersistedBubbleStateSnapshot {
   return {
     bubble_id: "b_resume_kickoff_meta_01",
@@ -29,16 +29,16 @@ function createBaseInput(state: PersistedBubbleStateSnapshot) {
     pairflowCommandProfile: "external" as const,
     state,
     transcriptSummary: "resume-summary: meta-review active",
-    implementerAgent: "codex" as const,
-    reviewerAgent: "claude" as const,
-    metaReviewerAgent: "claude" as const
+    implementerAgent: "opencode" as const,
+    reviewerAgent: "opencode" as const,
+    metaReviewerAgent: "opencode" as const
   };
 }
 
 describe("startCommandResumeKickoffMessages", () => {
   it("sends the meta-reviewer kickoff only when RUNNING meta-review authority matches the configured agent", () => {
     const resolved = resolveResumeKickoffMessages(
-      createBaseInput(createRunningMetaReviewerState("claude"))
+      createBaseInput(createRunningMetaReviewerState("opencode"))
     );
 
     expect(resolved.metaReviewerKickoffMessage).toContain(
@@ -51,7 +51,7 @@ describe("startCommandResumeKickoffMessages", () => {
 
   it("fails closed with a diagnostic when RUNNING meta-review authority does not match the configured agent", () => {
     const resolved = resolveResumeKickoffMessages(
-      createBaseInput(createRunningMetaReviewerState("codex"))
+      createBaseInput(createRunningMetaReviewerState("opencode"))
     );
 
     expect(resolved.metaReviewerKickoffMessage).toBeUndefined();
@@ -59,9 +59,9 @@ describe("startCommandResumeKickoffMessages", () => {
       "RUNNING meta-review state active context is inconsistent;"
     );
     expect(resolved.kickoffDiagnostic).toContain("active_role=meta_reviewer,");
-    expect(resolved.kickoffDiagnostic).toContain("active_agent=codex.");
+    expect(resolved.kickoffDiagnostic).toContain("active_agent=opencode.");
     expect(resolved.kickoffDiagnostic).toContain(
-      "configured_meta_reviewer=claude."
+      "configured_meta_reviewer=opencode."
     );
   });
 });

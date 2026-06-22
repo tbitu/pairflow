@@ -25,9 +25,9 @@ const baseConfig: BubbleConfig = {
   commit_requires_approval: true,
   attach_launcher: "auto",
   agents: {
-    implementer: "codex",
-    reviewer: "claude",
-    meta_reviewer: "codex"
+    implementer: "opencode",
+    reviewer: "opencode",
+    meta_reviewer: "opencode"
   },
   commands: {
     test: "pnpm test",
@@ -107,7 +107,7 @@ describe("refreshReviewerContext", () => {
     expect(script).toContain(`if ! cd ${shellQuote("/tmp/runtime-workspace")}; then`);
   });
 
-  it("submits Codex reviewer startup prompts after reviewer pane refresh", async () => {
+  it("submits Opencode reviewer startup prompts after reviewer pane refresh", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
@@ -124,7 +124,7 @@ describe("refreshReviewerContext", () => {
         ...baseConfig,
         agents: {
           ...baseConfig.agents,
-          reviewer: "codex"
+          reviewer: "opencode"
         },
         role_mcp: {
           implementer: "disabled",
@@ -160,7 +160,7 @@ describe("refreshReviewerContext", () => {
     ]);
   });
 
-  it("uses bubble-local reviewer MCP opt-in when refreshing a Codex reviewer", async () => {
+  it("uses bubble-local reviewer MCP opt-in when refreshing a Opencode reviewer", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
@@ -177,7 +177,7 @@ describe("refreshReviewerContext", () => {
         ...baseConfig,
         agents: {
           ...baseConfig.agents,
-          reviewer: "codex"
+          reviewer: "opencode"
         },
         role_mcp: {
           implementer: "disabled",
@@ -203,11 +203,11 @@ describe("refreshReviewerContext", () => {
     });
     const reviewerCommand = calls[0]?.[6];
     expect(typeof reviewerCommand).toBe("string");
-    expect(reviewerCommand).not.toContain("codex mcp list");
+    expect(reviewerCommand).not.toContain("opencode mcp list");
     expect(reviewerCommand).not.toContain("PAIRFLOW_ROLE_MCP_DISABLE_ARGS");
   });
 
-  it("does not submit Codex reviewer pane input when refresh has no startup prompt", async () => {
+  it("does not submit Opencode reviewer pane input when refresh has no startup prompt", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
@@ -224,7 +224,7 @@ describe("refreshReviewerContext", () => {
         ...baseConfig,
         agents: {
           ...baseConfig.agents,
-          reviewer: "codex"
+          reviewer: "opencode"
         },
         role_mcp: {
           implementer: "disabled",

@@ -31,7 +31,7 @@ describe("finalizeAskHumanFlow", () => {
           },
           state: {
             round: 2,
-            active_agent: "codex",
+            active_agent: "opencode",
             active_role: "implementer"
           },
           activation: {
@@ -83,7 +83,7 @@ describe("finalizeAskHumanFlow", () => {
           callOrder.push("emitBubbleLifecycleEventBestEffort");
           expect(input.actorRole).toBe("implementer");
           expect(input.metadata).toMatchObject({
-            sender: "codex",
+            sender: "opencode",
             refs_count: 1,
             question_length: 24
           });
@@ -142,7 +142,7 @@ describe("finalizeAskHumanFlow", () => {
           },
           state: {
             round: 2,
-            active_agent: "codex",
+            active_agent: "opencode",
             active_role: "implementer"
           },
           activation: {
@@ -244,7 +244,7 @@ describe("finalizeAskHumanFlow", () => {
           },
           state: {
             round: 2,
-            active_agent: "codex",
+            active_agent: "opencode",
             active_role: "implementer"
           }
         } as never,

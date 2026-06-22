@@ -77,7 +77,7 @@ describe("v11 infrastructure state store — variant boundary", () => {
       ...toPersistedSnapshot(initial),
       state: "RUNNING" as const,
       round: 1,
-      active_agent: "codex" as const,
+      active_agent: "opencode" as const,
       active_role: "implementer" as const,
       active_since: startedAt,
       last_command_at: startedAt,
@@ -91,8 +91,8 @@ describe("v11 infrastructure state store — variant boundary", () => {
       round_role_history: [
         {
           round: 1,
-          implementer: "codex" as const,
-          reviewer: "claude" as const,
+          implementer: "opencode" as const,
+          reviewer: "opencode" as const,
           switched_at: startedAt
         }
       ]
@@ -106,7 +106,7 @@ describe("v11 infrastructure state store — variant boundary", () => {
 
     expect(written.state.kind).toBe("running_standard");
     if (written.state.kind === "running_standard") {
-      expect(written.state.active_agent).toBe("codex");
+      expect(written.state.active_agent).toBe("opencode");
       expect(written.state.active_role).toBe("implementer");
       expect(written.state.execution_context.active_role).toBe("implementer");
     }

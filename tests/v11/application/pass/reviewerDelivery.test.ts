@@ -37,9 +37,9 @@ function createBubbleConfig(
     commit_requires_approval: true,
     attach_launcher: "auto",
     agents: {
-      implementer: "codex",
-      reviewer: "claude",
-      meta_reviewer: "codex"
+      implementer: "opencode",
+      reviewer: "opencode",
+      meta_reviewer: "opencode"
     },
     commands: {
       test: "pnpm test",
@@ -59,8 +59,8 @@ function createEnvelope(overrides: Partial<ProtocolEnvelope> = {}): ProtocolEnve
     id: "msg_20260319_001",
     ts: "2026-03-19T12:00:00.000Z",
     bubble_id: "b_delivery_v11_01",
-    sender: "codex",
-    recipient: "claude",
+    sender: "opencode",
+    recipient: "opencode",
     type: "PASS",
     round: 1,
     payload: {
@@ -328,8 +328,8 @@ describe("executePassDelivery", () => {
         reviewerBriefArtifactPath: "/tmp/unused-brief.md",
         reviewerFocusArtifactPath: "/tmp/unused-focus.json",
         envelope: createEnvelope({
-          sender: "claude",
-          recipient: "codex"
+          sender: "opencode",
+          recipient: "opencode"
         }),
         senderRole: "reviewer",
         recipientRole: "implementer"

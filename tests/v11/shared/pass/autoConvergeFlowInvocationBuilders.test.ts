@@ -48,11 +48,11 @@ describe("autoConvergeFlowInvocationBuilders", () => {
       },
       handoff: {
         senderRole: "reviewer",
-        senderAgent: "claude",
+        senderAgent: "opencode",
         envelopeRound: 3
       } as never,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       state: {
         round_role_history: []
       } as never,

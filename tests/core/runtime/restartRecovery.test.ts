@@ -70,7 +70,7 @@ async function createTempRepo(prefix = "pairflow-restart-recovery-"): Promise<st
 beforeEach(() => {
   configureStartBubbleDependencyDefaults({
     ...startBubbleDependencyDefaults,
-    resolveCodexMcpDisableArgs: () => Promise.resolve([])
+    resolveOpencodeMcpDisableArgs: () => Promise.resolve([])
   });
 });
 
@@ -165,7 +165,7 @@ describe("restart recovery", () => {
     const metaReviewRunning = {
       ...readyForApproval,
       state: "RUNNING" as const,
-      active_agent: "codex" as const,
+      active_agent: "opencode" as const,
       active_role: "meta_reviewer" as const,
       active_since: "2026-02-23T11:01:00.000Z",
       last_command_at: "2026-02-23T11:01:00.000Z",

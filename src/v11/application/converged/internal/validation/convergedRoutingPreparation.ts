@@ -131,7 +131,7 @@ function assertConvergedActiveContext(input: {
     expectedRole === "implementer"
       ? configuredImplementer
       : configuredReviewer;
-  if (state.active_agent !== expectedAgent) {
+  if ((state.active_agent as string) !== expectedAgent) {
     throw createError({
       reasonCode:
         expectedRole === "implementer"
@@ -214,7 +214,7 @@ function assertConvergedStateFreshness(input: {
   if (
     input.expectedReviewer !== undefined
     && state.active_role === "reviewer"
-    && state.active_agent !== input.expectedReviewer
+    && (state.active_agent as string) !== input.expectedReviewer
   ) {
     throw input.createError({
       reasonCode: "AUTO_CONVERGE_STATE_STALE",

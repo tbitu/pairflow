@@ -21,8 +21,8 @@ import type {
 export const DEFAULT_WORK_MODE: WorkMode = "worktree";
 export const DEFAULT_QUALITY_MODE: QualityMode = "strict";
 export const DEFAULT_REVIEW_ARTIFACT_TYPE: ReviewArtifactType = "code";
-export const DEFAULT_IMPLEMENTER_AGENT: AgentName = "codex";
-export const DEFAULT_REVIEWER_AGENT: AgentName = "claude";
+export const DEFAULT_IMPLEMENTER_AGENT: AgentName = "opencode";
+export const DEFAULT_REVIEWER_AGENT: AgentName = "opencode";
 export const DEFAULT_ROLE_MCP_POLICY_BY_ROLE: Record<
   "implementer" | "reviewer" | "meta_reviewer",
   RoleMcpPolicy
@@ -47,7 +47,7 @@ export const DEFAULT_REVIEW_POLICY_AUTO_REWORK_MIN_SEVERITY:
   BubbleReviewAutoReworkSeverity = "P3";
 export const DEFAULT_REVIEW_POLICY_CONSECUTIVE_CLEAN_RUNS_REQUIRED = 2;
 export const DEFAULT_LOCAL_OVERLAY_ENTRIES = [
-  ".claude",
+  ".opencode",
   ".mcp.json",
   ".env.local",
   ".env.production"

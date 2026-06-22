@@ -9,7 +9,7 @@ import {
 } from "./tmuxManager.js";
 import { submitTmuxPaneInput } from "./tmuxInput.js";
 import { buildAgentCommand } from "../../../shared/command/agentCommand.js";
-import { resolveCodexMcpDisableArgs } from "../../../shared/command/agentCommand.js";
+
 import { shouldSubmitStartupPrompt } from "../../../shared/command/startupPromptGate.js";
 import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../shared/runtimeSessionWorkspaceAuthority.js";
@@ -95,13 +95,7 @@ export async function refreshReviewerContext(
   const roleMcpPolicy =
     input.bubbleConfig.role_mcp?.reviewer
     ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.reviewer;
-  const codexMcpDisableArgs =
-    input.bubbleConfig.agents.reviewer === "codex" && roleMcpPolicy === "disabled"
-      ? await resolveCodexMcpDisableArgs({
-        roleName: "reviewer",
-        bubbleId: input.bubbleId
-      })
-      : undefined;
+
   const reviewerCommand = buildAgentCommand({
     agentName: input.bubbleConfig.agents.reviewer,
     roleName: "reviewer",
@@ -112,7 +106,7 @@ export async function refreshReviewerContext(
     bubbleId: input.bubbleId,
     workspacePath,
     pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile,
-    ...(codexMcpDisableArgs !== undefined ? { codexMcpDisableArgs } : {}),
+
     ...(input.bubbleConfig.executor?.type === "ssh"
       ? {
           remoteWorkspaceAuthority: {

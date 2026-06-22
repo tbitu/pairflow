@@ -52,7 +52,7 @@ describe("state machine", () => {
     const running = applyStateTransition(preparing, {
       to: "RUNNING",
       round: 1,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "implementer",
       executionContext: buildRunningExecutionContext({
         bubbleId: "b_test_01",
@@ -64,8 +64,8 @@ describe("state machine", () => {
       activeSince: "2026-02-21T12:00:00Z",
       appendRoundRoleEntry: {
         round: 1,
-        implementer: "codex",
-        reviewer: "claude",
+        implementer: "opencode",
+        reviewer: "opencode",
         switched_at: "2026-02-21T12:00:00Z"
       },
       lastCommandAt: "2026-02-21T12:01:00Z"
@@ -73,7 +73,7 @@ describe("state machine", () => {
 
     expect(running.state).toBe("RUNNING");
     expect(running.round).toBe(1);
-    expect(running.active_agent).toBe("codex");
+    expect(running.active_agent).toBe("opencode");
     expect(running.execution_context?.handoff_id).toBe(
       "implementer:b_test_01:round:1:attempt:1"
     );
@@ -88,7 +88,7 @@ describe("state machine", () => {
     const running = applyStateTransition(preparing, {
       to: "RUNNING",
       round: 1,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "implementer",
       executionContext: buildRunningExecutionContext({
         bubbleId: "b_test_01",
@@ -106,7 +106,7 @@ describe("state machine", () => {
       lastCommandAt: "2026-02-21T12:02:00Z"
     });
 
-    expect(waitingHuman.active_agent).toBe("codex");
+    expect(waitingHuman.active_agent).toBe("opencode");
     expect(waitingHuman.active_role).toBe("implementer");
     expect(waitingHuman.active_since).toBe("2026-02-21T12:00:00Z");
     expect(waitingHuman.execution_context).toBeNull();
@@ -120,7 +120,7 @@ describe("state machine", () => {
     const running = applyStateTransition(preparing, {
       to: "RUNNING",
       round: 1,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "implementer",
       executionContext: buildRunningExecutionContext({
         bubbleId: "b_test_01",

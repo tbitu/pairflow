@@ -26,8 +26,8 @@ function buildInput(
 ): Parameters<typeof prepareRepeatCleanAutoConverge>[0] {
   return {
     round: 2,
-    reviewer: "claude",
-    implementer: "codex",
+    reviewer: "opencode",
+    implementer: "opencode",
     reviewArtifactType: "code",
     roundRoleHistory: [],
     transcript: [],
@@ -37,7 +37,7 @@ function buildInput(
     reviewerVerification: undefined,
     reviewVerificationArtifactPath: "/tmp/review-verification.json",
     bubbleId: "b_123",
-    reviewerAgent: "claude",
+    reviewerAgent: "opencode",
     generatedAt: "2026-03-19T12:00:00.000Z",
     createError,
     ...overrides
@@ -77,7 +77,7 @@ describe("prepareRepeatCleanAutoConverge", () => {
             bubble_id: "b_123",
             state: "RUNNING",
             round: 2,
-            active_agent: "claude",
+            active_agent: "opencode",
             active_since: "2026-03-19T12:00:00.000Z",
             active_role: "reviewer",
             round_role_history: [],
@@ -127,7 +127,7 @@ describe("prepareRepeatCleanAutoConverge", () => {
               bubble_id: "b_123",
               state: "RUNNING",
               round: 2,
-              active_agent: "claude",
+              active_agent: "opencode",
               active_since: "2026-03-19T12:00:00.000Z",
               active_role: "reviewer",
               round_role_history: [],
@@ -161,7 +161,7 @@ describe("prepareRepeatCleanAutoConverge", () => {
               bubble_id: "b_123",
               state: "RUNNING",
               round: 2,
-              active_agent: "claude",
+              active_agent: "opencode",
               active_since: "2026-03-19T12:00:00.000Z",
               active_role: "reviewer",
               round_role_history: [],
@@ -200,7 +200,7 @@ describe("prepareRepeatCleanAutoConverge", () => {
             bubble_id: "b_123",
             state: "RUNNING",
             round: 2,
-            active_agent: "claude",
+            active_agent: "opencode",
             active_since: "2026-03-19T12:00:00.000Z",
             active_role: "reviewer",
             round_role_history: [],
@@ -226,7 +226,7 @@ describe("prepareRepeatCleanAutoConverge", () => {
       meta: {
         bubble_id: "b_123",
         round: 2,
-        reviewer: "claude",
+        reviewer: "opencode",
         generated_at: "2026-03-19T12:00:00.000Z"
       },
       validation: {

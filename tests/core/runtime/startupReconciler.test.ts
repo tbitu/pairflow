@@ -263,7 +263,7 @@ describe("reconcileRuntimeSessions", () => {
     const transitioned = {
       ...metaRunning,
       state: "RUNNING" as const,
-      active_agent: "codex" as const,
+      active_agent: "opencode" as const,
       active_role: "meta_reviewer" as const,
       active_since: "2026-02-22T19:41:00.000Z",
       last_command_at: "2026-02-22T19:41:00.000Z",
@@ -355,7 +355,7 @@ describe("reconcileRuntimeSessions", () => {
         },
         launchBubbleSessionAck: () =>
           Promise.resolve({ status: "running" as const, sessionName: "pf-b_reconcile_04" }),
-        resolveCodexMcpDisableArgs: () => Promise.resolve([])
+        resolveOpencodeMcpDisableArgs: () => Promise.resolve([])
       }
     );
 

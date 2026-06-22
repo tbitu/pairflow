@@ -18,7 +18,6 @@ import type { ProtocolEnvelope } from "../../../shared/protocol/protocolEnvelope
 import type { DeliveryTargetReasonCode } from "../../../shared/delivery/tmuxDeliveryContract.js";
 import type { DeliveryMessageRecipientRole } from "./tmuxDeliveryMessageBuilder.js";
 
-const compatPrimaryDeliveryRoles = ["implementer", "reviewer"] as const;
 type CompatProtocolRecipient =
   | ProtocolParticipant
   | LegacyMetaReviewerProtocolRecipient;
@@ -30,24 +29,13 @@ function normalizePaneIndex(value: unknown): number | undefined {
 }
 
 function resolveCompatDeliveryTargetRoleFromRecipient(
-  recipient: CompatProtocolRecipient,
-  bubbleConfig: BubbleConfig
+  recipient: CompatProtocolRecipient
 ): DeliveryTargetRole | undefined {
   if (recipient === "human" || recipient === "orchestrator") {
     return "status";
   }
   if (isLegacyMetaReviewerProtocolRecipient(recipient)) {
     return "meta_reviewer";
-  }
-  if (isAgentName(recipient)) {
-    // Bare agent identity fallback is only allowed to recover the primary
-    // implementer/reviewer lanes. Meta-review routing must remain explicit
-    // through metadata or the retained literal "meta-reviewer" recipient.
-    return resolveUniquelyConfiguredRoleForAgent({
-      agents: bubbleConfig.agents,
-      agent: recipient,
-      roles: compatPrimaryDeliveryRoles
-    });
   }
   return undefined;
 }
@@ -57,8 +45,7 @@ export function resolveTargetPaneIndex(
   bubbleConfig: BubbleConfig
 ): number | undefined {
   const resolvedRole = resolveCompatDeliveryTargetRoleFromRecipient(
-    recipient,
-    bubbleConfig
+    recipient
   );
   if (resolvedRole === undefined) {
     return undefined;
@@ -75,8 +62,7 @@ function resolveRecipientRoleFromRecipient(
   bubbleConfig: BubbleConfig
 ): DeliveryMessageRecipientRole {
   const resolvedRole = resolveCompatDeliveryTargetRoleFromRecipient(
-    recipient,
-    bubbleConfig
+    recipient
   );
   if (resolvedRole === "meta_reviewer") {
     return "meta-reviewer";

@@ -43,7 +43,7 @@ async function createTempRepo(): Promise<string> {
 beforeEach(() => {
   configureStartBubbleDependencyDefaults({
     ...startBubbleDependencyDefaults,
-    resolveCodexMcpDisableArgs: () => Promise.resolve([])
+    resolveOpencodeMcpDisableArgs: () => Promise.resolve([])
   });
 });
 
@@ -272,7 +272,7 @@ describe("bubble orchestration loop smoke", () => {
     const loadedState = await readStateSnapshot(loopBubble.paths.statePath);
     expect(loadedState.state.state).toBe("RUNNING");
     expect(loadedState.state.active_role).toBe("meta_reviewer");
-    expect(loadedState.state.active_agent).toBe("codex");
+    expect(loadedState.state.active_agent).toBe("opencode");
 
     expect(passDeliveryCalls).toEqual([
       {
@@ -294,7 +294,7 @@ describe("bubble orchestration loop smoke", () => {
     expect(convergenceDeliveryCalls).toEqual([
       {
         bubbleId: loopBubble.bubbleId,
-        recipient: "codex",
+        recipient: "opencode",
         type: "TASK"
       }
     ]);

@@ -5,8 +5,8 @@ import { buildBubbleStateSnapshotVariant } from "../../../../src/v11/domain/stat
 import type { PersistedBubbleStateSnapshot } from "../../../../src/v11/domain/state/snapshot/persistedBubbleStateSnapshot.js";
 import { ensureReplyWaitingHumanState } from "../../../../src/v11/domain/reply/waitingHumanStateGuard.js";
 
-const implementer: AgentName = "codex";
-const reviewer: AgentName = "claude";
+const implementer: AgentName = "opencode";
+const reviewer: AgentName = "opencode";
 
 class TestReplyError extends Error {
   public constructor(message: string) {

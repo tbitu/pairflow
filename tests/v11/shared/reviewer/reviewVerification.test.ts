@@ -203,7 +203,7 @@ describe("validateReviewVerificationArtifact", () => {
       meta: {
         bubble_id: "b1",
         round: 1,
-        reviewer: "claude",
+        reviewer: "opencode",
         generated_at: "2026-03-03T09:00:00.000Z"
       },
       validation: {
@@ -351,7 +351,7 @@ describe("review verification I/O helpers", () => {
       inputRef: "review-verification-input.json",
       bubbleId: "b_review_verification_01",
       round: 3,
-      reviewer: "claude",
+      reviewer: "opencode",
       generatedAt: "2026-03-03T10:00:00.000Z"
     });
     await writeReviewVerificationArtifactAtomic(artifactPath, artifact);
@@ -366,7 +366,7 @@ describe("review verification I/O helpers", () => {
     expect(staleRound.status).toBe("invalid");
 
     const wrongReviewer = await readReviewVerificationArtifactStatus(artifactPath, {
-      expectedReviewer: "codex"
+      expectedReviewer: "opencode"
     });
     expect(wrongReviewer.status).toBe("invalid");
   });

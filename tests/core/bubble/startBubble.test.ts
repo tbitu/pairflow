@@ -308,7 +308,7 @@ function expectReviewerValidationClaimGuardrails(text: string | undefined): void
 beforeEach(() => {
   configureStartBubbleDependencyDefaults({
     ...startBubbleDependencyDefaults,
-    resolveCodexMcpDisableArgs: async () => []
+    resolveOpencodeMcpDisableArgs: async () => []
   });
 });
 
@@ -422,7 +422,7 @@ describe("startBubble", () => {
       task: "Start bubble task",
       cwd: repoPath,
       implementerModel: "gpt-5.2",
-      reviewerModel: "claude-sonnet-4-5",
+      reviewerModel: "opencode-sonnet-4-5",
       metaReviewerModel: "gpt-5.2-mini"
     });
 
@@ -456,7 +456,7 @@ describe("startBubble", () => {
           expect(bootstrapInput.localOverlay).toEqual({
             enabled: true,
             mode: "symlink",
-            entries: [".claude", ".mcp.json", ".env.local", ".env.production"]
+            entries: [".opencode", ".mcp.json", ".env.local", ".env.production"]
           });
           return Promise.resolve(
             buildWorktreeBootstrapResult({
@@ -537,7 +537,7 @@ describe("startBubble", () => {
     expect(calls).toEqual(["bootstrap", "launch"]);
     expect(result.tmuxSessionName).toBe("pf-b_start_01");
     expect(result.state.state).toBe("RUNNING");
-    expect(result.state.active_agent).toBe("codex");
+    expect(result.state.active_agent).toBe("opencode");
     expect(result.state.active_role).toBe("implementer");
     expect(result.state.round).toBe(1);
     expect(claims).toEqual([
@@ -585,7 +585,7 @@ describe("startBubble", () => {
     );
     expect(implementerCommand).toContain("exec bash -i");
     expect(reviewerCommand).toContain("exec bash -i");
-    expect(implementerCommand).toContain("codex");
+    expect(implementerCommand).toContain("opencode");
     expect(implementerCommand).toContain("--dangerously-bypass-approvals-and-sandbox");
     expect(implementerCommand).toContain("--model");
     expect(implementerCommand).toContain("gpt-5.2");
@@ -607,12 +607,12 @@ describe("startBubble", () => {
     expect(implementerCommand).toContain(
       "--handoff-id <handoff-id> --execution-id <execution-id> --summary"
     );
-    expect(reviewerCommand).toContain("claude");
+    expect(reviewerCommand).toContain("opencode");
     expect(reviewerCommand).toContain("--dangerously-skip-permissions");
     expect(reviewerCommand).toContain("--permission-mode");
     expect(reviewerCommand).toContain("bypassPermissions");
     expect(reviewerCommand).toContain("--model");
-    expect(reviewerCommand).toContain("claude-sonnet-4-5");
+    expect(reviewerCommand).toContain("opencode-sonnet-4-5");
     expect(reviewerCommand).not.toContain("Pairflow reviewer start");
     expect(reviewerCommand).not.toContain("Reviewer brief (persisted artifact `reviewer-brief.md`)");
     expect(reviewerCommand).not.toContain("Stand by first. Do not start reviewing");
@@ -632,7 +632,7 @@ describe("startBubble", () => {
     expect(reviewerCommand).not.toContain("`max_scout_candidates_per_agent=8`");
     expect(reviewerCommand).not.toContain("`max_class_expansions_per_round=2`");
     expect(reviewerCommand).not.toContain("`max_expansion_siblings_per_class=5`");
-    expect(metaReviewerCommand).toContain("codex");
+    expect(metaReviewerCommand).toContain("opencode");
     expect(metaReviewerCommand).toContain(
       "--dangerously-bypass-approvals-and-sandbox"
     );
@@ -2118,7 +2118,7 @@ describe("startBubble", () => {
             );
             return { status: "running" as const, sessionName: "pf-b_start_bootstrap_clone_authority_01" };
           },
-          resolveCodexMcpDisableArgs: async () => [],
+          resolveOpencodeMcpDisableArgs: async () => [],
           cleanupWorktreeWorkspace: async () => {
             cleanupCalled = true;
             return {
@@ -5115,7 +5115,7 @@ describe("startBubble", () => {
     await updateBubbleState(bubble.paths.statePath, (current) => ({
       ...current,
       state: "RUNNING",
-      active_agent: "codex",
+      active_agent: "opencode",
       active_role: "meta_reviewer",
       meta_review: {
         ...current.meta_review!,

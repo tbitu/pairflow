@@ -34,11 +34,11 @@ describe("runAutoConvergeFlow", () => {
         reviewVerificationArtifactPath: "/tmp/review-verification.json",
         handoff: {
           senderRole: "reviewer",
-          senderAgent: "claude",
+          senderAgent: "opencode",
           envelopeRound: 2
         },
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         roundRoleHistory: [],
         transcript: [],
         severityGateRound: 2,
@@ -118,11 +118,11 @@ describe("runAutoConvergeFlow", () => {
           reviewVerificationArtifactPath: "/tmp/review-verification.json",
           handoff: {
             senderRole: "reviewer",
-            senderAgent: "claude",
+            senderAgent: "opencode",
             envelopeRound: 2
           },
-          reviewer: "claude",
-          implementer: "codex",
+          reviewer: "opencode",
+          implementer: "opencode",
           roundRoleHistory: [],
           transcript: [],
           severityGateRound: 2,
@@ -184,11 +184,11 @@ describe("runAutoConvergeFlow", () => {
           reviewVerificationArtifactPath: "/tmp/review-verification.json",
           handoff: {
             senderRole: "reviewer",
-            senderAgent: "claude",
+            senderAgent: "opencode",
             envelopeRound: 2
           },
-          reviewer: "claude",
-          implementer: "codex",
+          reviewer: "opencode",
+          implementer: "opencode",
           roundRoleHistory: [],
           transcript: [],
           severityGateRound: 2,

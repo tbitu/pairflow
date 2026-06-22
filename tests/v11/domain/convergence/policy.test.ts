@@ -16,8 +16,8 @@ function createPassEnvelope(
     id: "msg_20260222_001",
     ts: "2026-02-22T12:00:00.000Z",
     bubble_id: "b_policy_01",
-    sender: "claude",
-    recipient: "codex",
+    sender: "opencode",
+    recipient: "opencode",
     type: "PASS",
     round: 1,
     payload: {
@@ -35,7 +35,7 @@ function createConvergenceEnvelope(
     id: "msg_20260222_002",
     ts: "2026-02-22T12:04:00.000Z",
     bubble_id: "b_policy_01",
-    sender: "claude",
+    sender: "opencode",
     recipient: "orchestrator",
     type: "CONVERGENCE",
     round: 4,
@@ -518,21 +518,21 @@ describe("validateConvergencePolicy", () => {
 
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -594,21 +594,21 @@ describe("validateConvergencePolicy", () => {
   it("requires explicit findings declaration on previous reviewer PASS", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -630,21 +630,21 @@ describe("validateConvergencePolicy", () => {
   it("emits deterministic contradiction reason when previous reviewer PASS has missing findings payload and positive summary assertion", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -672,21 +672,21 @@ describe("validateConvergencePolicy", () => {
   it("fails closed when previous reviewer PASS claim source is invalid", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -711,21 +711,21 @@ describe("validateConvergencePolicy", () => {
   it("fails closed when previous reviewer PASS declares findings_claim_state without findings_claim_source", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -759,21 +759,21 @@ describe("validateConvergencePolicy", () => {
   it("fails closed when previous reviewer PASS declares findings_claim_source without findings_claim_state", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -807,21 +807,21 @@ describe("validateConvergencePolicy", () => {
   it("fails closed when structured claim says clean but payload.findings has items", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -855,21 +855,21 @@ describe("validateConvergencePolicy", () => {
   it("fails closed when structured claim says open_findings but payload.findings is empty", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -898,21 +898,21 @@ describe("validateConvergencePolicy", () => {
   it("fails closed when previous reviewer PASS claim state is unknown", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -937,21 +937,21 @@ describe("validateConvergencePolicy", () => {
   it("flags blocking findings when previous reviewer PASS has P1", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -977,33 +977,33 @@ describe("validateConvergencePolicy", () => {
   it("allows post-gate convergence when previous reviewer PASS has P1 findings", () => {
     const result = validateConvergencePolicy({
       currentRound: 4,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         },
         {
           round: 3,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:03:00.000Z"
         },
         {
           round: 4,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:05:00.000Z"
         }
       ],
@@ -1030,33 +1030,33 @@ describe("validateConvergencePolicy", () => {
   it("emits explicit post-gate fallback diagnostic when claim state/source is derived from findings payload count", () => {
     const result = validateConvergencePolicy({
       currentRound: 4,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         },
         {
           round: 3,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:03:00.000Z"
         },
         {
           round: 4,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:05:00.000Z"
         }
       ],
@@ -1083,21 +1083,21 @@ describe("validateConvergencePolicy", () => {
   it("keeps non-document blocking on canonical P1 even when effective_priority is downgraded", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1124,21 +1124,21 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence in round 2 when previous reviewer PASS has only P2 findings", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1164,21 +1164,21 @@ describe("validateConvergencePolicy", () => {
   it("keeps convergence structured-first when summary claims findings but payload claim is clean", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1204,33 +1204,33 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence when previous reviewer PASS explicitly reports zero findings with empty findings payload", () => {
     const result = validateConvergencePolicy({
       currentRound: 4,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         },
         {
           round: 3,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:03:00.000Z"
         },
         {
           round: 4,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:05:00.000Z"
         }
       ],
@@ -1252,21 +1252,21 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence when previous reviewer PASS summary uses explicit no-findings clause with empty findings payload", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1287,21 +1287,21 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence when previous reviewer PASS summary says no remaining findings with empty findings payload", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1322,21 +1322,21 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence when previous reviewer PASS summary says no active findings with empty findings payload", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1361,21 +1361,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -1397,21 +1397,21 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence when previous reviewer PASS summary says no unresolved findings with empty findings payload", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1432,21 +1432,21 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence when previous reviewer PASS summary says findings remain: 0 with empty findings payload", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1472,21 +1472,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -1508,21 +1508,21 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence when previous reviewer PASS summary says addressed P2 findings with empty findings payload", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1543,21 +1543,21 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence when summary contains severity-only status phrasing without findings context", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1578,21 +1578,21 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence when previous reviewer PASS summary says no open severity findings remain with empty findings payload", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1618,21 +1618,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -1659,21 +1659,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -1708,21 +1708,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -1745,21 +1745,21 @@ describe("validateConvergencePolicy", () => {
     for (const summary of ["2 findings were not open.", "2 findings were never open."]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -1793,21 +1793,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -1836,21 +1836,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -1877,21 +1877,21 @@ describe("validateConvergencePolicy", () => {
   it("keeps structured-first routing for mixed no-findings and positive findings clauses with empty findings payload", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1917,16 +1917,16 @@ describe("validateConvergencePolicy", () => {
   it("uses bypass-specific minimum-round diagnostic when meta_only convergence evidence is incomplete", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       effectiveLoopMode: "meta_only",
       roundRoleHistory: [
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1942,21 +1942,21 @@ describe("validateConvergencePolicy", () => {
   it("keeps structured-first routing for comma-separated mixed clauses with empty findings payload", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],
@@ -1986,21 +1986,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -2031,21 +2031,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -2077,21 +2077,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -2125,21 +2125,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -2170,21 +2170,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -2215,21 +2215,21 @@ describe("validateConvergencePolicy", () => {
     ]) {
       const result = validateConvergencePolicy({
         currentRound: 2,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         severity_gate_round: 4,
         roundRoleHistory: [
           {
             round: 1,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T11:59:00.000Z"
           },
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-02-22T12:01:00.000Z"
           }
         ],
@@ -2256,27 +2256,27 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence in round 3 when previous reviewer PASS has only P2 findings", () => {
     const result = validateConvergencePolicy({
       currentRound: 3,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         },
         {
           round: 3,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:03:00.000Z"
         }
       ],
@@ -2303,33 +2303,33 @@ describe("validateConvergencePolicy", () => {
   it("allows convergence in round 4 when previous reviewer PASS has only P2 findings", () => {
     const result = validateConvergencePolicy({
       currentRound: 4,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         },
         {
           round: 3,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:03:00.000Z"
         },
         {
           round: 4,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:05:00.000Z"
         }
       ],
@@ -2356,39 +2356,39 @@ describe("validateConvergencePolicy", () => {
   it("accepts previous-round reviewer CONVERGENCE as a qualifying reviewer verdict", () => {
     const result = validateConvergencePolicy({
       currentRound: 5,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         },
         {
           round: 3,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:03:00.000Z"
         },
         {
           round: 4,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:05:00.000Z"
         },
         {
           round: 5,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:07:00.000Z"
         }
       ],
@@ -2406,33 +2406,33 @@ describe("validateConvergencePolicy", () => {
   it("keeps document-scope blocker criteria strict when timing/layer are missing", () => {
     const result = validateConvergencePolicy({
       currentRound: 4,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "document",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         },
         {
           round: 3,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:03:00.000Z"
         },
         {
           round: 4,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:05:00.000Z"
         }
       ],
@@ -2459,33 +2459,33 @@ describe("validateConvergencePolicy", () => {
   it("blocks convergence in document scope only for strict P1 + required-now + L1", () => {
     const result = validateConvergencePolicy({
       currentRound: 4,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "document",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         },
         {
           round: 3,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:03:00.000Z"
         },
         {
           round: 4,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:05:00.000Z"
         }
       ],
@@ -2514,33 +2514,33 @@ describe("validateConvergencePolicy", () => {
   it("does not block in document scope when effective_priority downgrades strict P1 blocker to P2", () => {
     const result = validateConvergencePolicy({
       currentRound: 4,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "document",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         },
         {
           round: 3,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:03:00.000Z"
         },
         {
           round: 4,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:05:00.000Z"
         }
       ],
@@ -2570,15 +2570,15 @@ describe("validateConvergencePolicy", () => {
   it("returns explicit round-1 guardrail error code when convergence is requested in round 1", () => {
     const result = validateConvergencePolicy({
       currentRound: 1,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         }
       ],
@@ -2599,27 +2599,27 @@ describe("validateConvergencePolicy", () => {
   it("returns explicit previous reviewer pass missing reason code", () => {
     const result = validateConvergencePolicy({
       currentRound: 3,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 4,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         },
         {
           round: 3,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:03:00.000Z"
         }
       ],
@@ -2637,21 +2637,21 @@ describe("validateConvergencePolicy", () => {
   it("rejects invalid severity_gate_round policy input", () => {
     const result = validateConvergencePolicy({
       currentRound: 2,
-      reviewer: "claude",
-      implementer: "codex",
+      reviewer: "opencode",
+      implementer: "opencode",
       reviewArtifactType: "code",
       severity_gate_round: 3,
       roundRoleHistory: [
         {
           round: 1,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T11:59:00.000Z"
         },
         {
           round: 2,
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           switched_at: "2026-02-22T12:01:00.000Z"
         }
       ],

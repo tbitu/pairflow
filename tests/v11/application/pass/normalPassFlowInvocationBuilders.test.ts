@@ -54,15 +54,15 @@ function createNormalBaseInput(
       bubbleInstanceId: "bi_1234567890_abcdef0123456789"
     },
     handoff: {
-      senderAgent: "claude",
+      senderAgent: "opencode",
       senderRole: "reviewer",
-      recipientAgent: "codex",
+      recipientAgent: "opencode",
       recipientRole: "implementer",
       envelopeRound: 2,
       nextRound: 3
     },
-    reviewer: "claude",
-    implementer: "codex",
+    reviewer: "opencode",
+    implementer: "opencode",
     state: {
       state: "RUNNING",
       round: 2

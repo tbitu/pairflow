@@ -65,7 +65,7 @@ describe("emitHumanReply", () => {
     expect(result.sequence).toBe(3);
     expect(result.envelope.type).toBe("HUMAN_REPLY");
     expect(result.envelope.sender).toBe("human");
-    expect(result.envelope.recipient).toBe("codex");
+    expect(result.envelope.recipient).toBe("opencode");
     expect(result.envelope.payload.metadata).toEqual(
       expect.objectContaining({
         [deliveryTargetRoleMetadataKey]: "implementer"
@@ -74,7 +74,7 @@ describe("emitHumanReply", () => {
 
     const state = await readStateSnapshot(bubble.paths.statePath);
     expect(state.state.state).toBe("RUNNING");
-    expect(state.state.active_agent).toBe("codex");
+    expect(state.state.active_agent).toBe("opencode");
     expect(state.state.active_role).toBe("implementer");
     expect(state.state.active_since).toBe(now.toISOString());
     expect(state.state.last_command_at).toBe(now.toISOString());

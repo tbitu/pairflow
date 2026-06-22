@@ -12,7 +12,7 @@ function createRemoteBubbleEntry(
     worktreePath: "/repo/.pairflow-worktrees/remote-smoke20",
     state: "RUNNING",
     round: 1,
-    activeAgent: "claude",
+    activeAgent: "opencode",
     activeRole: "reviewer",
     activeSince: "2026-04-19T20:34:56.846Z",
     lastCommandAt: "2026-04-19T20:34:56.846Z",
@@ -77,14 +77,14 @@ describe("bubbleFingerprint remote execution normalization", () => {
       ...createRemoteBubbleEntry({
         runtimeAvailability: "active"
       }),
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "implementer",
       activeSince: "2026-04-19T20:34:40.000Z",
       lastCommandAt: "2026-04-19T20:34:40.000Z"
     };
     const reviewer: UiBubbleListEntry = {
       ...implementer,
-      activeAgent: "claude",
+      activeAgent: "opencode",
       activeRole: "reviewer",
       activeSince: "2026-04-19T20:35:12.000Z",
       lastCommandAt: "2026-04-19T20:35:12.000Z"

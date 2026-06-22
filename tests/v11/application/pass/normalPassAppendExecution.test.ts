@@ -30,8 +30,8 @@ describe("executeNormalPassAppend", () => {
         now,
         bubbleId: "b_123",
         handoff: {
-          senderAgent: "codex",
-          recipientAgent: "claude",
+          senderAgent: "opencode",
+          recipientAgent: "opencode",
           senderRole: "implementer",
           recipientRole: "reviewer",
           envelopeRound: 2
@@ -89,8 +89,8 @@ describe("executeNormalPassAppend", () => {
         now: new Date("2026-03-19T12:00:00.000Z"),
         bubbleId: "b_123",
         handoff: {
-          senderAgent: "claude",
-          recipientAgent: "codex",
+          senderAgent: "opencode",
+          recipientAgent: "opencode",
           senderRole: "reviewer",
           recipientRole: "implementer",
           envelopeRound: 2

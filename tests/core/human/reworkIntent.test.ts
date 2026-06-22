@@ -10,15 +10,15 @@ describe("applyDeferredReworkIntent", () => {
         bubble_id: "b_rework_intent_01",
         state: "WAITING_HUMAN",
         round: 2,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_since: "2026-03-21T09:55:00.000Z",
         active_role: "implementer",
         execution_context: null,
         round_role_history: [
           {
             round: 2,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-03-21T09:55:00.000Z"
           }
         ],
@@ -40,8 +40,8 @@ describe("applyDeferredReworkIntent", () => {
           consecutive_clean_runs: 0,
         }
       }),
-      implementer: "codex",
-      reviewer: "claude",
+      implementer: "opencode",
+      reviewer: "opencode",
       watchdogTimeoutMinutes: 60,
       now: new Date("2026-03-21T10:05:00.000Z")
     });

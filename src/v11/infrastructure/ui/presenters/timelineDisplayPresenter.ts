@@ -107,7 +107,7 @@ function resolveDisplayRole(
   if (sender === "orchestrator") {
     return "system";
   }
-  if (sender.includes("review") || sender.includes("claude")) {
+  if (sender.includes("review") || sender.includes("opencode")) {
     return "reviewer";
   }
   if (entry.sender.trim().length === 0) {

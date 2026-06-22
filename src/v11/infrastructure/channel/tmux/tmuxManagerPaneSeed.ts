@@ -1,6 +1,6 @@
 import {
   confirmTmuxPaneMarkerSubmission,
-  maybeAcceptClaudeTrustPrompt,
+  maybeAcceptOpencodeTrustPrompt,
   sendAndSubmitTmuxPaneMessage,
   submitTmuxPaneInput
 } from "./tmuxInput.js";
@@ -110,7 +110,7 @@ async function sendPaneMessage(
     return;
   }
 
-  await maybeAcceptClaudeTrustPrompt(runner, targetPane).catch(() => undefined);
+  await maybeAcceptOpencodeTrustPrompt(runner, targetPane).catch(() => undefined);
   const concreteMessage = message as string;
   await sendAndSubmitTmuxPaneMessage(runner, targetPane, concreteMessage);
   const marker = resolvePairflowPaneMessageMarker(concreteMessage);
@@ -144,7 +144,7 @@ export async function seedBubbleTmuxPaneMessages(
     input.metaReviewerAgentName,
     input.metaReviewerSubmitStartupPrompt
   );
-  // When a startup prompt was submitted for an agent (e.g. Codex), the agent
+  // When a startup prompt was submitted for an agent (e.g. Opencode), the agent
   // already received its full context via the CLI argument that launched it.
   // Sending a separate bootstrap+kickoff message through tmux paste would
   // deliver semi-duplicate content as a second input, causing "double input"

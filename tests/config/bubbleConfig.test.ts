@@ -26,8 +26,8 @@ base_branch = "main"
 bubble_branch = "bubble/b_test_01"
 
 [agents]
-implementer = "codex"
-reviewer = "claude"
+implementer = "opencode"
+reviewer = "opencode"
 
 [commands]
 test = "pnpm test"
@@ -51,13 +51,13 @@ describe("bubble config schema", () => {
     expect(config.local_overlay?.enabled).toBe(true);
     expect(config.local_overlay?.mode).toBe("symlink");
     expect(config.local_overlay?.entries).toEqual([
-      ".claude",
+      ".opencode",
       ".mcp.json",
       ".env.local",
       ".env.production"
     ]);
     expect(config.doc_contract_gates.round_gate_applies_after).toBe(2);
-    expect(config.agents.meta_reviewer).toBe("codex");
+    expect(config.agents.meta_reviewer).toBe("opencode");
     expect(config.role_mcp).toEqual({
       implementer: "disabled",
       reviewer: "disabled",
@@ -112,65 +112,65 @@ observer = "enabled"
     const config = parseBubbleConfigToml(baseToml);
 
     expect(config.agents).toEqual({
-      implementer: "codex",
-      reviewer: "claude",
-      meta_reviewer: "codex"
+      implementer: "opencode",
+      reviewer: "opencode",
+      meta_reviewer: "opencode"
     });
 
     const rendered = renderBubbleConfigToml(config);
-    expect(rendered).toContain('meta_reviewer = "codex"');
+    expect(rendered).toContain('meta_reviewer = "opencode"');
   });
 
   it("roundtrips an explicit non-default meta-reviewer binding", () => {
     const config = parseBubbleConfigToml(
       baseToml.replace(
-        '[agents]\nimplementer = "codex"\nreviewer = "claude"',
-        '[agents]\nimplementer = "codex"\nreviewer = "claude"\nmeta_reviewer = "claude"'
+        '[agents]\nimplementer = "opencode"\nreviewer = "opencode"',
+        '[agents]\nimplementer = "opencode"\nreviewer = "opencode"\nmeta_reviewer = "opencode"'
       )
     );
 
     expect(config.agents).toEqual({
-      implementer: "codex",
-      reviewer: "claude",
-      meta_reviewer: "claude"
+      implementer: "opencode",
+      reviewer: "opencode",
+      meta_reviewer: "opencode"
     });
 
     const rendered = renderBubbleConfigToml(config);
-    expect(rendered).toContain('meta_reviewer = "claude"');
-    expect(parseBubbleConfigToml(rendered).agents.meta_reviewer).toBe("claude");
+    expect(rendered).toContain('meta_reviewer = "opencode"');
+    expect(parseBubbleConfigToml(rendered).agents.meta_reviewer).toBe("opencode");
   });
 
   it("roundtrips optional role-specific agent models", () => {
     const config = parseBubbleConfigToml(
       baseToml.replace(
-        '[agents]\nimplementer = "codex"\nreviewer = "claude"',
+        '[agents]\nimplementer = "opencode"\nreviewer = "opencode"',
         [
           "[agents]",
-          'implementer = "codex"',
+          'implementer = "opencode"',
           'implementer_model = "gpt-5.2"',
-          'reviewer = "claude"',
-          'reviewer_model = "claude-sonnet-4-5"',
-          'meta_reviewer = "codex"',
+          'reviewer = "opencode"',
+          'reviewer_model = "opencode-sonnet-4-5"',
+          'meta_reviewer = "opencode"',
           'meta_reviewer_model = "gpt-5.2-mini"'
         ].join("\n")
       )
     );
 
     expect(config.agents).toMatchObject({
-      implementer: "codex",
+      implementer: "opencode",
       implementer_model: "gpt-5.2",
-      reviewer: "claude",
-      reviewer_model: "claude-sonnet-4-5",
-      meta_reviewer: "codex",
+      reviewer: "opencode",
+      reviewer_model: "opencode-sonnet-4-5",
+      meta_reviewer: "opencode",
       meta_reviewer_model: "gpt-5.2-mini"
     });
 
     const rendered = renderBubbleConfigToml(config);
     expect(rendered).toContain('implementer_model = "gpt-5.2"');
-    expect(rendered).toContain('reviewer_model = "claude-sonnet-4-5"');
+    expect(rendered).toContain('reviewer_model = "opencode-sonnet-4-5"');
     expect(rendered).toContain('meta_reviewer_model = "gpt-5.2-mini"');
     expect(parseBubbleConfigToml(rendered).agents.reviewer_model).toBe(
-      "claude-sonnet-4-5"
+      "opencode-sonnet-4-5"
     );
   });
 
@@ -178,8 +178,8 @@ observer = "enabled"
     const result = validateBubbleConfig(
       parseToml(
         `${baseToml.replace(
-          '[agents]\nimplementer = "codex"\nreviewer = "claude"',
-          '[agents]\nimplementer = "codex"\nreviewer = "claude"\nmeta_reviewer = "gpt"'
+          '[agents]\nimplementer = "opencode"\nreviewer = "opencode"',
+          '[agents]\nimplementer = "opencode"\nreviewer = "opencode"\nmeta_reviewer = "gpt"'
         )}`
       )
     );
@@ -191,7 +191,7 @@ observer = "enabled"
 
     expect(result.errors).toContainEqual({
       path: "agents.meta_reviewer",
-      message: "Must be one of: codex, claude, opencode"
+      message: "Must be one of: opencode, opencode, opencode"
     });
   });
 
@@ -542,9 +542,9 @@ round_gate_applies_after = -1
       commit_requires_approval: true,
       accuracy_critical: false,
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -556,7 +556,7 @@ round_gate_applies_after = -1
       local_overlay: {
         enabled: true,
         mode: "symlink",
-        entries: [".claude"]
+        entries: [".opencode"]
       },
       doc_contract_gates: {
         round_gate_applies_after: 2,
@@ -579,9 +579,9 @@ round_gate_applies_after = -1
       bubble_branch: "bubble/b_test_01",
       severity_gate_round: 3,
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -618,9 +618,9 @@ round_gate_applies_after = -1
         meta_review_consecutive_clean_runs_required: 1,
       },
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -656,9 +656,9 @@ round_gate_applies_after = -1
         meta_review_auto_rework_min_severity: "P0"
       },
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -700,9 +700,9 @@ round_gate_applies_after = -1
           meta_review_consecutive_clean_runs_required: value
         },
         agents: {
-          implementer: "codex",
-          reviewer: "claude",
-          meta_reviewer: "codex"
+          implementer: "opencode",
+          reviewer: "opencode",
+          meta_reviewer: "opencode"
         },
         commands: {
           test: "pnpm test",
@@ -751,9 +751,9 @@ meta_review_consecutive_clean_runs_required = ${tomlValue}
       base_branch: "main",
       bubble_branch: "bubble/b_test_01",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -792,9 +792,9 @@ meta_review_consecutive_clean_runs_required = ${tomlValue}
       bubble_branch: "bubble/b_test_01",
       severity_gate_round: 4.5,
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -831,9 +831,9 @@ meta_review_consecutive_clean_runs_required = ${tomlValue}
       commit_requires_approval: true,
       attach_launcher: "auto",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -861,9 +861,9 @@ meta_review_consecutive_clean_runs_required = ${tomlValue}
       base_branch: "main",
       bubble_branch: "bubble/b_test_01",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -906,9 +906,9 @@ meta_review_consecutive_clean_runs_required = ${tomlValue}
       base_branch: "main",
       bubble_branch: "bubble/b_test_01",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1069,9 +1069,9 @@ remote = "homelab"
       max_rounds: 8,
       commit_requires_approval: true,
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1110,9 +1110,9 @@ remote = "homelab"
       commit_requires_approval: true,
       attach_launcher: "auto",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1175,9 +1175,9 @@ remote = "homelab"
       commit_requires_approval: true,
       attach_launcher: "auto",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1189,7 +1189,7 @@ remote = "homelab"
       local_overlay: {
         enabled: true,
         mode: "hardlink",
-        entries: [".claude"]
+        entries: [".opencode"]
       }
     });
 
@@ -1226,9 +1226,9 @@ remote = "homelab"
         commit_requires_approval: true,
         attach_launcher: value,
         agents: {
-          implementer: "codex",
-          reviewer: "claude",
-          meta_reviewer: "codex"
+          implementer: "opencode",
+          reviewer: "opencode",
+          meta_reviewer: "opencode"
         },
         commands: {
           test: "pnpm test",
@@ -1264,9 +1264,9 @@ remote = "homelab"
       commit_requires_approval: true,
       attach_launcher: "wezterm",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1295,8 +1295,8 @@ bubble_branch = "bubble/b_test_critical_01"
 accuracy_critical = true
 
 [agents]
-implementer = "codex"
-reviewer = "claude"
+implementer = "opencode"
+reviewer = "opencode"
 
 [commands]
 test = "pnpm test"
@@ -1325,9 +1325,9 @@ typecheck = "pnpm typecheck"
       commit_requires_approval: true,
       attach_launcher: "auto",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1381,8 +1381,8 @@ typecheck = "pnpm typecheck"
       severity_gate_round: 4,
       commit_requires_approval: true,
       agents: {
-        implementer: "codex",
-        reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1394,8 +1394,8 @@ typecheck = "pnpm typecheck"
     if (!result.ok) {
       return;
     }
-    expect(result.value.agents.implementer).toBe("codex");
-    expect(result.value.agents.reviewer).toBe("codex");
+    expect(result.value.agents.implementer).toBe("opencode");
+    expect(result.value.agents.reviewer).toBe("opencode");
   });
 
   it("renders and re-parses bubble TOML", () => {
@@ -1419,9 +1419,9 @@ typecheck = "pnpm typecheck"
       open_remote_command:
         'code --folder-uri "vscode-remote://ssh-remote+{{remote_authority}}{{remote_clone_path}}"',
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1436,7 +1436,7 @@ typecheck = "pnpm typecheck"
       local_overlay: {
         enabled: true,
         mode: "copy",
-        entries: [".claude", ".env.local"]
+        entries: [".opencode", ".env.local"]
       }
     });
 
@@ -1451,7 +1451,7 @@ typecheck = "pnpm typecheck"
       'code --folder-uri "vscode-remote://ssh-remote+{{remote_authority}}{{remote_clone_path}}"'
     );
     expect(reparsed.local_overlay?.mode).toBe("copy");
-    expect(reparsed.local_overlay?.entries).toEqual([".claude", ".env.local"]);
+    expect(reparsed.local_overlay?.entries).toEqual([".opencode", ".env.local"]);
   });
 
   it("renders and re-parses bubble TOML with self_host profile", () => {
@@ -1470,9 +1470,9 @@ typecheck = "pnpm typecheck"
       severity_gate_round: 4,
       commit_requires_approval: true,
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1487,7 +1487,7 @@ typecheck = "pnpm typecheck"
       local_overlay: {
         enabled: true,
         mode: "symlink",
-        entries: [".claude"]
+        entries: [".opencode"]
       }
     });
 
@@ -1505,8 +1505,8 @@ bubble_branch = "bubble/b_test_open_command"
 open_command = "cursor --reuse-window {{worktree_path}}"
 
 [agents]
-implementer = "codex"
-reviewer = "claude"
+implementer = "opencode"
+reviewer = "opencode"
 
 [commands]
 test = "pnpm test"
@@ -1525,8 +1525,8 @@ bubble_branch = "bubble/b_test_open_remote_command"
 open_remote_command = "code --folder-uri \\"vscode-remote://ssh-remote+{{remote_authority}}{{remote_clone_path}}\\""
 
 [agents]
-implementer = "codex"
-reviewer = "claude"
+implementer = "opencode"
+reviewer = "opencode"
 
 [commands]
 test = "pnpm test"
@@ -1546,9 +1546,9 @@ typecheck = "pnpm typecheck"
       bubble_branch: "bubble/b_test_open_command_invalid",
       open_command: "   ",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1573,9 +1573,9 @@ typecheck = "pnpm typecheck"
       bubble_branch: "bubble/b_test_open_remote_command_invalid",
       open_remote_command: "   ",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1610,9 +1610,9 @@ typecheck = "pnpm typecheck"
       commit_requires_approval: true,
       attach_launcher: "auto",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1652,9 +1652,9 @@ typecheck = "pnpm typecheck"
       commit_requires_approval: true,
       attach_launcher: "auto",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1687,9 +1687,9 @@ typecheck = "pnpm typecheck"
       severity_gate_round: 4,
       commit_requires_approval: true,
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -1763,7 +1763,7 @@ id = "b"
     expect(() =>
       parseToml(`
 [[agents]]
-name = "codex"
+name = "opencode"
 `)
     ).toThrow(/Array-of-tables/u);
   });

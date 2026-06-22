@@ -6,12 +6,12 @@ import { isOpencodePromptLine, detectOpencodeReadiness } from "../../../src/v11/
 
 describe("opencode agent integration", () => {
   describe("buildAgentCommand for opencode", () => {
-    it("includes startup prompt in the command without codex-specific flags", () => {
+    it("includes startup prompt in the command without opencode-specific flags", () => {
       const cmd = buildAgentCommand({
         agentName: "opencode",
         bubbleId: "b_opencode_01",
         worktreePath: "/tmp/worktree/opencode-test",
-        codexMcpDisableArgs: [],
+        opencodeMcpDisableArgs: [],
         startupPrompt: "Implement this task."
       });
 
@@ -26,7 +26,7 @@ describe("opencode agent integration", () => {
         agentName: "opencode",
         bubbleId: "b_opencode_02",
         worktreePath: "/tmp/worktree/opencode-test",
-        codexMcpDisableArgs: ["--strict-mcp-config", "--mcp-config", "{}"],
+        opencodeMcpDisableArgs: ["--strict-mcp-config", "--mcp-config", "{}"],
         startupPrompt: undefined
       });
 
@@ -39,7 +39,7 @@ describe("opencode agent integration", () => {
         agentName: "opencode",
         bubbleId: "b_opencode_03",
         worktreePath: "/tmp/worktree/opencode-test",
-        codexMcpDisableArgs: [],
+        opencodeMcpDisableArgs: [],
         startupPrompt: undefined
       });
 
@@ -51,7 +51,7 @@ describe("opencode agent integration", () => {
         agentName: "opencode",
         bubbleId: "b_opencode_04",
         worktreePath: "/tmp/worktree/opencode-test",
-        codexMcpDisableArgs: [],
+        opencodeMcpDisableArgs: [],
         model: "gpt-4",
         startupPrompt: undefined
       });
@@ -173,48 +173,48 @@ describe("opencode agent integration", () => {
   });
 
   describe("agent-specific behavior boundaries", () => {
-    it("opencode command must not contain claude permission flags", () => {
+    it("opencode command must not contain opencode permission flags", () => {
       const cmd = buildAgentCommand({
         agentName: "opencode",
         bubbleId: "b_boundary_01",
         worktreePath: "/tmp/worktree/test",
-        codexMcpDisableArgs: [],
+        opencodeMcpDisableArgs: [],
         startupPrompt: undefined
       });
 
       expect(cmd).not.toContain("--dangerously-skip-permissions");
     });
 
-    it("opencode command must not contain codex sandbox flags", () => {
+    it("opencode command must not contain opencode sandbox flags", () => {
       const cmd = buildAgentCommand({
         agentName: "opencode",
         bubbleId: "b_boundary_02",
         worktreePath: "/tmp/worktree/test",
-        codexMcpDisableArgs: [],
+        opencodeMcpDisableArgs: [],
         startupPrompt: undefined
       });
 
       expect(cmd).not.toContain("--dangerously-bypass-approvals-and-sandbox");
     });
 
-    it("claude command must contain its own permission flags", () => {
+    it("opencode command must contain its own permission flags", () => {
       const cmd = buildAgentCommand({
-        agentName: "claude",
+        agentName: "opencode",
         bubbleId: "b_boundary_03",
         worktreePath: "/tmp/worktree/test",
-        codexMcpDisableArgs: [],
+        opencodeMcpDisableArgs: [],
         startupPrompt: undefined
       });
 
       expect(cmd).toContain("--dangerously-skip-permissions");
     });
 
-    it("codex command must contain its own permission flags", () => {
+    it("opencode command must contain its own permission flags", () => {
       const cmd = buildAgentCommand({
-        agentName: "codex",
+        agentName: "opencode",
         bubbleId: "b_boundary_04",
         worktreePath: "/tmp/worktree/test",
-        codexMcpDisableArgs: [],
+        opencodeMcpDisableArgs: [],
         startupPrompt: undefined
       });
 

@@ -641,8 +641,8 @@ describe("emitConvergedFromWorkspace", () => {
 
     expect(deliveries.map((delivery) => delivery.recipient)).toEqual([
       "human",
-      "codex",
-      "claude"
+      "opencode",
+      "opencode"
     ]);
     expect(deliveries.map((delivery) => delivery.deliveryTargetRole)).toEqual([
       "status",
@@ -1054,7 +1054,7 @@ describe("emitConvergedFromWorkspace", () => {
               {
                 ...loaded.state,
                 state: "RUNNING",
-                active_agent: "codex",
+                active_agent: "opencode",
                 active_role: "meta_reviewer",
                 active_since: "2026-02-22T09:04:40.000Z",
                 execution_context:
@@ -1098,7 +1098,7 @@ describe("emitConvergedFromWorkspace", () => {
     expect(result.convergenceEnvelope.type).toBe("CONVERGENCE");
     expect(result.gateRoute).toBe("meta_review_running");
     expect(result.approvalRequestEnvelope.type).toBe("TASK");
-    expect(result.approvalRequestEnvelope.recipient).toBe("codex");
+    expect(result.approvalRequestEnvelope.recipient).toBe("opencode");
     expect(result.state.state).toBe("RUNNING");
     expect(result.state.last_command_at).toBe(now.toISOString());
 

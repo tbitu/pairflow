@@ -66,7 +66,7 @@ function createLoadedRunningState(): LoadedStateSnapshot {
     bubble_id: "b_meta_gate_finalize_threshold_01",
     state: "RUNNING",
     round: 1,
-    active_agent: "codex",
+    active_agent: "opencode",
     active_since: "2026-04-22T10:00:00.000Z",
     active_role: "meta_reviewer",
     execution_context: {
@@ -82,8 +82,8 @@ function createLoadedRunningState(): LoadedStateSnapshot {
     round_role_history: [
       {
         round: 1,
-        implementer: "claude",
-        reviewer: "codex",
+        implementer: "opencode",
+        reviewer: "opencode",
         switched_at: "2026-04-22T10:00:00.000Z"
       }
     ],
@@ -383,9 +383,9 @@ async function createCleanFinalizeInputFixture(input?: {
           review_artifact_type: input?.reviewArtifactType ?? "code",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -496,9 +496,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -911,9 +911,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1065,9 +1065,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1131,9 +1131,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1207,9 +1207,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1365,9 +1365,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1425,9 +1425,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           commands: {
             test: "pnpm test",
@@ -1495,9 +1495,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1565,9 +1565,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1627,9 +1627,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1700,9 +1700,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1759,9 +1759,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1818,9 +1818,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1906,9 +1906,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -1992,9 +1992,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2081,9 +2081,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2144,9 +2144,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2225,9 +2225,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2308,9 +2308,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2387,9 +2387,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2469,9 +2469,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2542,9 +2542,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2622,9 +2622,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
           pairflow_command_profile: "external",
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2701,9 +2701,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2757,9 +2757,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2796,7 +2796,7 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
     expect(result.gateEnvelope.type).toBe("APPROVAL_DECISION");
     expect(approvalDecisionPayload(result.gateEnvelope).metadata).toMatchObject({
       actor: "meta-reviewer",
-      actor_agent: "claude",
+      actor_agent: "opencode",
       recommendation: "rework"
     });
   });
@@ -2835,9 +2835,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2912,9 +2912,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -2967,9 +2967,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -3025,9 +3025,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -3102,9 +3102,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -3166,9 +3166,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -3225,9 +3225,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",
@@ -3288,9 +3288,9 @@ describe("runCurrentRunMetaReviewGateFinalization", () => {
         bubbleConfig: {
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "claude",
-            reviewer: "codex",
-            meta_reviewer: "codex"
+            implementer: "opencode",
+            reviewer: "opencode",
+            meta_reviewer: "opencode"
           },
           review_policy: {
             review_loop_mode: "full",

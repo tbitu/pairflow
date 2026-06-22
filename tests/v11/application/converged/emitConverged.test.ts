@@ -118,7 +118,7 @@ describe("emitConvergedFromWorkspaceCommandOrchestration", () => {
     expect(v11).toEqual(legacy);
     expect(v11.convergenceEnvelopeType).toBe("CONVERGENCE");
     expect(v11.approvalRequestEnvelopeType).toBe("TASK");
-    expect(v11.approvalRequestRecipient).toBe("codex");
+    expect(v11.approvalRequestRecipient).toBe("opencode");
     expect(v11.approvalRequestSender).toBe("orchestrator");
     expect(v11.gateRoute).toBe("meta_review_running");
     expect(v11.state).toBe("RUNNING");
@@ -143,7 +143,7 @@ describe("emitConvergedFromWorkspaceCommandOrchestration", () => {
     expect(v11).toEqual(legacy);
     expect(v11.convergenceEnvelopeType).toBe("CONVERGENCE");
     expect(v11.approvalRequestEnvelopeType).toBe("TASK");
-    expect(v11.approvalRequestRecipient).toBe("codex");
+    expect(v11.approvalRequestRecipient).toBe("opencode");
     expect(v11.approvalRequestSender).toBe("orchestrator");
     expect(v11.gateRoute).toBe("meta_review_running");
     expect(v11.state).toBe("RUNNING");

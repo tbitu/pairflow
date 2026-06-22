@@ -101,7 +101,7 @@ describe("parallel bubbles soak", () => {
         expect(state.state.state).toBe("RUNNING");
         expect(state.state.round).toBe(2);
         expect(state.state.active_role).toBe("reviewer");
-        expect(state.state.active_agent).toBe("claude");
+        expect(state.state.active_agent).toBe("opencode");
 
         expect(transcript.map((entry) => entry.type)).toEqual([
           "TASK",

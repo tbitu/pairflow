@@ -8,11 +8,11 @@ async function notifyMetaReviewer(input: {
   bubbleId: string;
   round: number;
   targetPane: string;
-  metaReviewerAgent?: "codex" | "claude";
+  metaReviewerAgent?: "opencode" | "opencode";
 }, dependencies?: Parameters<typeof notifyMetaReviewerSubmissionRequest>[1]) {
   return await notifyMetaReviewerSubmissionRequest({
     ...input,
-    metaReviewerAgent: input.metaReviewerAgent ?? "codex"
+    metaReviewerAgent: input.metaReviewerAgent ?? "opencode"
   }, dependencies);
 }
 
@@ -198,7 +198,7 @@ describe("metaReviewGateNotify", () => {
     const round = 5;
     const targetPane = "pf-b_meta_review_notify_pane_exited:0.3";
     const runTmux = vi.fn(async () => ({
-      stdout: "claude exited (code 1). Dropping to interactive shell.",
+      stdout: "opencode exited (code 1). Dropping to interactive shell.",
       stderr: "",
       exitCode: 0
     }));
@@ -209,7 +209,7 @@ describe("metaReviewGateNotify", () => {
       bubbleId,
       round,
       targetPane,
-      metaReviewerAgent: "claude"
+      metaReviewerAgent: "opencode"
     }, {
       runtime: {
         tmux: {
@@ -225,7 +225,7 @@ describe("metaReviewGateNotify", () => {
     await expect(resultPromise).resolves.toEqual({
       status: "failed",
       reasonCode: "META_REVIEWER_PANE_EXITED",
-      message: "meta-reviewer pane fell back to interactive shell after claude exit."
+      message: "meta-reviewer pane fell back to interactive shell after opencode exit."
     });
     expect(sendSubmissionRequestMessage).toHaveBeenCalledTimes(1);
     expect(submitPaneInput).not.toHaveBeenCalled();

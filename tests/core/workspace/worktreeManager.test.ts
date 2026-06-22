@@ -200,8 +200,8 @@ describe("bootstrapWorktreeWorkspace", () => {
   it("syncs default local overlay entries as symlinks when sources exist", async () => {
     const repoPath = await createGitRepo();
     const worktreePath = await createWorktreePath("b_overlay_default");
-    await mkdir(join(repoPath, ".claude"), { recursive: true });
-    await writeFile(join(repoPath, ".claude", "settings.json"), "{\"ok\":true}\n", "utf8");
+    await mkdir(join(repoPath, ".opencode"), { recursive: true });
+    await writeFile(join(repoPath, ".opencode", "settings.json"), "{\"ok\":true}\n", "utf8");
     await writeFile(join(repoPath, ".env.local"), "A=1\n", "utf8");
 
     await bootstrapWorktreeWorkspace({
@@ -212,10 +212,10 @@ describe("bootstrapWorktreeWorkspace", () => {
       workspaceKind: "worktree"
     });
 
-    const claudeStats = await lstat(join(worktreePath, ".claude"));
-    expect(claudeStats.isSymbolicLink()).toBe(true);
-    expect(await readlink(join(worktreePath, ".claude"))).toBe(
-      join(repoPath, ".claude")
+    const opencodeStats = await lstat(join(worktreePath, ".opencode"));
+    expect(opencodeStats.isSymbolicLink()).toBe(true);
+    expect(await readlink(join(worktreePath, ".opencode"))).toBe(
+      join(repoPath, ".opencode")
     );
 
     const envStats = await lstat(join(worktreePath, ".env.local"));

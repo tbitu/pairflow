@@ -168,7 +168,7 @@ import {
 } from "./commands/plan/watch.js";
 import { isMainCliEntrypoint } from "./isMainCliEntrypoint.js";
 import type { ActorEmitResult } from "../v11/application/actorProtocol/emitActorProtocol.js";
-import { postEmitInterruptCodexPane, resolveSessionsPath } from "../v11/infrastructure/channel/tmux/postEmitInterruption.js";
+import { postEmitInterruptOpencodePane, resolveSessionsPath } from "../v11/infrastructure/channel/tmux/postEmitInterruption.js";
 
 async function handlePassCommand(args: string[]): Promise<number> {
   const result = await runPassCommand(args);
@@ -283,7 +283,7 @@ async function handleAgentEmitCommand(args: string[]): Promise<number> {
 
   writeAgentEmitResult(result);
 
-  // Post-emit interruption: interrupt the calling codex process to prevent
+  // Post-emit interruption: interrupt the calling opencode process to prevent
   // concurrent workers. Best-effort — never throws on failure.
   // _meta is intentionally optional on all ActorEmitResult variants so callers
   // can read it uniformly without branching on result.kind.
@@ -294,7 +294,7 @@ async function handleAgentEmitCommand(args: string[]): Promise<number> {
       // _meta fields are always populated together by emitActorProtocolFromWorkspace.
       // Use nullish coalescing to default to "implementer" if originatingRole is missing
       // (e.g., pre-existing emit results without this field).
-      await postEmitInterruptCodexPane({
+      await postEmitInterruptOpencodePane({
         sessionsPath,
         bubbleId: bubbleContext.bubbleId,
         originatingRole: bubbleContext.originatingRole ?? "implementer",

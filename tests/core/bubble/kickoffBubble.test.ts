@@ -50,7 +50,7 @@ async function setIdeationRunningRoundZero(statePath: string): Promise<void> {
       state: "RUNNING",
       round: 0,
       execution_context: null,
-      active_agent: "codex",
+      active_agent: "opencode",
       active_role: "implementer",
       active_since: "2026-03-15T12:00:00.000Z",
       last_command_at: "2026-03-15T12:00:00.000Z",

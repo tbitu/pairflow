@@ -9,14 +9,14 @@ function createState(partial: Partial<PersistedBubbleStateSnapshot>): PersistedB
     bubble_id: "b_watchdog_01",
     state: "RUNNING",
     round: 1,
-    active_agent: "codex",
+    active_agent: "opencode",
     active_since: "2026-02-22T12:00:00.000Z",
     active_role: "implementer",
     round_role_history: [
       {
         round: 1,
-        implementer: "codex",
-        reviewer: "claude",
+        implementer: "opencode",
+        reviewer: "opencode",
         switched_at: "2026-02-22T12:00:00.000Z"
       }
     ],
@@ -137,9 +137,9 @@ describe("computeWatchdogStatus", () => {
     expect(metaRunning.monitored).toBe(true);
     expect(metaRunningRecovery.monitored).toBe(true);
     expect(humanGate.monitored).toBe(false);
-    expect(metaRunning.monitoredAgent).toBe("codex");
+    expect(metaRunning.monitoredAgent).toBe("opencode");
     expect(metaRunningRecovery.monitoredAgent).toBeNull();
-    expect(humanGate.monitoredAgent).toBe("codex");
+    expect(humanGate.monitoredAgent).toBe("opencode");
     expect(metaRunning.referenceTimestamp).toBe("2026-02-22T12:00:00.000Z");
     expect(metaRunning.deadlineTimestamp).toBe("2026-02-22T12:05:00.000Z");
     expect(metaRunning.remainingSeconds).toBe(60);
@@ -172,7 +172,7 @@ describe("computeWatchdogStatus", () => {
     );
 
     expect(status.monitored).toBe(true);
-    expect(status.monitoredAgent).toBe("codex");
+    expect(status.monitoredAgent).toBe("opencode");
     expect(status.referenceTimestamp).toBe("2026-02-22T12:05:00.000Z");
     expect(status.deadlineTimestamp).toBe("2026-02-22T12:10:00.000Z");
     expect(status.remainingSeconds).toBe(120);
@@ -249,7 +249,7 @@ describe("computeWatchdogStatus", () => {
     const status = computeWatchdogStatus(
       createState({
         state: "RUNNING",
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "meta_reviewer",
         active_since: "2026-02-22T12:04:30.000Z",
         last_command_at: "2026-02-22T12:04:45.000Z",

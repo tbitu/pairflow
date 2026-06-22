@@ -35,7 +35,7 @@ async function createTempRepo(): Promise<string> {
 
 async function writeMetaReviewRunningState(input: {
   statePath: string;
-  activeAgent: "codex" | "claude";
+  activeAgent: "opencode" | "opencode";
   activeRole: "meta_reviewer";
   round?: number;
   nowIso: string;
@@ -116,7 +116,7 @@ async function appendReviewerSnapshot(input: {
     now: new Date(input.nowIso),
     envelope: {
       bubble_id: input.bubble.bubbleId,
-      sender: "claude",
+      sender: "opencode",
       recipient: "orchestrator",
       type: "CONVERGENCE",
       round: input.round ?? 1,
@@ -207,7 +207,7 @@ describe("v11 meta-review submit contract", () => {
     });
     await writeMetaReviewRunningState({
       statePath: bubble.paths.statePath,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "meta_reviewer",
       nowIso: "2026-03-24T10:31:00.000Z"
     });
@@ -252,7 +252,7 @@ describe("v11 meta-review submit contract", () => {
     });
     await writeMetaReviewRunningState({
       statePath: bubble.paths.statePath,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "meta_reviewer",
       nowIso: "2026-03-24T10:32:00.000Z"
     });
@@ -310,7 +310,7 @@ describe("v11 meta-review submit contract", () => {
     });
     await writeMetaReviewRunningState({
       statePath: bubble.paths.statePath,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "meta_reviewer",
       nowIso: "2026-03-24T10:32:05.000Z"
     });
@@ -420,7 +420,7 @@ describe("v11 meta-review submit contract", () => {
     }
     expect(last.payload.metadata).toMatchObject({
       actor: "meta-reviewer",
-      actor_agent: "codex",
+      actor_agent: "opencode",
       delivery_target_role: "status",
       latest_recommendation: "approve",
       meta_review_gate_route: "human_gate_approve"
@@ -444,7 +444,7 @@ describe("v11 meta-review submit contract", () => {
     });
     await writeMetaReviewRunningState({
       statePath: bubble.paths.statePath,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "meta_reviewer",
       nowIso: "2026-03-24T10:32:08.000Z"
     });
@@ -523,7 +523,7 @@ describe("v11 meta-review submit contract", () => {
     });
     await writeMetaReviewRunningState({
       statePath: bubble.paths.statePath,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "meta_reviewer",
       nowIso: "2026-03-24T10:32:10.000Z"
     });
@@ -584,7 +584,7 @@ describe("v11 meta-review submit contract", () => {
     });
     await writeMetaReviewRunningState({
       statePath: bubble.paths.statePath,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "meta_reviewer",
       nowIso: "2026-03-24T10:32:15.000Z"
     });
@@ -645,7 +645,7 @@ describe("v11 meta-review submit contract", () => {
     }
     expect(last.payload.metadata).toStrictEqual({
       actor: "meta-reviewer",
-      actor_agent: "codex",
+      actor_agent: "opencode",
       delivery_target_role: "status",
       consecutive_clean_runs: 0,
       latest_recommendation: "inconclusive",
@@ -672,7 +672,7 @@ describe("v11 meta-review submit contract", () => {
     });
     await writeMetaReviewRunningState({
       statePath: bubble.paths.statePath,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "meta_reviewer",
       nowIso: "2026-03-24T10:32:30.000Z"
     });
@@ -724,7 +724,7 @@ describe("v11 meta-review submit contract", () => {
     });
     await writeMetaReviewRunningState({
       statePath: bubble.paths.statePath,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "meta_reviewer",
       nowIso: "2026-03-24T10:33:00.000Z"
     });
@@ -744,7 +744,7 @@ describe("v11 meta-review submit contract", () => {
       bubble.paths.statePath,
       {
         ...original.state,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "meta_reviewer",
         active_since: "2026-03-24T10:33:30.000Z",
         last_command_at: "2026-03-24T10:33:30.000Z",
@@ -798,7 +798,7 @@ describe("v11 meta-review submit contract", () => {
     });
     await writeMetaReviewRunningState({
       statePath: bubble.paths.statePath,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "meta_reviewer",
       nowIso: "2026-03-24T10:34:00.000Z"
     });

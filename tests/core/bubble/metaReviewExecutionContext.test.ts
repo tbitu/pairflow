@@ -15,7 +15,7 @@ function createMetaReviewRunningState(
     bubble_id: "b_meta_execctx_test_01",
     state: "RUNNING",
     round: 2,
-    active_agent: "codex",
+    active_agent: "opencode",
     active_since: "2026-03-08T10:00:00.000Z",
     active_role: "meta_reviewer",
     execution_context: metaReviewExecutionContextToRunningContext(

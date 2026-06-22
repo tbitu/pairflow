@@ -207,8 +207,8 @@ function buildLaunchBubbleSessionRuntimeConfig(
     tmuxPaneSeparators: 4,
     metaReviewerCommand: input.metaReviewerCommand ?? input.reviewerCommand,
     statusPaneLabel: input.statusPaneLabel ?? buildStatusPaneLabel(input.bubbleId),
-    implementerPaneLabel: input.implementerPaneLabel ?? "[codex/implementer]",
-    reviewerPaneLabel: input.reviewerPaneLabel ?? "[claude/reviewer]",
+    implementerPaneLabel: input.implementerPaneLabel ?? "[opencode/implementer]",
+    reviewerPaneLabel: input.reviewerPaneLabel ?? "[opencode/reviewer]",
     metaReviewerPaneLabel:
       input.metaReviewerPaneLabel ?? "[meta-reviewer]",
     placeholderCommand: buildLaunchPanePlaceholderCommand()

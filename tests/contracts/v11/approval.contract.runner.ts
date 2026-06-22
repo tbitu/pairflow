@@ -202,7 +202,7 @@ async function seedReadyForHumanApprovalState(input: {
         metadata: {
           [deliveryTargetRoleMetadataKey]: "status",
           actor: "meta-reviewer",
-          actor_agent: "codex",
+          actor_agent: "opencode",
           latest_recommendation: "approve"
         }
       },

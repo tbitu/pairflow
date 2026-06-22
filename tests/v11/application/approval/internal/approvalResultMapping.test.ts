@@ -16,8 +16,8 @@ describe("approvalResultMapping", () => {
       } as never,
       decision: "approve",
       nowIso: "2026-03-19T22:00:00.000Z",
-      implementer: "codex",
-      reviewer: "claude",
+      implementer: "opencode",
+      reviewer: "opencode",
       watchdogTimeoutMinutes: 60,
       applyStateTransition: ((state: unknown, transition: unknown) => {
         transitions.push(transition);
@@ -83,8 +83,8 @@ describe("approvalResultMapping", () => {
       } as never,
       decision: "rework",
       nowIso: "2026-03-19T22:00:00.000Z",
-      implementer: "codex",
-      reviewer: "claude",
+      implementer: "opencode",
+      reviewer: "opencode",
       watchdogTimeoutMinutes: 60,
       applyStateTransition: ((state: Record<string, unknown>, transition: unknown) => {
         transitions.push(transition);
@@ -109,7 +109,7 @@ describe("approvalResultMapping", () => {
     expect(transitions[0]).toMatchObject({
       to: "RUNNING",
       round: 3,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "implementer",
       executionContext: {
         active_role: "implementer",
@@ -124,8 +124,8 @@ describe("approvalResultMapping", () => {
       lastCommandAt: "2026-03-19T22:00:00.000Z",
       appendRoundRoleEntry: {
         round: 3,
-        implementer: "codex",
-        reviewer: "claude",
+        implementer: "opencode",
+        reviewer: "opencode",
         switched_at: "2026-03-19T22:00:00.000Z"
       }
     });
@@ -151,16 +151,16 @@ describe("approvalResultMapping", () => {
         round_role_history: [
           {
             round: 3,
-            implementer: "codex",
-            reviewer: "claude",
+            implementer: "opencode",
+            reviewer: "opencode",
             switched_at: "2026-03-19T21:59:00.000Z"
           }
         ]
       } as never,
       decision: "rework",
       nowIso: "2026-03-19T22:00:00.000Z",
-      implementer: "codex",
-      reviewer: "claude",
+      implementer: "opencode",
+      reviewer: "opencode",
       watchdogTimeoutMinutes: 60,
       applyStateTransition: ((state: Record<string, unknown>, transition: Record<string, unknown>) => {
         transitions.push(transition);

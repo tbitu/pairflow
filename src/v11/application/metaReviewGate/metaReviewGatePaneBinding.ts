@@ -18,7 +18,7 @@ import {
 import {
   resolveRuntimeSessionWorkspaceAuthority
 } from "../../shared/runtimeSessionWorkspaceAuthority.js";
-import { resolveCodexMcpDisableArgs } from "../../shared/command/agentCommand.js";
+
 import { buildMetaReviewGateRunPrompt } from "./internal/prompts/metaReviewGatePrompt.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../config/defaults.js";
 
@@ -123,13 +123,7 @@ async function buildMetaReviewerCommand(input: {
   const roleMcpPolicy =
     input.metaReviewerMcpPolicy
     ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer;
-  const codexMcpDisableArgs =
-    input.metaReviewerAgent === "codex" && roleMcpPolicy === "disabled"
-      ? await resolveCodexMcpDisableArgs({
-        roleName: "meta_reviewer",
-        bubbleId: input.bubbleId
-      })
-      : undefined;
+
 
   return input.buildAgentCommand({
     agentName: input.metaReviewerAgent,
@@ -138,7 +132,7 @@ async function buildMetaReviewerCommand(input: {
     bubbleId: input.bubbleId,
     workspacePath: input.workspacePath,
     pairflowCommandProfile: input.pairflowCommandProfile,
-    ...(codexMcpDisableArgs !== undefined ? { codexMcpDisableArgs } : {}),
+
     startupPrompt: buildMetaReviewGateRunPrompt({
       bubbleId: input.bubbleId,
       round: input.round,

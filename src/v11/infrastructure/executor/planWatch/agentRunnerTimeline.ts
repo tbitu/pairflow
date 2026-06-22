@@ -1,14 +1,14 @@
 import type { StructuredAgentRunnerOutput } from "../../../shared/planWatchRunner/agentRunnerBridgeContract.js";
-import type { CodexJsonEvent } from "./codex/codexAgentRunnerStream.js";
-import type { CodexTimelineRow } from "./codex/codexAgentRunnerTimeline.js";
-import { normalizeCodexTimeline } from "./codex/codexAgentRunnerTimeline.js";
+import type { OpencodeJsonEvent } from "./opencode/opencodeAgentRunnerStream.js";
+import type { OpencodeTimelineRow } from "./opencode/opencodeAgentRunnerTimeline.js";
+import { normalizeOpencodeTimeline } from "./opencode/opencodeAgentRunnerTimeline.js";
 
-export type AgentRunnerTimelineRow = CodexTimelineRow;
+export type AgentRunnerTimelineRow = OpencodeTimelineRow;
 
 export function normalizeAgentRunnerTimeline(input: {
-  events: readonly CodexJsonEvent[];
+  events: readonly OpencodeJsonEvent[];
   finalOutput: StructuredAgentRunnerOutput | null;
   completedAt: string;
 }): readonly AgentRunnerTimelineRow[] {
-  return normalizeCodexTimeline(input);
+  return normalizeOpencodeTimeline(input);
 }

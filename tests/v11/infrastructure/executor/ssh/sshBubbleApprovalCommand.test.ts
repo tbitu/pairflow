@@ -352,7 +352,7 @@ describe("sshBubbleApprovalCommand", () => {
               bubble_id: "b_remote_rework_immediate_01",
               state: "RUNNING",
               round: 4,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_since: "2026-04-17T09:09:00.000Z",
               active_role: "implementer",
               execution_context: buildRunningExecutionContext({
@@ -1011,7 +1011,7 @@ describe("sshBubbleApprovalCommand", () => {
               bubble_id: "b_remote_rework_message_mismatch_01",
               state: "RUNNING",
               round: 4,
-              active_agent: "codex",
+              active_agent: "opencode",
               active_since: "2026-04-17T09:09:00.000Z",
               active_role: "implementer",
               execution_context: buildRunningExecutionContext({

@@ -8,14 +8,14 @@ import type {
 
 export const CODEX_RUNNER_ARTIFACT_SCHEMA_VERSION = 1;
 
-export interface PrepareCodexRunnerArtifactsInput {
+export interface PrepareOpencodeRunnerArtifactsInput {
   payload: AgentRunnerContinuationPayload;
   startedAt: string;
   mode: string;
 }
 
-export async function prepareCodexRunnerArtifacts(
-  input: PrepareCodexRunnerArtifactsInput
+export async function prepareOpencodeRunnerArtifacts(
+  input: PrepareOpencodeRunnerArtifactsInput
 ): Promise<AgentRunnerArtifactFiles> {
   const root = join(
     input.payload.repo_path,
@@ -126,9 +126,9 @@ async function claimArtifactDir(input: {
       throw error;
     }
   }
-  throw new CodexRunnerArtifactError(
+  throw new OpencodeRunnerArtifactError(
     "PLAN_WATCH_RUNNER_FILE_IO_FAILED",
-    `Could not claim Codex runner artifact directory; context root=${input.root}`
+    `Could not claim Opencode runner artifact directory; context root=${input.root}`
   );
 }
 
@@ -178,13 +178,13 @@ function isAlreadyExistsError(error: unknown): boolean {
   );
 }
 
-export class CodexRunnerArtifactError extends Error {
+export class OpencodeRunnerArtifactError extends Error {
   public constructor(
     public readonly reasonCode: "PLAN_WATCH_RUNNER_FILE_IO_FAILED",
     message: string
   ) {
     super(message);
-    this.name = "CodexRunnerArtifactError";
+    this.name = "OpencodeRunnerArtifactError";
   }
 }
 

@@ -69,7 +69,7 @@ async function maybeExitTmuxCopyMode(input: {
 /**
  * Send a message to a tmux pane and submit it via Enter.
  *
- * Verified against a real Claude Code instance: the Enter MUST arrive as a
+ * Verified against a real Opencode Code instance: the Enter MUST arrive as a
  * separate tmux `send-keys` command with a brief gap after the text.  Embedding
  * CR/LF in the literal text (`-l "text\r"` or `"text\n"`) does NOT trigger
  * submit in ink-based TUIs — they treat in-band control chars as newlines
@@ -104,7 +104,7 @@ export async function sendAndSubmitTmuxPaneMessage(
 
   // Brief gap lets the TUI process and render the pasted text before receiving
   // the Enter key as a distinct input event. The base delay of 500ms was verified
-  // against Claude Code v2.1.50 with messages up to ~550 chars. For longer merged
+  // against Opencode Code v2.1.50 with messages up to ~550 chars. For longer merged
   // payloads (e.g., bootstrap + kickoff combined in tmuxManagerPaneSeed.ts), the
   // delay scales proportionally so that a 2000-char message gets ~1600ms, preventing
   // the TUI from receiving Enter before it finishes processing all pasted characters.
@@ -146,27 +146,19 @@ function findLastIndex(arr: string[], predicate: (item: string) => boolean): num
 }
 
 function isAgentPromptLine(line: string): boolean {
-  // Some terminal layouts prefix prompt lines with pane border glyphs
-  // (for example `│ ❯`). Treat those as prompt lines too.
-  return /^\s*(?:[|│┃]\s*)*[>❯]/u.test(line);
+  // Traditional prompts use > or ❯ (possibly prefixed by pane borders).
+  // Opencode uses a box-drawing character ┃ to denote the input region.
+  return /^\s*(?:[|│┃]\s*)*[>❯]/.test(line) || /^\s*┃\s*/.test(line);
 }
 
-
 /**
- * Detect whether a line looks like an opencode TUI prompt.
+ * Detect whether a line looks like an opencode TUI footer/prompt.
  *
- * Currently returns `false` because opencode's exact prompt character is not yet
- * reliably identified across versions.  When the pattern becomes known (for example
- * a dedicated Unicode arrow or ASCII symbol), replace the body with a regex match
- * and document the exact pattern used.
- *
- * @returns {false} Always returns false — this is an intentional placeholder until a real
- *                  opencode prompt character regex is identified in a future version.
- * @see https://github.com/opencode-ai/opencode for upstream prompt changes.
+ * Opencode's exact prompt character is replaced by an input box footer
+ * UI. We match against common persistent footer text elements.
  */
-export function isOpencodePromptLine(): boolean {
-  // TODO: Replace with an opencode-specific prompt character regex when available.
-  return false;
+export function isOpencodePromptLine(line: string): boolean {
+  return line.includes("Ask anything...") || line.includes("ctrl+p commands");
 }
 
 /**
@@ -183,7 +175,7 @@ export interface DetectOpencodeReadinessOptions {
 /**
  * Opencode readiness detection via timeout sentinel.
  *
- * Unlike codex (which shows `[pairflow]` markers) and claude (whose prompt-line
+ * Unlike opencode (which shows `[pairflow]` markers) and opencode (whose prompt-line
  * pattern is detectable), opencode does not currently expose a reliable visual
  * indicator that can be matched in tmux pane captures.  This function polls for an
  * `isOpencodePromptLine` match within the configured timeout, then falls back to a
@@ -212,8 +204,12 @@ export async function detectOpencodeReadiness(
       allowFailure: true
     });
 
-    if (capture.exitCode === 0 && isOpencodePromptLine()) {
-      return true;
+    if (capture.exitCode === 0) {
+      const lines = capture.stdout.split("\n");
+      const isReady = lines.some((line) => isOpencodePromptLine(line));
+      if (isReady) {
+        return true;
+      }
     }
 
     // Brief pause between polls to avoid excessive tmux queries.
@@ -318,7 +314,7 @@ export async function confirmTmuxPaneMarkerSubmission(
   return false;
 }
 
-export async function maybeAcceptClaudeTrustPrompt(
+export async function maybeAcceptOpencodeTrustPrompt(
   runner: TmuxRunner,
   targetPane: string
 ): Promise<boolean> {
@@ -333,18 +329,18 @@ export async function maybeAcceptClaudeTrustPrompt(
     }
 
     const normalized = capture.stdout.toLowerCase();
-    const looksLikeClaudeFolderTrustPrompt =
+    const looksLikeOpencodeFolderTrustPrompt =
       normalized.includes("security guide") &&
       normalized.includes("yes, i trust this folder");
-    const looksLikeClaudeBypassPermissionsPrompt =
+    const looksLikeOpencodeBypassPermissionsPrompt =
       normalized.includes("bypass permissions mode") &&
       normalized.includes("yes, i accept");
-    const looksLikeCodexTrustPrompt =
+    const looksLikeOpencodeTrustPrompt =
       normalized.includes("do you trust the contents of this directory") &&
       normalized.includes("1. yes, continue");
 
-    if (looksLikeClaudeFolderTrustPrompt) {
-      // Claude's folder-trust prompt already highlights the "Yes" option.
+    if (looksLikeOpencodeFolderTrustPrompt) {
+      // Opencode's folder-trust prompt already highlights the "Yes" option.
       // Confirming requires a bare Enter, not typing "1".
       await submitTmuxPaneInput(runner, targetPane);
       accepted = true;
@@ -352,14 +348,14 @@ export async function maybeAcceptClaudeTrustPrompt(
       continue;
     }
 
-    if (looksLikeClaudeBypassPermissionsPrompt) {
+    if (looksLikeOpencodeBypassPermissionsPrompt) {
       await sendAndSubmitTmuxPaneMessage(runner, targetPane, "2");
       accepted = true;
       await sleep(250);
       continue;
     }
 
-    if (looksLikeCodexTrustPrompt) {
+    if (looksLikeOpencodeTrustPrompt) {
       await sendAndSubmitTmuxPaneMessage(runner, targetPane, "1");
       accepted = true;
       await sleep(250);

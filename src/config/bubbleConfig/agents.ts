@@ -44,7 +44,7 @@ export function validateBubbleAgents(
   if (implementer !== undefined && !isAgentName(implementer)) {
     errors.push({
       path: "agents.implementer",
-      message: "Must be one of: codex, claude, opencode"
+      message: "Must be one of: opencode, opencode, opencode"
     });
   }
 
@@ -54,7 +54,7 @@ export function validateBubbleAgents(
   if (reviewer !== undefined && !isAgentName(reviewer)) {
     errors.push({
       path: "agents.reviewer",
-      message: "Must be one of: codex, claude, opencode"
+      message: "Must be one of: opencode, opencode, opencode"
     });
   }
 
@@ -69,11 +69,11 @@ export function validateBubbleAgents(
     : undefined;
   // Legacy two-agent bubble.toml files normalize here so downstream runtime
   // consumers never need their own role-specific meta-reviewer fallback.
-  const metaReviewer = metaReviewerCandidate ?? "codex";
+  const metaReviewer = metaReviewerCandidate ?? "opencode";
   if (metaReviewerCandidate !== undefined && !isAgentName(metaReviewerCandidate)) {
     errors.push({
       path: "agents.meta_reviewer",
-      message: "Must be one of: codex, claude, opencode"
+      message: "Must be one of: opencode, opencode, opencode"
     });
   }
 

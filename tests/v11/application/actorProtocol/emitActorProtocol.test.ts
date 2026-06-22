@@ -101,12 +101,12 @@ async function switchFixtureToMetaReviewerAuthority(input: {
   bubbleId: string;
   statePath: string;
   startedAt?: string;
-  activeAgent?: "codex" | "claude" | null;
+  activeAgent?: "opencode" | "opencode" | null;
 }): Promise<void> {
   const loaded = await readStateSnapshot(input.statePath);
   const startedAt = input.startedAt ?? "2026-03-25T10:18:00.000Z";
   const activeAgent =
-    input.activeAgent === undefined ? "codex" : input.activeAgent;
+    input.activeAgent === undefined ? "opencode" : input.activeAgent;
   const executionContext = buildMetaReviewExecutionContext({
     bubbleId: input.bubbleId,
     round: loaded.state.round,
@@ -185,13 +185,13 @@ function buildSyntheticAuthoritativeContext(input: {
   const repo = input.repo ?? "/repo";
   const worktreePath =
     input.worktreePath ?? `${repo}/.pairflow/worktrees/${input.bubbleId}`;
-  const metaReviewerAgent = input.metaReviewerAgent ?? "codex";
+  const metaReviewerAgent = input.metaReviewerAgent ?? "opencode";
   const activeAgent =
     input.activeAgent === undefined
       ? input.expectedRole === "implementer"
-        ? "codex"
+        ? "opencode"
         : input.expectedRole === "reviewer"
-          ? "claude"
+          ? "opencode"
           : metaReviewerAgent
       : input.activeAgent;
 
@@ -214,8 +214,8 @@ function buildSyntheticAuthoritativeContext(input: {
       bubbleConfig: {
         id: input.bubbleId,
         agents: {
-          implementer: "codex",
-          reviewer: "claude",
+          implementer: "opencode",
+          reviewer: "opencode",
           meta_reviewer: metaReviewerAgent
         }
       }
@@ -540,7 +540,7 @@ describe("emitActorProtocol runtime", () => {
       execution_id: "exec_actor_protocol_policy_meta_01",
       round: 2,
       recommendation: "approve",
-      summary: "Dispatch-plan policy enforcement should require codex when active_agent is present",
+      summary: "Dispatch-plan policy enforcement should require opencode when active_agent is present",
       report_json: buildApproveMetaReviewReportJson(
         "meta-review-policy-enforcement"
       )
@@ -552,7 +552,7 @@ describe("emitActorProtocol runtime", () => {
       expectedRole: "meta_reviewer",
       expectedRound: 2,
       fingerprint: "fp_actor_protocol_policy_meta_01",
-      activeAgent: "claude"
+      activeAgent: "opencode"
     });
     const plan = resolveActorRuntimeDispatchPlan({
       expectedRole: authoritativeContext.expected_role,
@@ -566,7 +566,7 @@ describe("emitActorProtocol runtime", () => {
         authoritativeContext
       })
     ).toThrowErrorMatchingInlineSnapshot(
-      "[ActorEmitContextError: ACTOR_EMIT_CONTEXT_INVALID: canonical meta-reviewer authority requires the configured meta-reviewer agent when active_agent is present (active_agent=claude, configured=codex).]"
+      "[ActorEmitContextError: ACTOR_EMIT_CONTEXT_INVALID: canonical meta-reviewer authority requires the configured meta-reviewer agent when active_agent is present (active_agent=opencode, configured=opencode).]"
     );
   });
 
@@ -574,16 +574,16 @@ describe("emitActorProtocol runtime", () => {
     const actorInput = {
       kind: "meta_review_result",
       repo: "/repo",
-      bubble_id: "b_actor_protocol_policy_meta_claude_01",
+      bubble_id: "b_actor_protocol_policy_meta_opencode_01",
       handoff_id:
-        "meta_review:b_actor_protocol_policy_meta_claude_01:round:2:attempt:1",
-      execution_id: "exec_actor_protocol_policy_meta_claude_01",
+        "meta_review:b_actor_protocol_policy_meta_opencode_01:round:2:attempt:1",
+      execution_id: "exec_actor_protocol_policy_meta_opencode_01",
       round: 2,
       recommendation: "approve",
       summary:
-        "Dispatch-plan policy enforcement should accept configured claude ownership",
+        "Dispatch-plan policy enforcement should accept configured opencode ownership",
       report_json: buildApproveMetaReviewReportJson(
-        "meta-review-policy-enforcement-claude"
+        "meta-review-policy-enforcement-opencode"
       )
     } as const;
     const authoritativeContext = buildSyntheticAuthoritativeContext({
@@ -592,8 +592,8 @@ describe("emitActorProtocol runtime", () => {
       executionId: actorInput.execution_id,
       expectedRole: "meta_reviewer",
       expectedRound: 2,
-      fingerprint: "fp_actor_protocol_policy_meta_claude_01",
-      metaReviewerAgent: "claude"
+      fingerprint: "fp_actor_protocol_policy_meta_opencode_01",
+      metaReviewerAgent: "opencode"
     });
     const plan = resolveActorRuntimeDispatchPlan({
       expectedRole: authoritativeContext.expected_role,
@@ -1009,9 +1009,9 @@ describe("emitActorProtocol runtime", () => {
         input: {
           kind: "meta_review_result",
           repo: "/repo",
-          bubble_id: "b_actor_protocol_dispatch_meta_review_non_codex_01",
-          handoff_id: "meta_review:b_actor_protocol_dispatch_meta_review_non_codex_01:round:2:attempt:1",
-          execution_id: "exec_actor_protocol_dispatch_meta_review_non_codex_01",
+          bubble_id: "b_actor_protocol_dispatch_meta_review_non_opencode_01",
+          handoff_id: "meta_review:b_actor_protocol_dispatch_meta_review_non_opencode_01:round:2:attempt:1",
+          execution_id: "exec_actor_protocol_dispatch_meta_review_non_opencode_01",
           round: 2,
           recommendation: "approve",
           summary: "Outer dispatcher should enforce configured live meta-review authority",
@@ -1020,13 +1020,13 @@ describe("emitActorProtocol runtime", () => {
           )
         },
         authoritativeContext: buildSyntheticAuthoritativeContext({
-          bubbleId: "b_actor_protocol_dispatch_meta_review_non_codex_01",
-          handoffId: "meta_review:b_actor_protocol_dispatch_meta_review_non_codex_01:round:2:attempt:1",
-          executionId: "exec_actor_protocol_dispatch_meta_review_non_codex_01",
+          bubbleId: "b_actor_protocol_dispatch_meta_review_non_opencode_01",
+          handoffId: "meta_review:b_actor_protocol_dispatch_meta_review_non_opencode_01:round:2:attempt:1",
+          executionId: "exec_actor_protocol_dispatch_meta_review_non_opencode_01",
           expectedRole: "meta_reviewer",
           expectedRound: 2,
-          fingerprint: "fp_actor_protocol_dispatch_meta_review_non_codex_01",
-          activeAgent: "claude"
+          fingerprint: "fp_actor_protocol_dispatch_meta_review_non_opencode_01",
+          activeAgent: "opencode"
         }) as never
       })
     ).rejects.toThrow(

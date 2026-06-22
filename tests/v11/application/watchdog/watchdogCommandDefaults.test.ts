@@ -68,7 +68,7 @@ describe("watchdog command defaults", () => {
           bubble_id: "b_watchdog_defaults_01",
           state: "RUNNING",
           round: 1,
-          active_agent: "claude",
+          active_agent: "opencode",
           active_role: "reviewer",
           active_since: "2026-04-10T21:59:00.000Z",
           last_command_at: "2026-04-10T21:59:00.000Z",
@@ -109,8 +109,8 @@ describe("watchdog command defaults", () => {
           max_review_rounds: 3,
           watchdog_timeout_minutes: 30,
           agents: {
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           }
         },
         bubblePaths: {
@@ -126,7 +126,7 @@ describe("watchdog command defaults", () => {
           bubble_id: "b_watchdog_defaults_01",
           state: "RUNNING",
           round: 1,
-          active_agent: "claude",
+          active_agent: "opencode",
           active_role: "reviewer",
           active_since: "2026-04-10T21:59:00.000Z",
           last_command_at: "2026-04-10T21:59:00.000Z",

@@ -29,8 +29,8 @@ describe("executeConvergedExecution", () => {
         state: {
           round: 3
         } as never,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         summary: "converged summary",
         refs: ["artifacts/review.md"],
         findings: [
@@ -93,7 +93,7 @@ describe("executeConvergedExecution", () => {
             recipient: input.envelope.recipient,
             roleMetadata: input.envelope.payload.metadata?.[deliveryTargetRoleMetadataKey]
           });
-          if (input.envelope.recipient === "codex") {
+          if (input.envelope.recipient === "opencode") {
             return {
               status: "rejected",
               message: "",
@@ -128,11 +128,11 @@ describe("executeConvergedExecution", () => {
         roleMetadata: undefined
       },
       {
-        recipient: "codex",
+        recipient: "opencode",
         roleMetadata: "implementer"
       },
       {
-        recipient: "claude",
+        recipient: "opencode",
         roleMetadata: "reviewer"
       }
     ]);
@@ -169,8 +169,8 @@ describe("executeConvergedExecution", () => {
         state: {
           round: 3
         } as never,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         summary: "converged summary",
         refs: [],
         now: new Date("2026-03-19T11:05:00.000Z"),
@@ -232,11 +232,11 @@ describe("executeConvergedExecution", () => {
         recipientRole: "meta_reviewer"
       },
       {
-        recipient: "codex",
+        recipient: "opencode",
         recipientRole: "implementer"
       },
       {
-        recipient: "claude",
+        recipient: "opencode",
         recipientRole: "reviewer"
       }
     ]);
@@ -261,9 +261,9 @@ describe("executeConvergedExecution", () => {
           },
           bubbleConfig: {
             agents: {
-              implementer: "codex",
-              reviewer: "codex",
-              meta_reviewer: "claude"
+              implementer: "opencode",
+              reviewer: "opencode",
+              meta_reviewer: "opencode"
             }
           },
           worktreePath: "/repo/worktree",
@@ -272,8 +272,8 @@ describe("executeConvergedExecution", () => {
         state: {
           round: 3
         } as never,
-        reviewer: "codex",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         summary: "converged summary",
         refs: [],
         now: new Date("2026-03-19T11:06:00.000Z"),
@@ -296,7 +296,7 @@ describe("executeConvergedExecution", () => {
             ts: "2026-03-19T11:06:01.000Z",
             bubble_id: "b_exec_shared_fallback_001",
             sender: "orchestrator",
-            recipient: "codex",
+            recipient: "opencode",
             type: "APPROVAL_REQUEST",
             round: 3,
             payload: {
@@ -330,7 +330,7 @@ describe("executeConvergedExecution", () => {
     );
 
     expect(deliveryCalls[0]).toEqual({
-      recipient: "codex",
+      recipient: "opencode",
       recipientRole: undefined
     });
   });
@@ -360,8 +360,8 @@ describe("executeConvergedExecution", () => {
         state: {
           round: 4
         } as never,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         summary: "converged summary",
         refs: [],
         now: new Date("2026-03-19T11:10:00.000Z"),
@@ -393,7 +393,7 @@ describe("executeConvergedExecution", () => {
             ts: "2026-03-19T11:10:01.000Z",
             bubble_id: "b_exec_002",
             sender: "orchestrator",
-            recipient: "codex",
+            recipient: "opencode",
             type: "PASS",
             round: 4,
             payload: {
@@ -474,8 +474,8 @@ describe("executeConvergedExecution", () => {
         state: {
           round: 4
         } as never,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         summary: "converged summary",
         refs: [],
         now: new Date("2026-03-19T11:20:00.000Z"),
@@ -512,7 +512,7 @@ describe("executeConvergedExecution", () => {
           if (input.envelope.recipient === "human") {
             throw new Error("simulated tmux send failure");
           }
-          if (input.envelope.recipient === "codex") {
+          if (input.envelope.recipient === "opencode") {
             return {
               status: "rejected",
               message: "",

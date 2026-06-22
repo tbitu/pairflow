@@ -30,7 +30,7 @@ function createMetaReviewRunningState(
     bubble_id: "b_meta_submit_validation_01",
     state: "RUNNING",
     round: 2,
-    active_agent: "codex",
+    active_agent: "opencode",
     active_since: "2026-04-26T11:00:00.000Z",
     active_role: "meta_reviewer",
     execution_context: metaReviewExecutionContextToRunningContext(
@@ -104,11 +104,11 @@ describe("metaReviewCommandSubmitValidation", () => {
     await expect(
       assertMetaReviewSubmitterAuthority({
         bubbleId: "b_meta_submit_validation_01",
-        metaReviewerAgent: "claude",
+        metaReviewerAgent: "opencode",
         sessionsPath: "/tmp/runtime-sessions.json",
         readRuntimeSessions: async () => ({}),
         state: createMetaReviewRunningState({
-          active_agent: "claude"
+          active_agent: "opencode"
         })
       })
     ).resolves.toBeUndefined();
@@ -118,11 +118,11 @@ describe("metaReviewCommandSubmitValidation", () => {
     await expect(
       assertMetaReviewSubmitterAuthority({
         bubbleId: "b_meta_submit_validation_01",
-        metaReviewerAgent: "claude",
+        metaReviewerAgent: "opencode",
         sessionsPath: "/tmp/runtime-sessions.json",
         readRuntimeSessions: async () => ({}),
         state: createMetaReviewRunningState({
-          active_agent: "codex"
+          active_agent: "opencode"
         })
       })
     ).rejects.toMatchObject({
@@ -134,7 +134,7 @@ describe("metaReviewCommandSubmitValidation", () => {
   it("reads non-default meta-reviewer ownership from the prepared submit context path", async () => {
     const readRuntimeSessions = vi.fn(async () => ({}));
     const state = createMetaReviewRunningState({
-      active_agent: "claude"
+      active_agent: "opencode"
     });
     const prepared = await prepareAcceptedMetaReviewSubmit({
       submitInput: {
@@ -162,9 +162,9 @@ describe("metaReviewCommandSubmitValidation", () => {
             bubbleConfig: {
               id: "b_meta_submit_validation_01",
               agents: {
-                implementer: "codex",
-                reviewer: "claude",
-                meta_reviewer: "claude"
+                implementer: "opencode",
+                reviewer: "opencode",
+                meta_reviewer: "opencode"
               }
             }
           }) as never,
@@ -184,7 +184,7 @@ describe("metaReviewCommandSubmitValidation", () => {
       "/tmp/b_meta_submit_validation_01/sessions.json",
       { allowMissing: true }
     );
-    expect(prepared.resolved.bubbleConfig.agents.meta_reviewer).toBe("claude");
+    expect(prepared.resolved.bubbleConfig.agents.meta_reviewer).toBe("opencode");
     expect(prepared.executionContext.active_role).toBe("meta_reviewer");
     expect(prepared.runId).toBe("run_meta_submit_validation_prepare_01");
   });

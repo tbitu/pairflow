@@ -70,7 +70,7 @@ describe("runBubbleWatchdog", () => {
     statePath: string;
     activeSinceIso: string;
     lastCommandAtIso: string;
-    activeAgent?: "codex" | null;
+    activeAgent?: "opencode" | null;
   }): Promise<void> {
     const loaded = await readStateSnapshot(input.statePath);
     const readyForApproval = toPersistedSnapshot(
@@ -85,7 +85,7 @@ describe("runBubbleWatchdog", () => {
     const metaReviewRunning = {
       ...readyForApproval,
       state: "RUNNING" as const,
-      active_agent: input.activeAgent === undefined ? "codex" : input.activeAgent,
+      active_agent: input.activeAgent === undefined ? "opencode" : input.activeAgent,
       active_role:
         input.activeAgent === null ? null : ("meta_reviewer" as const),
       active_since: input.activeAgent === null ? null : input.activeSinceIso,
@@ -533,7 +533,7 @@ describe("runBubbleWatchdog", () => {
     }
     expect(resumeResult.envelope.payload.message).toBe(DEFAULT_RESUME_MESSAGE);
     expect(resumeResult.state.state).toBe("RUNNING");
-    expect(resumeResult.state.active_agent).toBe("codex");
+    expect(resumeResult.state.active_agent).toBe("opencode");
     expect(resumeResult.state.active_role).toBe("meta_reviewer");
     expect(resumeResult.state.active_since).toBe(resumedAt.toISOString());
     expect(resumeResult.state.execution_context).toMatchObject({
@@ -586,7 +586,7 @@ describe("runBubbleWatchdog", () => {
       "Meta-review timeout acknowledged; continue the meta-review flow."
     );
     expect(replyResult.state.state).toBe("RUNNING");
-    expect(replyResult.state.active_agent).toBe("codex");
+    expect(replyResult.state.active_agent).toBe("opencode");
     expect(replyResult.state.active_role).toBe("meta_reviewer");
     expect(replyResult.state.active_since).toBe(replyAt.toISOString());
     expect(replyResult.state.execution_context).toMatchObject({
@@ -730,7 +730,7 @@ describe("runBubbleWatchdog", () => {
       bubble.paths.statePath,
       {
         ...running.state,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "meta_reviewer",
         active_since: "2026-02-22T12:59:00.000Z",
         last_command_at: "2026-02-22T12:59:30.000Z",

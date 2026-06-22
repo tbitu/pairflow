@@ -14,8 +14,8 @@ describe("prepareConvergedPolicy", () => {
       {
         transcriptPath: "/tmp/transcript.ndjson",
         currentRound: 3,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "document",
         roundRoleHistory: [] as never,
         severityGateRound: 2,
@@ -34,8 +34,8 @@ describe("prepareConvergedPolicy", () => {
         validateConvergencePolicy: (input) => {
           callOrder.push("validateConvergencePolicy");
           expect(input.currentRound).toBe(3);
-          expect(input.reviewer).toBe("claude");
-          expect(input.implementer).toBe("codex");
+          expect(input.reviewer).toBe("opencode");
+          expect(input.implementer).toBe("opencode");
           expect(input.reviewArtifactType).toBe("document");
           expect(input.severity_gate_round).toBe(2);
           expect(input.effectiveLoopMode).toBe("meta_only");
@@ -62,8 +62,8 @@ describe("prepareConvergedPolicy", () => {
       {
         transcriptPath: "/tmp/transcript.ndjson",
         currentRound: 1,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "code",
         roundRoleHistory: [] as never,
         severityGateRound: 2,
@@ -92,8 +92,8 @@ describe("prepareConvergedPolicy", () => {
       prepareConvergedPolicy({
         transcriptPath: "/tmp/missing-transcript.ndjson",
         currentRound: 1,
-        reviewer: "claude",
-        implementer: "codex",
+        reviewer: "opencode",
+        implementer: "opencode",
         reviewArtifactType: "document",
         roundRoleHistory: [] as never,
         severityGateRound: 1,

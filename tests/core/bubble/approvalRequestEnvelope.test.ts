@@ -75,7 +75,7 @@ async function appendHumanApprovalRequestEnvelope(
 ) {
   return await appendHumanApprovalRequestEnvelopeImpl({
     ...input,
-    metaReviewerAgent: input.metaReviewerAgent ?? "codex"
+    metaReviewerAgent: input.metaReviewerAgent ?? "opencode"
   });
 }
 
@@ -94,7 +94,7 @@ async function appendReviewerSnapshot(input: {
     now: input.now,
     envelope: {
       bubble_id: input.bubbleId,
-      sender: "claude",
+      sender: "opencode",
       recipient: "orchestrator",
       type: "CONVERGENCE",
       round: input.round,
@@ -164,7 +164,7 @@ describe("appendHumanApprovalRequestEnvelope", () => {
       route: "human_gate_approve",
       refs: [],
       recommendation: "approve",
-      metaReviewerAgent: "claude",
+      metaReviewerAgent: "opencode",
       parityMetadata: {
         findings_claimed_open_total: 0,
         findings_artifact_open_total: 0,
@@ -180,7 +180,7 @@ describe("appendHumanApprovalRequestEnvelope", () => {
 
     expect(result.envelope.payload.metadata).toMatchObject({
       actor: "meta-reviewer",
-      actor_agent: "claude",
+      actor_agent: "opencode",
       latest_recommendation: "approve",
       meta_review_gate_route: "human_gate_approve"
     });

@@ -71,9 +71,9 @@ const baseConfig: BubbleConfig = {
   commit_requires_approval: true,
   attach_launcher: "auto",
   agents: {
-    implementer: "codex",
-    reviewer: "claude",
-    meta_reviewer: "codex"
+    implementer: "opencode",
+    reviewer: "opencode",
+    meta_reviewer: "opencode"
   },
   commands: {
     test: "pnpm test",
@@ -88,12 +88,12 @@ const baseConfig: BubbleConfig = {
 };
 
 function createEnvelope(overrides: Partial<ProtocolEnvelope> = {}): ProtocolEnvelope {
-  return {
+  const env = {
     id: "msg_20260222_101",
     ts: "2026-02-22T12:00:00.000Z",
     bubble_id: "b_delivery_01",
-    sender: "codex",
-    recipient: "claude",
+    sender: "opencode",
+    recipient: "opencode",
     type: "PASS",
     round: 1,
     payload: {
@@ -102,6 +102,12 @@ function createEnvelope(overrides: Partial<ProtocolEnvelope> = {}): ProtocolEnve
     refs: ["artifact://handoff.md"],
     ...overrides
   } as ProtocolEnvelope;
+
+  if (env.recipient === "opencode" && !env.payload.metadata) {
+    env.payload.metadata = { delivery_target_role: "reviewer" };
+  }
+
+  return env;
 }
 
 function submittedPaneOutput(markerLine: string): string {
@@ -190,14 +196,14 @@ function mockUnmappedMetaReviewerPane(): {
 }
 
 function createSharedAgentConfig(
-  agent: "codex" | "claude"
+  agent: "opencode" | "opencode"
 ): BubbleConfig {
   return {
     ...baseConfig,
     agents: {
       implementer: agent,
       reviewer: agent,
-      meta_reviewer: "codex"
+      meta_reviewer: "opencode"
     }
   };
 }
@@ -228,7 +234,7 @@ function resolveLegacyRecipientRoleForTest(input: {
   if (input.envelope.recipient === "meta-reviewer") {
     return "meta_reviewer";
   }
-  if (input.envelope.recipient === "codex" || input.envelope.recipient === "claude") {
+  if (input.envelope.recipient === "opencode" || input.envelope.recipient === "opencode") {
     return resolveUniquelyConfiguredRoleForAgent({
       agents: input.bubbleConfig.agents,
       agent: input.envelope.recipient,
@@ -444,19 +450,20 @@ describe("tmux delivery explicit recipient-role routing", () => {
       createEnvelope({
         id: "msg_20260222_100",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "TASK",
         payload: {
-          summary: "Meta-review fallback route."
+          summary: "Meta-review fallback route.",
+          metadata: {}
         },
         refs: ["artifact://meta-review-task.md"]
       }),
-      createSharedAgentConfig("claude")
+      createSharedAgentConfig("opencode")
     );
 
     expect(resolution).toEqual({
       targetPaneIndex: undefined,
-      recipientRole: "codex",
+      recipientRole: "opencode",
       deliveryTargetReasonCode: "DELIVERY_TARGET_ROLE_ABSENT"
     });
   });
@@ -466,7 +473,7 @@ describe("tmux delivery explicit recipient-role routing", () => {
       if (args[0] === "capture-pane") {
         return {
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         };
@@ -479,9 +486,10 @@ describe("tmux delivery explicit recipient-role routing", () => {
       bubbleConfig: baseConfig,
       sessionsPath: "/tmp/sessions.json",
       envelope: createEnvelope({
-        recipient: "claude",
+        recipient: "opencode",
         payload: {
-          summary: "handoff"
+          summary: "handoff",
+          metadata: { delivery_target_role: "reviewer" }
         }
       }),
       recipientRole: "meta_reviewer",
@@ -519,7 +527,7 @@ describe("tmux delivery explicit recipient-role routing", () => {
       if (args[0] === "capture-pane") {
         return {
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_102 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_102 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         };
@@ -532,12 +540,13 @@ describe("tmux delivery explicit recipient-role routing", () => {
       bubbleConfig: baseConfig,
       sessionsPath: "/tmp/sessions.json",
       envelope: createEnvelope({
-        recipient: "claude",
+        recipient: "opencode",
         payload: {
           summary: "handoff",
           metadata: {
-            delivery_target_role: "meta_reviewer"
-          }
+            delivery_target_role: "meta_reviewer",
+          metadata: { delivery_target_role: "reviewer" }
+        }
         }
       }),
       recipientRole: "implementer",
@@ -567,7 +576,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -600,7 +609,7 @@ describe("emitDeliveryNotificationAck", () => {
       })
     );
     expect(canonicalAck.message).toContain(
-      "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."
+      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
     );
   });
 
@@ -646,18 +655,19 @@ describe("emitDeliveryNotificationAck", () => {
       };
       const result = await emitDeliveryNotificationAck({
         bubbleId: "b_delivery_01",
-        bubbleConfig: createSharedAgentConfig("claude"),
+        bubbleConfig: createSharedAgentConfig("opencode"),
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
         envelope: createEnvelope({
           id: "msg_20260222_401",
           sender: "orchestrator",
-          recipient: "codex",
+          recipient: "opencode",
           type: "TASK",
           payload: {
-            summary: "Unmapped explicit + unsupported legacy route.",
+          summary: "Unmapped explicit + unsupported legacy route.",
             metadata: {
-              [deliveryTargetRoleMetadataKey]: "meta_reviewer"
-            }
+              [deliveryTargetRoleMetadataKey]: "meta_reviewer",
+          metadata: { delivery_target_role: "implementer" }
+        }
           },
           refs: ["artifact://meta-review-task.md"]
         }),
@@ -722,18 +732,19 @@ describe("emitDeliveryNotificationAck", () => {
 
       const result = await emitDeliveryNotificationAck({
         bubbleId: "b_delivery_01",
-        bubbleConfig: createSharedAgentConfig("codex"),
+        bubbleConfig: createSharedAgentConfig("opencode"),
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
         envelope: createEnvelope({
           id: "msg_20260222_402",
           sender: "orchestrator",
-          recipient: "codex",
+          recipient: "opencode",
           type: "TASK",
           payload: {
-            summary: "Meta-review task should keep explicit recipient-role guidance.",
+          summary: "Meta-review task should keep explicit recipient-role guidance.",
             metadata: {
-              [deliveryTargetRoleMetadataKey]: "meta_reviewer"
-            }
+              [deliveryTargetRoleMetadataKey]: "meta_reviewer",
+          metadata: { delivery_target_role: "implementer" }
+        }
           },
           refs: ["artifact://meta-review-task.md"]
         }),
@@ -775,7 +786,7 @@ describe("emitDeliveryNotificationAck", () => {
       reason_code: "DELIVERY_ACK_REJECTED"
     });
     expect(result.message).toContain(
-      "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."
+      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
     );
   });
 });
@@ -788,7 +799,7 @@ describe("tmux delivery T6 runtime observability baseline", () => {
     const calls: string[][] = [];
     const targetPane = "pf-b_delivery_01:0.2";
     const message =
-      "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md.";
+      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.";
     const expectedCapturePaneCall = [
       "capture-pane",
       "-p",
@@ -868,7 +879,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r2 APPROVAL_REQUEST orchestrator->codex msg=msg_20260222_102 ref=artifact://approval.md. Action: Bubble is READY_FOR_HUMAN_APPROVAL after meta-reviewer gate."),
+            submittedPaneOutput("# [pairflow] r2 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_102 ref=artifact://approval.md. Action: Bubble is READY_FOR_HUMAN_APPROVAL after meta-reviewer gate."),
           stderr: "",
           exitCode: 0
         });
@@ -888,13 +899,14 @@ describe("emitDeliveryNotificationAck", () => {
         id: "msg_20260222_102",
         type: "APPROVAL_REQUEST",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         round: 2,
         payload: {
           summary: "Waiting for human decision",
           metadata: {
             actor: "meta-reviewer",
-            latest_recommendation: "inconclusive"
+            latest_recommendation: "inconclusive",
+            delivery_target_role: "implementer"
           }
         },
         refs: ["artifact://approval.md"]
@@ -910,7 +922,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.1" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r2 APPROVAL_REQUEST orchestrator->codex")
+        call[4]?.includes("# [pairflow] r2 APPROVAL_REQUEST orchestrator->opencode")
     );
     expect(messageCall?.[4]).toContain(
       "Meta-reviewer requested human gate decision"
@@ -924,7 +936,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 TASK orchestrator->codex msg=msg_20260222_201 ref=artifact://meta-review-task.md."),
+            submittedPaneOutput("# [pairflow] r1 TASK orchestrator->opencode msg=msg_20260222_201 ref=artifact://meta-review-task.md."),
           stderr: "",
           exitCode: 0
         });
@@ -938,18 +950,19 @@ describe("emitDeliveryNotificationAck", () => {
 
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_201",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "TASK",
         payload: {
           summary: "Run meta-review now.",
           metadata: {
-            [deliveryTargetRoleMetadataKey]: "meta_reviewer"
-          }
+            [deliveryTargetRoleMetadataKey]: "meta_reviewer",
+          metadata: { delivery_target_role: "implementer" }
+        }
         },
         refs: ["artifact://meta-review-task.md"]
       }),
@@ -994,7 +1007,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS claude->codex msg=msg_20260222_202 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_202 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -1012,12 +1025,13 @@ describe("emitDeliveryNotificationAck", () => {
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_202",
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         payload: {
           summary: "Fallback expected.",
           metadata: {
-            [deliveryTargetRoleMetadataKey]: "meta-reviewer"
+            [deliveryTargetRoleMetadataKey]: "meta-reviewer",
+            delivery_target_role: "implementer"
           }
         }
       }),
@@ -1036,17 +1050,18 @@ describe("emitDeliveryNotificationAck", () => {
   it("fail-closes ambiguous shared-agent fallback when delivery_target_role metadata is invalid", async () => {
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_202_shared",
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         payload: {
           summary: "Ambiguous fallback must fail closed.",
           metadata: {
-            [deliveryTargetRoleMetadataKey]: "meta-reviewer"
-          }
+            [deliveryTargetRoleMetadataKey]: "meta-reviewer",
+          metadata: { delivery_target_role: "implementer" }
+        }
         }
       }),
       readSessionsRegistry: () => Promise.resolve(createRegistry())
@@ -1069,7 +1084,7 @@ describe("emitDeliveryNotificationAck", () => {
         if (args[0] === "capture-pane") {
           return Promise.resolve({
             stdout:
-              submittedPaneOutput("# [pairflow] r1 TASK orchestrator->codex msg=msg_20260222_203 ref=artifact://meta-review-task.md."),
+              submittedPaneOutput("# [pairflow] r1 TASK orchestrator->opencode msg=msg_20260222_203 ref=artifact://meta-review-task.md."),
             stderr: "",
             exitCode: 0
           });
@@ -1083,18 +1098,19 @@ describe("emitDeliveryNotificationAck", () => {
 
       const result = await emitDeliveryNotificationAck({
         bubbleId: "b_delivery_01",
-        bubbleConfig: createSharedAgentConfig("codex"),
+        bubbleConfig: createSharedAgentConfig("opencode"),
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
         envelope: createEnvelope({
           id: "msg_20260222_203",
           sender: "orchestrator",
-          recipient: "codex",
+          recipient: "opencode",
           type: "TASK",
           payload: {
-            summary: "Meta-review dispatch fallback expected.",
+          summary: "Meta-review dispatch fallback expected.",
             metadata: {
-              [deliveryTargetRoleMetadataKey]: "meta_reviewer"
-            }
+              [deliveryTargetRoleMetadataKey]: "meta_reviewer",
+          metadata: { delivery_target_role: "implementer" }
+        }
           },
           refs: ["artifact://meta-review-task.md"]
         }),
@@ -1124,10 +1140,11 @@ describe("emitDeliveryNotificationAck", () => {
         bubbleConfig: baseConfig,
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
         envelope: createEnvelope({
-          recipient: "claude",
+          recipient: "opencode",
           payload: {
-            summary: "Explicit meta-review route must fail closed."
-          }
+          summary: "Explicit meta-review route must fail closed.",
+          metadata: { delivery_target_role: "reviewer" }
+        }
         }),
         recipientRole: "meta_reviewer",
         readSessionsRegistry: () => Promise.resolve(createRegistry())
@@ -1146,14 +1163,14 @@ describe("emitDeliveryNotificationAck", () => {
     }
   });
 
-  it("keeps role-target routing parity for shared non-codex agent identities", async () => {
+  it("keeps role-target routing parity for shared non-opencode agent identities", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_204 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_204 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -1167,17 +1184,18 @@ describe("emitDeliveryNotificationAck", () => {
 
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("claude"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_204",
-        sender: "codex",
-        recipient: "claude",
+        sender: "opencode",
+        recipient: "opencode",
         payload: {
           summary: "Route to reviewer pane.",
           metadata: {
-            [deliveryTargetRoleMetadataKey]: "reviewer"
-          }
+            [deliveryTargetRoleMetadataKey]: "reviewer",
+          metadata: { delivery_target_role: "reviewer" }
+        }
         }
       }),
       runner,
@@ -1198,7 +1216,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r2 HUMAN_REPLY human->codex msg=msg_20260222_205 ref=artifact://reply.md."),
+            submittedPaneOutput("# [pairflow] r2 HUMAN_REPLY human->opencode msg=msg_20260222_205 ref=artifact://reply.md."),
           stderr: "",
           exitCode: 0
         });
@@ -1212,19 +1230,20 @@ describe("emitDeliveryNotificationAck", () => {
 
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_205",
         sender: "human",
-        recipient: "codex",
+        recipient: "opencode",
         type: "HUMAN_REPLY",
         round: 2,
         payload: {
           message: "Please continue reviewer analysis.",
           metadata: {
-            [deliveryTargetRoleMetadataKey]: "reviewer"
-          }
+            [deliveryTargetRoleMetadataKey]: "reviewer",
+          metadata: { delivery_target_role: "implementer" }
+        }
         },
         refs: ["artifact://reply.md"]
       }),
@@ -1246,7 +1265,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1296,7 +1315,7 @@ describe("emitDeliveryNotificationAck", () => {
       "pf-b_delivery_01:0.2",
       "-l",
       expect.stringContaining(
-        "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."
+        "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
       )
     ]);
     const messageCall = calls.find(
@@ -1304,7 +1323,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS codex->claude")
+        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain(
       "Action: Implementer handoff received. Run a fresh review now"
@@ -1437,7 +1456,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1473,7 +1492,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS codex->claude")
+        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain(
       "Action: Implementer handoff received. Run a fresh review now"
@@ -1489,7 +1508,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received.\naccepted=true running=true handoff_id=handoff_advanced_02 actor acknowledged work"),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received.\naccepted=true running=true handoff_id=handoff_advanced_02 actor acknowledged work"),
           stderr: "",
           exitCode: 0
         });
@@ -1583,7 +1602,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1622,7 +1641,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS codex->claude")
+        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain(
       "Implementer test evidence has been orchestrator-verified."
@@ -1646,7 +1665,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1675,7 +1694,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS codex->claude")
+        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
     );
 
     expect(messageCall?.[4]).toContain("Severity Ontology v1 reminder");
@@ -1740,7 +1759,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r2 PASS codex->claude msg=msg_20260222_102 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedPaneOutput("# [pairflow] r2 PASS opencode->opencode msg=msg_20260222_102 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1772,7 +1791,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r2 PASS codex->claude")
+        call[4]?.includes("# [pairflow] r2 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_B);
     expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_C);
@@ -1790,7 +1809,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r2 PASS codex->claude msg=msg_20260222_103 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedPaneOutput("# [pairflow] r2 PASS opencode->opencode msg=msg_20260222_103 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1831,7 +1850,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r2 PASS codex->claude")
+        call[4]?.includes("# [pairflow] r2 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_E);
     expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_C);
@@ -1907,7 +1926,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("PASS codex->claude")
+        call[4]?.includes("PASS opencode->opencode")
     );
     expect(reviewerMessages).toHaveLength(2);
     const cleanMessage = reviewerMessages[0]?.[4] ?? "";
@@ -2002,7 +2021,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("PASS codex->claude")
+        call[4]?.includes("PASS opencode->opencode")
     );
     expect(reviewerMessages).toHaveLength(2);
 
@@ -2103,7 +2122,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("PASS codex->claude")
+        call[4]?.includes("PASS opencode->opencode")
     );
     expect(reviewerMessages).toHaveLength(2);
     for (const messageCall of reviewerMessages) {
@@ -2153,7 +2172,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -2182,7 +2201,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS codex->claude")
+        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain(
       "Run required checks before final judgment. Reason: reviewer test verification directive was unavailable."
@@ -2255,7 +2274,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2284,7 +2303,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS codex->claude")
+        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain("document/task artifacts");
     expect(messageCall?.[4]).toContain("Do not force `feature-dev:code-reviewer`");
@@ -2298,7 +2317,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 HUMAN_QUESTION claude->human msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 HUMAN_QUESTION opencode->human msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2315,7 +2334,7 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleConfig: baseConfig,
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
-        sender: "claude",
+        sender: "opencode",
         recipient: "human",
         type: "HUMAN_QUESTION"
       }),
@@ -2345,7 +2364,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r2 APPROVAL_REQUEST orchestrator->codex msg=msg_20260222_206 ref=artifact://approval.md."),
+            submittedPaneOutput("# [pairflow] r2 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_206 ref=artifact://approval.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2359,19 +2378,20 @@ describe("emitDeliveryNotificationAck", () => {
 
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_206",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "APPROVAL_REQUEST",
         round: 2,
         payload: {
           summary: "Human gate is pending.",
           metadata: {
-            [deliveryTargetRoleMetadataKey]: "status"
-          }
+            [deliveryTargetRoleMetadataKey]: "status",
+          metadata: { delivery_target_role: "implementer" }
+        }
         },
         refs: ["artifact://approval.md"]
       }),
@@ -2393,7 +2413,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 APPROVAL_REQUEST orchestrator->codex msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2411,8 +2431,11 @@ describe("emitDeliveryNotificationAck", () => {
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         sender: "orchestrator",
-        recipient: "codex",
-        type: "APPROVAL_REQUEST"
+        recipient: "opencode",
+        type: "APPROVAL_REQUEST",
+        payload: {
+          metadata: { delivery_target_role: "implementer" }
+        }
       }),
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry())
@@ -2454,7 +2477,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout: submittedPaneOutput(
-            `# [pairflow] r2 APPROVAL_DECISION human->codex msg=msg_20260222_101 ref=${reworkRef}.`
+            `# [pairflow] r2 APPROVAL_DECISION human->opencode msg=msg_20260222_101 ref=${reworkRef}.`
           ),
           stderr: "",
           exitCode: 0
@@ -2473,12 +2496,13 @@ describe("emitDeliveryNotificationAck", () => {
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         sender: "human",
-        recipient: "codex",
+        recipient: "opencode",
         type: "APPROVAL_DECISION",
         round: 2,
         payload: {
           decision: "rework",
-          message: "Please address reviewer findings."
+          message: "Please address reviewer findings.",
+          metadata: { delivery_target_role: "implementer" }
         }
       }),
       messageRef: reworkRef,
@@ -2493,7 +2517,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.1" &&
         call[3] === "-l" &&
-        call[4]?.includes("APPROVAL_DECISION human->codex")
+        call[4]?.includes("APPROVAL_DECISION human->opencode")
     );
     expect(approvalCall?.[4]).toContain("Rework received.");
     expect(approvalCall?.[4]).not.toContain("Human requested rework.");
@@ -2514,7 +2538,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r2 APPROVAL_DECISION orchestrator->codex msg=msg_20260222_103 ref=artifact://auto-rework.md."),
+            submittedPaneOutput("# [pairflow] r2 APPROVAL_DECISION orchestrator->opencode msg=msg_20260222_103 ref=artifact://auto-rework.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2533,14 +2557,15 @@ describe("emitDeliveryNotificationAck", () => {
       envelope: createEnvelope({
         id: "msg_20260222_103",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "APPROVAL_DECISION",
         round: 2,
         payload: {
           decision: "rework",
           message: "Please address meta-review findings.",
           metadata: {
-            actor: "meta-reviewer"
+            actor: "meta-reviewer",
+            delivery_target_role: "implementer"
           }
         },
         refs: ["artifact://auto-rework.md"]
@@ -2555,7 +2580,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.1" &&
         call[3] === "-l" &&
-        call[4]?.includes("APPROVAL_DECISION orchestrator->codex")
+        call[4]?.includes("APPROVAL_DECISION orchestrator->opencode")
     );
     expect(approvalCall?.[4]).toContain("Meta-review auto-rework received.");
     expect(approvalCall?.[4]).not.toContain("Rework received.");
@@ -2569,7 +2594,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r2 APPROVAL_DECISION orchestrator->codex msg=msg_20260222_104 ref=artifact://gate-auto-rework.md."),
+            submittedPaneOutput("# [pairflow] r2 APPROVAL_DECISION orchestrator->opencode msg=msg_20260222_104 ref=artifact://gate-auto-rework.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2588,14 +2613,15 @@ describe("emitDeliveryNotificationAck", () => {
       envelope: createEnvelope({
         id: "msg_20260222_104",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "APPROVAL_DECISION",
         round: 2,
         payload: {
           decision: "rework",
           message: "Please address gate-routed findings.",
           metadata: {
-            actor: "meta-review-gate"
+            actor: "meta-review-gate",
+            delivery_target_role: "implementer"
           }
         },
         refs: ["artifact://gate-auto-rework.md"]
@@ -2609,7 +2635,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.1" &&
         call[3] === "-l" &&
-        call[4]?.includes("APPROVAL_DECISION orchestrator->codex")
+        call[4]?.includes("APPROVAL_DECISION orchestrator->opencode")
     );
     expect(approvalCall?.[4]).toContain("Meta-review auto-rework received.");
     expect(approvalCall?.[4]).not.toContain("Human requested rework.");
@@ -2659,11 +2685,12 @@ describe("emitDeliveryNotificationAck", () => {
 
     const passMessage = await deliverToImplementer(
       createEnvelope({
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         type: "PASS",
         payload: {
-          summary: "Fix request from reviewer"
+          summary: "Fix request from reviewer",
+          metadata: { delivery_target_role: "implementer" }
         }
       })
     );
@@ -2698,10 +2725,11 @@ describe("emitDeliveryNotificationAck", () => {
     const humanReplyMessage = await deliverToImplementer(
       createEnvelope({
         sender: "human",
-        recipient: "codex",
+        recipient: "opencode",
         type: "HUMAN_REPLY",
         payload: {
-          message: "Please clarify section 2."
+          message: "Please clarify section 2.",
+          metadata: { delivery_target_role: "implementer" }
         }
       })
     );
@@ -2723,11 +2751,12 @@ describe("emitDeliveryNotificationAck", () => {
     const reworkMessage = await deliverToImplementer(
       createEnvelope({
         sender: "human",
-        recipient: "codex",
+        recipient: "opencode",
         type: "APPROVAL_DECISION",
         payload: {
           decision: "rework",
-          message: "Please rework the docs update."
+          message: "Please rework the docs update.",
+          metadata: { delivery_target_role: "implementer" }
         }
       })
     );
@@ -2752,10 +2781,11 @@ describe("emitDeliveryNotificationAck", () => {
       createEnvelope({
         id: "msg_20260222_102",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "TASK",
         payload: {
-          summary: "Task artifact includes target_write_files and L2 implementation sketch."
+          summary: "Task artifact includes target_write_files and L2 implementation sketch.",
+          metadata: { delivery_target_role: "implementer" }
         }
       })
     );
@@ -2776,7 +2806,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS claude->codex msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2796,11 +2826,12 @@ describe("emitDeliveryNotificationAck", () => {
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         type: "PASS",
         payload: {
-          summary: "Please apply reviewer fixes."
+          summary: "Please apply reviewer fixes.",
+          metadata: { delivery_target_role: "implementer" }
         }
       }),
       runner,
@@ -2813,7 +2844,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.1" &&
         call[3] === "-l" &&
-        call[4]?.includes("PASS claude->codex")
+        call[4]?.includes("PASS opencode->opencode")
     );
     expect(passToImplementerCall?.[4]).toContain("Reviewer feedback received.");
     expect(passToImplementerCall?.[4]).toContain(
@@ -2844,7 +2875,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS claude->codex msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2868,11 +2899,12 @@ describe("emitDeliveryNotificationAck", () => {
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         type: "PASS",
         payload: {
-          summary: "Please apply reviewer fixes."
+          summary: "Please apply reviewer fixes.",
+          metadata: { delivery_target_role: "implementer" }
         }
       }),
       runner,
@@ -2885,7 +2917,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.1" &&
         call[3] === "-l" &&
-        call[4]?.includes("PASS claude->codex")
+        call[4]?.includes("PASS opencode->opencode")
     );
     expect(passToImplementerCall?.[4]).toContain(
       "Bubble-level PASS validation policy is invalid"
@@ -2910,7 +2942,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout: submittedPaneOutput(
-            `# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=${fallbackRef}.`
+            `# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=${fallbackRef}.`
           ),
           stderr: "",
           exitCode: 0
@@ -2940,7 +2972,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS codex->claude")
+        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain(`ref=${fallbackRef}.`);
     expect(messageCall?.[4]).not.toContain("ref=transcript.ndjson#");
@@ -2953,7 +2985,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://priority-source.md."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://priority-source.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2982,7 +3014,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS codex->claude")
+        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain("ref=artifact://priority-source.md.");
     expect(messageCall?.[4]).not.toContain("/.pairflow/bubbles/b_delivery_01/transcript.ndjson#");
@@ -2995,7 +3027,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 APPROVAL_REQUEST orchestrator->claude msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -3013,7 +3045,7 @@ describe("emitDeliveryNotificationAck", () => {
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         sender: "orchestrator",
-        recipient: "claude",
+        recipient: "opencode",
         type: "APPROVAL_REQUEST"
       }),
       runner,
@@ -3051,7 +3083,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -3094,7 +3126,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedPaneOutput("# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -3157,7 +3189,7 @@ describe("emitDeliveryNotificationAck", () => {
       reason_code: "DELIVERY_ACK_RUNTIME_SESSION_UNAVAILABLE"
     });
     expect(result.message).toContain(
-      "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."
+      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
     );
     expect(result.message).toContain(
       "Run pairflow commands from the active workspace root."
@@ -3245,18 +3277,19 @@ describe("emitDeliveryNotificationAck", () => {
     try {
       const result = await emitDeliveryNotificationAck({
         bubbleId: "b_delivery_01",
-        bubbleConfig: createSharedAgentConfig("claude"),
+        bubbleConfig: createSharedAgentConfig("opencode"),
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
         envelope: createEnvelope({
           id: "msg_20260222_401",
           sender: "orchestrator",
-          recipient: "codex",
+          recipient: "opencode",
           type: "TASK",
           payload: {
-            summary: "Unmapped explicit + unsupported legacy route.",
+          summary: "Unmapped explicit + unsupported legacy route.",
             metadata: {
-              [deliveryTargetRoleMetadataKey]: "meta_reviewer"
-            }
+              [deliveryTargetRoleMetadataKey]: "meta_reviewer",
+          metadata: { delivery_target_role: "implementer" }
+        }
           },
           refs: ["artifact://meta-review-task.md"]
         }),
@@ -3290,7 +3323,7 @@ describe("emitDeliveryNotificationAck", () => {
       deliveryTargetReasonCode: "DELIVERY_TARGET_REGISTRY_READ_FAILED"
     });
     expect(result.message).toContain(
-      "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."
+      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
     );
     expect(result.message).toContain(
       "Run pairflow commands from the active workspace root."
@@ -3318,7 +3351,7 @@ describe("emitDeliveryNotificationAck", () => {
       reason_code: "DELIVERY_ACK_REJECTED"
     });
     expect(result.message).toContain(
-      "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."
+      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
     );
     expect(result.message).toContain(
       "Run pairflow commands from workspace root: /tmp/worktree."
@@ -3388,7 +3421,7 @@ describe("emitDeliveryNotificationAck", () => {
           stdout:
             captureCount >= 3
               ? [
-                  "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md.",
+                  "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
                   "",
                   ">"
                 ].join("\n")
@@ -3435,9 +3468,9 @@ describe("emitDeliveryNotificationAck", () => {
           // Marker appears after the > prompt — stuck in input buffer.
           return Promise.resolve({
             stdout: [
-              "Claude Code is ready.",
+              "Opencode Code is ready.",
               "",
-              "> # [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."
+              "> # [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
             ].join("\n"),
             stderr: "",
             exitCode: 0
@@ -3446,7 +3479,7 @@ describe("emitDeliveryNotificationAck", () => {
         // After retry Enter, marker moves to output area (before prompt).
         return Promise.resolve({
           stdout: [
-            "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md.",
+            "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
             "",
             ">"
           ].join("\n"),
@@ -3494,9 +3527,9 @@ describe("emitDeliveryNotificationAck", () => {
         if (captureCount <= 2) {
           return Promise.resolve({
             stdout: [
-              "Claude Code is ready.",
+              "Opencode Code is ready.",
               "",
-              "│ ❯ # [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md."
+              "│ ❯ # [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
             ].join("\n"),
             stderr: "",
             exitCode: 0
@@ -3504,7 +3537,7 @@ describe("emitDeliveryNotificationAck", () => {
         }
         return Promise.resolve({
           stdout: [
-            "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md.",
+            "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
             "",
             "│ ❯"
           ].join("\n"),
@@ -3583,9 +3616,9 @@ describe("emitDeliveryNotificationAck", () => {
         return Promise.resolve({
           stdout: [
             "Earlier output above the current viewport:",
-            "# [pairflow] r1 PASS codex->claude msg=msg_20260222_101 ref=artifact://handoff.md.",
+            "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
             "",
-            "Claude Code is ready.",
+            "Opencode Code is ready.",
             "",
             ">"
           ].join("\n"),
@@ -3705,9 +3738,9 @@ describe("retryStuckAgentInput", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout: [
-            "Claude Code is ready.",
+            "Opencode Code is ready.",
             "",
-            "❯ # [pairflow] r1 PASS codex->claude msg=msg_123 ref=handoff.md."
+            "❯ # [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -3741,9 +3774,9 @@ describe("retryStuckAgentInput", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout: [
-            "Claude Code is ready.",
+            "Opencode Code is ready.",
             "",
-            "│ ❯ # [pairflow] r1 PASS codex->claude msg=msg_123 ref=handoff.md."
+            "│ ❯ # [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -3777,7 +3810,7 @@ describe("retryStuckAgentInput", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout: [
-            "# [pairflow] r1 PASS codex->claude msg=msg_123 ref=handoff.md.",
+            "# [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md.",
             "Processing...",
             "❯"
           ].join("\n"),
@@ -3809,9 +3842,9 @@ describe("retryStuckAgentInput", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout: [
-            "# [pairflow] r1 PASS codex->claude msg=msg_123 ref=handoff.md.",
-            "Claude Code welcome screen",
-            "❯ # [pairflow] r1 PASS codex->claude msg=msg_123 ref=handoff.md."
+            "# [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md.",
+            "Opencode Code welcome screen",
+            "❯ # [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -3882,7 +3915,7 @@ describe("retryStuckAgentInput", () => {
         return Promise.resolve({
           stdout: [
             "",
-            "❯ # [pairflow] r1 TASK orchestrator->codex msg=msg_123 ref=task.md."
+            "❯ # [pairflow] r1 TASK orchestrator->opencode msg=msg_123 ref=task.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -3922,7 +3955,7 @@ describe("retryStuckAgentInput", () => {
         return Promise.resolve({
           stdout: [
             "",
-            "❯ # [pairflow] r2 HUMAN_REPLY human->codex msg=msg_456 ref=reply.md."
+            "❯ # [pairflow] r2 HUMAN_REPLY human->opencode msg=msg_456 ref=reply.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -3933,7 +3966,7 @@ describe("retryStuckAgentInput", () => {
 
     const result = await retryStuckAgentInput({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/sessions.json",
       activeRole: "reviewer",
       runner,
@@ -3962,7 +3995,7 @@ describe("retryStuckAgentInput", () => {
         return Promise.resolve({
           stdout: [
             "",
-            "❯ # [pairflow] r2 PASS claude->codex msg=msg_789 ref=meta-review.md."
+            "❯ # [pairflow] r2 PASS opencode->opencode msg=msg_789 ref=meta-review.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -3973,7 +4006,7 @@ describe("retryStuckAgentInput", () => {
 
     const result = await retryStuckAgentInput({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/sessions.json",
       activeRole: "meta_reviewer",
       runner,

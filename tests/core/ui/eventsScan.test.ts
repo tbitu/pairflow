@@ -79,7 +79,7 @@ function createBubbleListEntry(input: {
     worktreePath: input.worktreePath,
     state: "RUNNING",
     round: input.round,
-    activeAgent: "codex",
+    activeAgent: "opencode",
     activeRole: "implementer",
     activeSince: "2026-04-19T20:00:00.000Z",
     lastCommandAt: "2026-04-19T20:00:00.000Z",
@@ -229,7 +229,7 @@ describe("scanUiEventsRepo remote refresh routing", () => {
     });
     const reviewerEntry: UiBubbleListEntry = {
       ...implementerEntry,
-      activeAgent: "claude",
+      activeAgent: "opencode",
       activeRole: "reviewer",
       activeSince: "2026-04-19T20:00:30.000Z",
       lastCommandAt: "2026-04-19T20:00:30.000Z"

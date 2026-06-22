@@ -32,7 +32,7 @@ describe("runConvergedFlow", () => {
         authoritativeContext,
         expectedStateFingerprint: "fp_1",
         expectedRound: 3,
-        expectedReviewer: "claude",
+        expectedReviewer: "opencode",
         createError: (input) => new Error(toErrorMessage(input)),
         resolveMetaReviewRolloutBlockingReasonCodes: () => []
       },
@@ -60,8 +60,8 @@ describe("runConvergedFlow", () => {
               round: 3,
               round_role_history: []
             },
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           } as never;
         },
         prepareConvergedPolicy: async (input) => {
@@ -192,8 +192,8 @@ describe("runConvergedFlow", () => {
               round: 3,
               round_role_history: []
             },
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           }) as never,
         prepareConvergedPolicy: async () => ({
           transcript: [],
@@ -293,8 +293,8 @@ describe("runConvergedFlow", () => {
               round: 2,
               round_role_history: []
             },
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           }) as never,
           prepareConvergedPolicy: async () => ({
             transcript: [],
@@ -348,8 +348,8 @@ describe("runConvergedFlow", () => {
               round: 3,
               round_role_history: []
             },
-            implementer: "codex",
-            reviewer: "claude"
+            implementer: "opencode",
+            reviewer: "opencode"
           }) as never,
         prepareConvergedPolicy: async () => ({
           transcript: [],
@@ -449,8 +449,8 @@ describe("runConvergedFlow", () => {
                 round: 4,
                 round_role_history: []
               },
-              implementer: "codex",
-              reviewer: "claude"
+              implementer: "opencode",
+              reviewer: "opencode"
             }) as never,
           prepareConvergedPolicy: async () => {
             calls.push("prepareConvergedPolicy");
@@ -536,8 +536,8 @@ describe("runConvergedFlow", () => {
                 round: 5,
                 round_role_history: []
               },
-              implementer: "codex",
-              reviewer: "claude"
+              implementer: "opencode",
+              reviewer: "opencode"
             }) as never,
           prepareConvergedPolicy: async () => ({
             transcript: [],

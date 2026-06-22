@@ -79,7 +79,7 @@ export interface MetaReviewGatePaneBindingRuntimeCapabilities {
     pairflowCommandProfile?: PairflowCommandProfile;
     roleName?: "implementer" | "reviewer" | "meta_reviewer";
     roleMcpPolicy?: RoleMcpPolicy;
-    codexMcpDisableArgs?: string[];
+    opencodeMcpDisableArgs?: string[];
     startupPrompt?: string | undefined;
   }) => string;
   tmux?: MetaReviewGatePaneBindingTmuxCapabilities;

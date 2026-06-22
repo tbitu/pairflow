@@ -26,8 +26,8 @@ describe("buildKickoffIdeationConfig", () => {
         checkpoints: [],
         commit_message_template: "msg",
         agents: {
-          implementer: "codex",
-          reviewer: "claude"
+          implementer: "opencode",
+          reviewer: "opencode"
         },
         ideation: {
           mode: true,
@@ -68,8 +68,8 @@ describe("buildKickoffIdeationConfig", () => {
         checkpoints: [],
         commit_message_template: "msg",
         agents: {
-          implementer: "codex",
-          reviewer: "claude"
+          implementer: "opencode",
+          reviewer: "opencode"
         },
         ideation: {
           mode: true,

@@ -10,7 +10,7 @@ function createState(round: number): BubbleStateSnapshot {
     bubble_id: "b_kickoff_state_persistence_01",
     state: "RUNNING",
     round,
-    active_agent: round === 0 ? "claude" : "codex",
+    active_agent: round === 0 ? "opencode" : "opencode",
     active_since: "2026-03-19T22:00:00.000Z",
     active_role: round === 0 ? "reviewer" : "implementer",
     round_role_history: [],

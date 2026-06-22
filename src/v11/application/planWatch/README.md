@@ -8,4 +8,4 @@ The lane has three visibility levels:
 
 CLI-facing runner timeline rendering should depend on the neutral infrastructure facade at `src/v11/infrastructure/executor/planWatch/agentRunnerTimeline.ts`, not provider-specific timeline files.
 
-Keep application `runner/` limited to orchestration contracts, command invocation policy, and provider-neutral result classification. Provider-specific process arguments, artifact files, JSONL parsing, and timeline normalization belong under infrastructure, such as `src/v11/infrastructure/executor/planWatch/codex/**`.
+Keep application `runner/` limited to orchestration contracts, command invocation policy, and provider-neutral result classification. Provider-specific process arguments, artifact files, JSONL parsing, and timeline normalization belong under infrastructure, such as `src/v11/infrastructure/executor/planWatch/opencode/**`.

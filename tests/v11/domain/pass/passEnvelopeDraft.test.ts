@@ -8,9 +8,9 @@ describe("buildPassEnvelopeDraft", () => {
     const draft = buildPassEnvelopeDraft({
       bubbleId: "b_123",
       handoff: {
-        senderAgent: "codex",
+        senderAgent: "opencode",
         senderRole: "implementer",
-        recipientAgent: "claude",
+        recipientAgent: "opencode",
         recipientRole: "reviewer",
         envelopeRound: 2
       },
@@ -32,8 +32,8 @@ describe("buildPassEnvelopeDraft", () => {
 
     expect(draft).toMatchObject({
       bubble_id: "b_123",
-      sender: "codex",
-      recipient: "claude",
+      sender: "opencode",
+      recipient: "opencode",
       type: "PASS",
       round: 2,
       refs: ["artifact://handoff.md"],
@@ -62,9 +62,9 @@ describe("buildPassEnvelopeDraft", () => {
     const draft = buildPassEnvelopeDraft({
       bubbleId: "b_123",
       handoff: {
-        senderAgent: "claude",
+        senderAgent: "opencode",
         senderRole: "reviewer",
-        recipientAgent: "codex",
+        recipientAgent: "opencode",
         recipientRole: "implementer",
         envelopeRound: 3
       },
@@ -94,9 +94,9 @@ describe("buildPassEnvelopeDraft", () => {
     const draft = buildPassEnvelopeDraft({
       bubbleId: "b_123",
       handoff: {
-        senderAgent: "claude",
+        senderAgent: "opencode",
         senderRole: "reviewer",
-        recipientAgent: "codex",
+        recipientAgent: "opencode",
         recipientRole: "implementer",
         envelopeRound: 4
       },

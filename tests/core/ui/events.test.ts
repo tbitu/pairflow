@@ -486,7 +486,7 @@ describe("UI event payload validation", () => {
     worktreePath: "/tmp/worktree",
     state: "RUNNING",
     round: 1,
-    activeAgent: "codex",
+    activeAgent: "opencode",
     activeRole: "implementer",
     activeSince: "2026-02-25T00:00:00.000Z",
     lastCommandAt: null,

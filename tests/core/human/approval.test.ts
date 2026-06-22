@@ -216,7 +216,7 @@ async function setupReadyForHumanApprovalBubble(repoPath: string, bubbleId: stri
         metadata: {
           [deliveryTargetRoleMetadataKey]: "status",
           actor: "meta-reviewer",
-          actor_agent: "codex",
+          actor_agent: "opencode",
           latest_recommendation: "inconclusive"
         }
       },
@@ -231,7 +231,7 @@ async function setupReadyForHumanApprovalBubble(repoPath: string, bubbleId: stri
     expect(gateEnvelope.payload.metadata).toMatchObject({
       [deliveryTargetRoleMetadataKey]: "status",
       actor: "meta-reviewer",
-      actor_agent: "codex",
+      actor_agent: "opencode",
       latest_recommendation: "inconclusive"
     });
     expect(gateEnvelope.payload.metadata?.latest_recommendation).toBe("inconclusive");
@@ -564,7 +564,7 @@ describe("approval decisions", () => {
           metadata: {
             [deliveryTargetRoleMetadataKey]: "status",
             actor: "meta-reviewer",
-            actor_agent: "codex",
+            actor_agent: "opencode",
             latest_recommendation: "approve"
           }
         },
@@ -643,7 +643,7 @@ describe("approval decisions", () => {
           metadata: {
             [deliveryTargetRoleMetadataKey]: "status",
             actor: "meta-reviewer",
-            actor_agent: "codex"
+            actor_agent: "opencode"
           }
         },
         refs: []
@@ -718,7 +718,7 @@ describe("approval decisions", () => {
           metadata: {
             [deliveryTargetRoleMetadataKey]: "status",
             actor: "meta-reviewer",
-            actor_agent: "codex"
+            actor_agent: "opencode"
           }
         },
         refs: []
@@ -1106,7 +1106,7 @@ describe("approval decisions", () => {
           metadata: {
             [deliveryTargetRoleMetadataKey]: "status",
             actor: "meta-reviewer",
-            actor_agent: "codex",
+            actor_agent: "opencode",
             latest_recommendation: "approve"
           }
         },
@@ -1174,7 +1174,7 @@ describe("approval decisions", () => {
           metadata: {
             [deliveryTargetRoleMetadataKey]: "status",
             actor: "meta-reviewer",
-            actor_agent: "codex",
+            actor_agent: "opencode",
             latest_recommendation: "approve",
             meta_review_gate_route: "human_gate_dispatch_failed",
             meta_review_gate_reason_code:
@@ -1264,7 +1264,7 @@ describe("approval decisions", () => {
           metadata: {
             [deliveryTargetRoleMetadataKey]: "status",
             actor: "meta-reviewer",
-            actor_agent: "codex",
+            actor_agent: "opencode",
             latest_recommendation: "approve"
           }
         },
@@ -1349,7 +1349,7 @@ describe("approval decisions", () => {
           metadata: {
             [deliveryTargetRoleMetadataKey]: "status",
             actor: "meta-reviewer",
-            actor_agent: "codex",
+            actor_agent: "opencode",
             latest_recommendation: "approve"
           }
         },
@@ -1425,7 +1425,7 @@ describe("approval decisions", () => {
           metadata: {
             [deliveryTargetRoleMetadataKey]: "status",
             actor: "meta-reviewer",
-            actor_agent: "codex",
+            actor_agent: "opencode",
             latest_recommendation: "approve",
             approval_summary_consistency_status: "mismatch"
           }
@@ -1513,7 +1513,7 @@ describe("approval decisions", () => {
           metadata: {
             [deliveryTargetRoleMetadataKey]: "status",
             actor: "meta-reviewer",
-            actor_agent: "codex",
+            actor_agent: "opencode",
             latest_recommendation: "approve"
           }
         },

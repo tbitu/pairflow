@@ -305,9 +305,9 @@ describe("actor loop smoke", () => {
             bubbleId,
             workspacePath: started.worktreePath as string,
             statusCommand: "pairflow bubble status",
-            implementerCommand: "codex",
-            reviewerCommand: "claude",
-            metaReviewerCommand: "codex"
+            implementerCommand: "opencode",
+            reviewerCommand: "opencode",
+            metaReviewerCommand: "opencode"
           });
         }
       });
@@ -438,7 +438,7 @@ describe("actor loop smoke", () => {
       ).toBe(true);
       expect(
         sideEffects.every((record) => {
-          if (record.tool === "codex") {
+          if (record.tool === "opencode") {
             return record.args.join(" ") === "mcp list --json";
           }
           return record.tool === "tmux"

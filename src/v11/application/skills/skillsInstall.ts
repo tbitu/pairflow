@@ -24,8 +24,8 @@ interface ManagedPathPreflight {
   unsafe: boolean;
 }
 
-function otherTargetDir(targetDir: ".claude" | ".codex"): ".claude" | ".codex" {
-  return targetDir === ".claude" ? ".codex" : ".claude";
+function otherTargetDir(targetDir: ".opencode" | ".opencode"): ".opencode" | ".opencode" {
+  return targetDir === ".opencode" ? ".opencode" : ".opencode";
 }
 
 function isDirectory(status: SkillsInstallPathStatus): boolean {

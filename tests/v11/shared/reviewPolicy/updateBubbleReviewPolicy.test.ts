@@ -23,8 +23,8 @@ base_branch = "main"
 bubble_branch = "bubble/b_review_policy_update_01"
 
 [agents]
-implementer = "codex"
-reviewer = "claude"
+implementer = "opencode"
+reviewer = "opencode"
 
 [commands]
 test = "pnpm test"

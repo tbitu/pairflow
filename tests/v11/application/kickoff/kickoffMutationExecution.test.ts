@@ -44,7 +44,7 @@ describe("executeKickoffMutation", () => {
 
     const backup = await executeKickoffMutation({
       bubbleId: "b_kickoff_exec_01",
-      implementer: "codex",
+      implementer: "opencode",
       task: {
         content: "Kickoff implementation task",
         source: "inline"
@@ -70,7 +70,7 @@ describe("executeKickoffMutation", () => {
       envelope: {
         bubble_id: "b_kickoff_exec_01",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "TASK",
         round: 1,
         payload: {
@@ -93,7 +93,7 @@ describe("executeKickoffMutation", () => {
 
     await executeKickoffMutation({
       bubbleId: "b_kickoff_exec_02",
-      implementer: "codex",
+      implementer: "opencode",
       task: {
         content: "Kickoff callback task",
         source: "inline"
@@ -116,7 +116,7 @@ describe("executeKickoffMutation", () => {
       ts: nowIso,
       bubble_id: "b_kickoff_exec_02",
       sender: "orchestrator",
-      recipient: "codex",
+      recipient: "opencode",
       type: "TASK",
       round: 1,
       payload: {

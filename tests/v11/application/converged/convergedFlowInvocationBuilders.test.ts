@@ -105,8 +105,8 @@ describe("convergedFlowInvocationBuilders", () => {
           resolved: {},
           bubbleIdentity: {},
           state: {},
-          implementer: "codex",
-          reviewer: "claude"
+          implementer: "opencode",
+          reviewer: "opencode"
         }) as never,
       prepareConvergedPolicy: async () =>
         ({
@@ -166,8 +166,8 @@ describe("convergedFlowInvocationBuilders", () => {
           resolved: {},
           bubbleIdentity: {},
           state: {},
-          implementer: "codex",
-          reviewer: "claude"
+          implementer: "opencode",
+          reviewer: "opencode"
         }) as never,
       prepareConvergedPolicy: async () =>
         ({
@@ -223,8 +223,8 @@ describe("convergedFlowInvocationBuilders", () => {
           resolved: {},
           bubbleIdentity: {},
           state: {},
-          implementer: "codex",
-          reviewer: "claude"
+          implementer: "opencode",
+          reviewer: "opencode"
         }) as never,
       prepareConvergedPolicy: async () =>
         ({

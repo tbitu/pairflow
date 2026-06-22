@@ -72,7 +72,7 @@ describe("UI action API smoke", () => {
         processSpawn: adapters.processSpawn,
         launchBubbleSessionAck: adapters.launchBubbleSessionAck,
         terminateBubbleTmuxSession: adapters.terminateBubbleTmuxSession,
-        resolveCodexMcpDisableArgs: () => Promise.resolve([])
+        resolveOpencodeMcpDisableArgs: () => Promise.resolve([])
       });
 
     const fakeTmuxRunner = async (args: string[]) => {

@@ -22,7 +22,7 @@ function persistedRunning(round: number): PersistedBubbleStateSnapshot {
     bubble_id: "b_test_variant_running",
     state: "RUNNING",
     round,
-    active_agent: "codex",
+    active_agent: "opencode",
     active_role: "implementer",
     active_since: baseTimestamp,
     execution_context: buildRunningExecutionContext({
@@ -35,8 +35,8 @@ function persistedRunning(round: number): PersistedBubbleStateSnapshot {
     round_role_history: [
       {
         round,
-        implementer: "codex",
-        reviewer: "claude",
+        implementer: "opencode",
+        reviewer: "opencode",
         switched_at: baseTimestamp
       }
     ],
@@ -82,7 +82,7 @@ describe("buildBubbleStateSnapshotVariant", () => {
     const variant = buildBubbleStateSnapshotVariant(persistedRunning(2));
     expect(variant.kind).toBe("running_standard");
     if (variant.kind === "running_standard") {
-      expect(variant.active_agent).toBe("codex");
+      expect(variant.active_agent).toBe("opencode");
       expect(variant.active_role).toBe("implementer");
       expect(variant.execution_context).not.toBeNull();
     }

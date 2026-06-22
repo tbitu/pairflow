@@ -57,7 +57,7 @@ async function setupSourceAndHome(): Promise<{
   homeDir: string;
 }> {
   const root = await createTempDir("pairflow-skills-install-");
-  const sourceRoot = join(root, "package", ".claude", "skills");
+  const sourceRoot = join(root, "package", ".opencode", "skills");
   const homeDir = join(root, "home");
   await writeAllSkillSources(sourceRoot);
   return {
@@ -84,7 +84,7 @@ describe("skills install command parsing", () => {
     expect(parsed.help).toBe(true);
     expect(getSkillsInstallHelpText()).toContain("pairflow skills install");
     expect(getSkillsInstallHelpText()).toContain("--skills all|UsePairflow");
-    expect(getSkillsInstallHelpText()).toContain("Default: .claude");
+    expect(getSkillsInstallHelpText()).toContain("Default: .opencode");
   });
 
   it("parses selected skills, target dir, json, force, dry-run, and link-other", () => {
@@ -92,7 +92,7 @@ describe("skills install command parsing", () => {
       "--skills",
       "UsePairflow,ExecutePairflowPlan,UsePairflow",
       "--target-dir",
-      ".codex",
+      ".opencode",
       "--link-other",
       "--dry-run",
       "--force",
@@ -104,7 +104,7 @@ describe("skills install command parsing", () => {
       throw new Error("Expected non-help parsed options.");
     }
     expect(parsed.skills).toEqual(["UsePairflow", "ExecutePairflowPlan"]);
-    expect(parsed.targetDir).toBe(".codex");
+    expect(parsed.targetDir).toBe(".opencode");
     expect(parsed.linkOther).toBe(true);
     expect(parsed.dryRun).toBe(true);
     expect(parsed.force).toBe(true);
@@ -126,7 +126,7 @@ describe("skills install command execution", () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
 
     const result = await runSkillsInstallCommand(
-      ["--dry-run", "--json", "--skills", "all", "--target-dir", ".claude"],
+      ["--dry-run", "--json", "--skills", "all", "--target-dir", ".opencode"],
       {
         homeDir,
         sourceRootCandidates: [sourceRoot]
@@ -136,8 +136,8 @@ describe("skills install command execution", () => {
     expect(result).not.toBeNull();
     expect(JSON.parse(JSON.stringify(result))).toMatchObject({
       sourceRoot,
-      targetRoot: join(homeDir, ".claude", "skills"),
-      targetDir: ".claude",
+      targetRoot: join(homeDir, ".opencode", "skills"),
+      targetDir: ".opencode",
       selectedSkills: [
         "UsePairflow",
         "CreatePairflowSpec",
@@ -147,7 +147,7 @@ describe("skills install command execution", () => {
       linkOther: false,
       status: "planned"
     });
-    await expect(lstat(join(homeDir, ".claude"))).rejects.toMatchObject({
+    await expect(lstat(join(homeDir, ".opencode"))).rejects.toMatchObject({
       code: "ENOENT"
     });
   });
@@ -156,7 +156,7 @@ describe("skills install command execution", () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
 
     const result = await runSkillsInstallCommand(
-      ["--skills", "UsePairflow,ExecutePairflowPlan", "--target-dir", ".claude"],
+      ["--skills", "UsePairflow,ExecutePairflowPlan", "--target-dir", ".opencode"],
       {
         homeDir,
         sourceRootCandidates: [sourceRoot]
@@ -165,16 +165,16 @@ describe("skills install command execution", () => {
 
     expect(result?.status).toBe("fresh_install");
     await expect(
-      readFile(join(homeDir, ".claude", "skills", "UsePairflow", "SKILL.md"), "utf8")
+      readFile(join(homeDir, ".opencode", "skills", "UsePairflow", "SKILL.md"), "utf8")
     ).resolves.toContain("UsePairflow");
     await expect(
       readFile(
-        join(homeDir, ".claude", "skills", "ExecutePairflowPlan", "SKILL.md"),
+        join(homeDir, ".opencode", "skills", "ExecutePairflowPlan", "SKILL.md"),
         "utf8"
       )
     ).resolves.toContain("ExecutePairflowPlan");
     await expect(
-      lstat(join(homeDir, ".claude", "skills", "CreatePairflowSpec"))
+      lstat(join(homeDir, ".opencode", "skills", "CreatePairflowSpec"))
     ).rejects.toMatchObject({
       code: "ENOENT"
     });
@@ -184,7 +184,7 @@ describe("skills install command execution", () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
 
     const result = await runSkillsInstallCommand(
-      ["--skills", "UsePairflow,UsePairflow", "--target-dir", ".claude"],
+      ["--skills", "UsePairflow,UsePairflow", "--target-dir", ".opencode"],
       {
         homeDir,
         sourceRootCandidates: [sourceRoot]
@@ -194,20 +194,20 @@ describe("skills install command execution", () => {
     expect(result?.selectedSkills).toEqual(["UsePairflow"]);
     expect(result?.operations).toHaveLength(1);
     await expect(
-      readFile(join(homeDir, ".claude", "skills", "UsePairflow", "SKILL.md"), "utf8")
+      readFile(join(homeDir, ".opencode", "skills", "UsePairflow", "SKILL.md"), "utf8")
     ).resolves.toContain("UsePairflow");
   });
 
   it("refreshes an existing selected target directory and reports updated_existing", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
-    const destination = join(homeDir, ".claude", "skills", "UsePairflow");
+    const destination = join(homeDir, ".opencode", "skills", "UsePairflow");
     await mkdir(destination, {
       recursive: true
     });
     await writeFile(join(destination, "stale.txt"), "stale\n", "utf8");
 
     const result = await runSkillsInstallCommand(
-      ["--skills", "UsePairflow", "--target-dir", ".claude"],
+      ["--skills", "UsePairflow", "--target-dir", ".opencode"],
       {
         homeDir,
         sourceRootCandidates: [sourceRoot]
@@ -227,15 +227,15 @@ describe("skills install command execution", () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
 
     const first = await runSkillsInstallCommand(
-      ["--skills", "CreatePairflowSpec", "--target-dir", ".claude", "--link-other"],
+      ["--skills", "CreatePairflowSpec", "--target-dir", ".opencode", "--link-other"],
       {
         homeDir,
         sourceRootCandidates: [sourceRoot]
       }
     );
-    const linkPath = join(homeDir, ".codex", "skills", "CreatePairflowSpec");
+    const linkPath = join(homeDir, ".opencode", "skills", "CreatePairflowSpec");
     await expect(readlink(linkPath)).resolves.toBe(
-      join(homeDir, ".claude", "skills", "CreatePairflowSpec")
+      join(homeDir, ".opencode", "skills", "CreatePairflowSpec")
     );
     expect(first?.status).toBe("fresh_install");
 
@@ -244,7 +244,7 @@ describe("skills install command execution", () => {
         "--skills",
         "CreatePairflowSpec",
         "--target-dir",
-        ".claude",
+        ".opencode",
         "--link-other",
         "true"
       ],
@@ -256,18 +256,18 @@ describe("skills install command execution", () => {
 
     expect(second?.status).toBe("updated_existing");
     await expect(readlink(linkPath)).resolves.toBe(
-      join(homeDir, ".claude", "skills", "CreatePairflowSpec")
+      join(homeDir, ".opencode", "skills", "CreatePairflowSpec")
     );
   });
 
   it("fails unsafe managed paths before later writes without force", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
-    const destination = join(homeDir, ".claude", "skills", "UsePairflow");
-    const linkPath = join(homeDir, ".codex", "skills", "UsePairflow");
-    await mkdir(join(homeDir, ".claude", "skills"), {
+    const destination = join(homeDir, ".opencode", "skills", "UsePairflow");
+    const linkPath = join(homeDir, ".opencode", "skills", "UsePairflow");
+    await mkdir(join(homeDir, ".opencode", "skills"), {
       recursive: true
     });
-    await mkdir(join(homeDir, ".codex", "skills"), {
+    await mkdir(join(homeDir, ".opencode", "skills"), {
       recursive: true
     });
     await writeFile(destination, "unsafe target\n", "utf8");
@@ -275,7 +275,7 @@ describe("skills install command execution", () => {
 
     await expect(
       runSkillsInstallCommand(
-        ["--skills", "UsePairflow", "--target-dir", ".claude", "--link-other"],
+        ["--skills", "UsePairflow", "--target-dir", ".opencode", "--link-other"],
         {
           homeDir,
           sourceRootCandidates: [sourceRoot]
@@ -289,14 +289,14 @@ describe("skills install command execution", () => {
 
   it("reports a dry-run plan even when existing managed paths would be unsafe for real writes", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
-    const destination = join(homeDir, ".claude", "skills", "UsePairflow");
-    await mkdir(join(homeDir, ".claude", "skills"), {
+    const destination = join(homeDir, ".opencode", "skills", "UsePairflow");
+    await mkdir(join(homeDir, ".opencode", "skills"), {
       recursive: true
     });
     await writeFile(destination, "unsafe target\n", "utf8");
 
     const result = await runSkillsInstallCommand(
-      ["--skills", "UsePairflow", "--target-dir", ".claude", "--dry-run"],
+      ["--skills", "UsePairflow", "--target-dir", ".opencode", "--dry-run"],
       {
         homeDir,
         sourceRootCandidates: [sourceRoot]
@@ -310,12 +310,12 @@ describe("skills install command execution", () => {
 
   it("fails closed when managed target paths overlap the selected source root", async () => {
     const root = await createTempDir("pairflow-skills-source-overlap-");
-    const sourceRoot = join(root, ".claude", "skills");
+    const sourceRoot = join(root, ".opencode", "skills");
     await writeAllSkillSources(sourceRoot);
 
     await expect(
       runSkillsInstallCommand(
-        ["--skills", "UsePairflow", "--target-dir", ".claude", "--force"],
+        ["--skills", "UsePairflow", "--target-dir", ".opencode", "--force"],
         {
           homeDir: root,
           sourceRootCandidates: [sourceRoot]
@@ -331,17 +331,17 @@ describe("skills install command execution", () => {
   it("fails closed when a managed target path reaches the source root through a parent symlink", async () => {
     const root = await createTempDir("pairflow-skills-source-symlink-overlap-");
     const packageRoot = join(root, "package");
-    const sourceRoot = join(packageRoot, ".claude", "skills");
+    const sourceRoot = join(packageRoot, ".opencode", "skills");
     const homeDir = join(root, "home");
     await writeAllSkillSources(sourceRoot);
     await mkdir(homeDir, {
       recursive: true
     });
-    await symlink(join(packageRoot, ".claude"), join(homeDir, ".claude"), "dir");
+    await symlink(join(packageRoot, ".opencode"), join(homeDir, ".opencode"), "dir");
 
     await expect(
       runSkillsInstallCommand(
-        ["--skills", "UsePairflow", "--target-dir", ".claude", "--force"],
+        ["--skills", "UsePairflow", "--target-dir", ".opencode", "--force"],
         {
           homeDir,
           sourceRootCandidates: [sourceRoot]
@@ -356,15 +356,15 @@ describe("skills install command execution", () => {
 
   it("fails closed when link-other agent roots alias through a parent symlink", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
-    const targetAgentRoot = join(homeDir, ".claude");
+    const targetAgentRoot = join(homeDir, ".opencode");
     await mkdir(targetAgentRoot, {
       recursive: true
     });
-    await symlink(targetAgentRoot, join(homeDir, ".codex"), "dir");
+    await symlink(targetAgentRoot, join(homeDir, ".opencode"), "dir");
 
     await expect(
       runSkillsInstallCommand(
-        ["--skills", "UsePairflow", "--target-dir", ".claude", "--link-other"],
+        ["--skills", "UsePairflow", "--target-dir", ".opencode", "--link-other"],
         {
           homeDir,
           sourceRootCandidates: [sourceRoot]
@@ -373,7 +373,7 @@ describe("skills install command execution", () => {
     ).rejects.toThrow("agent or skills root is a symlink");
 
     await expect(
-      lstat(join(homeDir, ".claude", "skills", "UsePairflow"))
+      lstat(join(homeDir, ".opencode", "skills", "UsePairflow"))
     ).rejects.toMatchObject({
       code: "ENOENT"
     });
@@ -384,8 +384,8 @@ describe("skills install command execution", () => {
 
   it("fails closed when link-other skills roots alias through a parent symlink even with force", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
-    const targetSkillsRoot = join(homeDir, ".claude", "skills");
-    const otherAgentRoot = join(homeDir, ".codex");
+    const targetSkillsRoot = join(homeDir, ".opencode", "skills");
+    const otherAgentRoot = join(homeDir, ".opencode");
     await mkdir(targetSkillsRoot, {
       recursive: true
     });
@@ -400,7 +400,7 @@ describe("skills install command execution", () => {
           "--skills",
           "UsePairflow",
           "--target-dir",
-          ".claude",
+          ".opencode",
           "--link-other",
           "--force"
         ],
@@ -421,14 +421,14 @@ describe("skills install command execution", () => {
 
   it("reports a dry-run plan when the target agent root parent is not a directory", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
-    const targetAgentRoot = join(homeDir, ".claude");
+    const targetAgentRoot = join(homeDir, ".opencode");
     await mkdir(homeDir, {
       recursive: true
     });
     await writeFile(targetAgentRoot, "not a directory\n", "utf8");
 
     const result = await runSkillsInstallCommand(
-      ["--skills", "UsePairflow", "--target-dir", ".claude", "--dry-run"],
+      ["--skills", "UsePairflow", "--target-dir", ".opencode", "--dry-run"],
       {
         homeDir,
         sourceRootCandidates: [sourceRoot]
@@ -444,12 +444,12 @@ describe("skills install command execution", () => {
 
   it("replaces unsafe selected managed paths with force and reports replaced_existing", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
-    const destination = join(homeDir, ".claude", "skills", "UsePairflow");
-    const linkPath = join(homeDir, ".codex", "skills", "UsePairflow");
-    await mkdir(join(homeDir, ".claude", "skills"), {
+    const destination = join(homeDir, ".opencode", "skills", "UsePairflow");
+    const linkPath = join(homeDir, ".opencode", "skills", "UsePairflow");
+    await mkdir(join(homeDir, ".opencode", "skills"), {
       recursive: true
     });
-    await mkdir(join(homeDir, ".codex", "skills"), {
+    await mkdir(join(homeDir, ".opencode", "skills"), {
       recursive: true
     });
     await writeFile(destination, "unsafe target\n", "utf8");
@@ -460,7 +460,7 @@ describe("skills install command execution", () => {
         "--skills",
         "UsePairflow",
         "--target-dir",
-        ".claude",
+        ".opencode",
         "--link-other",
         "--force"
       ],
@@ -479,7 +479,7 @@ describe("skills install command execution", () => {
 
   it("keeps an existing install when staged directory replacement cannot copy source", async () => {
     const { homeDir } = await setupSourceAndHome();
-    const destination = join(homeDir, ".claude", "skills", "UsePairflow");
+    const destination = join(homeDir, ".opencode", "skills", "UsePairflow");
     await mkdir(destination, {
       recursive: true
     });
@@ -505,7 +505,7 @@ describe("skills install command execution", () => {
 
   it("fails closed without deleting when a managed target changes after preflight", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
-    const destination = join(homeDir, ".claude", "skills", "UsePairflow");
+    const destination = join(homeDir, ".opencode", "skills", "UsePairflow");
     await mkdir(destination, {
       recursive: true
     });
@@ -532,15 +532,15 @@ describe("skills install command execution", () => {
 
   it("uses staged replacement primitives instead of remove-before-copy application flow", async () => {
     const calls: string[] = [];
-    const sourceRoot = "/source/.claude/skills";
+    const sourceRoot = "/source/.opencode/skills";
     const homeDir = "/home";
     const fakeFs: SkillsInstallFileSystem = {
       async pathStatus(path) {
         if (
           path === sourceRoot
           || path === join(sourceRoot, "UsePairflow")
-          || path === join(homeDir, ".claude", "skills", "UsePairflow")
-          || path === join(homeDir, ".codex", "skills", "UsePairflow")
+          || path === join(homeDir, ".opencode", "skills", "UsePairflow")
+          || path === join(homeDir, ".opencode", "skills", "UsePairflow")
         ) {
           return {
             exists: true,
@@ -584,7 +584,7 @@ describe("skills install command execution", () => {
       installPairflowSkills(
         {
           skills: ["UsePairflow"],
-          targetDir: ".claude",
+          targetDir: ".opencode",
           linkOther: true,
           force: true,
           dryRun: false
@@ -598,10 +598,10 @@ describe("skills install command execution", () => {
     ).rejects.toThrow("simulated symlink replace failure");
 
     expect(calls).toContain(
-      `replace-dir:${join(sourceRoot, "UsePairflow")}->${join(homeDir, ".claude", "skills", "UsePairflow")}`
+      `replace-dir:${join(sourceRoot, "UsePairflow")}->${join(homeDir, ".opencode", "skills", "UsePairflow")}`
     );
     expect(calls).toContain(
-      `replace-link:${join(homeDir, ".claude", "skills", "UsePairflow")}->${join(homeDir, ".codex", "skills", "UsePairflow")}`
+      `replace-link:${join(homeDir, ".opencode", "skills", "UsePairflow")}->${join(homeDir, ".opencode", "skills", "UsePairflow")}`
     );
     expect(calls.some((call) => call.startsWith("remove:"))).toBe(false);
     expect(calls.some((call) => call.startsWith("copy:"))).toBe(false);
@@ -610,7 +610,7 @@ describe("skills install command execution", () => {
 
   it("fails closed when selected package source files are missing", async () => {
     const root = await createTempDir("pairflow-skills-missing-source-");
-    const sourceRoot = join(root, "package", ".claude", "skills");
+    const sourceRoot = join(root, "package", ".opencode", "skills");
     const homeDir = join(root, "home");
     await writeSkillSource(sourceRoot, "UsePairflow");
 

@@ -49,8 +49,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -100,8 +100,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -224,8 +224,8 @@ describe("almost e2e smoke runner", () => {
             bubbleId: "bubble-1",
             workspacePath: "/tmp/worktree",
             statusCommand: "pairflow bubble status",
-            implementerCommand: "codex",
-            reviewerCommand: "codex"
+            implementerCommand: "opencode",
+            reviewerCommand: "opencode"
           });
         }
       })
@@ -268,8 +268,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -308,8 +308,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -344,8 +344,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -380,8 +380,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -420,8 +420,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -454,8 +454,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -498,8 +498,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -530,8 +530,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -560,8 +560,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -600,8 +600,8 @@ describe("almost e2e smoke runner", () => {
             bubbleId: "other-bubble",
             workspacePath: "/tmp/worktree",
             statusCommand: "pairflow bubble status",
-            implementerCommand: "codex",
-            reviewerCommand: "codex"
+            implementerCommand: "opencode",
+            reviewerCommand: "opencode"
           });
         }
       })
@@ -630,8 +630,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -685,8 +685,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -728,8 +728,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -777,8 +777,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -814,8 +814,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -870,8 +870,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -910,8 +910,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });
@@ -946,8 +946,8 @@ describe("almost e2e smoke runner", () => {
           bubbleId: "bubble-1",
           workspacePath: "/tmp/worktree",
           statusCommand: "pairflow bubble status",
-          implementerCommand: "codex",
-          reviewerCommand: "codex"
+          implementerCommand: "opencode",
+          reviewerCommand: "opencode"
         });
       }
     });

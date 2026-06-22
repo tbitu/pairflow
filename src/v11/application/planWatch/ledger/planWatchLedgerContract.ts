@@ -49,7 +49,7 @@ export interface PlanWatchLedgerRecord {
   changedArtifacts?: readonly string[] | undefined;
   routeLedgerSummary?: string | undefined;
   artifactDir?: string | undefined;
-  codexSessionId?: string | undefined;
+  opencodeSessionId?: string | undefined;
 }
 
 export interface PlanWatchLedgerData {

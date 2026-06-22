@@ -12,7 +12,7 @@ describe("protocol NDJSON helpers", () => {
       ts: "2026-02-21T12:34:56.000Z",
       bubble_id: "b_test_01",
       sender: "orchestrator",
-      recipient: "codex",
+      recipient: "opencode",
       type: "TASK",
       round: 0,
       payload: {

@@ -41,8 +41,8 @@ async function createCiFixture(): Promise<{ fixtureDir: string; commandLog: stri
     [
       "#!/usr/bin/env bash",
       "set -euo pipefail",
-      "if [[ \"${PAIRFLOW_TEST_FAIL_ON_CODEX_VISIBLE:-0}\" == \"1\" ]] && command -v codex >/dev/null 2>&1; then",
-      `  echo "codex-visible:$(command -v codex)" >> "${commandLog}"`,
+      "if [[ \"${PAIRFLOW_TEST_FAIL_ON_CODEX_VISIBLE:-0}\" == \"1\" ]] && command -v opencode >/dev/null 2>&1; then",
+      `  echo "opencode-visible:$(command -v opencode)" >> "${commandLog}"`,
       "  exit 42",
       "fi",
       `echo "$*" >> "${commandLog}"`,
@@ -211,22 +211,22 @@ describe("ci-local commit range integration", () => {
     expect(commands).toContain("exec vitest run --config vitest.smoke.config.ts");
   });
 
-  it("hides local codex from ci child commands by default", async () => {
+  it("hides local opencode from ci child commands by default", async () => {
     const { fixtureDir, commandLog } = await createCiFixture();
-    const codexPath = join(fixtureDir, "bin", "codex");
+    const opencodePath = join(fixtureDir, "bin", "opencode");
     await writeFile(
-      codexPath,
-      ["#!/usr/bin/env bash", "echo local-codex", ""].join("\n"),
+      opencodePath,
+      ["#!/usr/bin/env bash", "echo local-opencode", ""].join("\n"),
       "utf8"
     );
-    await chmod(codexPath, 0o755);
+    await chmod(opencodePath, 0o755);
 
     const result = await runCiFixture(fixtureDir, {
       PATH: `${join(fixtureDir, "bin")}${delimiter}/bin${delimiter}/usr/bin`,
       PAIRFLOW_CI_ALLOW_CODEX: "0"
     });
 
-    expect(result.stdout).toContain("codex visibility: hidden");
-    expect(await readFile(commandLog, "utf8")).not.toContain("codex-visible");
+    expect(result.stdout).toContain("opencode visibility: hidden");
+    expect(await readFile(commandLog, "utf8")).not.toContain("opencode-visible");
   });
 });

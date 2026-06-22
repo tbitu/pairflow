@@ -123,9 +123,9 @@ function createApplyObservationContext(
         severity_gate_round: 2,
         commit_requires_approval: true,
         agents: {
-          implementer: "claude",
-          reviewer: "codex",
-          meta_reviewer: "codex"
+          implementer: "opencode",
+          reviewer: "opencode",
+          meta_reviewer: "opencode"
         },
         commands: {
           test: "pnpm test",
@@ -171,7 +171,7 @@ describe("reconcileObservedGateResult", () => {
             ts: "2026-04-22T10:00:00.000Z",
             bubble_id: "b_meta_gate_apply_observation_01",
             sender: "orchestrator",
-            recipient: "codex",
+            recipient: "opencode",
             type: "TASK",
             round,
             payload: {

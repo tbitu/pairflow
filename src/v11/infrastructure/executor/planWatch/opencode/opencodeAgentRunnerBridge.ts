@@ -4,23 +4,23 @@ import type {
   AgentRunnerContinuationPayload,
   AgentRunnerArtifactFiles
 } from "../../../../shared/planWatchRunner/agentRunnerBridgeContract.js";
-import { prepareCodexRunnerArtifacts } from "./codexAgentRunnerArtifacts.js";
-import { classifyCodexJsonProcessResult } from "./codexAgentRunnerBridgeResult.js";
+import { prepareOpencodeRunnerArtifacts } from "./opencodeAgentRunnerArtifacts.js";
+import { classifyOpencodeJsonProcessResult } from "./opencodeAgentRunnerBridgeResult.js";
 
-export const CODEX_PLAN_WATCH_RUNNER_BACKEND = "codex";
+export const CODEX_PLAN_WATCH_RUNNER_BACKEND = "opencode";
 
-export async function prepareCodexRunnerFiles(
+export async function prepareOpencodeRunnerFiles(
   payload: AgentRunnerContinuationPayload,
   startedAt = new Date().toISOString()
 ): Promise<AgentRunnerArtifactFiles> {
-  return prepareCodexRunnerArtifacts({
+  return prepareOpencodeRunnerArtifacts({
     payload,
     startedAt,
-    mode: "codex_json"
+    mode: "opencode_json"
   });
 }
 
-export function buildCodexRunnerArgs(input: {
+export function buildOpencodeRunnerArgs(input: {
   payload: AgentRunnerContinuationPayload;
   schemaFilePath: string;
 }): string[] {
@@ -66,10 +66,10 @@ export function isUnavailableExecutableError(error: unknown): boolean {
   return false;
 }
 
-export function createCodexPlanWatchRunnerBackendAdapter(input: {
-  prepareRunnerFiles?: typeof prepareCodexRunnerFiles | undefined;
+export function createOpencodePlanWatchRunnerBackendAdapter(input: {
+  prepareRunnerFiles?: typeof prepareOpencodeRunnerFiles | undefined;
 } = {}): AgentRunnerBuiltInBackendAdapter {
-  const prepareRunnerFiles = input.prepareRunnerFiles ?? prepareCodexRunnerFiles;
+  const prepareRunnerFiles = input.prepareRunnerFiles ?? prepareOpencodeRunnerFiles;
   return {
     backend: CODEX_PLAN_WATCH_RUNNER_BACKEND,
     async prepareInvocationConfig(input) {
@@ -117,8 +117,8 @@ export function createCodexPlanWatchRunnerBackendAdapter(input: {
         config: {
           ...input.config,
           backend: CODEX_PLAN_WATCH_RUNNER_BACKEND,
-          command: input.config.command?.trim() || "codex",
-          args: buildCodexRunnerArgs({
+          command: input.config.command?.trim() || "opencode",
+          args: buildOpencodeRunnerArgs({
             payload: input.payload,
             schemaFilePath: runnerArtifactFiles.schemaFilePath
           }),
@@ -141,11 +141,11 @@ export function createCodexPlanWatchRunnerBackendAdapter(input: {
           failureStage: "precondition",
           exitCode: input.processResult.exitCode,
           stdout: input.processResult.stdout,
-          stderr: "Codex runner artifact files were not prepared.",
+          stderr: "Opencode runner artifact files were not prepared.",
           payload: input.payload
         };
       }
-      return classifyCodexJsonProcessResult({
+      return classifyOpencodeJsonProcessResult({
         input: input.input,
         processResult: input.processResult,
         startedAt: input.startedAt,
@@ -163,8 +163,8 @@ export function createCodexPlanWatchRunnerBackendAdapter(input: {
   };
 }
 
-export const codexPlanWatchRunnerBackendAdapter =
-  createCodexPlanWatchRunnerBackendAdapter();
+export const opencodePlanWatchRunnerBackendAdapter =
+  createOpencodePlanWatchRunnerBackendAdapter();
 
 function buildExecutePairflowPlanPrompt(
   payload: AgentRunnerContinuationPayload

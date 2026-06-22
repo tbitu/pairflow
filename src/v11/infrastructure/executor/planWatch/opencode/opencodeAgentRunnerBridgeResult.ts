@@ -9,10 +9,10 @@ import type {
   AgentRunnerProcessResult,
   RequiredAgentRunnerCommandConfig
 } from "../../../../shared/planWatchRunner/agentRunnerBridgeContract.js";
-import { parseCodexJsonlStream } from "./codexAgentRunnerStream.js";
-import { normalizeCodexTimeline } from "./codexAgentRunnerTimeline.js";
+import { parseOpencodeJsonlStream } from "./opencodeAgentRunnerStream.js";
+import { normalizeOpencodeTimeline } from "./opencodeAgentRunnerTimeline.js";
 
-export async function classifyCodexJsonProcessResult(input: {
+export async function classifyOpencodeJsonProcessResult(input: {
   input: AgentRunnerBridgeInput;
   processResult: AgentRunnerProcessResult;
   startedAt: string;
@@ -25,7 +25,7 @@ export async function classifyCodexJsonProcessResult(input: {
   if (stdoutFileFailure !== undefined) {
     return stdoutFileFailure;
   }
-  const streamOutput = await readCodexEventStreamText(
+  const streamOutput = await readOpencodeEventStreamText(
     input.artifactFiles.eventsFilePath
   ).catch((error: unknown) =>
     fileIoBlocked(input, error instanceof Error ? error.message : String(error))
@@ -33,14 +33,14 @@ export async function classifyCodexJsonProcessResult(input: {
   if (typeof streamOutput !== "string") {
     return streamOutput;
   }
-  const parsed = parseCodexJsonlStream(streamOutput);
+  const parsed = parseOpencodeJsonlStream(streamOutput);
   const processFailure = processFailureResult(input);
   const finalOutputForTimeline =
     parsed.malformed
     || processFailure !== undefined
       ? null
       : parsed.finalOutput;
-  const timeline = normalizeCodexTimeline({
+  const timeline = normalizeOpencodeTimeline({
     events: parsed.events,
     finalOutput: finalOutputForTimeline,
     completedAt: input.completedAt
@@ -96,14 +96,14 @@ export async function classifyCodexJsonProcessResult(input: {
     ...(structuredOutput.routeLedgerSummary !== undefined
       ? { routeLedgerSummary: structuredOutput.routeLedgerSummary }
       : {}),
-    ...(parsed.codexSessionId !== undefined
-      ? { codexSessionId: parsed.codexSessionId }
+    ...(parsed.opencodeSessionId !== undefined
+      ? { opencodeSessionId: parsed.opencodeSessionId }
       : {}),
     payload: input.payload
   };
 }
 
-async function readCodexEventStreamText(
+async function readOpencodeEventStreamText(
   eventsFilePath: string
 ): Promise<string> {
   return readFile(eventsFilePath, "utf8");
@@ -121,7 +121,7 @@ async function writeTextAtomic(path: string, content: string): Promise<void> {
 }
 
 function fileIoBlocked(
-  input: Parameters<typeof classifyCodexJsonProcessResult>[0],
+  input: Parameters<typeof classifyOpencodeJsonProcessResult>[0],
   stderr: string
 ): AgentRunnerBridgeResult {
   return blocked({
@@ -142,7 +142,7 @@ function joinStderr(processStderr: string, diagnostic: string): string {
 }
 
 function processFailureResult(
-  input: Parameters<typeof classifyCodexJsonProcessResult>[0]
+  input: Parameters<typeof classifyOpencodeJsonProcessResult>[0]
 ): AgentRunnerBridgeResult | undefined {
   if (input.processResult.aborted) {
     return processBlocked(input, "AGENT_RUNNER_ABORTED", "abort");
@@ -163,7 +163,7 @@ function processFailureResult(
 }
 
 function stdoutFileFailureResult(
-  input: Parameters<typeof classifyCodexJsonProcessResult>[0]
+  input: Parameters<typeof classifyOpencodeJsonProcessResult>[0]
 ): AgentRunnerBridgeResult | undefined {
   if (input.processResult.stdoutFileWriteError === undefined) {
     return undefined;
@@ -172,7 +172,7 @@ function stdoutFileFailureResult(
 }
 
 function processBlocked(
-  input: Parameters<typeof classifyCodexJsonProcessResult>[0],
+  input: Parameters<typeof classifyOpencodeJsonProcessResult>[0],
   reasonCode: AgentRunnerBridgeFailureReasonCode,
   failureStage: NonNullable<AgentRunnerBridgeResult["failureStage"]>
 ): AgentRunnerBridgeResult {

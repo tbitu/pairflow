@@ -25,9 +25,9 @@ function createDeliveryInput(): EmitDeliveryNotificationInput {
       commit_requires_approval: true,
       attach_launcher: "auto",
       agents: {
-        implementer: "codex",
-        reviewer: "claude",
-        meta_reviewer: "codex"
+        implementer: "opencode",
+        reviewer: "opencode",
+        meta_reviewer: "opencode"
       },
       commands: {
         test: "pnpm test",
@@ -45,8 +45,8 @@ function createDeliveryInput(): EmitDeliveryNotificationInput {
       id: "msg_20260403_100",
       ts: "2026-04-03T12:20:00.000Z",
       bubble_id: "b_shared_delivery_01",
-      sender: "claude",
-      recipient: "codex",
+      sender: "opencode",
+      recipient: "opencode",
       type: "PASS",
       round: 1,
       payload: {

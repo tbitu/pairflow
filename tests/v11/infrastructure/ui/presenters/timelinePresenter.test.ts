@@ -17,8 +17,8 @@ function envelope(overrides: Partial<ProtocolEnvelope> = {}): ProtocolEnvelope {
     id: "env-1",
     ts: "2026-05-05T10:00:00.000Z",
     bubble_id: "b-display",
-    sender: "codex",
-    recipient: "codex",
+    sender: "opencode",
+    recipient: "opencode",
     type: "PASS",
     round: 1,
     payload: {
@@ -228,7 +228,7 @@ describe("timelinePresenter display DTO", () => {
         id: "env-human-question",
         type: "HUMAN_QUESTION",
         sender: "human",
-        recipient: "codex",
+        recipient: "opencode",
         payload: {
           question: "Can you proceed?"
         }
@@ -386,7 +386,7 @@ describe("timelinePresenter display DTO", () => {
       envelope({
         id: "converged-before-rerun",
         type: "CONVERGENCE",
-        sender: "codex",
+        sender: "opencode",
         recipient: "orchestrator",
         round: 4,
         payload: {
@@ -439,7 +439,7 @@ describe("timelinePresenter display DTO", () => {
       envelope({
         id: "converged-before-meta-review",
         type: "CONVERGENCE",
-        sender: "codex",
+        sender: "opencode",
         recipient: "orchestrator",
         round: 2,
         payload: {
@@ -483,7 +483,7 @@ describe("timelinePresenter display DTO", () => {
           summary: "Meta-review approves.",
           metadata: {
             actor: "meta-reviewer",
-            actor_agent: "codex",
+            actor_agent: "opencode",
             latest_recommendation: "approve",
             consecutive_clean_runs: 2
           }
@@ -501,7 +501,7 @@ describe("timelinePresenter display DTO", () => {
     expect(items[1]).toMatchObject({
       id: "meta-handoff-attempt-2",
       role: "meta_reviewer",
-      senderLabel: "codex",
+      senderLabel: "opencode",
       cleanRunTag: {
         label: "clean 1",
         tone: "success"
@@ -511,7 +511,7 @@ describe("timelinePresenter display DTO", () => {
     expect(items[2]).toMatchObject({
       id: "meta-approval",
       role: "meta_reviewer",
-      senderLabel: "codex",
+      senderLabel: "opencode",
       cleanRunTag: null
     });
     expect(items[2]?.badges).toEqual([
@@ -792,7 +792,7 @@ describe("timelinePresenter display DTO", () => {
       round: 1,
       type: "HUMAN_QUESTION",
       sender: "human",
-      recipient: "codex",
+      recipient: "opencode",
       payload: {
         question: "Can you proceed?",
         metadata: {
@@ -874,8 +874,8 @@ describe("timelinePresenter display DTO", () => {
             ts: "2026-05-05T10:00:00.000Z",
             round: 2,
             type: "PASS",
-            sender: "codex",
-            recipient: "codex",
+            sender: "opencode",
+            recipient: "opencode",
             payload: {
               message: "Remote row."
             },
@@ -903,7 +903,7 @@ describe("timelinePresenter display DTO", () => {
           envelope({
             id: "converged-before-meta-review",
             type: "CONVERGENCE",
-            sender: "codex",
+            sender: "opencode",
             recipient: "orchestrator",
             round: 2,
             payload: {
@@ -947,7 +947,7 @@ describe("timelinePresenter display DTO", () => {
               summary: "Meta-review approves.",
               metadata: {
                 actor: "meta-reviewer",
-                actor_agent: "codex",
+                actor_agent: "opencode",
                 latest_recommendation: "approve",
                 consecutive_clean_runs: 2
               }

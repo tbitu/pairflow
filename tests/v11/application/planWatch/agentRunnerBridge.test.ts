@@ -29,14 +29,14 @@ import type {
 import {
   buildArtifactDirBaseName,
   planSlugFromPath
-} from "../../../../src/v11/infrastructure/executor/planWatch/codex/codexAgentRunnerArtifacts.js";
+} from "../../../../src/v11/infrastructure/executor/planWatch/opencode/opencodeAgentRunnerArtifacts.js";
 import {
-  createCodexPlanWatchRunnerBackendAdapter,
-  prepareCodexRunnerFiles,
+  createOpencodePlanWatchRunnerBackendAdapter,
+  prepareOpencodeRunnerFiles,
   validateContinuationPayload
-} from "../../../../src/v11/infrastructure/executor/planWatch/codex/codexAgentRunnerBridge.js";
-import { parseCodexJsonlStream } from "../../../../src/v11/infrastructure/executor/planWatch/codex/codexAgentRunnerStream.js";
-import { normalizeCodexTimeline } from "../../../../src/v11/infrastructure/executor/planWatch/codex/codexAgentRunnerTimeline.js";
+} from "../../../../src/v11/infrastructure/executor/planWatch/opencode/opencodeAgentRunnerBridge.js";
+import { parseOpencodeJsonlStream } from "../../../../src/v11/infrastructure/executor/planWatch/opencode/opencodeAgentRunnerStream.js";
+import { normalizeOpencodeTimeline } from "../../../../src/v11/infrastructure/executor/planWatch/opencode/opencodeAgentRunnerTimeline.js";
 import { runAgentRunnerCommand } from "../../../../src/v11/defaults/planWatch/agentRunnerBridgeDefaults.js";
 import { MAX_NODE_TIMER_DELAY_MS } from "../../../../src/v11/shared/timing/nodeTimerDelay.js";
 import type {
@@ -81,7 +81,7 @@ function baseInput(): AgentRunnerBridgeInput {
 }
 
 type AgentRunnerBridgeTestDependencies = AgentRunnerBridgeDependencies & {
-  prepareCodexRunnerFiles: ReturnType<typeof vi.fn>;
+  prepareOpencodeRunnerFiles: ReturnType<typeof vi.fn>;
 };
 
 function deps(
@@ -107,7 +107,7 @@ function deps(
       'runner prose\n{"status":"settled_checkpoint","reason_code":"PLAN_SETTLED","summary":"done"}\n',
     stderr: ""
   })));
-  const prepareCodexRunnerFilesMock = overrides.prepareCodexRunnerFiles ?? vi.fn(async () => ({
+  const prepareOpencodeRunnerFilesMock = overrides.prepareOpencodeRunnerFiles ?? vi.fn(async () => ({
     artifactDir: defaultArtifactDir,
     artifactDirRef:
       ".pairflow/runtime/plan-watch/agent-runner/2026-05-01_10-00-00-local-plan-watch-plan-v1_invocation-001",
@@ -118,7 +118,7 @@ function deps(
   }));
   return {
     pathExists: vi.fn(async () => true),
-    prepareCodexRunnerFiles: prepareCodexRunnerFilesMock,
+    prepareOpencodeRunnerFiles: prepareOpencodeRunnerFilesMock,
     now: vi
       .fn()
       .mockReturnValueOnce(new Date("2026-05-01T10:00:00.000Z"))
@@ -126,8 +126,8 @@ function deps(
     ...overrides,
     builtInBackends:
       overrides.builtInBackends ?? [
-        createCodexPlanWatchRunnerBackendAdapter({
-          prepareRunnerFiles: prepareCodexRunnerFilesMock
+        createOpencodePlanWatchRunnerBackendAdapter({
+          prepareRunnerFiles: prepareOpencodeRunnerFilesMock
         })
       ],
     runCommand
@@ -175,7 +175,7 @@ function wrapRunCommandForStdoutArtifact(
   return runCommand;
 }
 
-function codexAgentMessage(output: unknown): string {
+function opencodeAgentMessage(output: unknown): string {
   return `${JSON.stringify({
     type: "item.completed",
     timestamp: "2026-05-01T10:00:04.000Z",
@@ -624,16 +624,16 @@ describe("agentRunnerBridge", () => {
     expect(dependencies.runCommand).not.toHaveBeenCalled();
   });
 
-  it("validates built-in runner idle timeout before preparing Codex artifacts", async () => {
+  it("validates built-in runner idle timeout before preparing Opencode artifacts", async () => {
     const dependencies = deps({
-      prepareCodexRunnerFiles: vi.fn(async () => {
+      prepareOpencodeRunnerFiles: vi.fn(async () => {
         throw new Error("should not prepare artifacts");
       })
     });
 
     const result = await runExecutePairflowPlanContinuation(
       { ...baseInput(), idleTimeoutMs: MAX_NODE_TIMER_DELAY_MS + 1 },
-      { backend: "codex" },
+      { backend: "opencode" },
       dependencies
     );
 
@@ -644,7 +644,7 @@ describe("agentRunnerBridge", () => {
       command: null
     });
     expect(dependencies.pathExists).not.toHaveBeenCalled();
-    expect(dependencies.prepareCodexRunnerFiles).not.toHaveBeenCalled();
+    expect(dependencies.prepareOpencodeRunnerFiles).not.toHaveBeenCalled();
     expect(dependencies.runCommand).not.toHaveBeenCalled();
   });
 
@@ -667,17 +667,17 @@ describe("agentRunnerBridge", () => {
     expect(dependencies.runCommand).not.toHaveBeenCalled();
   });
 
-  it("derives the built-in Codex invocation from plan authority only", async () => {
+  it("derives the built-in Opencode invocation from plan authority only", async () => {
     const invocations: AgentRunnerProcessInvocation[] = [];
     const schemaFilePath = "/repo/.pairflow/runtime/custom/schema.json";
     const artifactRoot = await createTempDir();
 
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex", idleTimeoutMs: 5000 },
+      { backend: "opencode", idleTimeoutMs: 5000 },
       deps({
         pathExists: vi.fn(async () => true),
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: artifactRoot,
           artifactDirRef:
             ".pairflow/runtime/plan-watch/agent-runner/2026-05-01_10-00-00-local-plan-watch-plan-v1_invocation-001",
@@ -690,7 +690,7 @@ describe("agentRunnerBridge", () => {
           invocations.push(invocation);
           return {
             exitCode: 0,
-            stdout: codexAgentMessage({
+            stdout: opencodeAgentMessage({
               status: "settled_checkpoint",
               reason_code: "PLAN_SETTLED",
               summary: "continued"
@@ -706,7 +706,7 @@ describe("agentRunnerBridge", () => {
       reasonCode: "PLAN_SETTLED",
       runnerSummary: "continued",
       command: {
-        command: "codex",
+        command: "opencode",
         cwd: "/repo",
         inputMode: "none",
         idleTimeoutMs: 5000
@@ -737,7 +737,7 @@ describe("agentRunnerBridge", () => {
     expect(invocations[0]?.stdin).toBeUndefined();
   });
 
-  it("creates discoverable Codex artifact files and sanitizes invocation path segments", async () => {
+  it("creates discoverable Opencode artifact files and sanitizes invocation path segments", async () => {
     const repoPath = await createTempDir();
     const payload: AgentRunnerContinuationPayload = {
       ...buildAgentRunnerContinuationPayload({
@@ -748,11 +748,11 @@ describe("agentRunnerBridge", () => {
       repo_path: repoPath
     };
 
-    const first = await prepareCodexRunnerFiles(
+    const first = await prepareOpencodeRunnerFiles(
       payload,
       "2026-05-01T10:00:00.000Z"
     );
-    const second = await prepareCodexRunnerFiles(
+    const second = await prepareOpencodeRunnerFiles(
       payload,
       "2026-05-01T10:00:00.000Z"
     );
@@ -806,12 +806,12 @@ describe("agentRunnerBridge", () => {
     ).toBe(`${localSegment}_local-plan-watch_unsafe-invocation`);
   });
 
-  it("rejects unsupported workflow before built-in Codex spawn", async () => {
+  it("rejects unsupported workflow before built-in Opencode spawn", async () => {
     const dependencies = deps();
 
     const result = await runExecutePairflowPlanContinuation(
       { ...baseInput(), workflow: "CreateTask" },
-      { backend: "codex" },
+      { backend: "opencode" },
       dependencies
     );
 
@@ -840,7 +840,7 @@ describe("agentRunnerBridge", () => {
 
     const result = await runExecutePairflowPlanContinuation(
       { ...baseInput(), workflow: "CreateTask", invocationId: "" },
-      { backend: "codex" },
+      { backend: "opencode" },
       dependencies
     );
 
@@ -854,12 +854,12 @@ describe("agentRunnerBridge", () => {
     expect(dependencies.runCommand).not.toHaveBeenCalled();
   });
 
-  it("rejects malformed built-in Codex payload before filesystem checks or spawn", async () => {
+  it("rejects malformed built-in Opencode payload before filesystem checks or spawn", async () => {
     const dependencies = deps();
 
     const result = await runExecutePairflowPlanContinuation(
       { ...baseInput(), invocationId: "" },
-      { backend: "codex" },
+      { backend: "opencode" },
       dependencies
     );
 
@@ -873,7 +873,7 @@ describe("agentRunnerBridge", () => {
     expect(dependencies.runCommand).not.toHaveBeenCalled();
   });
 
-  it("rejects invalid triggered_at timestamps in the Codex payload validator", () => {
+  it("rejects invalid triggered_at timestamps in the Opencode payload validator", () => {
     const payload: AgentRunnerContinuationPayload = {
       ...buildAgentRunnerContinuationPayload(baseInput()),
       triggered_at: "not-a-date"
@@ -884,16 +884,16 @@ describe("agentRunnerBridge", () => {
     );
   });
 
-  it("classifies Codex runner file preparation failures before spawning", async () => {
+  it("classifies Opencode runner file preparation failures before spawning", async () => {
     const dependencies = deps({
-      prepareCodexRunnerFiles: vi.fn(async () => {
+      prepareOpencodeRunnerFiles: vi.fn(async () => {
         throw new Error("EACCES: cannot write schema");
       })
     });
 
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       dependencies
     );
 
@@ -907,7 +907,7 @@ describe("agentRunnerBridge", () => {
     expect(dependencies.runCommand).not.toHaveBeenCalled();
   });
 
-  it("blocks missing plan path for the built-in Codex runner before spawning", async () => {
+  it("blocks missing plan path for the built-in Opencode runner before spawning", async () => {
     const dependencies = deps({
       pathExists: vi
         .fn()
@@ -918,7 +918,7 @@ describe("agentRunnerBridge", () => {
 
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       dependencies
     );
 
@@ -931,14 +931,14 @@ describe("agentRunnerBridge", () => {
     expect(dependencies.runCommand).not.toHaveBeenCalled();
   });
 
-  it("parses Codex output from the final structured agent message", async () => {
+  it("parses Opencode output from the final structured agent message", async () => {
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
         runCommand: vi.fn(async () => ({
           exitCode: 0,
-          stdout: codexAgentMessage({
+          stdout: opencodeAgentMessage({
             status: "human_checkpoint",
             reason_code: "NEEDS_OPERATOR"
           }),
@@ -954,19 +954,19 @@ describe("agentRunnerBridge", () => {
     expect(result.stdout).toContain("NEEDS_OPERATOR");
   });
 
-  it("writes Codex event artifacts for non-mock test runCommand overrides", async () => {
+  it("writes Opencode event artifacts for non-mock test runCommand overrides", async () => {
     const artifactRoot = await createTempDir();
     const eventsFilePath = join(artifactRoot, "events.ndjson");
     const timelineFilePath = join(artifactRoot, "timeline.ndjson");
-    const message = codexAgentMessage({
+    const message = opencodeAgentMessage({
       status: "settled_checkpoint",
       reason_code: "PLAN_SETTLED"
     });
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: artifactRoot,
           artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",
           schemaFilePath: join(artifactRoot, "schema.json"),
@@ -992,7 +992,7 @@ describe("agentRunnerBridge", () => {
     );
   });
 
-  it("uses the last valid structured Codex agent message and writes raw plus timeline artifacts", async () => {
+  it("uses the last valid structured Opencode agent message and writes raw plus timeline artifacts", async () => {
     const artifactRoot = await createTempDir();
     const eventsFilePath = join(artifactRoot, "events.ndjson");
     const timelineFilePath = join(artifactRoot, "timeline.ndjson");
@@ -1000,7 +1000,7 @@ describe("agentRunnerBridge", () => {
       type: "thread.started",
       thread_id: "019df063-d8b1-7631-9be8-191fe2eef27c"
     })}\n`;
-    const first = codexAgentMessage({
+    const first = opencodeAgentMessage({
       status: "settled_checkpoint",
       reason_code: "FIRST"
     });
@@ -1019,7 +1019,7 @@ describe("agentRunnerBridge", () => {
         output: commandOutput
       }
     })}\n`;
-    const second = codexAgentMessage({
+    const second = opencodeAgentMessage({
       status: "human_checkpoint",
       reason_code: "LAST",
       summary: "needs operator"
@@ -1027,9 +1027,9 @@ describe("agentRunnerBridge", () => {
 
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: artifactRoot,
           artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",
           schemaFilePath: join(artifactRoot, "schema.json"),
@@ -1049,7 +1049,7 @@ describe("agentRunnerBridge", () => {
       status: "human_checkpoint",
       reasonCode: "LAST",
       runnerSummary: "needs operator",
-      codexSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c",
+      opencodeSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c",
       artifactDir: ".pairflow/runtime/plan-watch/agent-runner/run"
     });
     expect(await readFile(eventsFilePath, "utf8")).toBe(`${sessionEvent}${first}${commandEvent}${second}`);
@@ -1060,13 +1060,13 @@ describe("agentRunnerBridge", () => {
         type: string;
         outputLineCount?: number;
         outputPreview?: string;
-        codexSessionId?: string;
+        opencodeSessionId?: string;
       });
     expect(timeline).toContainEqual({
       schemaVersion: 1,
-      type: "codex_session_started",
+      type: "opencode_session_started",
       at: "2026-05-01T10:00:05.000Z",
-      codexSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c"
+      opencodeSessionId: "019df063-d8b1-7631-9be8-191fe2eef27c"
     });
     expect(timeline.map((row) => row.type)).toContain("command_completed");
     expect(timeline.map((row) => row.type)).toContain("runner_completed");
@@ -1076,7 +1076,7 @@ describe("agentRunnerBridge", () => {
     expect(commandRow?.outputPreview).not.toContain("line 20");
   });
 
-  it("normalizes multipart Codex agent messages with a completed-at fallback timestamp", async () => {
+  it("normalizes multipart Opencode agent messages with a completed-at fallback timestamp", async () => {
     const artifactRoot = await createTempDir();
     const eventsFilePath = join(artifactRoot, "events.ndjson");
     const timelineFilePath = join(artifactRoot, "timeline.ndjson");
@@ -1087,9 +1087,9 @@ describe("agentRunnerBridge", () => {
 
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: artifactRoot,
           artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",
           schemaFilePath: join(artifactRoot, "schema.json"),
@@ -1133,7 +1133,7 @@ describe("agentRunnerBridge", () => {
       });
   });
 
-  it("normalizes flat Codex agent_message events and skips non-text content arrays", async () => {
+  it("normalizes flat Opencode agent_message events and skips non-text content arrays", async () => {
     const artifactRoot = await createTempDir();
     const eventsFilePath = join(artifactRoot, "events.ndjson");
     const timelineFilePath = join(artifactRoot, "timeline.ndjson");
@@ -1144,9 +1144,9 @@ describe("agentRunnerBridge", () => {
 
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: artifactRoot,
           artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",
           schemaFilePath: join(artifactRoot, "schema.json"),
@@ -1197,8 +1197,8 @@ describe("agentRunnerBridge", () => {
     });
   });
 
-  it("parses Codex JSONL streams without treating timeline as final authority", () => {
-    const parsed = parseCodexJsonlStream(
+  it("parses Opencode JSONL streams without treating timeline as final authority", () => {
+    const parsed = parseOpencodeJsonlStream(
       `${JSON.stringify({
         type: "thread.started",
         thread_id: "019df063-d8b1-7631-9be8-191fe2eef27c"
@@ -1213,15 +1213,15 @@ describe("agentRunnerBridge", () => {
 
     expect(parsed.finalOutput).toBeNull();
     expect(parsed.malformed).toBe(false);
-    expect(parsed.codexSessionId).toBe("019df063-d8b1-7631-9be8-191fe2eef27c");
+    expect(parsed.opencodeSessionId).toBe("019df063-d8b1-7631-9be8-191fe2eef27c");
   });
 
-  it("parses multipart Codex agent_message content without a delimiter rewrite", () => {
+  it("parses multipart Opencode agent_message content without a delimiter rewrite", () => {
     const text = JSON.stringify({
       status: "settled_checkpoint",
       reason_code: "PLAN_SETTLED"
     });
-    const parsed = parseCodexJsonlStream(
+    const parsed = parseOpencodeJsonlStream(
       `${JSON.stringify({
         type: "item.completed",
         item: {
@@ -1241,8 +1241,8 @@ describe("agentRunnerBridge", () => {
   });
 
   it("drops parser final output when a JSON-like malformed line is present", () => {
-    const parsed = parseCodexJsonlStream(
-      `{not-json\n${codexAgentMessage({
+    const parsed = parseOpencodeJsonlStream(
+      `{not-json\n${opencodeAgentMessage({
         status: "settled_checkpoint",
         reason_code: "PLAN_SETTLED"
       })}`
@@ -1252,10 +1252,10 @@ describe("agentRunnerBridge", () => {
     expect(parsed.finalOutput).toBeNull();
   });
 
-  it("does not fall back to plain Codex stdout when the JSON stream has no structured agent message", async () => {
+  it("does not fall back to plain Opencode stdout when the JSON stream has no structured agent message", async () => {
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
         runCommand: vi.fn(async () => ({
           exitCode: 0,
@@ -1274,10 +1274,10 @@ describe("agentRunnerBridge", () => {
     });
   });
 
-  it("blocks empty Codex JSON streams", async () => {
+  it("blocks empty Opencode JSON streams", async () => {
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
         runCommand: vi.fn(async () => ({
           exitCode: 0,
@@ -1294,10 +1294,10 @@ describe("agentRunnerBridge", () => {
     });
   });
 
-  it("preserves Codex idle-timeout classification when the JSON stream has no final message", async () => {
+  it("preserves Opencode idle-timeout classification when the JSON stream has no final message", async () => {
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
         runCommand: vi.fn(async (): Promise<AgentRunnerProcessResult> => ({
           exitCode: null,
@@ -1321,10 +1321,10 @@ describe("agentRunnerBridge", () => {
     });
   });
 
-  it("preserves Codex non-zero exit classification when the JSON stream has no final message", async () => {
+  it("preserves Opencode non-zero exit classification when the JSON stream has no final message", async () => {
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
         runCommand: vi.fn(async () => ({
           exitCode: 2,
@@ -1346,14 +1346,14 @@ describe("agentRunnerBridge", () => {
     });
   });
 
-  it("normalizes Codex timeline even when the Codex process exits non-zero", async () => {
+  it("normalizes Opencode timeline even when the Opencode process exits non-zero", async () => {
     const artifactRoot = await createTempDir();
     const timelineFilePath = join(artifactRoot, "timeline.ndjson");
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: artifactRoot,
           artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",
           schemaFilePath: join(artifactRoot, "schema.json"),
@@ -1390,14 +1390,14 @@ describe("agentRunnerBridge", () => {
     );
   });
 
-  it("omits runner completion timeline rows when a failed Codex process emits a final message", async () => {
+  it("omits runner completion timeline rows when a failed Opencode process emits a final message", async () => {
     const artifactRoot = await createTempDir();
     const timelineFilePath = join(artifactRoot, "timeline.ndjson");
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: artifactRoot,
           artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",
           schemaFilePath: join(artifactRoot, "schema.json"),
@@ -1417,7 +1417,7 @@ describe("agentRunnerBridge", () => {
               exit_code: 1,
               output: "failed"
             }
-          })}\n${codexAgentMessage({
+          })}\n${opencodeAgentMessage({
             status: "settled_checkpoint",
             reason_code: "PLAN_SETTLED"
           })}`,
@@ -1437,12 +1437,12 @@ describe("agentRunnerBridge", () => {
     expect(timeline).not.toContain("runner_completed");
   });
 
-  it("classifies Codex event artifact write failures as output blockers", async () => {
+  it("classifies Opencode event artifact write failures as output blockers", async () => {
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: "/repo/.pairflow/runtime/plan-watch/agent-runner/run",
           artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",
           schemaFilePath: "/repo/.pairflow/runtime/plan-watch/agent-runner/run/structured-output.schema.json",
@@ -1452,11 +1452,11 @@ describe("agentRunnerBridge", () => {
         })),
         runCommand: vi.fn(async () => ({
           exitCode: 0,
-          stdout: codexAgentMessage({
+          stdout: opencodeAgentMessage({
             status: "settled_checkpoint",
             reason_code: "PLAN_SETTLED"
           }),
-          stderr: "codex stderr"
+          stderr: "opencode stderr"
         }))
       })
     );
@@ -1466,30 +1466,30 @@ describe("agentRunnerBridge", () => {
       reasonCode: "PLAN_WATCH_RUNNER_FILE_IO_FAILED",
       failureStage: "output",
       command: {
-        command: "codex",
+        command: "opencode",
         inputMode: "none"
       },
       exitCode: 0,
       artifactDir: ".pairflow/runtime/plan-watch/agent-runner/run"
     });
     expect(result.stderr).toContain("ENOENT");
-    expect(result.stderr).toContain("codex stderr");
+    expect(result.stderr).toContain("opencode stderr");
   });
 
-  it("preserves Codex process failure classification when timeline artifact writes fail", async () => {
+  it("preserves Opencode process failure classification when timeline artifact writes fail", async () => {
     const artifactRoot = await createTempDir();
     const eventsFilePath = join(artifactRoot, "events.ndjson");
     const timelineFilePath = join(artifactRoot, "missing", "timeline.ndjson");
-    await writeFile(eventsFilePath, codexAgentMessage({
+    await writeFile(eventsFilePath, opencodeAgentMessage({
       status: "settled_checkpoint",
       reason_code: "PLAN_SETTLED"
     }), "utf8");
 
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: artifactRoot,
           artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",
           schemaFilePath: join(artifactRoot, "schema.json"),
@@ -1499,7 +1499,7 @@ describe("agentRunnerBridge", () => {
         })),
         runCommand: vi.fn(async () => ({
           exitCode: 2,
-          stdout: codexAgentMessage({
+          stdout: opencodeAgentMessage({
             status: "settled_checkpoint",
             reason_code: "PLAN_SETTLED"
           }),
@@ -1525,9 +1525,9 @@ describe("agentRunnerBridge", () => {
 
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: artifactRoot,
           artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",
           schemaFilePath: join(artifactRoot, "schema.json"),
@@ -1537,7 +1537,7 @@ describe("agentRunnerBridge", () => {
         })),
         runCommand: vi.fn(async () => ({
           exitCode: 0,
-          stdout: codexAgentMessage({
+          stdout: opencodeAgentMessage({
             status: "settled_checkpoint",
             reason_code: "PLAN_SETTLED"
           }),
@@ -1569,9 +1569,9 @@ describe("agentRunnerBridge", () => {
     })}\n`;
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: artifactRoot,
           artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",
           schemaFilePath: join(artifactRoot, "schema.json"),
@@ -1581,7 +1581,7 @@ describe("agentRunnerBridge", () => {
         })),
         runCommand: vi.fn(async () => ({
           exitCode: 0,
-          stdout: `codex startup diagnostic\n${commandEvent}${codexAgentMessage({
+          stdout: `opencode startup diagnostic\n${commandEvent}${opencodeAgentMessage({
             status: "settled_checkpoint",
             reason_code: "PLAN_SETTLED"
           })}`,
@@ -1617,9 +1617,9 @@ describe("agentRunnerBridge", () => {
     })}\n`;
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
-        prepareCodexRunnerFiles: vi.fn(async () => ({
+        prepareOpencodeRunnerFiles: vi.fn(async () => ({
           artifactDir: artifactRoot,
           artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",
           schemaFilePath: join(artifactRoot, "schema.json"),
@@ -1629,7 +1629,7 @@ describe("agentRunnerBridge", () => {
         })),
         runCommand: vi.fn(async () => ({
           exitCode: 0,
-          stdout: `${commandEvent}{not-json\n${codexAgentMessage({
+          stdout: `${commandEvent}{not-json\n${opencodeAgentMessage({
             status: "settled_checkpoint",
             reason_code: "PLAN_SETTLED"
           })}`,
@@ -1650,8 +1650,8 @@ describe("agentRunnerBridge", () => {
     expect(timeline).not.toContain("runner_completed");
   });
 
-  it("caps unrecognized Codex timeline rows", () => {
-    const timeline = normalizeCodexTimeline({
+  it("caps unrecognized Opencode timeline rows", () => {
+    const timeline = normalizeOpencodeTimeline({
       events: Array.from({ length: 30 }, (_, index) => ({
         line: JSON.stringify({ type: `diagnostic.${index}` }),
         value: { type: `diagnostic.${index}` }
@@ -1666,7 +1666,7 @@ describe("agentRunnerBridge", () => {
   });
 
   it("classifies contradictory command event/status pairs as completed when either side completed", () => {
-    const timeline = normalizeCodexTimeline({
+    const timeline = normalizeOpencodeTimeline({
       events: [
         {
           line: "{}",
@@ -1721,7 +1721,7 @@ describe("agentRunnerBridge", () => {
     expect(dependencies.runCommand).not.toHaveBeenCalled();
   });
 
-  it("blocks missing repo path for the built-in Codex runner before spawning", async () => {
+  it("blocks missing repo path for the built-in Opencode runner before spawning", async () => {
     const dependencies = deps({
       pathExists: vi
         .fn()
@@ -1731,7 +1731,7 @@ describe("agentRunnerBridge", () => {
 
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       dependencies
     );
 
@@ -1744,10 +1744,10 @@ describe("agentRunnerBridge", () => {
     expect(dependencies.runCommand).not.toHaveBeenCalled();
   });
 
-  it("keeps Codex spawn error messages without ENOENT code in the generic bucket", async () => {
+  it("keeps Opencode spawn error messages without ENOENT code in the generic bucket", async () => {
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
         runCommand: vi.fn(async () => {
           throw new Error("ENOENT");
@@ -1765,10 +1765,10 @@ describe("agentRunnerBridge", () => {
     });
   });
 
-  it("classifies Codex spawn ENOENT error codes with the Codex-specific reason code", async () => {
+  it("classifies Opencode spawn ENOENT error codes with the Opencode-specific reason code", async () => {
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
         runCommand: vi.fn(async () => {
           throw Object.assign(new Error("spawn failed"), { code: "ENOENT" });
@@ -1786,10 +1786,10 @@ describe("agentRunnerBridge", () => {
     });
   });
 
-  it("keeps non-ENOENT Codex runner rejections in the generic spawn bucket", async () => {
+  it("keeps non-ENOENT Opencode runner rejections in the generic spawn bucket", async () => {
     const result = await runExecutePairflowPlanContinuation(
       baseInput(),
-      { backend: "codex" },
+      { backend: "opencode" },
       deps({
         runCommand: vi.fn(async () => {
           throw new Error("permission denied");
@@ -1893,14 +1893,14 @@ describe("agentRunnerBridge", () => {
     expect(dependencies.runCommand).not.toHaveBeenCalled();
   });
 
-  it("does not prepare Codex runner files when the stop signal is already aborted", async () => {
+  it("does not prepare Opencode runner files when the stop signal is already aborted", async () => {
     const controller = new AbortController();
     controller.abort();
     const dependencies = deps();
 
     const result = await runExecutePairflowPlanContinuation(
       { ...baseInput(), stopSignal: controller.signal },
-      { backend: "codex" },
+      { backend: "opencode" },
       dependencies
     );
 
@@ -1911,7 +1911,7 @@ describe("agentRunnerBridge", () => {
       command: null
     });
     expect(dependencies.pathExists).not.toHaveBeenCalled();
-    expect(dependencies.prepareCodexRunnerFiles).not.toHaveBeenCalled();
+    expect(dependencies.prepareOpencodeRunnerFiles).not.toHaveBeenCalled();
     expect(dependencies.runCommand).not.toHaveBeenCalled();
   });
 
@@ -2552,16 +2552,16 @@ describe("agentRunnerBridge", () => {
     await expect(readFile(stdoutFilePath, "utf8")).rejects.toThrow(/ENOENT/u);
   });
 
-  it("blocks Codex JSON runs when the default adapter cannot fully persist events.ndjson", async () => {
+  it("blocks Opencode JSON runs when the default adapter cannot fully persist events.ndjson", async () => {
     const root = await createTempDir();
-    const runnerPath = join(root, "codex-json-runner.js");
+    const runnerPath = join(root, "opencode-json-runner.js");
     const eventsFilePath = join(root, "events.ndjson");
     const timelineFilePath = join(root, "timeline.ndjson");
-    const firstMessage = codexAgentMessage({
+    const firstMessage = opencodeAgentMessage({
       status: "settled_checkpoint",
       reason_code: "PARTIAL_SHOULD_NOT_WIN"
     });
-    const secondMessage = codexAgentMessage({
+    const secondMessage = opencodeAgentMessage({
       status: "settled_checkpoint",
       reason_code: "PLAN_SETTLED"
     });
@@ -2591,7 +2591,7 @@ describe("agentRunnerBridge", () => {
     const result = await runExecutePairflowPlanContinuation(
       { ...baseInput(), planPath: process.cwd(), repoPath: process.cwd() },
       {
-        backend: "codex",
+        backend: "opencode",
         command: runnerPath,
         env: { PAIRFLOW_TEST_EVENTS_FILE: eventsFilePath }
       },
@@ -2599,7 +2599,7 @@ describe("agentRunnerBridge", () => {
         pathExists: async () => true,
         runCommand: runAgentRunnerCommand,
         builtInBackends: [
-          createCodexPlanWatchRunnerBackendAdapter({
+          createOpencodePlanWatchRunnerBackendAdapter({
             prepareRunnerFiles: async () => ({
               artifactDir: root,
               artifactDirRef: ".pairflow/runtime/plan-watch/agent-runner/run",

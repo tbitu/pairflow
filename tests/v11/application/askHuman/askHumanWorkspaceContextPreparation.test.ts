@@ -31,7 +31,7 @@ describe("prepareAskHumanWorkspaceContext", () => {
         bubble_id: "b_ask_human_01",
         state: "RUNNING",
         round: 3,
-        active_agent: "codex",
+        active_agent: "opencode",
         active_role: "implementer",
         active_since: "2026-02-21T12:00:00.000Z",
         round_role_history: [],
@@ -89,7 +89,7 @@ describe("prepareAskHumanWorkspaceContext", () => {
         bubble_id: "b_ask_human_02",
         state: "RUNNING",
         round: 4,
-        active_agent: "claude",
+        active_agent: "opencode",
         active_role: "reviewer",
         active_since: "2026-02-21T12:00:00.000Z",
         execution_context: {
@@ -189,7 +189,7 @@ describe("prepareAskHumanWorkspaceContext", () => {
               bubble_id: "b_ask_human_03",
               state: "RUNNING",
               round: 4,
-              active_agent: "claude",
+              active_agent: "opencode",
               active_role: "reviewer",
               active_since: "2026-02-21T12:00:00.000Z",
               execution_context: {

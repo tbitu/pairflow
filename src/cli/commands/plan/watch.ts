@@ -361,8 +361,8 @@ export function renderPlanWatchEventText(event: PlanWatchEvent): string {
       `invocation=${event.invocationId}`,
       `status=${event.runnerResult.status}`,
       `reason=${event.runnerResult.reasonCode}`,
-      ...(event.runnerResult.codexSessionId !== undefined
-        ? [`codex_session=${event.runnerResult.codexSessionId}`]
+      ...(event.runnerResult.opencodeSessionId !== undefined
+        ? [`opencode_session=${event.runnerResult.opencodeSessionId}`]
         : [])
     ].join(" ");
   }
@@ -408,11 +408,11 @@ export function renderPlanWatchRunnerTimelineLine(line: string): string | null {
       summary: asString(row.summary)
     });
   }
-  if (row.type === "codex_session_started") {
+  if (row.type === "opencode_session_started") {
     return renderRunnerMessage({
       label: "runner",
-      reason: "codex session",
-      summary: asString(row.codexSessionId)
+      reason: "opencode session",
+      summary: asString(row.opencodeSessionId)
     });
   }
   if (row.type === "runner_completed") {

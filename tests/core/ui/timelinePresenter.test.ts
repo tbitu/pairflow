@@ -38,7 +38,7 @@ describe("timelinePresenter lenient fallback", () => {
       ts: "2026-03-13T12:05:14.149Z",
       bubble_id: "b_ui_compat_01",
       sender: "orchestrator",
-      recipient: "codex",
+      recipient: "opencode",
       type: "TASK",
       round: 0,
       payload: {
@@ -50,8 +50,8 @@ describe("timelinePresenter lenient fallback", () => {
       id: "msg_20260313_002",
       ts: "2026-03-13T12:25:31.766Z",
       bubble_id: "b_ui_compat_01",
-      sender: "codex",
-      recipient: "claude",
+      sender: "opencode",
+      recipient: "opencode",
       type: "PASS",
       round: 1,
       payload: {
@@ -76,7 +76,7 @@ describe("timelinePresenter lenient fallback", () => {
     expect(timeline[1]).toMatchObject({
       id: "msg_20260313_002",
       summaryText: "Forward-compatible payload fields",
-      senderLabel: "codex",
+      senderLabel: "opencode",
       role: "implementer",
       badges: []
     });
@@ -129,7 +129,7 @@ describe("timelinePresenter lenient fallback", () => {
         ts: "2026-04-19T19:50:57.099Z",
         bubble_id: "remote-smoke18",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "TASK",
         round: 0,
         payload: {
@@ -147,7 +147,7 @@ describe("timelinePresenter lenient fallback", () => {
           ts: "2026-04-19T19:50:57.099Z",
           bubble_id: "remote-smoke18",
           sender: "orchestrator",
-          recipient: "codex",
+          recipient: "opencode",
           type: "TASK",
           round: 0,
           payload: {
@@ -159,8 +159,8 @@ describe("timelinePresenter lenient fallback", () => {
           id: "msg_20260419_002",
           ts: "2026-04-19T19:51:43.291Z",
           bubble_id: "remote-smoke18",
-          sender: "codex",
-          recipient: "claude",
+          sender: "opencode",
+          recipient: "opencode",
           type: "PASS",
           round: 1,
           payload: {

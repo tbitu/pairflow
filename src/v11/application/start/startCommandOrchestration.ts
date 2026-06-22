@@ -82,8 +82,7 @@ export interface ResolvedStartBubbleDependencies {
   executeRemoteBubbleStart:
     (input: ExecuteRemoteBubbleStartInput) => Promise<ExecuteRemoteBubbleStartResult>;
   prepareRemoteStartActivationPackage: PrepareRemoteStartActivationPackagePort;
-  resolveCodexMcpDisableArgs:
-    NonNullable<StartBubbleDependencies["resolveCodexMcpDisableArgs"]>;
+
   reportWarning: (message: string) => void;
   buildResumeSummary:
     NonNullable<StartBubbleDependencies["buildResumeTranscriptSummary"]>;
@@ -227,9 +226,7 @@ export function resolveStartBubbleDependencies(
     writeState:
       dependencies.writeStateSnapshot ?? startBubbleDependencyDefaults.writeStateSnapshot,
     ...remoteExecution,
-    resolveCodexMcpDisableArgs:
-      dependencies.resolveCodexMcpDisableArgs
-      ?? startBubbleDependencyDefaults.resolveCodexMcpDisableArgs,
+
     reportWarning:
       dependencies.reportWarning
       ?? ((message: string) => {

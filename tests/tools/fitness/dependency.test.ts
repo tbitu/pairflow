@@ -949,7 +949,7 @@ describe("dependency fitness check", () => {
       [
         "import { spawn } from 'node:child_process';",
         "export const discover = (): void => {",
-        "  spawn('codex', ['mcp', 'list', '--json']);",
+        "  spawn('opencode', ['mcp', 'list', '--json']);",
         "};",
         ""
       ].join("\n")
@@ -964,7 +964,7 @@ describe("dependency fitness check", () => {
         scope: ["src/v11/**"],
         exceptions: [
           {
-            id: "agent-command-codex-mcp-discovery",
+            id: "agent-command-opencode-mcp-discovery",
             kind: "allow-ownership-signal",
             owner: "architecture/runtime",
             reason: "Bounded command discovery is intentionally shared.",
@@ -981,7 +981,7 @@ describe("dependency fitness check", () => {
     expect(report.status).toBe("pass");
     expect(report.details).toContain("exceptions_applied=1");
     expect(report.details).toContain(
-      "exceptions_applied_ids=agent-command-codex-mcp-discovery"
+      "exceptions_applied_ids=agent-command-opencode-mcp-discovery"
     );
   });
 

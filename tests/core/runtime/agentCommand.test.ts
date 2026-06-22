@@ -5,10 +5,10 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import type { CodexMcpDisableArgsError } from "../../../src/v11/shared/command/agentCommand.js";
+import type { OpencodeMcpDisableArgsError } from "../../../src/v11/shared/command/agentCommand.js";
 import {
   buildAgentCommand,
-  resolveCodexMcpDisableArgs
+  resolveOpencodeMcpDisableArgs
 } from "../../../src/v11/shared/command/agentCommand.js";
 import { shellQuote } from "../../../src/v11/shared/foundation/shellQuote.js";
 
@@ -46,51 +46,51 @@ function extractBashLcScript(command: string): string {
   return quotedScript.slice(1, -1).replace(/'\\''/gu, "'");
 }
 
-async function resolveArgsWithFakeCodex(input: {
-  codexJson?: unknown;
-  codexStdout?: string;
-  codexStderr?: string;
-  codexExitCode?: number;
+async function resolveArgsWithFakeOpencode(input: {
+  opencodeJson?: unknown;
+  opencodeStdout?: string;
+  opencodeStderr?: string;
+  opencodeExitCode?: number;
 }): Promise<string[]> {
   const tempDir = await mkdtemp(path.join(tmpdir(), "pairflow-agent-command-"));
-  const fakeCodexPath = path.join(tempDir, "codex");
-  const codexStdout =
-    input.codexStdout ?? JSON.stringify(input.codexJson ?? []);
-  const codexStderr = input.codexStderr ?? "";
-  const codexExitCode = input.codexExitCode ?? 0;
+  const fakeOpencodePath = path.join(tempDir, "opencode");
+  const opencodeStdout =
+    input.opencodeStdout ?? JSON.stringify(input.opencodeJson ?? []);
+  const opencodeStderr = input.opencodeStderr ?? "";
+  const opencodeExitCode = input.opencodeExitCode ?? 0;
   await writeFile(
-    fakeCodexPath,
+    fakeOpencodePath,
     [
       "#!/usr/bin/env bash",
       "set -euo pipefail",
       "if [ \"$1 $2\" != \"mcp list\" ]; then",
-      "  printf '%s\\n' \"unexpected codex invocation: $*\" >&2",
+      "  printf '%s\\n' \"unexpected opencode invocation: $*\" >&2",
       "  exit 64",
       "fi",
-      ...(codexStderr.length > 0
-        ? [`printf '%s\\n' ${shellQuote(codexStderr)} >&2`]
+      ...(opencodeStderr.length > 0
+        ? [`printf '%s\\n' ${shellQuote(opencodeStderr)} >&2`]
         : []),
-      `printf '%s\\n' ${shellQuote(codexStdout)}`,
-      `exit ${codexExitCode}`
+      `printf '%s\\n' ${shellQuote(opencodeStdout)}`,
+      `exit ${opencodeExitCode}`
     ].join("\n")
   );
-  await chmod(fakeCodexPath, 0o755);
+  await chmod(fakeOpencodePath, 0o755);
 
-  return await resolveCodexMcpDisableArgs({
+  return await resolveOpencodeMcpDisableArgs({
     roleName: "reviewer",
-    bubbleId: "b_agent_cmd_fake_codex",
-    codexCommand: fakeCodexPath
+    bubbleId: "b_agent_cmd_fake_opencode",
+    opencodeCommand: fakeOpencodePath
   });
 }
 
 describe("buildAgentCommand", () => {
-  it("builds external profile bootstrap for codex by default", async () => {
+  it("builds external profile bootstrap for opencode by default", async () => {
     const worktreePath = "/tmp/pairflow worktree/it's-here";
     const command = buildAgentCommand({
-      agentName: "codex",
-      bubbleId: "b_agent_cmd_codex_01",
+      agentName: "opencode",
+      bubbleId: "b_agent_cmd_opencode_01",
       worktreePath,
-      codexMcpDisableArgs: [
+      opencodeMcpDisableArgs: [
         "-c",
         'mcp_servers={"codescene"={command="node",args=["-e","process.exit(0)"],enabled=false}}'
       ],
@@ -106,7 +106,7 @@ describe("buildAgentCommand", () => {
     expect(script).toContain('exec "$PAIRFLOW_EXTERNAL_COMMAND" "$@"');
     expect(script).not.toContain('exec node "$PAIRFLOW_LOCAL_ENTRYPOINT" "$@"');
     expect(command).toContain("--dangerously-bypass-approvals-and-sandbox");
-    expect(command).not.toContain("codex mcp list");
+    expect(command).not.toContain("opencode mcp list");
     expect(command).not.toContain("setTimeout");
     expect(command).not.toContain("command -v node");
     expect(command).toContain("mcp_servers={");
@@ -119,40 +119,40 @@ describe("buildAgentCommand", () => {
     await assertBashParses(command);
   });
 
-  it("omits Codex MCP discovery and disable overrides when the role opts in", async () => {
+  it("omits Opencode MCP discovery and disable overrides when the role opts in", async () => {
     const command = buildAgentCommand({
-      agentName: "codex",
+      agentName: "opencode",
       roleName: "reviewer",
       roleMcpPolicy: "enabled",
-      bubbleId: "b_agent_cmd_codex_enabled_01",
-      worktreePath: "/tmp/pairflow-worktree/codex-enabled"
+      bubbleId: "b_agent_cmd_opencode_enabled_01",
+      worktreePath: "/tmp/pairflow-worktree/opencode-enabled"
     });
 
     expect(command).toContain("--dangerously-bypass-approvals-and-sandbox");
-    expect(command).not.toContain("codex mcp list");
+    expect(command).not.toContain("opencode mcp list");
     expect(command).not.toContain("PAIRFLOW_ROLE_MCP_DISABLE_ARGS");
     await assertBashParses(command);
   });
 
-  it("builds Codex MCP disable overrides for quoted TOML server names", async () => {
-    const codexMcpDisableArgs = await resolveArgsWithFakeCodex({
-      codexJson: [
+  it("builds Opencode MCP disable overrides for quoted TOML server names", async () => {
+    const opencodeMcpDisableArgs = await resolveArgsWithFakeOpencode({
+      opencodeJson: [
         { name: "foo.bar", enabled: true },
         { name: "quote\"back\\slash", enabled: true },
         { name: "already_disabled", enabled: false }
       ]
     });
     const command = buildAgentCommand({
-      agentName: "codex",
+      agentName: "opencode",
       roleName: "reviewer",
       roleMcpPolicy: "disabled",
       bubbleId: "b_agent_cmd_quoted_mcp_names_01",
       worktreePath: "/tmp/pairflow-worktree/quoted-mcp",
-      codexMcpDisableArgs
+      opencodeMcpDisableArgs
     });
     const script = extractBashLcScript(command);
 
-    expect(codexMcpDisableArgs).toEqual([
+    expect(opencodeMcpDisableArgs).toEqual([
       "-c",
       'mcp_servers={"foo.bar"={command="node",args=["-e","process.exit(0)"],enabled=false},"quote\\"back\\\\slash"={command="node",args=["-e","process.exit(0)"],enabled=false}}'
     ]);
@@ -163,68 +163,68 @@ describe("buildAgentCommand", () => {
     await assertBashParses(command);
   });
 
-  it("fails closed when Codex MCP discovery exits non-zero", async () => {
-    await expect(resolveArgsWithFakeCodex({
-      codexStdout: "",
-      codexStderr: "boom",
-      codexExitCode: 7
+  it("fails closed when Opencode MCP discovery exits non-zero", async () => {
+    await expect(resolveArgsWithFakeOpencode({
+      opencodeStdout: "",
+      opencodeStderr: "boom",
+      opencodeExitCode: 7
     })).rejects.toThrow(
-      "codex mcp list --json failed for role reviewer in bubble b_agent_cmd_fake_codex"
+      "opencode mcp list --json failed for role reviewer in bubble b_agent_cmd_fake_opencode"
     );
-    await expect(resolveArgsWithFakeCodex({
-      codexStdout: "",
-      codexStderr: "boom",
-      codexExitCode: 7
+    await expect(resolveArgsWithFakeOpencode({
+      opencodeStdout: "",
+      opencodeStderr: "boom",
+      opencodeExitCode: 7
     })).rejects.toThrow("code=7");
-    await expect(resolveArgsWithFakeCodex({
-      codexStdout: "",
-      codexStderr: "boom",
-      codexExitCode: 7
+    await expect(resolveArgsWithFakeOpencode({
+      opencodeStdout: "",
+      opencodeStderr: "boom",
+      opencodeExitCode: 7
     })).rejects.toThrow("boom");
   });
 
-  it("fails closed when Codex MCP discovery returns malformed JSON", async () => {
-    await expect(resolveArgsWithFakeCodex({
-      codexStdout: "{not-json"
-    })).rejects.toThrow("codex mcp list --json returned malformed JSON");
-    await expect(resolveArgsWithFakeCodex({
-      codexStdout: "{not-json"
+  it("fails closed when Opencode MCP discovery returns malformed JSON", async () => {
+    await expect(resolveArgsWithFakeOpencode({
+      opencodeStdout: "{not-json"
+    })).rejects.toThrow("opencode mcp list --json returned malformed JSON");
+    await expect(resolveArgsWithFakeOpencode({
+      opencodeStdout: "{not-json"
     })).rejects.toMatchObject({
-      name: "CodexMcpDisableArgsError",
+      name: "OpencodeMcpDisableArgsError",
       reasonCode: "CODEX_MCP_LIST_JSON_MALFORMED",
-      context: { command_name: "codex mcp list --json" }
-    } satisfies Partial<CodexMcpDisableArgsError>);
+      context: { command_name: "opencode mcp list --json" }
+    } satisfies Partial<OpencodeMcpDisableArgsError>);
   });
 
-  it("fails closed when Codex MCP discovery returns invalid schema", async () => {
-    await expect(resolveArgsWithFakeCodex({
-      codexJson: { name: "not-array" }
-    })).rejects.toThrow("codex mcp list --json must return a top-level array");
-    await expect(resolveArgsWithFakeCodex({
-      codexJson: [{ name: "missing-enabled" }]
-    })).rejects.toThrow("codex MCP entry 0 has unsupported enabled value");
-    await expect(resolveArgsWithFakeCodex({
-      codexJson: [{ name: "", enabled: true }]
+  it("fails closed when Opencode MCP discovery returns invalid schema", async () => {
+    await expect(resolveArgsWithFakeOpencode({
+      opencodeJson: { name: "not-array" }
+    })).rejects.toThrow("opencode mcp list --json must return a top-level array");
+    await expect(resolveArgsWithFakeOpencode({
+      opencodeJson: [{ name: "missing-enabled" }]
+    })).rejects.toThrow("opencode MCP entry 0 has unsupported enabled value");
+    await expect(resolveArgsWithFakeOpencode({
+      opencodeJson: [{ name: "", enabled: true }]
     })).rejects.toThrow(
-      "enabled codex MCP entry 0 must have a non-empty string name"
+      "enabled opencode MCP entry 0 must have a non-empty string name"
     );
   });
 
-  it("fails closed when an enabled Codex MCP server name contains control characters", async () => {
-    await expect(resolveArgsWithFakeCodex({
-      codexJson: [{ name: "bad\nname", enabled: true }]
+  it("fails closed when an enabled Opencode MCP server name contains control characters", async () => {
+    await expect(resolveArgsWithFakeOpencode({
+      opencodeJson: [{ name: "bad\nname", enabled: true }]
     })).rejects.toThrow(
-      "enabled codex MCP entry 0 name contains unsupported control characters"
+      "enabled opencode MCP entry 0 name contains unsupported control characters"
     );
   });
 
-  it("passes strict empty MCP config for Claude disabled roles", async () => {
+  it("passes strict empty MCP config for Opencode disabled roles", async () => {
     const command = buildAgentCommand({
-      agentName: "claude",
+      agentName: "opencode",
       roleName: "reviewer",
       roleMcpPolicy: "disabled",
-      bubbleId: "b_agent_cmd_claude_disabled_01",
-      worktreePath: "/tmp/pairflow-worktree/claude-disabled",
+      bubbleId: "b_agent_cmd_opencode_disabled_01",
+      worktreePath: "/tmp/pairflow-worktree/opencode-disabled",
       startupPrompt: "review this handoff"
     });
     const script = extractBashLcScript(command);
@@ -241,13 +241,13 @@ describe("buildAgentCommand", () => {
     await assertBashParses(command);
   });
 
-  it("preserves Claude baseline launch when the role opts in to MCP", async () => {
+  it("preserves Opencode baseline launch when the role opts in to MCP", async () => {
     const command = buildAgentCommand({
-      agentName: "claude",
+      agentName: "opencode",
       roleName: "meta_reviewer",
       roleMcpPolicy: "enabled",
-      bubbleId: "b_agent_cmd_claude_enabled_01",
-      worktreePath: "/tmp/pairflow-worktree/claude-enabled"
+      bubbleId: "b_agent_cmd_opencode_enabled_01",
+      worktreePath: "/tmp/pairflow-worktree/opencode-enabled"
     });
 
     expect(command).toContain("--dangerously-skip-permissions");
@@ -256,14 +256,14 @@ describe("buildAgentCommand", () => {
     await assertBashParses(command);
   });
 
-  it("embeds precomputed Codex MCP disable args without discovery script", async () => {
+  it("embeds precomputed Opencode MCP disable args without discovery script", async () => {
     const command = buildAgentCommand({
-      agentName: "codex",
+      agentName: "opencode",
       roleName: "implementer",
       roleMcpPolicy: "disabled",
       bubbleId: "b_agent_cmd_bash3_compat_01",
       worktreePath: "/tmp/pairflow-worktree/bash3",
-      codexMcpDisableArgs: ["-c", "mcp_servers={}"]
+      opencodeMcpDisableArgs: ["-c", "mcp_servers={}"]
     });
     const script = extractBashLcScript(command);
 
@@ -276,15 +276,15 @@ describe("buildAgentCommand", () => {
 
   it("uses role policy instead of agent policy for same-agent roles", async () => {
     const disabledReviewer = buildAgentCommand({
-      agentName: "codex",
+      agentName: "opencode",
       roleName: "reviewer",
       roleMcpPolicy: "disabled",
       bubbleId: "b_agent_cmd_same_agent_reviewer_01",
       worktreePath: "/tmp/pairflow-worktree/same-agent-reviewer",
-      codexMcpDisableArgs: ["-c", "mcp_servers={}"]
+      opencodeMcpDisableArgs: ["-c", "mcp_servers={}"]
     });
     const enabledMetaReviewer = buildAgentCommand({
-      agentName: "codex",
+      agentName: "opencode",
       roleName: "meta_reviewer",
       roleMcpPolicy: "enabled",
       bubbleId: "b_agent_cmd_same_agent_meta_01",
@@ -300,11 +300,11 @@ describe("buildAgentCommand", () => {
   it("prefers workspacePath as the canonical agent root when provided", async () => {
     const workspacePath = "/tmp/pairflow-workspace/canonical";
     const command = buildAgentCommand({
-      agentName: "codex",
+      agentName: "opencode",
       bubbleId: "b_agent_cmd_workspace_01",
       workspacePath,
       worktreePath: "/tmp/pairflow-workspace/legacy",
-      codexMcpDisableArgs: [],
+      opencodeMcpDisableArgs: [],
       startupPrompt: "Prompt"
     });
     const script = extractBashLcScript(command);
@@ -318,11 +318,11 @@ describe("buildAgentCommand", () => {
   it("pins the external pairflow authority when explicitly provided", async () => {
     const workspacePath = "/tmp/pairflow-remote-workspace/canonical";
     const command = buildAgentCommand({
-      agentName: "codex",
+      agentName: "opencode",
       bubbleId: "b_agent_cmd_remote_external_01",
       workspacePath,
       externalPairflowCommand: "/home/dev/.local/share/pnpm/pairflow",
-      codexMcpDisableArgs: [],
+      opencodeMcpDisableArgs: [],
       startupPrompt: "Prompt"
     });
     const script = extractBashLcScript(command);
@@ -336,7 +336,7 @@ describe("buildAgentCommand", () => {
   it("exports remote workspace authority for remote external panes", async () => {
     const workspacePath = "/remote/repos/pairflow--bubble-01";
     const command = buildAgentCommand({
-      agentName: "codex",
+      agentName: "opencode",
       bubbleId: "b_agent_cmd_remote_authority_01",
       workspacePath,
       externalPairflowCommand: "/home/dev/.local/share/pnpm/pairflow",
@@ -344,7 +344,7 @@ describe("buildAgentCommand", () => {
         workspaceRoot: workspacePath,
         externalPairflowCommand: "/home/dev/.local/share/pnpm/pairflow"
       },
-      codexMcpDisableArgs: [],
+      opencodeMcpDisableArgs: [],
       startupPrompt: "Prompt"
     });
     const script = extractBashLcScript(command);
@@ -362,10 +362,10 @@ describe("buildAgentCommand", () => {
   });
 
   it("builds self_host profile bootstrap when explicitly selected", async () => {
-    const worktreePath = "/tmp/pairflow-worktree/claude";
+    const worktreePath = "/tmp/pairflow-worktree/opencode";
     const command = buildAgentCommand({
-      agentName: "claude",
-      bubbleId: "b_agent_cmd_claude_01",
+      agentName: "opencode",
+      bubbleId: "b_agent_cmd_opencode_01",
       worktreePath,
       pairflowCommandProfile: "self_host",
       startupPrompt: "Reviewer startup prompt."
@@ -384,21 +384,21 @@ describe("buildAgentCommand", () => {
 
   it("passes an explicit model to the selected agent CLI", async () => {
     const command = buildAgentCommand({
-      agentName: "claude",
-      model: "claude-sonnet-4-5",
+      agentName: "opencode",
+      model: "opencode-sonnet-4-5",
       bubbleId: "b_agent_cmd_model_01",
       workspacePath: "/tmp/pairflow-worktree/model"
     });
 
     expect(command).toContain("--model");
-    expect(command).toContain("claude-sonnet-4-5");
+    expect(command).toContain("opencode-sonnet-4-5");
     await assertBashParses(command);
   });
 
   it("fails closed when worktree path is empty", () => {
     expect(() =>
       buildAgentCommand({
-        agentName: "codex",
+        agentName: "opencode",
         bubbleId: "b_agent_cmd_invalid_01",
         worktreePath: "   "
       })

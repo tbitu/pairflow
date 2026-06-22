@@ -15,7 +15,7 @@ function createStateSnapshot(): BubbleStateSnapshot {
     bubble_id: "b_kickoff_validation_01",
     state: "RUNNING",
     round: 0,
-    active_agent: "claude",
+    active_agent: "opencode",
     active_since: "2026-03-19T22:00:00.000Z",
     active_role: "reviewer",
     round_role_history: [],

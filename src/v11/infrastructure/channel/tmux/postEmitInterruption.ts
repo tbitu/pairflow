@@ -30,7 +30,7 @@ export interface PostEmitInterruptionInput {
  * Best-effort: all failures are silently logged and never thrown. The emit
  * result is already committed at this point — interruption is a side effect.
  */
-export async function postEmitInterruptCodexPane(
+export async function postEmitInterruptOpencodePane(
   input: PostEmitInterruptionInput,
 ): Promise<void> {
   const tmuxRunner = input.tmuxRunner ?? runTmux;

@@ -16,7 +16,7 @@ function createLoadedRunningState(
       bubble_id: "b_meta_gate_stage_01",
       state: "RUNNING",
       round: 4,
-      active_agent: "claude",
+      active_agent: "opencode",
       active_since: "2026-03-19T10:00:00.000Z",
       active_role: "reviewer",
       round_role_history: [],
@@ -64,7 +64,7 @@ describe("stageMetaReviewRunningState", () => {
     const result = await stageMetaReviewRunningState({
       bubbleId: "b_meta_gate_stage_01",
       loadedRunning: createLoadedRunningState(),
-      metaReviewerAgent: "codex",
+      metaReviewerAgent: "opencode",
       nowIso: "2026-03-19T10:03:30.000Z",
       watchdogTimeoutMinutes: 15,
       statePath: "/tmp/b_meta_gate_stage_01/state.json",
@@ -105,7 +105,7 @@ describe("stageMetaReviewRunningState", () => {
         ...loadedRunning,
         state: stateWithoutMetaReview
       },
-      metaReviewerAgent: "codex",
+      metaReviewerAgent: "opencode",
       nowIso: "2026-03-19T10:03:30.000Z",
       watchdogTimeoutMinutes: 15,
       statePath: "/tmp/b_meta_gate_stage_01/state.json",

@@ -49,9 +49,7 @@ import type {
 import type {
   ResolveBubbleFromWorkspaceCwdPort
 } from "../../ports/workspaceResolution.js";
-import type {
-  ResolveCodexMcpDisableArgsInput
-} from "../../shared/command/agentCommand.js";
+
 
 interface ExecuteRemoteBubbleStartInput {
   bubbleId: string;
@@ -123,8 +121,7 @@ export interface StartBubbleDependencyDefaults {
   readReviewerFocusArtifact: ReadReviewerFocusArtifactPort;
   resolveBubbleFromWorkspaceCwd: ResolveBubbleFromWorkspaceCwdPort;
   resolveReviewerTestExecutionDirective: ResolveReviewerTestExecutionDirectivePort;
-  resolveCodexMcpDisableArgs:
-    (input: ResolveCodexMcpDisableArgsInput) => Promise<string[]>;
+
 }
 
 let configuredStartBubbleDependencyDefaults:

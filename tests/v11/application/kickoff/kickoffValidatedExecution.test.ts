@@ -27,7 +27,7 @@ function createRunningState(base: PersistedBubbleStateSnapshot): PersistedBubble
     ...base,
     state: "RUNNING",
     round: 0,
-    active_agent: "claude",
+    active_agent: "opencode",
     active_role: "reviewer"
   };
 }

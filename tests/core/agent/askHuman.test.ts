@@ -79,7 +79,7 @@ describe("emitAskHumanFromWorkspace", () => {
 
     expect(result.sequence).toBe(2);
     expect(result.envelope.type).toBe("HUMAN_QUESTION");
-    expect(result.envelope.sender).toBe("codex");
+    expect(result.envelope.sender).toBe("opencode");
     expect(result.envelope.recipient).toBe("human");
     expect(result.state.state).toBe("WAITING_HUMAN");
     expect(result.activation).toEqual({
@@ -92,7 +92,7 @@ describe("emitAskHumanFromWorkspace", () => {
 
     const state = await readStateSnapshot(bubble.paths.statePath);
     expect(state.state.state).toBe("WAITING_HUMAN");
-    expect(state.state.active_agent).toBe("codex");
+    expect(state.state.active_agent).toBe("opencode");
     expect(state.state.active_role).toBe("implementer");
     expect(state.state.execution_context).toBeNull();
     expect(state.state.last_command_at).toBe(now.toISOString());

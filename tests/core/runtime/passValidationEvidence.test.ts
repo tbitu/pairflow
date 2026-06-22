@@ -94,8 +94,8 @@ cwd = "apps/web"
 paths = ["apps/web/**", "packages/ui/**"]
 
 [agents]
-implementer = "codex"
-reviewer = "claude"
+implementer = "opencode"
+reviewer = "opencode"
 
 [commands]
 test = "pnpm test"
@@ -132,8 +132,8 @@ base_branch = "main"
 bubble_branch = "bubble/b_false_explicit"
 
 [agents]
-implementer = "codex"
-reviewer = "claude"
+implementer = "opencode"
+reviewer = "opencode"
 
 [commands]
 test = "pnpm test"
@@ -177,8 +177,8 @@ cwd = "apps/web"
 paths = ["apps/web/**"]
 
 [agents]
-implementer = "codex"
-reviewer = "claude"
+implementer = "opencode"
+reviewer = "opencode"
 
 [commands]
 test = "pnpm test"

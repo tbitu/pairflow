@@ -163,11 +163,11 @@ pairflow_command_profile = "external"
 reviewer_context_mode = "fresh"
 
 [defaults.agents]
-implementer = "codex"
+implementer = "opencode"
 implementer_model = "gpt-5.2"
-reviewer = "claude"
-reviewer_model = "claude-sonnet-4-5"
-meta_reviewer = "codex"
+reviewer = "opencode"
+reviewer_model = "opencode-sonnet-4-5"
+meta_reviewer = "opencode"
 meta_reviewer_model = "gpt-5.2-mini"
 
 [defaults.role_mcp]
@@ -193,11 +193,11 @@ round_gate_applies_after = 2
       pairflow_command_profile: "external",
       reviewer_context_mode: "fresh",
       agents: {
-        implementer: "codex",
+        implementer: "opencode",
         implementer_model: "gpt-5.2",
-        reviewer: "claude",
-        reviewer_model: "claude-sonnet-4-5",
-        meta_reviewer: "codex",
+        reviewer: "opencode",
+        reviewer_model: "opencode-sonnet-4-5",
+        meta_reviewer: "opencode",
         meta_reviewer_model: "gpt-5.2-mini"
       },
       role_mcp: {
@@ -220,13 +220,13 @@ round_gate_applies_after = 2
   it("parses plan-watch runner backend selection", () => {
     const parsed = parsePairflowRepoConfigToml(`
 [plan_watch.runner]
-backend = "codex"
+backend = "opencode"
 idle_timeout_seconds = 900
 `);
 
     expect(parsed.plan_watch).toEqual({
       runner: {
-        backend: "codex",
+        backend: "opencode",
         idle_timeout_seconds: 900
       }
     });
@@ -308,9 +308,9 @@ severity_gate_round = 3
 pairflow_command_profile = "local"
 
 [defaults.agents]
-implementer = "codex"
-reviewer = "codex"
-unknown = "claude"
+implementer = "opencode"
+reviewer = "opencode"
+unknown = "opencode"
 
 [defaults.role_mcp]
 reviewer = "maybe"

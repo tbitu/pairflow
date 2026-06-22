@@ -369,7 +369,7 @@ async function executeAskHumanCase(input: {
         bubble.paths.statePath,
         {
           ...loaded.state,
-          active_agent: "codex",
+          active_agent: "opencode",
           active_role: "meta_reviewer",
           active_since: "2026-03-19T10:01:45.000Z",
           last_command_at: "2026-03-19T10:01:45.000Z",

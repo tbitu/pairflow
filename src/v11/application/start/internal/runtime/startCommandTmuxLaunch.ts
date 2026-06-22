@@ -53,16 +53,9 @@ async function buildAgentLaunchCommand(input: {
   startupPrompt?: string | undefined;
   externalPairflowCommand?: string;
   remoteWorkspaceAuthority?: PairflowRemoteWorkspaceAuthority;
-  resolveCodexMcpDisableArgs:
-    ResolvedStartBubbleDependencies["resolveCodexMcpDisableArgs"];
+
 }): Promise<string> {
-  const codexMcpDisableArgs =
-    input.agentName === "codex" && input.roleMcpPolicy === "disabled"
-      ? await input.resolveCodexMcpDisableArgs({
-        roleName: input.roleName,
-        bubbleId: input.bubbleId
-      })
-      : undefined;
+
   return buildAgentCommand({
     agentName: input.agentName,
     roleName: input.roleName,
@@ -77,7 +70,7 @@ async function buildAgentLaunchCommand(input: {
     ...(input.remoteWorkspaceAuthority !== undefined
       ? { remoteWorkspaceAuthority: input.remoteWorkspaceAuthority }
       : {}),
-    ...(codexMcpDisableArgs !== undefined ? { codexMcpDisableArgs } : {}),
+
     startupPrompt: input.startupPrompt
   });
 }
@@ -238,7 +231,7 @@ export async function launchFreshTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
+
       startupPrompt: implementerStartupPrompt
     }),
     reviewerCommand: await buildAgentLaunchCommand({
@@ -255,7 +248,7 @@ export async function launchFreshTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
+
       startupPrompt: undefined
     }),
     metaReviewerCommand: await buildAgentLaunchCommand({
@@ -272,7 +265,7 @@ export async function launchFreshTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
+
       startupPrompt: undefined
     }),
     implementerKickoffMessage: input.ideationPending
@@ -368,7 +361,7 @@ export async function launchResumeTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
+
       startupPrompt: implementerStartupPrompt
     }),
     reviewerCommand: await buildAgentLaunchCommand({
@@ -385,7 +378,7 @@ export async function launchResumeTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
+
       startupPrompt: reviewerStartupPrompt
     }),
     metaReviewerCommand: await buildAgentLaunchCommand({
@@ -402,7 +395,7 @@ export async function launchResumeTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
+
       startupPrompt: metaReviewerStartupPrompt
     }),
     ...input.resumeKickoffMessages
