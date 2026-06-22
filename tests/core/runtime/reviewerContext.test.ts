@@ -25,9 +25,9 @@ const baseConfig: BubbleConfig = {
   commit_requires_approval: true,
   attach_launcher: "auto",
   agents: {
-    implementer: "opencode",
-    reviewer: "opencode",
-    meta_reviewer: "opencode"
+    implementer: "codex",
+    reviewer: "claude",
+    meta_reviewer: "codex"
   },
   commands: {
     test: "pnpm test",
@@ -107,7 +107,7 @@ describe("refreshReviewerContext", () => {
     expect(script).toContain(`if ! cd ${shellQuote("/tmp/runtime-workspace")}; then`);
   });
 
-  it("submits Opencode reviewer startup prompts after reviewer pane refresh", async () => {
+  it("submits Codex reviewer startup prompts after reviewer pane refresh", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
@@ -124,7 +124,7 @@ describe("refreshReviewerContext", () => {
         ...baseConfig,
         agents: {
           ...baseConfig.agents,
-          reviewer: "opencode"
+          reviewer: "codex"
         },
         role_mcp: {
           implementer: "disabled",
@@ -160,7 +160,122 @@ describe("refreshReviewerContext", () => {
     ]);
   });
 
-  it("uses bubble-local reviewer MCP opt-in when refreshing a Opencode reviewer", async () => {
+  it("sends Opencode reviewer startup prompt via tmux input after pane respawn", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      return Promise.resolve({
+        stdout: "",
+        stderr: "",
+        exitCode: 0
+      });
+    };
+    const startupPrompt = "Reviewer brief: verify the current handoff.";
+
+    const result = await refreshReviewerContext({
+      bubbleId: "b_reviewer_ctx_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "opencode"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      reviewerStartupPrompt: startupPrompt,
+      runner,
+      startupSubmitDelayMs: 0,
+      readSessionsRegistry: () =>
+        Promise.resolve({
+          b_reviewer_ctx_01: createRuntimeSessionRecord({
+            workspacePath: "/tmp/runtime-workspace",
+            workspaceKind: "worktree"
+          })
+        })
+    });
+
+    const reviewerTargetPane =
+      `pf-b_reviewer_ctx_01:0.${String(getTopologySlotPaneIndexForRole("reviewer"))}`;
+
+    expect(result).toEqual({
+      refreshed: true
+    });
+    const reviewerCommand = calls[0]?.[6];
+    expect(typeof reviewerCommand).toBe("string");
+    expect(String(reviewerCommand)).not.toContain(startupPrompt);
+    expect(calls).toContainEqual([
+      "send-keys",
+      "-t",
+      reviewerTargetPane,
+      "-l",
+      startupPrompt
+    ]);
+    expect(calls).toContainEqual([
+      "send-keys",
+      "-t",
+      reviewerTargetPane,
+      "Enter"
+    ]);
+  });
+
+  it("chunks long Opencode reviewer startup prompts before submitting", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      return Promise.resolve({
+        stdout: "",
+        stderr: "",
+        exitCode: 0
+      });
+    };
+    const startupPrompt = "x".repeat(4200);
+
+    const result = await refreshReviewerContext({
+      bubbleId: "b_reviewer_ctx_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "opencode"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      reviewerStartupPrompt: startupPrompt,
+      runner,
+      startupSubmitDelayMs: 0,
+      readSessionsRegistry: () =>
+        Promise.resolve({
+          b_reviewer_ctx_01: createRuntimeSessionRecord({
+            workspacePath: "/tmp/runtime-workspace",
+            workspaceKind: "worktree"
+          })
+        })
+    });
+
+    const reviewerTargetPane =
+      `pf-b_reviewer_ctx_01:0.${String(getTopologySlotPaneIndexForRole("reviewer"))}`;
+
+    expect(result).toEqual({
+      refreshed: true
+    });
+    expect(
+      calls.filter(
+        (call) =>
+          call[0] === "send-keys" &&
+          call[1] === "-t" &&
+          call[2] === reviewerTargetPane &&
+          call[3] === "-l"
+      )
+    ).toHaveLength(5);
+    expect(calls).toContainEqual([
+      "send-keys",
+      "-t",
+      reviewerTargetPane,
+      "Enter"
+    ]);
+  });
+
+  it("uses bubble-local reviewer MCP opt-in when refreshing a Codex reviewer", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
@@ -177,7 +292,7 @@ describe("refreshReviewerContext", () => {
         ...baseConfig,
         agents: {
           ...baseConfig.agents,
-          reviewer: "opencode"
+          reviewer: "codex"
         },
         role_mcp: {
           implementer: "disabled",
@@ -203,11 +318,11 @@ describe("refreshReviewerContext", () => {
     });
     const reviewerCommand = calls[0]?.[6];
     expect(typeof reviewerCommand).toBe("string");
-    expect(reviewerCommand).not.toContain("opencode mcp list");
+    expect(reviewerCommand).not.toContain("codex mcp list");
     expect(reviewerCommand).not.toContain("PAIRFLOW_ROLE_MCP_DISABLE_ARGS");
   });
 
-  it("does not submit Opencode reviewer pane input when refresh has no startup prompt", async () => {
+  it("does not submit Codex reviewer pane input when refresh has no startup prompt", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
@@ -224,7 +339,7 @@ describe("refreshReviewerContext", () => {
         ...baseConfig,
         agents: {
           ...baseConfig.agents,
-          reviewer: "opencode"
+          reviewer: "codex"
         },
         role_mcp: {
           implementer: "disabled",

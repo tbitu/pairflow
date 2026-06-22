@@ -11,6 +11,12 @@ import {
   buildResumeMetaReviewerStartupPrompt,
   buildResumeReviewerStartupPrompt
 } from "../prompts/startCommandResumePrompts.js";
+import {
+  resolveBootstrapStartupMessages,
+  resolveCommandStartupPrompt,
+  resolveResumeBootstrapStartupMessages,
+  shouldSubmitStartupPrompt
+} from "./startCommandStartupPromptRouting.js";
 import type { resolveResumeKickoffMessages } from "../prompts/startCommandResumePrompts.js";
 import type { ResolvedStartBubbleDependencies } from "../../startCommandOrchestration.js";
 import type { StartExecutionContext } from "./startCommandContext.js";
@@ -20,7 +26,6 @@ import { DEFAULT_REVIEW_POLICY_REVIEWER_BLOCKING_MIN_SEVERITY } from "../../../.
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
 import type { PairflowRemoteWorkspaceAuthority } from "../../../../shared/command/pairflowCommandBootstrap.js";
 import type { RoleMcpPolicy } from "../../../../shared/config/bubbleConfigVocabulary.js";
-import { shouldSubmitStartupPrompt } from "../../../../shared/command/startupPromptGate.js";
 
 function buildStatusPaneLabel(bubbleId: string): string {
   return `[orchestrator/status]-[${bubbleId}]`;
@@ -53,9 +58,16 @@ async function buildAgentLaunchCommand(input: {
   startupPrompt?: string | undefined;
   externalPairflowCommand?: string;
   remoteWorkspaceAuthority?: PairflowRemoteWorkspaceAuthority;
-
+  resolveCodexMcpDisableArgs:
+    ResolvedStartBubbleDependencies["resolveCodexMcpDisableArgs"];
 }): Promise<string> {
-
+  const codexMcpDisableArgs =
+    input.agentName === "codex" && input.roleMcpPolicy === "disabled"
+      ? await input.resolveCodexMcpDisableArgs({
+        roleName: input.roleName,
+        bubbleId: input.bubbleId
+      })
+      : undefined;
   return buildAgentCommand({
     agentName: input.agentName,
     roleName: input.roleName,
@@ -70,8 +82,11 @@ async function buildAgentLaunchCommand(input: {
     ...(input.remoteWorkspaceAuthority !== undefined
       ? { remoteWorkspaceAuthority: input.remoteWorkspaceAuthority }
       : {}),
-
-    startupPrompt: input.startupPrompt
+    ...(codexMcpDisableArgs !== undefined ? { codexMcpDisableArgs } : {}),
+    startupPrompt: resolveCommandStartupPrompt(
+      input.agentName,
+      input.startupPrompt
+    )
   });
 }
 
@@ -214,9 +229,10 @@ export async function launchFreshTmuxSession(input: {
     ),
     reviewerSubmitStartupPrompt: false,
     metaReviewerSubmitStartupPrompt: false,
-    implementerAgentName: input.context.resolved.bubbleConfig.agents.implementer,
-    reviewerAgentName: input.context.resolved.bubbleConfig.agents.reviewer,
-    metaReviewerAgentName: metaReviewerAgent,
+    ...resolveBootstrapStartupMessages({
+      implementerAgent: input.context.resolved.bubbleConfig.agents.implementer,
+      implementerStartupPrompt
+    }),
     implementerCommand: await buildAgentLaunchCommand({
       agentName: input.context.resolved.bubbleConfig.agents.implementer,
       roleName: "implementer",
@@ -231,7 +247,7 @@ export async function launchFreshTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-
+      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
       startupPrompt: implementerStartupPrompt
     }),
     reviewerCommand: await buildAgentLaunchCommand({
@@ -248,7 +264,7 @@ export async function launchFreshTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-
+      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
       startupPrompt: undefined
     }),
     metaReviewerCommand: await buildAgentLaunchCommand({
@@ -265,7 +281,7 @@ export async function launchFreshTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-
+      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
       startupPrompt: undefined
     }),
     implementerKickoffMessage: input.ideationPending
@@ -341,9 +357,13 @@ export async function launchResumeTmuxSession(input: {
       metaReviewerAgent,
       metaReviewerStartupPrompt
     ),
-    implementerAgentName: input.context.resolved.bubbleConfig.agents.implementer,
-    reviewerAgentName: input.context.resolved.bubbleConfig.agents.reviewer,
-    metaReviewerAgentName: metaReviewerAgent,
+    ...resolveResumeBootstrapStartupMessages({
+      context: input.context,
+      implementerStartupPrompt,
+      reviewerStartupPrompt,
+      metaReviewerStartupPrompt,
+      metaReviewerAgent
+    }),
     launchImplementerAgent,
     launchReviewerAgent,
     launchMetaReviewerAgent,
@@ -361,7 +381,7 @@ export async function launchResumeTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-
+      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
       startupPrompt: implementerStartupPrompt
     }),
     reviewerCommand: await buildAgentLaunchCommand({
@@ -378,7 +398,7 @@ export async function launchResumeTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-
+      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
       startupPrompt: reviewerStartupPrompt
     }),
     metaReviewerCommand: await buildAgentLaunchCommand({
@@ -395,7 +415,7 @@ export async function launchResumeTmuxSession(input: {
       pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
       ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
       ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
-
+      resolveCodexMcpDisableArgs: input.deps.resolveCodexMcpDisableArgs,
       startupPrompt: metaReviewerStartupPrompt
     }),
     ...input.resumeKickoffMessages

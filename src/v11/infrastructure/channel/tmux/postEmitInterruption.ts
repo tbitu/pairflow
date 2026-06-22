@@ -18,6 +18,28 @@ export interface PostEmitInterruptionInput {
   tmuxRunner?: typeof runTmux;
   /** Optional tmux command options (for testing). */
   tmuxOptions?: TmuxRunOptions;
+  /** Optional delay between first and second Escape key presses. Defaults to 1000ms. */
+  interEscapeDelayMs?: number;
+  /** Optional sleep override for testing. */
+  sleepForDelayMs?: (delayMs: number) => Promise<void>;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function sendDoubleEscape(input: {
+  runner: typeof runTmux;
+  targetPane: string;
+  tmuxOpts: TmuxRunOptions;
+  interEscapeDelayMs: number;
+  sleepForDelayMs: (delayMs: number) => Promise<void>;
+}): Promise<void> {
+  await input.runner(["send-keys", "-t", input.targetPane, "Escape"], input.tmuxOpts);
+  if (input.interEscapeDelayMs > 0) {
+    await input.sleepForDelayMs(input.interEscapeDelayMs);
+  }
+  await input.runner(["send-keys", "-t", input.targetPane, "Escape"], input.tmuxOpts);
 }
 
 /**
@@ -35,6 +57,28 @@ export async function postEmitInterruptOpencodePane(
 ): Promise<void> {
   const tmuxRunner = input.tmuxRunner ?? runTmux;
   const tmuxOpts = input.tmuxOptions ?? { allowFailure: true };
+  const interEscapeDelayMs = Math.max(0, input.interEscapeDelayMs ?? 150);
+  const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
+  const invokingPane = process.env.TMUX_PANE?.trim();
+
+  // Prefer interrupting the exact pane that invoked `pairflow agent emit`.
+  // This avoids role/pane drift when operators invoke emits from a pane that
+  // doesn't match the current active-role lane.
+  if (invokingPane !== undefined && invokingPane.length > 0) {
+    try {
+      await sendDoubleEscape({
+        runner: tmuxRunner,
+        targetPane: invokingPane,
+        tmuxOpts,
+        interEscapeDelayMs,
+        sleepForDelayMs
+      });
+    } catch {
+      console.error(`[postEmitInterrupt] tmux send-keys to ${invokingPane} failed: session may have ended`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    return;
+  }
 
   // Read the sessions registry to find the tmux session name for this bubble.
   let sessionName: string | undefined;
@@ -66,8 +110,13 @@ export async function postEmitInterruptOpencodePane(
 
   try {
     // The agent-side termination contract requires two Escape presses after emit.
-    await tmuxRunner(["send-keys", "-t", targetPane, "Escape"], tmuxOpts);
-    await tmuxRunner(["send-keys", "-t", targetPane, "Escape"], tmuxOpts);
+    await sendDoubleEscape({
+      runner: tmuxRunner,
+      targetPane,
+      tmuxOpts,
+      interEscapeDelayMs,
+      sleepForDelayMs
+    });
   } catch {
     // Tmux may not be available or session may have ended — log for diagnostics, then best-effort skip.
     console.error(`[postEmitInterrupt] tmux send-keys to ${targetPane} failed: session may have ended`);
@@ -85,4 +134,3 @@ export async function postEmitInterruptOpencodePane(
 export function resolveSessionsPath(repoPath: string): string {
   return join(repoPath, ".pairflow", "runtime", "sessions.json");
 }
-

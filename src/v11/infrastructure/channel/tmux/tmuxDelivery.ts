@@ -1,5 +1,9 @@
 import { readRuntimeSessionsRegistry } from "../../executor/sessionRuntime/runtimeSessionsRegistry.js";
+import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../config/defaults.js";
+import { buildAgentCommand } from "../../../shared/command/agentCommand.js";
+import type { AgentRole } from "../../../../contracts/kernel/agentIdentity.js";
 import { runTmux, type TmuxRunner } from "./tmuxManager.js";
+import { respawnTmuxPaneCommand } from "./tmuxManager.js";
 import {
   checkTmuxPaneMarkerStatus,
   submitTmuxPaneInput
@@ -21,6 +25,8 @@ import {
   resolveEnvelopeRecipientRole,
   resolveEnvelopeTargetPane
 } from "./tmuxDeliveryTargeting.js";
+import { resolveConfiguredAgentForRole } from "../../../domain/agentIdentity/agentIdentity.js";
+import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import {
   resolveWatchdogTargetPaneIndex
 } from "../../../shared/watchdog/watchdogPaneTargeting.js";
@@ -149,6 +155,60 @@ function createDeliveryMessage(input: {
   };
 }
 
+function resolveExpectedPaneAgentForRecipient(input: {
+  recipientRole: ReturnType<typeof resolveEnvelopeRecipientRole>;
+  bubbleConfig: EmitDeliveryNotificationRuntimeInput["bubbleConfig"];
+}): AgentName | undefined {
+  switch (input.recipientRole) {
+    case "implementer":
+      return resolveConfiguredAgentForRole({
+        agents: input.bubbleConfig.agents,
+        role: "implementer"
+      });
+    case "reviewer":
+      return resolveConfiguredAgentForRole({
+        agents: input.bubbleConfig.agents,
+        role: "reviewer"
+      });
+    case "meta-reviewer":
+      return resolveConfiguredAgentForRole({
+        agents: input.bubbleConfig.agents,
+        role: "meta_reviewer"
+      });
+    default:
+      return undefined;
+  }
+}
+
+function resolveRecipientRoleToAgentRole(
+  recipientRole: ReturnType<typeof resolveEnvelopeRecipientRole>
+): AgentRole | undefined {
+  switch (recipientRole) {
+    case "implementer":
+      return "implementer";
+    case "reviewer":
+      return "reviewer";
+    case "meta-reviewer":
+      return "meta_reviewer";
+    default:
+      return undefined;
+  }
+}
+
+function resolveRoleModel(input: {
+  role: AgentRole;
+  bubbleConfig: EmitDeliveryNotificationRuntimeInput["bubbleConfig"];
+}): string | undefined {
+  switch (input.role) {
+    case "implementer":
+      return input.bubbleConfig.agents.implementer_model;
+    case "reviewer":
+      return input.bubbleConfig.agents.reviewer_model;
+    case "meta_reviewer":
+      return input.bubbleConfig.agents.meta_reviewer_model;
+  }
+}
+
 export async function emitDeliveryNotificationAck(
   input: EmitDeliveryNotificationRuntimeInput
 ): Promise<DeliveryAck> {
@@ -202,6 +262,48 @@ export async function emitDeliveryNotificationAck(
   const targetPane = `${sessionName}:0.${targetPaneIndex}`;
   const runner = input.runner ?? runTmux;
   const deliveryTiming = resolveDeliveryTiming(input.deliveryTiming);
+  const expectedPaneAgent = resolveExpectedPaneAgentForRecipient({
+    recipientRole: targetResolution.recipientRole,
+    bubbleConfig: input.bubbleConfig
+  });
+  const expectedAgentRole = resolveRecipientRoleToAgentRole(
+    targetResolution.recipientRole
+  );
+  const respawnExpectedPaneAgent = expectedPaneAgent === "opencode"
+    && expectedAgentRole !== undefined
+    ? async (): Promise<void> => {
+        const roleModel = resolveRoleModel({
+          role: expectedAgentRole,
+          bubbleConfig: input.bubbleConfig
+        });
+        const roleMcpPolicy =
+          input.bubbleConfig.role_mcp?.[expectedAgentRole]
+          ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE[expectedAgentRole];
+        const respawnCommand = buildAgentCommand({
+          agentName: expectedPaneAgent,
+          roleName: expectedAgentRole,
+          roleMcpPolicy,
+          ...(roleModel !== undefined ? { model: roleModel } : {}),
+          bubbleId: input.bubbleId,
+          workspacePath,
+          pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile,
+          ...(input.bubbleConfig.executor?.type === "ssh"
+            ? {
+                remoteWorkspaceAuthority: {
+                  workspaceRoot: workspacePath
+                }
+              }
+            : {})
+        });
+        await respawnTmuxPaneCommand({
+          sessionName,
+          paneIndex: targetPaneIndex,
+          cwd: workspacePath,
+          command: respawnCommand,
+          runner
+        });
+      }
+    : undefined;
   const deliveryAck = await attemptTmuxDelivery({
     runner,
     targetPane,
@@ -211,6 +313,10 @@ export async function emitDeliveryNotificationAck(
     targetPaneIndex,
     ...(input.initialDelayMs !== undefined ? { initialDelayMs: input.initialDelayMs } : {}),
     ...(input.deliveryAttempts !== undefined ? { deliveryAttempts: input.deliveryAttempts } : {}),
+    ...(expectedPaneAgent !== undefined ? { expectedPaneAgent } : {}),
+    ...(respawnExpectedPaneAgent !== undefined
+      ? { respawnExpectedPaneAgent }
+      : {}),
     ...(deliveryTiming !== undefined ? { timing: deliveryTiming } : {}),
     ...(targetResolution.deliveryTargetReasonCode !== undefined
       ? { deliveryTargetReasonCode: targetResolution.deliveryTargetReasonCode }

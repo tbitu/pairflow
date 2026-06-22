@@ -395,6 +395,32 @@ describe("buildAgentCommand", () => {
     await assertBashParses(command);
   });
 
+  it("builds interactive opencode launch with config-based yolo permissions", async () => {
+    const command = buildAgentCommand({
+      agentName: "opencode",
+      model: "lmstudio/qwen3.6-35b-a3b-mtp@q6_k_xl-reviewer",
+      bubbleId: "b_agent_cmd_opencode_01",
+      workspacePath: "/tmp/pairflow-worktree/opencode",
+      startupPrompt: "Let us test opencode prompt"
+    });
+    const script = extractBashLcScript(command);
+
+    expect(script).toContain("export OPENCODE_CONFIG_CONTENT='");
+    expect(script).toContain("\"$schema\":\"https://opencode.ai/config.json\"");
+    expect(script).toContain("\"permission\":\"allow\"");
+    expect(script).toContain("\"baseURL\":\"http://127.0.0.1:1235/v1\"");
+    expect(script).toContain("\"headerTimeout\":60000");
+    expect(script).toContain("\"chunkTimeout\":120000");
+    expect(script).toContain("\"timeout\":900000");
+    expect(script).toContain("'opencode'");
+    expect(script).not.toContain("'--prompt'");
+    expect(script).toContain("Let us test opencode prompt");
+    expect(script).toContain("'--model'");
+    expect(script).toContain("'lmstudio/qwen3.6-35b-a3b-mtp@q6_k_xl-reviewer'");
+    expect(script).not.toContain("'--dangerously-skip-permissions'");
+    await assertBashParses(command);
+  });
+
   it("fails closed when worktree path is empty", () => {
     expect(() =>
       buildAgentCommand({
