@@ -1,4 +1,5 @@
 import type { PairflowGlobalConfig } from "../../../config/pairflowConfig.js";
+import type { ResolveOpencodeMcpDisableArgsInput } from "../../shared/command/agentCommand.js";
 import type {
   BubbleRemotePointer
 } from "../../shared/remote/remoteExecutionTypes.js";
@@ -121,6 +122,9 @@ export interface StartBubbleDependencyDefaults {
   readReviewerFocusArtifact: ReadReviewerFocusArtifactPort;
   resolveBubbleFromWorkspaceCwd: ResolveBubbleFromWorkspaceCwdPort;
   resolveReviewerTestExecutionDirective: ResolveReviewerTestExecutionDirectivePort;
+  resolveOpencodeMcpDisableArgs: (
+    input: ResolveOpencodeMcpDisableArgsInput
+  ) => Promise<string[]>;
 
 }
 

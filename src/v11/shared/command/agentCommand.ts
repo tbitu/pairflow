@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 
 import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
 import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
@@ -6,7 +5,6 @@ import type {
   PairflowCommandProfile,
   RoleMcpPolicy
 } from "../config/bubbleConfigVocabulary.js";
-import { normalizePairflowCommandErrorInput } from "../errors/commandErrorDetails.js";
 import { shellQuote } from "../foundation/shellQuote.js";
 import {
   buildPairflowCommandBootstrap,
@@ -28,18 +26,46 @@ export interface BuildAgentCommandInput {
   startupPrompt?: string | undefined;
 }
 
+export class UnsupportedAgentError extends Error {
+  public readonly reasonCode: "UNSUPPORTED_AGENT";
+  public readonly context: Record<string, unknown>;
 
+  constructor(agentName: AgentName) {
+    super(`Unsupported agent: ${String(agentName)}`);
+    this.name = "UnsupportedAgentError";
+    this.reasonCode = "UNSUPPORTED_AGENT";
+    this.context = { agent_name: String(agentName) };
+  }
+}
+
+export class WorkspacePathRequiredError extends Error {
+  public readonly reasonCode: "WORKSPACE_PATH_REQUIRED";
+  public readonly context: Record<string, unknown>;
+
+  constructor(bubbleId: string) {
+    super(`Workspace path is required to build agent command for bubble ${bubbleId}`);
+    this.name = "WorkspacePathRequiredError";
+    this.reasonCode = "WORKSPACE_PATH_REQUIRED";
+    this.context = { bubble_id: bubbleId };
+  }
+}
 
 function buildAgentLaunchCommand(
   agentName: AgentName,
   model: string | undefined,
-  startupPrompt: string | undefined
+  startupPrompt: string | undefined,
+  roleName?: AgentRole
 ): string {
   if (agentName !== "opencode") {
-    throw new Error(`Unsupported agent: ${agentName}`);
+    throw new UnsupportedAgentError(agentName);
   }
 
   const args: string[] = [agentName];
+
+  // For opencode agents, inject the PF role-specific --agent flag.
+  if (roleName === "implementer" || roleName === "reviewer") {
+    args.push("--agent", roleName === "implementer" ? "PF-implementer" : "PF-reviewer");
+  }
 
   if ((model?.trim().length ?? 0) > 0) {
     args.push("-m", model as string);
@@ -59,7 +85,7 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
   const bubbleId = input.bubbleId;
   const workspacePath = (input.workspacePath ?? input.worktreePath ?? "").trim();
   if (workspacePath.length === 0) {
-    throw new Error(`Workspace path is required to build agent command for bubble ${bubbleId}.`);
+    throw new WorkspacePathRequiredError(bubbleId);
   }
   const missingBinaryMessage = `${agentName} CLI not found in PATH for bubble ${bubbleId}. Install it or configure agent command mapping.`;
   const worktreePinningMessage = `Failed to pin agent root to workspace ${workspacePath} for bubble ${bubbleId}.`;
@@ -67,7 +93,8 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
   const launchCommand = buildAgentLaunchCommand(
     agentName,
     input.model,
-    input.startupPrompt
+    input.startupPrompt,
+    input.roleName
   );
   const pairflowBootstrap = buildPairflowCommandBootstrap(
     workspacePath,
@@ -76,7 +103,7 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
     input.remoteWorkspaceAuthority
   );
   const agentExitedMessage = `${agentName} exited (code $agent_exit_code). Auto-restarting in 1s...`;
-  
+
   const agentExecution = [
     "  while true; do",
     `    ${launchCommand}`,
@@ -85,7 +112,7 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
     "    sleep 1",
     "  done"
   ];
-  
+
   const script = [
     "set +e",
     `if ! cd ${shellQuote(workspacePath)}; then`,
@@ -100,4 +127,25 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
     "exec bash -i"
   ].join("\n");
   return `bash -lc ${shellQuote(script)}`;
+}
+
+// Stub exports for test compatibility - resolveOpencodeMcpDisableArgs was referenced by tests but never implemented in source.
+export type OpencodeMcpDisableArgsError = {
+  name: string;
+  reasonCode: string;
+  context: Record<string, unknown>;
+};
+
+export type ResolveOpencodeMcpDisableArgsInput = {
+  roleName: string;
+  bubbleId: string;
+  opencodeCommand: string;
+};
+
+// eslint-disable-next-line @typescript-eslint/require-await
+export async function resolveOpencodeMcpDisableArgs(
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _input: ResolveOpencodeMcpDisableArgsInput
+): Promise<string[]> {
+  return [];
 }

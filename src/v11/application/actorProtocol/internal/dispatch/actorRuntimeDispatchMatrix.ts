@@ -150,7 +150,7 @@ function assertMetaReviewerActiveAgentMatchesConfigWhenPresent(
   if (activeAgent !== configuredMetaReviewer) {
     throw new ActorEmitContextError(
       "ACTOR_EMIT_CONTEXT_INVALID",
-      `ACTOR_EMIT_CONTEXT_INVALID: canonical meta-reviewer authority requires the configured meta-reviewer agent when active_agent is present (active_agent=${activeAgent}, configured=${configuredMetaReviewer}).`
+      `ACTOR_EMIT_CONTEXT_INVALID: canonical meta-reviewer authority requires the configured meta-reviewer agent when active_agent is present (active_agent=${String(activeAgent)}, configured=${String(configuredMetaReviewer)}).`
     );
   }
 }

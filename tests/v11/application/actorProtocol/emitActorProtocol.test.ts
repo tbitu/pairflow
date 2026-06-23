@@ -101,7 +101,7 @@ async function switchFixtureToMetaReviewerAuthority(input: {
   bubbleId: string;
   statePath: string;
   startedAt?: string;
-  activeAgent?: "opencode" | "opencode" | null;
+  activeAgent?: "opencode"   | null;
 }): Promise<void> {
   const loaded = await readStateSnapshot(input.statePath);
   const startedAt = input.startedAt ?? "2026-03-25T10:18:00.000Z";

@@ -72,13 +72,13 @@ export function resolvePassHandoff(input: ResolvePassHandoffInput): ResolvedPass
   if (state.active_role === "implementer" && state.active_agent !== implementer) {
     raiseResolutionError(
       createError,
-      `Active role implementer must map to configured implementer agent (${implementer}).`
+      `Active role implementer must map to configured implementer agent (${String(implementer)}).`
     );
   }
   if (state.active_role === "reviewer" && state.active_agent !== reviewer) {
     raiseResolutionError(
       createError,
-      `Active role reviewer must map to configured reviewer agent (${reviewer}).`
+      `Active role reviewer must map to configured reviewer agent (${String(reviewer)}).`
     );
   }
 

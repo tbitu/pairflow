@@ -7,8 +7,10 @@ import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
  * tmux-based submission.
  */
 export function shouldSubmitStartupPrompt(
-  agentName: AgentName,
-  startupPrompt: string | undefined
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _agentName: AgentName,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _startupPrompt: string | undefined
 ): boolean {
   // Opencode receives its startup prompt via CLI arguments.
   return false;

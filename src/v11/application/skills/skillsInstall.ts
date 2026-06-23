@@ -24,7 +24,7 @@ interface ManagedPathPreflight {
   unsafe: boolean;
 }
 
-function otherTargetDir(targetDir: ".opencode" | ".opencode"): ".opencode" | ".opencode" {
+function otherTargetDir(targetDir: ".opencode"): ".opencode" {
   return targetDir === ".opencode" ? ".opencode" : ".opencode";
 }
 

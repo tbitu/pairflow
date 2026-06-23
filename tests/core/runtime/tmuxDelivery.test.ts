@@ -196,7 +196,7 @@ function mockUnmappedMetaReviewerPane(): {
 }
 
 function createSharedAgentConfig(
-  agent: "opencode" | "opencode"
+  agent: "opencode"  
 ): BubbleConfig {
   return {
     ...baseConfig,
@@ -1030,8 +1030,7 @@ describe("emitDeliveryNotificationAck", () => {
         payload: {
           summary: "Fallback expected.",
           metadata: {
-            [deliveryTargetRoleMetadataKey]: "meta-reviewer",
-            delivery_target_role: "implementer"
+            [deliveryTargetRoleMetadataKey]: "implementer"
           }
         }
       }),
@@ -2434,6 +2433,7 @@ describe("emitDeliveryNotificationAck", () => {
         recipient: "opencode",
         type: "APPROVAL_REQUEST",
         payload: {
+          summary: "Default approval request.",
           metadata: { delivery_target_role: "implementer" }
         }
       }),

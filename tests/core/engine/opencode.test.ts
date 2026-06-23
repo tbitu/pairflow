@@ -63,12 +63,12 @@ describe("opencode agent integration", () => {
 
   describe("isOpencodePromptLine", () => {
     it("returns false for all known prompt patterns until a regex is defined", () => {
-      expect(isOpencodePromptLine()).toBe(false);
-      expect(isOpencodePromptLine()).toBe(false);
-      expect(isOpencodePromptLine()).toBe(false);
-      expect(isOpencodePromptLine()).toBe(false);
-      expect(isOpencodePromptLine()).toBe(false);
-      expect(isOpencodePromptLine()).toBe(false);
+      expect(isOpencodePromptLine("")).toBe(false);
+      expect(isOpencodePromptLine("")).toBe(false);
+      expect(isOpencodePromptLine("")).toBe(false);
+      expect(isOpencodePromptLine("")).toBe(false);
+      expect(isOpencodePromptLine("")).toBe(false);
+      expect(isOpencodePromptLine("")).toBe(false);
     });
   });
 

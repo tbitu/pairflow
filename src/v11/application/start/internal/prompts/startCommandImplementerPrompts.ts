@@ -1,10 +1,8 @@
 import {
-  buildCanonicalActorEmitLookupGuidance,
-  buildAgentEvidenceHandoffGuidance as buildAgentEvidenceHandoffGuidanceFromRegistry,
-  buildRolePromptConcernLines
+  buildRolePromptConcernLines,
+  buildAgentEvidenceHandoffGuidance as buildAgentEvidenceHandoffGuidanceFromRegistry
 } from "../../../../shared/role/prompts/rolePromptConcerns.js";
 import { buildDocumentBubbleSourceEditGuard } from "../../../../shared/document/documentBubbleSourceEditGuard.js";
-import { buildPairflowCommandGuidance } from "../../startCommandPromptRuntime.js";
 import type {
   PairflowCommandProfile,
   ReviewArtifactType
@@ -41,20 +39,7 @@ export function buildImplementerKickoffMessage(input: {
   return [
     `# [pairflow] bubble=${input.bubbleId} kickoff.`,
     `Read task file now: ${input.taskArtifactPath}.`,
-    buildImplementerKickoffScopeInstruction(input.reviewArtifactType),
-    buildPairflowCommandGuidance(
-      input.workspacePath,
-      input.pairflowCommandProfile
-    ),
-    buildAgentEvidenceHandoffGuidance(
-      input.reviewArtifactType,
-      input.validationCommands
-    ),
-    buildCanonicalActorEmitLookupGuidance({
-      bubbleId: input.bubbleId,
-      repoPath: "<repo>"
-    }),
-    "When done with validation, hand off with `pairflow agent emit --kind pass --repo <repo> --bubble-id <id> --handoff-id <handoff-id> --execution-id <execution-id> --summary \"<what changed + validation>\"` and include available evidence `--ref` log paths."
+    buildImplementerKickoffScopeInstruction(input.reviewArtifactType)
   ].join(" ");
 }
 

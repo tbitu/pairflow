@@ -34,12 +34,12 @@ function validateCurrentRoundHistory(
 
   if (currentRoundHistory.reviewer !== input.reviewer) {
     errors.push(
-      `round_role_history reviewer for round ${input.currentRound} must be ${input.reviewer}.`
+      `round_role_history reviewer for round ${input.currentRound} must be ${String(input.reviewer)}.`
     );
   }
   if (currentRoundHistory.implementer !== input.implementer) {
     errors.push(
-      `round_role_history implementer for round ${input.currentRound} must be ${input.implementer}.`
+      `round_role_history implementer for round ${input.currentRound} must be ${String(input.implementer)}.`
     );
   }
 }

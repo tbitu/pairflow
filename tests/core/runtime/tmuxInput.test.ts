@@ -240,9 +240,9 @@ describe("maybeAcceptOpencodeTrustPrompt", () => {
 
 describe("isOpencodePromptLine", () => {
   it("returns false by default until an opencode-specific pattern is defined", () => {
-    expect(isOpencodePromptLine()).toBe(false);
-    expect(isOpencodePromptLine()).toBe(false);
-    expect(isOpencodePromptLine()).toBe(false);
+    expect(isOpencodePromptLine("")).toBe(false);
+    expect(isOpencodePromptLine("")).toBe(false);
+    expect(isOpencodePromptLine("")).toBe(false);
   });
 });
 

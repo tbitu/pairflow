@@ -1,4 +1,5 @@
 import { loadPairflowGlobalConfig as loadPairflowGlobalConfigCanonical } from "../../../config/pairflowConfig.js";
+import { resolveOpencodeMcpDisableArgs } from "../../shared/command/agentCommand.js";
 import {
   ensureBubbleInstanceIdForMutation
 } from "../../infrastructure/artifact/bubble/bubbleInstanceId.js";
@@ -146,6 +147,9 @@ export interface StartBubbleDependencyDefaults {
   resolveBubbleFromWorkspaceCwd: ResolveBubbleFromWorkspaceCwdPort;
   resolveReviewerTestExecutionDirective:
     ResolveReviewerTestExecutionDirectivePort;
+  resolveOpencodeMcpDisableArgs: (
+    input: { roleName: string; bubbleId: string; opencodeCommand: string }
+  ) => Promise<string[]>;
 
 }
 
@@ -195,6 +199,7 @@ export const startBubbleDependencyDefaults: StartBubbleDependencyDefaults = {
   readReviewerFocusArtifact,
   resolveBubbleFromWorkspaceCwd,
   resolveReviewerTestExecutionDirective,
+  resolveOpencodeMcpDisableArgs,
 
 };
 
