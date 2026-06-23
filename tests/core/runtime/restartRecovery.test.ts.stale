@@ -70,7 +70,7 @@ async function createTempRepo(prefix = "pairflow-restart-recovery-"): Promise<st
 beforeEach(() => {
   configureStartBubbleDependencyDefaults({
     ...startBubbleDependencyDefaults,
-    resolveOpencodeMcpDisableArgs: () => Promise.resolve([])
+    resolveCodexMcpDisableArgs: () => Promise.resolve([])
   });
 });
 

@@ -358,7 +358,7 @@ export async function maybeAcceptClaudeTrustPrompt(
   return accepted;
 }
 
-export async function isOpencodePromptLine(line: string): Promise<boolean> {
+export function isOpencodePromptLine(line: string): boolean {
   const lower = line.toLowerCase();
   return (
     (lower.includes("security guide") && lower.includes("trust this folder"))

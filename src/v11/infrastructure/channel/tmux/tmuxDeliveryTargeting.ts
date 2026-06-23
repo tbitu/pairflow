@@ -1,6 +1,4 @@
 import type { BubbleConfig } from "../../../shared/config/bubbleConfigTypes.js";
-import { isAgentName } from "../../../../contracts/kernel/agentIdentity.js";
-import { resolveUniquelyConfiguredRoleForAgent } from "../../../domain/agentIdentity/agentIdentity.js";
 import {
   getSharedTopologySlotPaneIndex,
   getSharedTopologySlotPaneIndexForRole
@@ -42,7 +40,8 @@ function resolveCompatDeliveryTargetRoleFromRecipient(
 
 export function resolveTargetPaneIndex(
   recipient: CompatProtocolRecipient,
-  bubbleConfig: BubbleConfig
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _bubbleConfig: BubbleConfig
 ): number | undefined {
   const resolvedRole = resolveCompatDeliveryTargetRoleFromRecipient(
     recipient
@@ -59,6 +58,7 @@ export function resolveTargetPaneIndex(
 
 function resolveRecipientRoleFromRecipient(
   recipient: CompatProtocolRecipient,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   bubbleConfig: BubbleConfig
 ): DeliveryMessageRecipientRole {
   const resolvedRole = resolveCompatDeliveryTargetRoleFromRecipient(

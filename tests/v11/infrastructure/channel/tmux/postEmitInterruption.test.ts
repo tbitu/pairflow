@@ -320,7 +320,7 @@ describe("postEmitInterruptOpencodePane", () => {
         delayCalls.push(delayMs);
       };
 
-      await postEmitInterruptCodexPane({
+      await postEmitInterruptOpencodePane({
         sessionsPath,
         bubbleId,
         tmuxRunner: mockRunner,

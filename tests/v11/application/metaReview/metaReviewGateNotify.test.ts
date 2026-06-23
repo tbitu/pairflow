@@ -8,7 +8,7 @@ async function notifyMetaReviewer(input: {
   bubbleId: string;
   round: number;
   targetPane: string;
-  metaReviewerAgent?: "opencode" | "opencode";
+  metaReviewerAgent?: "opencode";
 }, dependencies?: Parameters<typeof notifyMetaReviewerSubmissionRequest>[1]) {
   return await notifyMetaReviewerSubmissionRequest({
     ...input,

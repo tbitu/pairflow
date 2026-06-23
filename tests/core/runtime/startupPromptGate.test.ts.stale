@@ -13,7 +13,7 @@ describe("startup prompt submission gate", () => {
       agentName: "opencode",
       bubbleId: "b_startup_gate_opencode_01",
       worktreePath: "/tmp/worktree/startup-gate",
-      opencodeMcpDisableArgs: [],
+      codexMcpDisableArgs: [],
       startupPrompt: "Implement this task."
     });
 
@@ -26,7 +26,7 @@ describe("startup prompt submission gate", () => {
       agentName: "opencode",
       bubbleId: "b_startup_gate_opencode_01",
       worktreePath: "/tmp/worktree/startup-gate",
-      opencodeMcpDisableArgs: [],
+      codexMcpDisableArgs: [],
       startupPrompt: "Implement this task."
     });
 
@@ -44,7 +44,7 @@ describe("startup prompt submission gate", () => {
       agentName: "opencode",
       bubbleId: "b_startup_gate_opencode_01",
       worktreePath: "/tmp/worktree/startup-gate",
-      opencodeMcpDisableArgs: [],
+      codexMcpDisableArgs: [],
       startupPrompt: "Implement this task."
     });
 

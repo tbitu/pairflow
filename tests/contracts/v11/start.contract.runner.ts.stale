@@ -575,7 +575,7 @@ async function executeStartCase(input: {
         | "loadPairflowGlobalConfig"
         | "executeRemoteBubbleStart"
         | "writeStateSnapshot"
-        | "resolveOpencodeMcpDisableArgs"
+        | "resolveCodexMcpDisableArgs"
         | "reportWarning"
       > = {
         loadPairflowGlobalConfig: () => Promise.resolve({
@@ -649,7 +649,7 @@ async function executeStartCase(input: {
         reportWarning: (message: string) => {
           remoteWarnings.push(message);
         },
-        resolveOpencodeMcpDisableArgs: () => Promise.resolve([])
+        resolveCodexMcpDisableArgs: () => Promise.resolve([])
       };
 
       const result =

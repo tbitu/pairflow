@@ -109,7 +109,7 @@ type MetaReviewGatePaneBindingTmux = NonNullable<
   ReturnType<typeof resolveMetaReviewGatePaneBindingTmuxCapabilities>
 >;
 
-async function buildMetaReviewerCommand(input: {
+function buildMetaReviewerCommand(input: {
   buildAgentCommand: MetaReviewGateCommandBuilder;
   metaReviewerAgent: AgentName;
   bubbleId: string;
@@ -119,7 +119,7 @@ async function buildMetaReviewerCommand(input: {
   taskArtifactPath: string;
   pairflowCommandProfile: PairflowCommandProfile;
   metaReviewerMcpPolicy: RoleMcpPolicy;
-}): Promise<string> {
+}): string {
   const roleMcpPolicy =
     input.metaReviewerMcpPolicy
     ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer;
@@ -251,7 +251,7 @@ export const resolveMetaReviewerPaneWarning: ResolveMetaReviewerPaneWarning = as
   }
   const workspacePath = workspaceAuthority.workspacePath;
   try {
-    const metaReviewerCommand = await buildMetaReviewerCommand({
+    const metaReviewerCommand = buildMetaReviewerCommand({
       buildAgentCommand,
       metaReviewerAgent: input.metaReviewerAgent,
       bubbleId: input.bubbleId,
