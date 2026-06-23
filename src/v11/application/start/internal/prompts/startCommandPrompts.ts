@@ -3,6 +3,8 @@ import { homedir } from "node:os";
 import { shellQuote } from "../../../../shared/foundation/shellQuote.js";
 import { buildPinnedPairflowCommand } from "../../startCommandPromptRuntime.js";
 import type { ReviewerFocusExtractionResult } from "../../../../shared/reviewer/reviewerBrief.js";
+
+import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
 import type {
   BubbleReviewAutoReworkSeverity
 } from "../../../../shared/reviewPolicy/reviewPolicyTypes.js";
@@ -115,9 +117,15 @@ export function buildReviewerStartupPrompt(input: {
   reviewArtifactType: ReviewArtifactType;
   reviewerBlockingMinSeverity?: BubbleReviewAutoReworkSeverity;
   pairflowCommandProfile: PairflowCommandProfile;
+  agentName?: AgentName;
   reviewerBriefText?: string;
   reviewerFocus?: ReviewerFocusExtractionResult;
 }): string {
+  // AC2: For opencode agents, do not inject generic startup prompts.
+  if (input.agentName === "opencode") {
+    return "";
+  }
+
   return buildRolePromptConcernLines({
     role: "reviewer",
     phase: "startup",

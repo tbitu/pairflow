@@ -143,6 +143,7 @@ function buildActiveResumeStartupPrompts(input: {
     pairflowCommandProfile: bubbleConfig.pairflow_command_profile,
     state: loadedState,
     transcriptSummary: input.transcriptSummary,
+    agentName: activeAgent,
     ...(input.kickoffDiagnostic !== undefined
       ? { kickoffDiagnostic: input.kickoffDiagnostic }
       : {})
@@ -199,6 +200,7 @@ export async function launchFreshTmuxSession(input: {
     input.context.remoteStartContext?.externalPairflowCommand;
   const remoteWorkspaceAuthority = resolveRemoteWorkspaceAuthority(input.context);
   const metaReviewerAgent = input.context.resolved.bubbleConfig.agents.meta_reviewer;
+  const implementerAgent = input.context.resolved.bubbleConfig.agents.implementer;
   const implementerStartupPrompt = buildImplementerStartupPrompt({
     bubbleId: input.context.resolved.bubbleId,
     repoPath: input.context.resolved.repoPath,
@@ -207,6 +209,7 @@ export async function launchFreshTmuxSession(input: {
     reviewArtifactType: input.context.resolved.bubbleConfig.review_artifact_type,
     pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
     ideationPending: input.ideationPending,
+    agentName: implementerAgent,
     validationCommands: input.context.resolved.bubbleConfig.commands
   });
   const ack = await input.deps.launchSessionAck({
@@ -289,7 +292,8 @@ export async function launchFreshTmuxSession(input: {
           bubbleId: input.context.resolved.bubbleId,
           workspacePath: input.launchWorkspacePath,
           taskArtifactPath: input.context.resolved.bubblePaths.taskArtifactPath,
-          pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile
+          pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
+          agentName: input.context.resolved.bubbleConfig.agents.implementer
         })
       : buildImplementerKickoffMessage({
           bubbleId: input.context.resolved.bubbleId,
@@ -297,7 +301,8 @@ export async function launchFreshTmuxSession(input: {
           taskArtifactPath: input.context.resolved.bubblePaths.taskArtifactPath,
           reviewArtifactType: input.context.resolved.bubbleConfig.review_artifact_type,
           pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
-          validationCommands: input.context.resolved.bubbleConfig.commands
+          validationCommands: input.context.resolved.bubbleConfig.commands,
+          agentName: input.context.resolved.bubbleConfig.agents.implementer
         })
   });
 

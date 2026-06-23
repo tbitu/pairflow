@@ -12,6 +12,7 @@ import type {
 import type {
   BubbleCommandsConfig
 } from "../../../../shared/command/commandConfigTypes.js";
+import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
 
 export function buildImplementerStartupPrompt(input: {
   bubbleId: string;
@@ -21,8 +22,14 @@ export function buildImplementerStartupPrompt(input: {
   reviewArtifactType: ReviewArtifactType;
   pairflowCommandProfile: PairflowCommandProfile;
   ideationPending: boolean;
+  agentName?: AgentName;
   validationCommands?: BubbleCommandsConfig;
 }): string {
+  // AC2: For opencode agents, do not inject generic startup prompts.
+  if (input.agentName === "opencode") {
+    return "";
+  }
+
   return buildRolePromptConcernLines({
     role: "implementer",
     phase: "startup",
@@ -36,9 +43,18 @@ export function buildImplementerKickoffMessage(input: {
   taskArtifactPath: string;
   reviewArtifactType: ReviewArtifactType;
   pairflowCommandProfile: PairflowCommandProfile;
+  agentName?: AgentName;
   validationCommands?: BubbleCommandsConfig;
 }): string {
-  return [
+  // AC3: For opencode agents, strip all generic guidance — only bubble ID + task path.
+  if (input.agentName === "opencode") {
+    return [
+      `# [pairflow] bubble=${input.bubbleId} kickoff.`,
+      `Read task file now: ${input.taskArtifactPath}.`,
+    ].join(" ");
+  }
+
+    return [
     `# [pairflow] bubble=${input.bubbleId} kickoff.`,
     `Read task file now: ${input.taskArtifactPath}.`,
     buildImplementerKickoffScopeInstruction(input.reviewArtifactType),
@@ -78,6 +94,7 @@ export function buildImplementerIdeationKickoffMessage(input: {
   workspacePath: string;
   taskArtifactPath: string;
   pairflowCommandProfile: PairflowCommandProfile;
+  agentName?: AgentName;
 }): string {
   return [
     `# [pairflow] bubble=${input.bubbleId} kickoff (ideation pending).`,
