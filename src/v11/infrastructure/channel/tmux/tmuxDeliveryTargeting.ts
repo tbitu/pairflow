@@ -59,7 +59,7 @@ export function resolveTargetPaneIndex(
 function resolveRecipientRoleFromRecipient(
   recipient: CompatProtocolRecipient,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _bubbleConfig: BubbleConfig
+  bubbleConfig: BubbleConfig
 ): DeliveryMessageRecipientRole {
   const resolvedRole = resolveCompatDeliveryTargetRoleFromRecipient(
     recipient

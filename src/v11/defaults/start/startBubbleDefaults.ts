@@ -1,5 +1,5 @@
 import { loadPairflowGlobalConfig as loadPairflowGlobalConfigCanonical } from "../../../config/pairflowConfig.js";
-import { resolveOpencodeMcpDisableArgs } from "../../shared/command/agentCommand.js";
+import { resolveCodexMcpDisableArgs } from "../../shared/command/agentCommand.js";
 import {
   ensureBubbleInstanceIdForMutation
 } from "../../infrastructure/artifact/bubble/bubbleInstanceId.js";
@@ -58,6 +58,7 @@ import type {
   ExecuteRemoteBubbleStartInput,
   ExecuteRemoteBubbleStartResult
 } from "../../application/start/startCommandContract.js";
+import type { ResolveCodexMcpDisableArgsInput } from "../../shared/command/agentCommand.js";
 import type {
   BubbleRemotePointer
 } from "../../shared/remote/remoteExecutionTypes.js";
@@ -147,8 +148,8 @@ export interface StartBubbleDependencyDefaults {
   resolveBubbleFromWorkspaceCwd: ResolveBubbleFromWorkspaceCwdPort;
   resolveReviewerTestExecutionDirective:
     ResolveReviewerTestExecutionDirectivePort;
-  resolveOpencodeMcpDisableArgs: (
-    input: { roleName: string; bubbleId: string; opencodeCommand: string }
+  resolveCodexMcpDisableArgs: (
+    input: ResolveCodexMcpDisableArgsInput
   ) => Promise<string[]>;
 
 }
@@ -199,7 +200,7 @@ export const startBubbleDependencyDefaults: StartBubbleDependencyDefaults = {
   readReviewerFocusArtifact,
   resolveBubbleFromWorkspaceCwd,
   resolveReviewerTestExecutionDirective,
-  resolveOpencodeMcpDisableArgs,
+  resolveCodexMcpDisableArgs,
 
 };
 

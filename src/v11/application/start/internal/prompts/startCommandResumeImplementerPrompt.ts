@@ -10,6 +10,7 @@ import { buildRolePromptConcernLines } from "../../../../shared/role/prompts/rol
 import type {
   RolePromptStateSnapshot
 } from "../../../../shared/role/prompts/rolePromptConcernTypes.js";
+import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
 
 export function buildResumeImplementerStartupPrompt(input: {
   bubbleId: string;
@@ -20,9 +21,15 @@ export function buildResumeImplementerStartupPrompt(input: {
   pairflowCommandProfile: PairflowCommandProfile;
   state: RolePromptStateSnapshot;
   transcriptSummary: string;
+  agentName?: AgentName;
   kickoffDiagnostic?: string;
   validationCommands?: BubbleCommandsConfig;
 }): string {
+  // AC2: For opencode agents, do not inject generic startup prompts.
+  if (input.agentName === "opencode") {
+    return "";
+  }
+
   return joinPromptLines(
     buildRolePromptConcernLines({
       role: "implementer",

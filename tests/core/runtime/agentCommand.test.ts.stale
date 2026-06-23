@@ -5,10 +5,10 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import type { OpencodeMcpDisableArgsError } from "../../../src/v11/shared/command/agentCommand.js";
+import type { CodexMcpDisableArgsError } from "../../../src/v11/shared/command/agentCommand.js";
 import {
   buildAgentCommand,
-  resolveOpencodeMcpDisableArgs
+  resolveCodexMcpDisableArgs
 } from "../../../src/v11/shared/command/agentCommand.js";
 import { shellQuote } from "../../../src/v11/shared/foundation/shellQuote.js";
 
@@ -76,10 +76,10 @@ async function resolveArgsWithFakeOpencode(input: {
   );
   await chmod(fakeOpencodePath, 0o755);
 
-  return await resolveOpencodeMcpDisableArgs({
+  return await resolveCodexMcpDisableArgs({
     roleName: "reviewer",
     bubbleId: "b_agent_cmd_fake_opencode",
-    opencodeCommand: fakeOpencodePath
+    codexCommand: fakeOpencodePath
   });
 }
 
@@ -90,7 +90,7 @@ describe("buildAgentCommand", () => {
       agentName: "opencode",
       bubbleId: "b_agent_cmd_opencode_01",
       worktreePath,
-      opencodeMcpDisableArgs: [
+      codexMcpDisableArgs: [
         "-c",
         'mcp_servers={"codescene"={command="node",args=["-e","process.exit(0)"],enabled=false}}'
       ],
@@ -135,7 +135,7 @@ describe("buildAgentCommand", () => {
   });
 
   it("builds Opencode MCP disable overrides for quoted TOML server names", async () => {
-    const opencodeMcpDisableArgs = await resolveArgsWithFakeOpencode({
+    const codexMcpDisableArgs = await resolveArgsWithFakeOpencode({
       opencodeJson: [
         { name: "foo.bar", enabled: true },
         { name: "quote\"back\\slash", enabled: true },
@@ -148,11 +148,11 @@ describe("buildAgentCommand", () => {
       roleMcpPolicy: "disabled",
       bubbleId: "b_agent_cmd_quoted_mcp_names_01",
       worktreePath: "/tmp/pairflow-worktree/quoted-mcp",
-      opencodeMcpDisableArgs
+      codexMcpDisableArgs
     });
     const script = extractBashLcScript(command);
 
-    expect(opencodeMcpDisableArgs).toEqual([
+    expect(codexMcpDisableArgs).toEqual([
       "-c",
       'mcp_servers={"foo.bar"={command="node",args=["-e","process.exit(0)"],enabled=false},"quote\\"back\\\\slash"={command="node",args=["-e","process.exit(0)"],enabled=false}}'
     ]);
@@ -190,10 +190,10 @@ describe("buildAgentCommand", () => {
     await expect(resolveArgsWithFakeOpencode({
       opencodeStdout: "{not-json"
     })).rejects.toMatchObject({
-      name: "OpencodeMcpDisableArgsError",
+      name: "CodexMcpDisableArgsError",
       reasonCode: "CODEX_MCP_LIST_JSON_MALFORMED",
       context: { command_name: "opencode mcp list --json" }
-    } satisfies Partial<OpencodeMcpDisableArgsError>);
+    } satisfies Partial<CodexMcpDisableArgsError>);
   });
 
   it("fails closed when Opencode MCP discovery returns invalid schema", async () => {
@@ -263,7 +263,7 @@ describe("buildAgentCommand", () => {
       roleMcpPolicy: "disabled",
       bubbleId: "b_agent_cmd_bash3_compat_01",
       worktreePath: "/tmp/pairflow-worktree/bash3",
-      opencodeMcpDisableArgs: ["-c", "mcp_servers={}"]
+      codexMcpDisableArgs: ["-c", "mcp_servers={}"]
     });
     const script = extractBashLcScript(command);
 
@@ -281,7 +281,7 @@ describe("buildAgentCommand", () => {
       roleMcpPolicy: "disabled",
       bubbleId: "b_agent_cmd_same_agent_reviewer_01",
       worktreePath: "/tmp/pairflow-worktree/same-agent-reviewer",
-      opencodeMcpDisableArgs: ["-c", "mcp_servers={}"]
+      codexMcpDisableArgs: ["-c", "mcp_servers={}"]
     });
     const enabledMetaReviewer = buildAgentCommand({
       agentName: "opencode",
@@ -304,7 +304,7 @@ describe("buildAgentCommand", () => {
       bubbleId: "b_agent_cmd_workspace_01",
       workspacePath,
       worktreePath: "/tmp/pairflow-workspace/legacy",
-      opencodeMcpDisableArgs: [],
+      codexMcpDisableArgs: [],
       startupPrompt: "Prompt"
     });
     const script = extractBashLcScript(command);
@@ -322,7 +322,7 @@ describe("buildAgentCommand", () => {
       bubbleId: "b_agent_cmd_remote_external_01",
       workspacePath,
       externalPairflowCommand: "/home/dev/.local/share/pnpm/pairflow",
-      opencodeMcpDisableArgs: [],
+      codexMcpDisableArgs: [],
       startupPrompt: "Prompt"
     });
     const script = extractBashLcScript(command);
@@ -344,7 +344,7 @@ describe("buildAgentCommand", () => {
         workspaceRoot: workspacePath,
         externalPairflowCommand: "/home/dev/.local/share/pnpm/pairflow"
       },
-      opencodeMcpDisableArgs: [],
+      codexMcpDisableArgs: [],
       startupPrompt: "Prompt"
     });
     const script = extractBashLcScript(command);
@@ -392,6 +392,32 @@ describe("buildAgentCommand", () => {
 
     expect(command).toContain("--model");
     expect(command).toContain("opencode-sonnet-4-5");
+    await assertBashParses(command);
+  });
+
+  it("builds interactive opencode launch with config-based yolo permissions", async () => {
+    const command = buildAgentCommand({
+      agentName: "opencode",
+      model: "lmstudio/qwen3.6-35b-a3b-mtp@q6_k_xl-reviewer",
+      bubbleId: "b_agent_cmd_opencode_01",
+      workspacePath: "/tmp/pairflow-worktree/opencode",
+      startupPrompt: "Let us test opencode prompt"
+    });
+    const script = extractBashLcScript(command);
+
+    expect(script).toContain("export OPENCODE_CONFIG_CONTENT='");
+    expect(script).toContain("\"$schema\":\"https://opencode.ai/config.json\"");
+    expect(script).toContain("\"permission\":\"allow\"");
+    expect(script).toContain("\"baseURL\":\"http://127.0.0.1:1235/v1\"");
+    expect(script).toContain("\"headerTimeout\":60000");
+    expect(script).toContain("\"chunkTimeout\":120000");
+    expect(script).toContain("\"timeout\":900000");
+    expect(script).toContain("'opencode'");
+    expect(script).not.toContain("'--prompt'");
+    expect(script).toContain("Let us test opencode prompt");
+    expect(script).toContain("'--model'");
+    expect(script).toContain("'lmstudio/qwen3.6-35b-a3b-mtp@q6_k_xl-reviewer'");
+    expect(script).not.toContain("'--dangerously-skip-permissions'");
     await assertBashParses(command);
   });
 

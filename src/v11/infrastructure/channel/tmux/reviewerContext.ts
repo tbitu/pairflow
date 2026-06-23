@@ -7,11 +7,9 @@ import {
   runTmux,
   type TmuxRunner
 } from "./tmuxManager.js";
-import { submitTmuxPaneInput } from "./tmuxInput.js";
+import { sendAndSubmitTmuxPaneMessage, submitTmuxPaneInput } from "./tmuxInput.js";
 import { buildAgentCommand } from "../../../shared/command/agentCommand.js";
-
-import { shouldSubmitStartupPrompt } from "../../../shared/command/startupPromptGate.js";
-import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
+import { resolveCodexMcpDisableArgs } from "../../../shared/command/agentCommand.js";
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../shared/runtimeSessionWorkspaceAuthority.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../config/defaults.js";
 import type {
@@ -38,22 +36,56 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
+function shouldSubmitStartupPrompt(
+  agentName: string,
+  startupPrompt: string | undefined
+): boolean {
+  return agentName === "codex"
+    && (startupPrompt?.trim().length ?? 0) > 0;
+}
+
+function shouldSendStartupPromptPostSpawn(
+  agentName: string,
+  startupPrompt: string | undefined
+): boolean {
+  return agentName === "opencode"
+    && (startupPrompt?.trim().length ?? 0) > 0;
+}
+
 async function maybeSubmitReviewerStartupPrompt(input: {
-  agentName: AgentName;
+  agentName: string;
   startupPrompt?: string | undefined;
   runner: TmuxRunner;
   sessionName: string;
   paneIndex: number;
   startupSubmitDelayMs?: number;
 }): Promise<void> {
-  if (!shouldSubmitStartupPrompt(input.agentName, input.startupPrompt)) {
+  const shouldSubmit = shouldSubmitStartupPrompt(
+    input.agentName,
+    input.startupPrompt
+  );
+  const shouldSendPostSpawn = shouldSendStartupPromptPostSpawn(
+    input.agentName,
+    input.startupPrompt
+  );
+  if (!shouldSubmit && !shouldSendPostSpawn) {
     return;
   }
 
-  await sleep(input.startupSubmitDelayMs ?? 1500);
-  await submitTmuxPaneInput(
+  const targetPane = `${input.sessionName}:0.${input.paneIndex}`;
+  const startupSubmitDelayMs = input.startupSubmitDelayMs ?? 1500;
+  if (startupSubmitDelayMs > 0) {
+    await sleep(startupSubmitDelayMs);
+  }
+  if (shouldSubmit) {
+    await submitTmuxPaneInput(input.runner, targetPane);
+    return;
+  }
+  await sendAndSubmitTmuxPaneMessage(
     input.runner,
-    `${input.sessionName}:0.${input.paneIndex}`
+    targetPane,
+    input.startupPrompt as string,
+    { maxChunkLength: 1024 }
   );
 }
 
@@ -95,7 +127,13 @@ export async function refreshReviewerContext(
   const roleMcpPolicy =
     input.bubbleConfig.role_mcp?.reviewer
     ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.reviewer;
-
+  const codexMcpDisableArgs =
+    input.bubbleConfig.agents.reviewer === "codex" && roleMcpPolicy === "disabled"
+      ? await resolveCodexMcpDisableArgs({
+        roleName: "reviewer",
+        bubbleId: input.bubbleId
+      })
+      : undefined;
   const reviewerCommand = buildAgentCommand({
     agentName: input.bubbleConfig.agents.reviewer,
     roleName: "reviewer",
@@ -106,7 +144,7 @@ export async function refreshReviewerContext(
     bubbleId: input.bubbleId,
     workspacePath,
     pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile,
-
+    ...(codexMcpDisableArgs !== undefined ? { codexMcpDisableArgs } : {}),
     ...(input.bubbleConfig.executor?.type === "ssh"
       ? {
           remoteWorkspaceAuthority: {
@@ -114,7 +152,10 @@ export async function refreshReviewerContext(
           }
         }
       : {}),
-    startupPrompt: input.reviewerStartupPrompt
+    startupPrompt:
+      input.bubbleConfig.agents.reviewer === "opencode"
+        ? undefined
+        : input.reviewerStartupPrompt
   });
 
   try {

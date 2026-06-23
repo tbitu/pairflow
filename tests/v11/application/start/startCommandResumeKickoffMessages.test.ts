@@ -4,7 +4,7 @@ import { resolveResumeKickoffMessages } from "../../../../src/v11/application/st
 import type { PersistedBubbleStateSnapshot } from "../../../../src/v11/domain/state/snapshot/persistedBubbleStateSnapshot.js";
 
 function createRunningMetaReviewerState(
-  activeAgent: "opencode"  
+  activeAgent: "opencode"
 ): PersistedBubbleStateSnapshot {
   return {
     bubble_id: "b_resume_kickoff_meta_01",

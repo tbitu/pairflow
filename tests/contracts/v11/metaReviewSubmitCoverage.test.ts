@@ -35,7 +35,7 @@ async function createTempRepo(): Promise<string> {
 
 async function writeMetaReviewRunningState(input: {
   statePath: string;
-  activeAgent: "opencode"  ;
+  activeAgent: "opencode";
   activeRole: "meta_reviewer";
   round?: number;
   nowIso: string;

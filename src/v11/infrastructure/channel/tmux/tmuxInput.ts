@@ -6,12 +6,11 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
-/** Fallback delay for opencode readiness detection (timeout sentinel). */
-export const OPENCODE_READINESS_FALLBACK_DELAY_MS = 600;
 export interface SendAndSubmitTmuxPaneMessageOptions {
   requireSuccess?: boolean;
   submitDelayMs?: number;
   sleepForDelayMs?: (delayMs: number) => Promise<void>;
+  maxChunkLength?: number;
 }
 
 export type TmuxPaneMarkerStatus = "submitted" | "stuck_in_input" | "not_found";
@@ -24,6 +23,29 @@ export interface ConfirmTmuxPaneMarkerSubmissionInput {
   settleDelayMs?: number;
   retryDelayMs?: number;
   sleepForDelayMs?: (delayMs: number) => Promise<void>;
+}
+
+function resolveDynamicSubmitDelayMs(message: string): number {
+  const minimumDelayMs = 500;
+  const maximumDelayMs = 20000;
+  const lineCount = message.split("\n").length;
+  const lengthDelayMs = Math.ceil(message.length * 1.6);
+  const structureDelayMs = Math.max(0, lineCount - 1) * 20;
+  return Math.min(
+    maximumDelayMs,
+    Math.max(minimumDelayMs, lengthDelayMs + structureDelayMs)
+  );
+}
+
+function splitForTmuxLiteralSend(message: string, maxChunkLength: number): string[] {
+  if (message.length <= maxChunkLength) {
+    return [message];
+  }
+  const chunks: string[] = [];
+  for (let index = 0; index < message.length; index += maxChunkLength) {
+    chunks.push(message.slice(index, index + maxChunkLength));
+  }
+  return chunks;
 }
 
 async function maybeExitTmuxCopyMode(input: {
@@ -69,7 +91,7 @@ async function maybeExitTmuxCopyMode(input: {
 /**
  * Send a message to a tmux pane and submit it via Enter.
  *
- * Verified against a real Opencode Code instance: the Enter MUST arrive as a
+ * Verified against a real Claude Code instance: the Enter MUST arrive as a
  * separate tmux `send-keys` command with a brief gap after the text.  Embedding
  * CR/LF in the literal text (`-l "text\r"` or `"text\n"`) does NOT trigger
  * submit in ink-based TUIs — they treat in-band control chars as newlines
@@ -89,26 +111,30 @@ export async function sendAndSubmitTmuxPaneMessage(
     targetPane,
     requireSuccess: options.requireSuccess ?? false
   });
-  const writeResult = await runner(
-    ["send-keys", "-t", targetPane, "-l", message],
-    { allowFailure: true }
-  );
-  if (writeResult.exitCode !== 0) {
-    if (options.requireSuccess) {
-      throw new Error(
-        `TMUX_MESSAGE_WRITE_FAILED: context operation_id=tmux_input_send target_pane=${targetPane}.`
-      );
+  const maxChunkLength =
+    options.maxChunkLength !== undefined
+      ? Math.max(1, Math.floor(options.maxChunkLength))
+      : Number.POSITIVE_INFINITY;
+  for (const messageChunk of splitForTmuxLiteralSend(message, maxChunkLength)) {
+    const writeResult = await runner(
+      ["send-keys", "-t", targetPane, "-l", messageChunk],
+      { allowFailure: true }
+    );
+    if (writeResult.exitCode !== 0) {
+      if (options.requireSuccess) {
+        throw new Error(
+          `TMUX_MESSAGE_WRITE_FAILED: context operation_id=tmux_input_send target_pane=${targetPane}.`
+        );
+      }
+      return;
     }
-    return;
+    await sleep(200);
   }
 
   // Brief gap lets the TUI process and render the pasted text before receiving
-  // the Enter key as a distinct input event. The base delay of 500ms was verified
-  // against Opencode Code v2.1.50 with messages up to ~550 chars. For longer merged
-  // payloads (e.g., bootstrap + kickoff combined in tmuxManagerPaneSeed.ts), the
-  // delay scales proportionally so that a 2000-char message gets ~1600ms, preventing
-  // the TUI from receiving Enter before it finishes processing all pasted characters.
-  const submitDelayMs = options.submitDelayMs ?? Math.min(5000, Math.max(500, Math.ceil(message.length * 0.8)));
+  // the Enter key as a distinct input event. Use a dynamic delay that scales
+  // with payload size and line structure to handle heavier local-LLM terminals.
+  const submitDelayMs = options.submitDelayMs ?? resolveDynamicSubmitDelayMs(message);
   if (submitDelayMs > 0) {
     const sleepForDelayMs = options.sleepForDelayMs ?? sleep;
     await sleepForDelayMs(submitDelayMs);
@@ -146,83 +172,35 @@ function findLastIndex(arr: string[], predicate: (item: string) => boolean): num
 }
 
 function isAgentPromptLine(line: string): boolean {
-  // Traditional prompts use > or ❯ (possibly prefixed by pane borders).
-  // Opencode uses a box-drawing character ┃ to denote the input region.
-  return /^\s*(?:[|│┃]\s*)*[>❯]/.test(line) || /^\s*┃\s*/.test(line);
+  // Some terminal layouts prefix prompt lines with pane border glyphs
+  // (for example `│ ❯`). Treat those as prompt lines too.
+  return /^\s*(?:[|│┃]\s*)*[>❯]/u.test(line);
 }
 
-/**
- * Detect whether a line looks like an opencode TUI footer/prompt.
- *
- * Opencode's exact prompt character is replaced by an input box footer
- * UI. We match against common persistent footer text elements.
- */
-export function isOpencodePromptLine(line: string): boolean {
-  return line.includes("Ask anything...") || line.includes("ctrl+p commands");
-}
-
-/**
- * Optional override parameters for opencode readiness detection.
- * These are positional in the function signature; this interface only holds
- * overridable defaults (timeouts and sleep injection for testing).
- */
-export interface DetectOpencodeReadinessOptions {
-  timeoutMs?: number;
-  sleepForDelayMs?: (ms: number) => Promise<void>;
-  maxPolls?: number;
-}
-
-/**
- * Opencode readiness detection via timeout sentinel.
- *
- * Unlike opencode (which shows `[pairflow]` markers) and opencode (whose prompt-line
- * pattern is detectable), opencode does not currently expose a reliable visual
- * indicator that can be matched in tmux pane captures.  This function polls for an
- * `isOpencodePromptLine` match within the configured timeout, then falls back to a
- * short delay-based sentinel when no visual signal appears — trusting that opencode
- * processes input quickly enough even without a visible prompt change.
- *
- * The fallback delay defaults to **600 ms**, which is sufficient for the agent TUI
- * to acknowledge pasted keystrokes and be ready for the next message.
- */
-export async function detectOpencodeReadiness(
+export async function waitForTuiReady(
   runner: TmuxRunner,
-  targetPane: string,
-  options?: DetectOpencodeReadinessOptions
+  targetPane: string
 ): Promise<boolean> {
-  // Since isOpencodePromptLine() is a placeholder that always returns false,
-  // skip the long polling loop and use a minimal poll phase. This eliminates
-  // wasted ~5s startup latency while keeping the API future-proof for when
-  // a real visual indicator regex is added (see TODO in isOpencodePromptLine).
-  const maxPolls = options?.maxPolls ?? 2;
-  const fallbackDelay = OPENCODE_READINESS_FALLBACK_DELAY_MS;
-  const sleepForDelayMs = options?.sleepForDelayMs ?? sleep;
-
-  // Quick poll window: up to maxPolls captures with brief pauses.
-  for (let pollCount = 0; pollCount < maxPolls; pollCount += 1) {
-    const capture = await runner(["capture-pane", "-p", "-S", "-200", "-t", targetPane], {
+  const attempts = 60; // 30 seconds
+  for (let i = 0; i < attempts; i++) {
+    const capture = await runner(["capture-pane", "-p", "-t", targetPane], {
       allowFailure: true
     });
-
     if (capture.exitCode === 0) {
       const lines = capture.stdout.split("\n");
-      const isReady = lines.some((line) => isOpencodePromptLine(line));
-      if (isReady) {
+      const isOpencode = lines.some((line) => /▀▀▀▀/u.test(line));
+      const hasOpencodeReady = capture.stdout.toLowerCase().includes("ask anything") || capture.stdout.toLowerCase().includes("tab agents") || capture.stdout.toLowerCase().includes("ctrl+p commands");
+      const hasPrompt = isOpencode ? hasOpencodeReady : lines.some((line) => isAgentPromptLine(line));
+      if (hasPrompt) {
+        // Extra settle time to ensure the TUI's internal event loop is ready
+        await sleep(2000);
         return true;
       }
     }
-
-    // Brief pause between polls to avoid excessive tmux queries.
-    await sleepForDelayMs(150);
+    await sleep(500);
   }
-
-  // Fallback: opencode has no reliable visual indicator, so trust that the process
-  // is ready after a short settling delay (the timeout sentinel).
-  await sleepForDelayMs(fallbackDelay);
-  return true;
+  return false;
 }
-
-
 
 export async function checkTmuxPaneMarkerStatus(
   runner: TmuxRunner,
@@ -242,7 +220,19 @@ export async function checkTmuxPaneMarkerStatus(
   }
 
   const lines = output.split("\n");
-  const lastPromptIdx = findLastIndex(lines, isAgentPromptLine);
+  let lastPromptIdx = findLastIndex(lines, isAgentPromptLine);
+  if (lastPromptIdx < 0) {
+    // Opencode (Antigravity) fallback: find the bottom boundary of the input box
+    const bottomBarIdx = findLastIndex(lines, (line) => /▀▀▀▀/u.test(line));
+    if (bottomBarIdx > 0) {
+      let topOfInputIdx = bottomBarIdx - 1;
+      while (topOfInputIdx >= 0 && /^\s*┃/u.test(lines[topOfInputIdx]!)) {
+        topOfInputIdx -= 1;
+      }
+      lastPromptIdx = topOfInputIdx + 1;
+    }
+  }
+
   if (lastPromptIdx < 0) {
     // A promptless marker can be a wrapped TUI input buffer with the prompt
     // scrolled off-capture. Treat it as unsubmitted so delivery fails closed
@@ -314,6 +304,87 @@ export async function confirmTmuxPaneMarkerSubmission(
   return false;
 }
 
+export async function maybeAcceptClaudeTrustPrompt(
+  runner: TmuxRunner,
+  targetPane: string
+): Promise<boolean> {
+  let accepted = false;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const capture = await runner(["capture-pane", "-pt", targetPane], {
+      allowFailure: true
+    });
+    if (capture.exitCode !== 0) {
+      return accepted;
+    }
+
+    const normalized = capture.stdout.toLowerCase();
+    const looksLikeClaudeFolderTrustPrompt =
+      normalized.includes("security guide") &&
+      normalized.includes("yes, i trust this folder");
+    const looksLikeClaudeBypassPermissionsPrompt =
+      normalized.includes("bypass permissions mode") &&
+      normalized.includes("yes, i accept");
+    const looksLikeCodexTrustPrompt =
+      normalized.includes("do you trust the contents of this directory") &&
+      normalized.includes("1. yes, continue");
+
+    if (looksLikeClaudeFolderTrustPrompt) {
+      // Claude's folder-trust prompt already highlights the "Yes" option.
+      // Confirming requires a bare Enter, not typing "1".
+      await submitTmuxPaneInput(runner, targetPane);
+      accepted = true;
+      await sleep(250);
+      continue;
+    }
+
+    if (looksLikeClaudeBypassPermissionsPrompt) {
+      await sendAndSubmitTmuxPaneMessage(runner, targetPane, "2");
+      accepted = true;
+      await sleep(250);
+      continue;
+    }
+
+    if (looksLikeCodexTrustPrompt) {
+      await sendAndSubmitTmuxPaneMessage(runner, targetPane, "1");
+      accepted = true;
+      await sleep(250);
+      continue;
+    }
+
+    return accepted;
+  }
+
+  return accepted;
+}
+
+export function isOpencodePromptLine(line: string): boolean {
+  const lower = line.toLowerCase();
+  return (
+    (lower.includes("security guide") && lower.includes("trust this folder"))
+    || (lower.includes("do you trust the contents of this directory"))
+    || (lower.includes("bypass permissions mode") && lower.includes("accept"))
+  );
+}
+
+export async function detectOpencodeReadiness(
+  runner: TmuxRunner,
+  targetPane: string
+): Promise<boolean> {
+  const capture = await runner(["capture-pane", "-pt", targetPane], {
+    allowFailure: true
+  });
+  if (capture.exitCode !== 0) {
+    return false;
+  }
+  const lower = capture.stdout.toLowerCase();
+  return (
+    lower.includes("opencode code is ready")
+    || lower.includes("opencode ready")
+    || lower.includes("ready.")
+  );
+}
+
 export async function maybeAcceptOpencodeTrustPrompt(
   runner: TmuxRunner,
   targetPane: string
@@ -331,34 +402,24 @@ export async function maybeAcceptOpencodeTrustPrompt(
     const normalized = capture.stdout.toLowerCase();
     const looksLikeOpencodeFolderTrustPrompt =
       normalized.includes("security guide") &&
-      normalized.includes("yes, i trust this folder");
+      normalized.includes("trust this folder");
     const looksLikeOpencodeBypassPermissionsPrompt =
       normalized.includes("bypass permissions mode") &&
-      normalized.includes("yes, i accept");
+      normalized.includes("accept");
     const looksLikeOpencodeTrustPrompt =
-      normalized.includes("do you trust the contents of this directory") &&
-      normalized.includes("1. yes, continue");
+      normalized.includes("do you trust the contents of this directory");
 
-    if (looksLikeOpencodeFolderTrustPrompt) {
-      // Opencode's folder-trust prompt already highlights the "Yes" option.
-      // Confirming requires a bare Enter, not typing "1".
-      await submitTmuxPaneInput(runner, targetPane);
+    if (looksLikeOpencodeFolderTrustPrompt || looksLikeOpencodeBypassPermissionsPrompt) {
+      await sendAndSubmitTmuxPaneMessage(runner, targetPane, "Enter");
       accepted = true;
-      await sleep(250);
-      continue;
-    }
-
-    if (looksLikeOpencodeBypassPermissionsPrompt) {
-      await sendAndSubmitTmuxPaneMessage(runner, targetPane, "2");
-      accepted = true;
-      await sleep(250);
+      await new Promise((resolve) => setTimeout(resolve, 250));
       continue;
     }
 
     if (looksLikeOpencodeTrustPrompt) {
       await sendAndSubmitTmuxPaneMessage(runner, targetPane, "1");
       accepted = true;
-      await sleep(250);
+      await new Promise((resolve) => setTimeout(resolve, 250));
       continue;
     }
 

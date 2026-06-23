@@ -43,7 +43,7 @@ async function createTempRepo(): Promise<string> {
 beforeEach(() => {
   configureStartBubbleDependencyDefaults({
     ...startBubbleDependencyDefaults,
-    resolveOpencodeMcpDisableArgs: () => Promise.resolve([])
+    resolveCodexMcpDisableArgs: () => Promise.resolve([])
   });
 });
 

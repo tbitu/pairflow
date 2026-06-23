@@ -308,7 +308,7 @@ function expectReviewerValidationClaimGuardrails(text: string | undefined): void
 beforeEach(() => {
   configureStartBubbleDependencyDefaults({
     ...startBubbleDependencyDefaults,
-    resolveOpencodeMcpDisableArgs: async () => []
+    resolveCodexMcpDisableArgs: async () => []
   });
 });
 
@@ -2118,7 +2118,7 @@ describe("startBubble", () => {
             );
             return { status: "running" as const, sessionName: "pf-b_start_bootstrap_clone_authority_01" };
           },
-          resolveOpencodeMcpDisableArgs: async () => [],
+          resolveCodexMcpDisableArgs: async () => [],
           cleanupWorktreeWorkspace: async () => {
             cleanupCalled = true;
             return {

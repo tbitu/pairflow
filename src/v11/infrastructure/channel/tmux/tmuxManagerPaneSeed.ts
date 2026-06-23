@@ -1,12 +1,10 @@
-import {
-  confirmTmuxPaneMarkerSubmission,
-  maybeAcceptOpencodeTrustPrompt,
-  sendAndSubmitTmuxPaneMessage,
-  submitTmuxPaneInput
-} from "./tmuxInput.js";
 import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import {
-  detectOpencodeReadiness
+  confirmTmuxPaneMarkerSubmission,
+  maybeAcceptClaudeTrustPrompt,
+  sendAndSubmitTmuxPaneMessage,
+  submitTmuxPaneInput,
+  waitForTuiReady
 } from "./tmuxInput.js";
 import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
 
@@ -60,10 +58,10 @@ export interface SeedBubbleTmuxPaneMessagesInput {
   metaReviewerBootstrapMessage?: string | undefined;
   implementerKickoffMessage?: string | undefined;
   reviewerKickoffMessage?: string | undefined;
+  implementerAgentName: AgentName | undefined;
+  reviewerAgentName: AgentName | undefined;
+  metaReviewerAgentName: AgentName | undefined;
   metaReviewerKickoffMessage?: string | undefined;
-  implementerAgentName?: AgentName | undefined;
-  reviewerAgentName?: AgentName | undefined;
-  metaReviewerAgentName?: AgentName | undefined;
 }
 
 function resolvePairflowPaneMessageMarker(message: string): string | undefined {
@@ -74,25 +72,10 @@ function resolvePairflowPaneMessageMarker(message: string): string | undefined {
 async function submitStartupPrompt(
   runner: TmuxRunner,
   targetPane: string,
-  agentName: AgentName | undefined,
   shouldSubmit: boolean | undefined
 ): Promise<void> {
   if (!shouldSubmit) {
     return;
-  }
-
-  // Opencode readiness gate: poll for visual prompt indicator or fall back
-  // to a timeout sentinel before submitting the startup prompt via tmux.
-  if (agentName === "opencode") {
-    try {
-      await detectOpencodeReadiness(runner, targetPane);
-    } catch (cause) {
-      const message = cause instanceof Error ? cause.message : String(cause);
-      console.error('[opencode-readiness] readiness detection failed:', message);
-      const error = new Error(`opencode readiness check failed: ${message}`);
-      Object.assign(error, { code: "OPENCODE_READINESS_FAILED" });
-      throw error;
-    }
   }
 
   await new Promise<void>((resolvePromise) => {
@@ -110,10 +93,19 @@ async function sendPaneMessage(
     return;
   }
 
-  await maybeAcceptOpencodeTrustPrompt(runner, targetPane).catch(() => undefined);
+  await maybeAcceptClaudeTrustPrompt(runner, targetPane).catch(() => undefined);
   const concreteMessage = message as string;
-  await sendAndSubmitTmuxPaneMessage(runner, targetPane, concreteMessage);
   const marker = resolvePairflowPaneMessageMarker(concreteMessage);
+  const isStructuredPairflowEnvelope = marker !== undefined;
+  // Give the TUI time to initialize during very early pane bootstrap
+  // before submitting the whole prompt as one tmux input.
+  // Fail closed on write/submit failures so launch does not report success
+  // with a silently missing startup handoff.
+  await waitForTuiReady(runner, targetPane);
+  await sendAndSubmitTmuxPaneMessage(runner, targetPane, concreteMessage, {
+    requireSuccess: !isStructuredPairflowEnvelope,
+    maxChunkLength: 1024
+  });
   if (marker !== undefined) {
     await confirmTmuxPaneMarkerSubmission({
       runner,
@@ -129,23 +121,21 @@ export async function seedBubbleTmuxPaneMessages(
   await submitStartupPrompt(
     input.runner,
     input.implementerPaneId,
-    input.implementerAgentName,
     input.implementerSubmitStartupPrompt
   );
   await submitStartupPrompt(
     input.runner,
     input.reviewerPaneId,
-    input.reviewerAgentName,
     input.reviewerSubmitStartupPrompt
   );
   await submitStartupPrompt(
     input.runner,
     input.metaReviewerPaneId,
-    input.metaReviewerAgentName,
     input.metaReviewerSubmitStartupPrompt
   );
-  // When a startup prompt was submitted for an agent (e.g. Opencode), the agent
-  // already received its full context via the CLI argument that launched it.
+  // When a startup prompt was submitted for an agent (currently Codex), the
+  // agent already received its full context via the CLI argument that launched
+  // it.
   // Sending a separate bootstrap+kickoff message through tmux paste would
   // deliver semi-duplicate content as a second input, causing "double input"
   // steering confusion. Skip the pasted message for agents whose startup

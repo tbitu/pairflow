@@ -84,6 +84,7 @@ export interface ResolvedStartBubbleDependencies {
   prepareRemoteStartActivationPackage: PrepareRemoteStartActivationPackagePort;
 
   reportWarning: (message: string) => void;
+  resolveCodexMcpDisableArgs?: StartBubbleDependencies["resolveCodexMcpDisableArgs"];
   buildResumeSummary:
     NonNullable<StartBubbleDependencies["buildResumeTranscriptSummary"]>;
   ensureReviewerPolicySnapshot: EnsureReviewerPolicySnapshotPort;
@@ -232,6 +233,9 @@ export function resolveStartBubbleDependencies(
       ?? ((message: string) => {
         process.stderr.write(`${message}\n`);
       }),
+    resolveCodexMcpDisableArgs:
+      dependencies.resolveCodexMcpDisableArgs
+      ?? startBubbleDependencyDefaults.resolveCodexMcpDisableArgs,
     ...reviewerDependencies
   };
 }

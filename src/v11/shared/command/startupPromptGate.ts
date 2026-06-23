@@ -8,9 +8,9 @@ import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
  */
 export function shouldSubmitStartupPrompt(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _agentName: AgentName,
+  agentName: AgentName,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _startupPrompt: string | undefined
+  startupPrompt: string | undefined
 ): boolean {
   // Opencode receives its startup prompt via CLI arguments.
   return false;
