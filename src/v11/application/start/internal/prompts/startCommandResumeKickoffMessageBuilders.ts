@@ -13,6 +13,7 @@ import type {
 } from "../../../../shared/config/bubbleConfigVocabulary.js";
 import {
   buildCanonicalActorEmitLookupGuidance,
+  buildAgentEvidenceHandoffGuidance
 } from "../../../../shared/role/prompts/rolePromptConcerns.js";
 import { buildDocumentBubbleSourceEditGuard } from "../../../../shared/document/documentBubbleSourceEditGuard.js";
 
@@ -68,7 +69,17 @@ export function buildResumeImplementerKickoffMessage(input: {
     `# [pairflow] bubble=${input.bubbleId} resume kickoff (implementer).`,
     `State is RUNNING at round ${input.round}.`,
     `Re-open task context: ${input.taskArtifactPath}.`,
-    buildResumeImplementerScopeInstruction(input.reviewArtifactType)
+    buildResumeImplementerScopeInstruction(input.reviewArtifactType),
+    buildPairflowCommandGuidance(
+      input.workspacePath,
+      input.pairflowCommandProfile
+    ),
+    buildCanonicalActorEmitLookupGuidance({
+      bubbleId: input.bubbleId,
+      repoPath: input.repoPath
+    }),
+    buildAgentEvidenceHandoffGuidance(input.reviewArtifactType),
+    buildResumeImplementerHandoffInstruction(input.reviewArtifactType)
   ].join(" ");
 }
 
@@ -85,6 +96,14 @@ export function buildResumeImplementerScopeInstruction(
   }
 
   return "Continue active implementation.";
+}
+
+export function buildResumeImplementerHandoffInstruction(
+  reviewArtifactType: ReviewArtifactType
+): string {
+  const scopeNoun =
+    reviewArtifactType === "document" ? "refinement" : "implementation";
+  return `Continue active ${scopeNoun} and hand off with \`pairflow agent emit --kind pass --repo <repo> --bubble-id <id> --handoff-id <handoff-id> --execution-id <execution-id> --summary "<what changed + validation>"\` plus available evidence \`--ref\` logs when ready.`;
 }
 
 export function buildResumeReviewerKickoffMessage(input: {
@@ -121,6 +140,14 @@ export function buildResumeReviewerKickoffMessage(input: {
   return [
     `# [pairflow] bubble=${input.bubbleId} resume kickoff (reviewer).`,
     `State is RUNNING at round ${input.round}.`,
+    buildPairflowCommandGuidance(
+      input.workspacePath,
+      input.pairflowCommandProfile
+    ),
+    buildCanonicalActorEmitLookupGuidance({
+      bubbleId: input.bubbleId,
+      repoPath: input.repoPath
+    }),
     ...(input.reviewerTestDirectiveLine !== undefined
       ? [`Test directive: ${input.reviewerTestDirectiveLine}`]
       : []),

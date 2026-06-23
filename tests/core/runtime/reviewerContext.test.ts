@@ -107,7 +107,7 @@ describe("refreshReviewerContext", () => {
     expect(script).toContain(`if ! cd ${shellQuote("/tmp/runtime-workspace")}; then`);
   });
 
-  it("submits Opencode reviewer startup prompts after reviewer pane refresh", async () => {
+  it("opencode reviewer startup prompts delivered via CLI args not tmux paste after pane refresh", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
@@ -145,19 +145,15 @@ describe("refreshReviewerContext", () => {
         })
     });
 
-    const reviewerTargetPane =
-      `pf-b_reviewer_ctx_01:0.${String(getTopologySlotPaneIndexForRole("reviewer"))}`;
-
     expect(result).toEqual({
       refreshed: true
     });
+    // Opencode receives startup prompts via CLI -p flag in the respawn-pane command,
+    // not via tmux send-keys (shouldSubmitStartupPrompt returns false for opencode).
     expect(calls[0]?.[0]).toBe("respawn-pane");
-    expect(calls).toContainEqual([
-      "send-keys",
-      "-t",
-      reviewerTargetPane,
-      "Enter"
-    ]);
+    // No send-keys should be issued for opencode.
+    const sendKeysCalls = calls.filter((c) => c[0] === "send-keys");
+    expect(sendKeysCalls.length).toBe(0);
   });
 
   it("uses bubble-local reviewer MCP opt-in when refreshing a Opencode reviewer", async () => {

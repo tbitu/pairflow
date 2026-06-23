@@ -19,7 +19,8 @@ import type { AgentRole } from "../../../../../contracts/kernel/agentIdentity.js
 import { DEFAULT_REVIEW_POLICY_REVIEWER_BLOCKING_MIN_SEVERITY } from "../../../../../config/defaults.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
 import type { PairflowRemoteWorkspaceAuthority } from "../../../../shared/command/pairflowCommandBootstrap.js";
-import type { RoleMcpPolicy } from "../../../../shared/config/bubbleConfigVocabulary.js";
+import type { PairflowCommandProfile, ReviewArtifactType, RoleMcpPolicy } from "../../../../shared/config/bubbleConfigVocabulary.js";
+import type { BubbleCommandsConfig } from "../../../../shared/command/commandConfigTypes.js";
 import { shouldSubmitStartupPrompt } from "../../../../shared/command/startupPromptGate.js";
 
 function buildStatusPaneLabel(bubbleId: string): string {
@@ -184,6 +185,46 @@ function buildActiveResumeStartupPrompts(input: {
   return {};
 }
 
+/** Build implementer kickoff message with opencode agent filtering. */
+function buildImplementerKickoffWithAgentFilter(input: {
+  agentName: AgentName;
+  bubbleId: string;
+  launchWorkspacePath: string;
+  taskArtifactPath: string;
+  reviewArtifactType: ReviewArtifactType;
+  pairflowCommandProfile: PairflowCommandProfile;
+  validationCommands?: BubbleCommandsConfig | undefined;
+  ideationPending: boolean;
+}): string {
+  // Opencode agents receive minimal kickoff messages (no redundant guidance).
+  if (input.agentName === "opencode") {
+    return [
+      `# [pairflow] bubble=${input.bubbleId} kickoff.`,
+      `Read task file now: ${input.taskArtifactPath}.`
+    ].join(" ");
+  }
+  if (input.ideationPending) {
+    return buildImplementerIdeationKickoffMessage({
+      bubbleId: input.bubbleId,
+      workspacePath: input.launchWorkspacePath,
+      taskArtifactPath: input.taskArtifactPath,
+      pairflowCommandProfile: input.pairflowCommandProfile
+    });
+  }
+  const baseParams = {
+    bubbleId: input.bubbleId,
+    workspacePath: input.launchWorkspacePath,
+    taskArtifactPath: input.taskArtifactPath,
+    reviewArtifactType: input.reviewArtifactType,
+    pairflowCommandProfile: input.pairflowCommandProfile
+  } as const;
+  return buildImplementerKickoffMessage(
+    input.validationCommands !== undefined
+      ? { ...baseParams, validationCommands: input.validationCommands }
+      : baseParams
+  );
+}
+
 export async function launchFreshTmuxSession(input: {
   context: StartExecutionContext;
   deps: ResolvedStartBubbleDependencies;
@@ -282,21 +323,16 @@ export async function launchFreshTmuxSession(input: {
 
       startupPrompt: undefined
     }),
-    implementerKickoffMessage: input.ideationPending
-      ? buildImplementerIdeationKickoffMessage({
-          bubbleId: input.context.resolved.bubbleId,
-          workspacePath: input.launchWorkspacePath,
-          taskArtifactPath: input.context.resolved.bubblePaths.taskArtifactPath,
-          pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile
-        })
-      : buildImplementerKickoffMessage({
-          bubbleId: input.context.resolved.bubbleId,
-          workspacePath: input.launchWorkspacePath,
-          taskArtifactPath: input.context.resolved.bubblePaths.taskArtifactPath,
-          reviewArtifactType: input.context.resolved.bubbleConfig.review_artifact_type,
-          pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
-          validationCommands: input.context.resolved.bubbleConfig.commands
-        })
+    implementerKickoffMessage: buildImplementerKickoffWithAgentFilter({
+      agentName: input.context.resolved.bubbleConfig.agents.implementer,
+      bubbleId: input.context.resolved.bubbleId,
+      launchWorkspacePath: input.launchWorkspacePath,
+      taskArtifactPath: input.context.resolved.bubblePaths.taskArtifactPath,
+      reviewArtifactType: input.context.resolved.bubbleConfig.review_artifact_type,
+      pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
+      validationCommands: input.context.resolved.bubbleConfig.commands,
+      ideationPending: input.ideationPending
+    })
   });
 
   return assertRunningLaunchAck({

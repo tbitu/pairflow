@@ -1,8 +1,10 @@
 import {
-  buildRolePromptConcernLines,
-  buildAgentEvidenceHandoffGuidance as buildAgentEvidenceHandoffGuidanceFromRegistry
+  buildCanonicalActorEmitLookupGuidance,
+  buildAgentEvidenceHandoffGuidance as buildAgentEvidenceHandoffGuidanceFromRegistry,
+  buildRolePromptConcernLines
 } from "../../../../shared/role/prompts/rolePromptConcerns.js";
 import { buildDocumentBubbleSourceEditGuard } from "../../../../shared/document/documentBubbleSourceEditGuard.js";
+import { buildPairflowCommandGuidance } from "../../startCommandPromptRuntime.js";
 import type {
   PairflowCommandProfile,
   ReviewArtifactType
@@ -28,6 +30,21 @@ export function buildImplementerStartupPrompt(input: {
   }).join(" ");
 }
 
+export function buildImplementerIdeationKickoffMessage(input: {
+  bubbleId: string;
+  workspacePath: string;
+  taskArtifactPath: string;
+  pairflowCommandProfile: PairflowCommandProfile;
+}): string {
+  return [
+    `# [pairflow] bubble=${input.bubbleId} kickoff (ideation pending).`,
+    "State is RUNNING at round 0.",
+    "No implementer action is required right now.",
+    "Stay idle and wait for explicit human instruction.",
+    "Do not run `pairflow bubble kickoff` yourself."
+  ].join(" ");
+}
+
 export function buildImplementerKickoffMessage(input: {
   bubbleId: string;
   workspacePath: string;
@@ -39,7 +56,20 @@ export function buildImplementerKickoffMessage(input: {
   return [
     `# [pairflow] bubble=${input.bubbleId} kickoff.`,
     `Read task file now: ${input.taskArtifactPath}.`,
-    buildImplementerKickoffScopeInstruction(input.reviewArtifactType)
+    buildImplementerKickoffScopeInstruction(input.reviewArtifactType),
+    buildPairflowCommandGuidance(
+      input.workspacePath,
+      input.pairflowCommandProfile
+    ),
+    buildAgentEvidenceHandoffGuidanceFromRegistry(
+      input.reviewArtifactType,
+      input.validationCommands
+    ),
+    buildCanonicalActorEmitLookupGuidance({
+      bubbleId: input.bubbleId,
+      repoPath: "<repo>"
+    }),
+    "When done with validation, hand off with `pairflow agent emit --kind pass --repo <repo> --bubble-id <id> --handoff-id <handoff-id> --execution-id <execution-id> --summary \"<what changed + validation>\"` and include available evidence `--ref` log paths."
   ].join(" ");
 }
 
@@ -48,28 +78,14 @@ export function buildImplementerKickoffScopeInstruction(
 ): string {
   if (reviewArtifactType === "document") {
     return [
-      "Document refinement mode (`review_artifact_type=document`): refine only the task/spec/progress/docs artifacts required by the task.",
+      "Document refinement mode (`review_artifact_type=document`): continue only task/spec/progress/docs refinement.",
       buildDocumentBubbleSourceEditGuard(),
-      "Do not implement product/runtime/source-code changes in this bubble, even if the task describes an eventual implementation.",
-      "If the requested outcome cannot be completed without product/source edits, stop and emit a blocker or route-back/replan request instead of making those code changes."
+      "Do not implement product/runtime/source-code changes in this bubble.",
+      "If the remaining work requires code changes, stop and emit a blocker or route-back/replan request instead of editing source."
     ].join(" ");
   }
 
-  return "Start implementation immediately in this launch workspace (Phase 1C1 no-split worktree root).";
-}
-
-export function buildImplementerIdeationKickoffMessage(input: {
-  bubbleId: string;
-  workspacePath: string;
-  taskArtifactPath: string;
-  pairflowCommandProfile: PairflowCommandProfile;
-}): string {
-  return [
-    `# [pairflow] bubble=${input.bubbleId} kickoff (ideation pending).`,
-    "This bubble is in ideation mode; no implementer action is required.",
-    "Stay idle and wait for explicit human instruction.",
-    "Do not run `pairflow bubble kickoff` yourself and do not emit implementer/reviewer handoff yet."
-  ].join(" ");
+  return "Continue active implementation.";
 }
 
 export function buildAgentEvidenceHandoffGuidance(
