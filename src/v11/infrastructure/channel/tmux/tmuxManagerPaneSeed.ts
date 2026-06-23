@@ -1,3 +1,4 @@
+import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import {
   confirmTmuxPaneMarkerSubmission,
   maybeAcceptClaudeTrustPrompt,
@@ -57,6 +58,9 @@ export interface SeedBubbleTmuxPaneMessagesInput {
   metaReviewerBootstrapMessage?: string | undefined;
   implementerKickoffMessage?: string | undefined;
   reviewerKickoffMessage?: string | undefined;
+  implementerAgentName: AgentName | undefined;
+  reviewerAgentName: AgentName | undefined;
+  metaReviewerAgentName: AgentName | undefined;
   metaReviewerKickoffMessage?: string | undefined;
 }
 

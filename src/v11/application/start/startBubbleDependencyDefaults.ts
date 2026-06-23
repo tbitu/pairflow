@@ -121,6 +121,7 @@ export interface StartBubbleDependencyDefaults {
   readReviewerFocusArtifact: ReadReviewerFocusArtifactPort;
   resolveBubbleFromWorkspaceCwd: ResolveBubbleFromWorkspaceCwdPort;
   resolveReviewerTestExecutionDirective: ResolveReviewerTestExecutionDirectivePort;
+  resolveCodexMcpDisableArgs?: (input: import("../../shared/command/agentCommand.js").ResolveCodexMcpDisableArgsInput) => Promise<string[]> | undefined;
 
 }
 

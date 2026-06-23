@@ -1,6 +1,6 @@
 export const protocolParticipants = [
-  "opencode",
-  "opencode",
+  "codex",
+  "claude",
   "opencode",
   "orchestrator",
   "human"

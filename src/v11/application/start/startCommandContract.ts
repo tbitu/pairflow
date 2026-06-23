@@ -134,4 +134,5 @@ export interface StartBubbleDependencies {
     | undefined;
 
   reportWarning?: ((message: string) => void) | undefined;
+  resolveCodexMcpDisableArgs?: (input: import("../../shared/command/agentCommand.js").ResolveCodexMcpDisableArgsInput) => Promise<string[]> | undefined;
 }

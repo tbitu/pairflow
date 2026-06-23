@@ -63,7 +63,7 @@ async function buildAgentLaunchCommand(input: {
 }): Promise<string> {
   const codexMcpDisableArgs =
     input.agentName === "codex" && input.roleMcpPolicy === "disabled"
-      ? await input.resolveCodexMcpDisableArgs({
+      ? await input.resolveCodexMcpDisableArgs?.({
         roleName: input.roleName,
         bubbleId: input.bubbleId
       })

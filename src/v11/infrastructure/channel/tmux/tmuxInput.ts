@@ -357,3 +357,74 @@ export async function maybeAcceptClaudeTrustPrompt(
 
   return accepted;
 }
+
+export async function isOpencodePromptLine(line: string): Promise<boolean> {
+  const lower = line.toLowerCase();
+  return (
+    (lower.includes("security guide") && lower.includes("trust this folder"))
+    || (lower.includes("do you trust the contents of this directory"))
+    || (lower.includes("bypass permissions mode") && lower.includes("accept"))
+  );
+}
+
+export async function detectOpencodeReadiness(
+  runner: TmuxRunner,
+  targetPane: string
+): Promise<boolean> {
+  const capture = await runner(["capture-pane", "-pt", targetPane], {
+    allowFailure: true
+  });
+  if (capture.exitCode !== 0) {
+    return false;
+  }
+  const lower = capture.stdout.toLowerCase();
+  return (
+    lower.includes("opencode code is ready")
+    || lower.includes("opencode ready")
+    || lower.includes("ready.")
+  );
+}
+
+export async function maybeAcceptOpencodeTrustPrompt(
+  runner: TmuxRunner,
+  targetPane: string
+): Promise<boolean> {
+  let accepted = false;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const capture = await runner(["capture-pane", "-pt", targetPane], {
+      allowFailure: true
+    });
+    if (capture.exitCode !== 0) {
+      return accepted;
+    }
+
+    const normalized = capture.stdout.toLowerCase();
+    const looksLikeOpencodeFolderTrustPrompt =
+      normalized.includes("security guide") &&
+      normalized.includes("trust this folder");
+    const looksLikeOpencodeBypassPermissionsPrompt =
+      normalized.includes("bypass permissions mode") &&
+      normalized.includes("accept");
+    const looksLikeOpencodeTrustPrompt =
+      normalized.includes("do you trust the contents of this directory");
+
+    if (looksLikeOpencodeFolderTrustPrompt || looksLikeOpencodeBypassPermissionsPrompt) {
+      await sendAndSubmitTmuxPaneMessage(runner, targetPane, "Enter");
+      accepted = true;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      continue;
+    }
+
+    if (looksLikeOpencodeTrustPrompt) {
+      await sendAndSubmitTmuxPaneMessage(runner, targetPane, "1");
+      accepted = true;
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      continue;
+    }
+
+    return accepted;
+  }
+
+  return accepted;
+}
