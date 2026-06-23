@@ -40,7 +40,6 @@ import type {
   VerifyRemoteCloneStartAuthorityPort
 } from "../../ports/remoteCloneStartAuthority.js";
 
-import type { ResolveCodexMcpDisableArgsInput } from "../../shared/command/agentCommand.js";
 
 export interface StartBubbleInput {
   bubbleId: string;
@@ -135,5 +134,4 @@ export interface StartBubbleDependencies {
     | undefined;
 
   reportWarning?: ((message: string) => void) | undefined;
-  resolveCodexMcpDisableArgs?: (input: ResolveCodexMcpDisableArgsInput) => Promise<string[]> | undefined;
 }

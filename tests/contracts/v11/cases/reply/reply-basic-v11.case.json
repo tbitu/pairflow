@@ -15,7 +15,7 @@
     "envelopeType": "HUMAN_REPLY",
     "deliveryCount": 1,
     "deliveryRecipients": [
-      "codex"
+      "opencode"
     ],
     "deliveryTargetRoles": [
       "implementer"

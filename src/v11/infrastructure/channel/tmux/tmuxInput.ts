@@ -91,7 +91,7 @@ async function maybeExitTmuxCopyMode(input: {
 /**
  * Send a message to a tmux pane and submit it via Enter.
  *
- * Verified against a real Claude Code instance: the Enter MUST arrive as a
+ * Verified against a real terminal instance: the Enter MUST arrive as a
  * separate tmux `send-keys` command with a brief gap after the text.  Embedding
  * CR/LF in the literal text (`-l "text\r"` or `"text\n"`) does NOT trigger
  * submit in ink-based TUIs — they treat in-band control chars as newlines
@@ -304,59 +304,7 @@ export async function confirmTmuxPaneMarkerSubmission(
   return false;
 }
 
-export async function maybeAcceptClaudeTrustPrompt(
-  runner: TmuxRunner,
-  targetPane: string
-): Promise<boolean> {
-  let accepted = false;
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const capture = await runner(["capture-pane", "-pt", targetPane], {
-      allowFailure: true
-    });
-    if (capture.exitCode !== 0) {
-      return accepted;
-    }
-
-    const normalized = capture.stdout.toLowerCase();
-    const looksLikeClaudeFolderTrustPrompt =
-      normalized.includes("security guide") &&
-      normalized.includes("yes, i trust this folder");
-    const looksLikeClaudeBypassPermissionsPrompt =
-      normalized.includes("bypass permissions mode") &&
-      normalized.includes("yes, i accept");
-    const looksLikeCodexTrustPrompt =
-      normalized.includes("do you trust the contents of this directory") &&
-      normalized.includes("1. yes, continue");
-
-    if (looksLikeClaudeFolderTrustPrompt) {
-      // Claude's folder-trust prompt already highlights the "Yes" option.
-      // Confirming requires a bare Enter, not typing "1".
-      await submitTmuxPaneInput(runner, targetPane);
-      accepted = true;
-      await sleep(250);
-      continue;
-    }
-
-    if (looksLikeClaudeBypassPermissionsPrompt) {
-      await sendAndSubmitTmuxPaneMessage(runner, targetPane, "2");
-      accepted = true;
-      await sleep(250);
-      continue;
-    }
-
-    if (looksLikeCodexTrustPrompt) {
-      await sendAndSubmitTmuxPaneMessage(runner, targetPane, "1");
-      accepted = true;
-      await sleep(250);
-      continue;
-    }
-
-    return accepted;
-  }
-
-  return accepted;
-}
 
 export function isOpencodePromptLine(line: string): boolean {
   const lower = line.toLowerCase();

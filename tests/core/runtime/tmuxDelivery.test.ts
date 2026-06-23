@@ -71,9 +71,9 @@ const baseConfig: BubbleConfig = {
   commit_requires_approval: true,
   attach_launcher: "auto",
   agents: {
-    implementer: "codex",
-    reviewer: "claude",
-    meta_reviewer: "codex"
+    implementer: "opencode",
+    reviewer: "opencode",
+    meta_reviewer: "opencode"
   },
   commands: {
     test: "pnpm test",
@@ -92,8 +92,8 @@ function createEnvelope(overrides: Partial<ProtocolEnvelope> = {}): ProtocolEnve
     id: "msg_20260222_101",
     ts: "2026-02-22T12:00:00.000Z",
     bubble_id: "b_delivery_01",
-    sender: "codex",
-    recipient: "claude",
+    sender: "opencode",
+    recipient: "opencode",
     type: "PASS",
     round: 1,
     payload: {
@@ -190,14 +190,14 @@ function mockUnmappedMetaReviewerPane(): {
 }
 
 function createSharedAgentConfig(
-  agent: "codex" | "claude" | "opencode"
+  agent: "opencode"    
 ): BubbleConfig {
   return {
     ...baseConfig,
     agents: {
       implementer: agent,
       reviewer: agent,
-      meta_reviewer: "codex"
+      meta_reviewer: "opencode"
     }
   };
 }
@@ -228,7 +228,7 @@ function resolveLegacyRecipientRoleForTest(input: {
   if (input.envelope.recipient === "meta-reviewer") {
     return "meta_reviewer";
   }
-  if (input.envelope.recipient === "codex" || input.envelope.recipient === "claude") {
+  if (input.envelope.recipient === "opencode" || input.envelope.recipient === "opencode") {
     return resolveUniquelyConfiguredRoleForAgent({
       agents: input.bubbleConfig.agents,
       agent: input.envelope.recipient,
@@ -444,19 +444,19 @@ describe("tmux delivery explicit recipient-role routing", () => {
       createEnvelope({
         id: "msg_20260222_100",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "TASK",
         payload: {
           summary: "Meta-review fallback route."
         },
         refs: ["artifact://meta-review-task.md"]
       }),
-      createSharedAgentConfig("claude")
+      createSharedAgentConfig("opencode")
     );
 
     expect(resolution).toEqual({
       targetPaneIndex: undefined,
-      recipientRole: "codex",
+      recipientRole: "opencode",
       deliveryTargetReasonCode: "DELIVERY_TARGET_ROLE_ABSENT"
     });
   });
@@ -479,7 +479,7 @@ describe("tmux delivery explicit recipient-role routing", () => {
       bubbleConfig: baseConfig,
       sessionsPath: "/tmp/sessions.json",
       envelope: createEnvelope({
-        recipient: "claude",
+        recipient: "opencode",
         payload: {
           summary: "handoff"
         }
@@ -532,7 +532,7 @@ describe("tmux delivery explicit recipient-role routing", () => {
       bubbleConfig: baseConfig,
       sessionsPath: "/tmp/sessions.json",
       envelope: createEnvelope({
-        recipient: "claude",
+        recipient: "opencode",
         payload: {
           summary: "handoff",
           metadata: {
@@ -646,12 +646,12 @@ describe("emitDeliveryNotificationAck", () => {
       };
       const result = await emitDeliveryNotificationAck({
         bubbleId: "b_delivery_01",
-        bubbleConfig: createSharedAgentConfig("claude"),
+        bubbleConfig: createSharedAgentConfig("opencode"),
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
         envelope: createEnvelope({
           id: "msg_20260222_401",
           sender: "orchestrator",
-          recipient: "codex",
+          recipient: "opencode",
           type: "TASK",
           payload: {
             summary: "Unmapped explicit + unsupported legacy route.",
@@ -722,12 +722,12 @@ describe("emitDeliveryNotificationAck", () => {
 
       const result = await emitDeliveryNotificationAck({
         bubbleId: "b_delivery_01",
-        bubbleConfig: createSharedAgentConfig("codex"),
+        bubbleConfig: createSharedAgentConfig("opencode"),
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
         envelope: createEnvelope({
           id: "msg_20260222_402",
           sender: "orchestrator",
-          recipient: "codex",
+          recipient: "opencode",
           type: "TASK",
           payload: {
             summary: "Meta-review task should keep explicit recipient-role guidance.",
@@ -832,9 +832,9 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleConfig: {
         ...baseConfig,
         agents: {
-          implementer: "codex",
+          implementer: "opencode",
           reviewer: "opencode",
-          meta_reviewer: "codex"
+          meta_reviewer: "opencode"
         }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
@@ -889,9 +889,9 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleConfig: {
         ...baseConfig,
         agents: {
-          implementer: "codex",
+          implementer: "opencode",
           reviewer: "opencode",
-          meta_reviewer: "codex"
+          meta_reviewer: "opencode"
         }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
@@ -963,9 +963,9 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleConfig: {
         ...baseConfig,
         agents: {
-          implementer: "codex",
+          implementer: "opencode",
           reviewer: "opencode",
-          meta_reviewer: "codex"
+          meta_reviewer: "opencode"
         }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
@@ -1094,7 +1094,7 @@ describe("emitDeliveryNotificationAck", () => {
         id: "msg_20260222_102",
         type: "APPROVAL_REQUEST",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         round: 2,
         payload: {
           summary: "Waiting for human decision",
@@ -1144,12 +1144,12 @@ describe("emitDeliveryNotificationAck", () => {
 
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_201",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "TASK",
         payload: {
           summary: "Run meta-review now.",
@@ -1218,8 +1218,8 @@ describe("emitDeliveryNotificationAck", () => {
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_202",
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         payload: {
           summary: "Fallback expected.",
           metadata: {
@@ -1242,12 +1242,12 @@ describe("emitDeliveryNotificationAck", () => {
   it("fail-closes ambiguous shared-agent fallback when delivery_target_role metadata is invalid", async () => {
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_202_shared",
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         payload: {
           summary: "Ambiguous fallback must fail closed.",
           metadata: {
@@ -1289,12 +1289,12 @@ describe("emitDeliveryNotificationAck", () => {
 
       const result = await emitDeliveryNotificationAck({
         bubbleId: "b_delivery_01",
-        bubbleConfig: createSharedAgentConfig("codex"),
+        bubbleConfig: createSharedAgentConfig("opencode"),
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
         envelope: createEnvelope({
           id: "msg_20260222_203",
           sender: "orchestrator",
-          recipient: "codex",
+          recipient: "opencode",
           type: "TASK",
           payload: {
             summary: "Meta-review dispatch fallback expected.",
@@ -1330,7 +1330,7 @@ describe("emitDeliveryNotificationAck", () => {
         bubbleConfig: baseConfig,
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
         envelope: createEnvelope({
-          recipient: "claude",
+          recipient: "opencode",
           payload: {
             summary: "Explicit meta-review route must fail closed."
           }
@@ -1373,12 +1373,12 @@ describe("emitDeliveryNotificationAck", () => {
 
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("claude"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_204",
-        sender: "codex",
-        recipient: "claude",
+        sender: "opencode",
+        recipient: "opencode",
         payload: {
           summary: "Route to reviewer pane.",
           metadata: {
@@ -1418,12 +1418,12 @@ describe("emitDeliveryNotificationAck", () => {
 
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_205",
         sender: "human",
-        recipient: "codex",
+        recipient: "opencode",
         type: "HUMAN_REPLY",
         round: 2,
         payload: {
@@ -2521,7 +2521,7 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleConfig: baseConfig,
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
-        sender: "claude",
+        sender: "opencode",
         recipient: "human",
         type: "HUMAN_QUESTION"
       }),
@@ -2565,12 +2565,12 @@ describe("emitDeliveryNotificationAck", () => {
 
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_206",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "APPROVAL_REQUEST",
         round: 2,
         payload: {
@@ -2617,7 +2617,7 @@ describe("emitDeliveryNotificationAck", () => {
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "APPROVAL_REQUEST"
       }),
       runner,
@@ -2679,7 +2679,7 @@ describe("emitDeliveryNotificationAck", () => {
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         sender: "human",
-        recipient: "codex",
+        recipient: "opencode",
         type: "APPROVAL_DECISION",
         round: 2,
         payload: {
@@ -2739,7 +2739,7 @@ describe("emitDeliveryNotificationAck", () => {
       envelope: createEnvelope({
         id: "msg_20260222_103",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "APPROVAL_DECISION",
         round: 2,
         payload: {
@@ -2794,7 +2794,7 @@ describe("emitDeliveryNotificationAck", () => {
       envelope: createEnvelope({
         id: "msg_20260222_104",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "APPROVAL_DECISION",
         round: 2,
         payload: {
@@ -2865,8 +2865,8 @@ describe("emitDeliveryNotificationAck", () => {
 
     const passMessage = await deliverToImplementer(
       createEnvelope({
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         type: "PASS",
         payload: {
           summary: "Fix request from reviewer"
@@ -2904,7 +2904,7 @@ describe("emitDeliveryNotificationAck", () => {
     const humanReplyMessage = await deliverToImplementer(
       createEnvelope({
         sender: "human",
-        recipient: "codex",
+        recipient: "opencode",
         type: "HUMAN_REPLY",
         payload: {
           message: "Please clarify section 2."
@@ -2929,7 +2929,7 @@ describe("emitDeliveryNotificationAck", () => {
     const reworkMessage = await deliverToImplementer(
       createEnvelope({
         sender: "human",
-        recipient: "codex",
+        recipient: "opencode",
         type: "APPROVAL_DECISION",
         payload: {
           decision: "rework",
@@ -2958,7 +2958,7 @@ describe("emitDeliveryNotificationAck", () => {
       createEnvelope({
         id: "msg_20260222_102",
         sender: "orchestrator",
-        recipient: "codex",
+        recipient: "opencode",
         type: "TASK",
         payload: {
           summary: "Task artifact includes target_write_files and L2 implementation sketch."
@@ -3002,8 +3002,8 @@ describe("emitDeliveryNotificationAck", () => {
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         type: "PASS",
         payload: {
           summary: "Please apply reviewer fixes."
@@ -3074,8 +3074,8 @@ describe("emitDeliveryNotificationAck", () => {
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
-        sender: "claude",
-        recipient: "codex",
+        sender: "opencode",
+        recipient: "opencode",
         type: "PASS",
         payload: {
           summary: "Please apply reviewer fixes."
@@ -3219,7 +3219,7 @@ describe("emitDeliveryNotificationAck", () => {
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         sender: "orchestrator",
-        recipient: "claude",
+        recipient: "opencode",
         type: "APPROVAL_REQUEST"
       }),
       runner,
@@ -3451,12 +3451,12 @@ describe("emitDeliveryNotificationAck", () => {
     try {
       const result = await emitDeliveryNotificationAck({
         bubbleId: "b_delivery_01",
-        bubbleConfig: createSharedAgentConfig("claude"),
+        bubbleConfig: createSharedAgentConfig("opencode"),
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
         envelope: createEnvelope({
           id: "msg_20260222_401",
           sender: "orchestrator",
-          recipient: "codex",
+          recipient: "opencode",
           type: "TASK",
           payload: {
             summary: "Unmapped explicit + unsupported legacy route.",
@@ -4139,7 +4139,7 @@ describe("retryStuckAgentInput", () => {
 
     const result = await retryStuckAgentInput({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/sessions.json",
       activeRole: "reviewer",
       runner,
@@ -4179,7 +4179,7 @@ describe("retryStuckAgentInput", () => {
 
     const result = await retryStuckAgentInput({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("codex"),
+      bubbleConfig: createSharedAgentConfig("opencode"),
       sessionsPath: "/tmp/sessions.json",
       activeRole: "meta_reviewer",
       runner,

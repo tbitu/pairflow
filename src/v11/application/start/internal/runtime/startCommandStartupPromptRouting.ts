@@ -1,12 +1,12 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
 import type { StartExecutionContext } from "./startCommandContext.js";
 
 export function shouldSubmitStartupPrompt(
-  agentName: AgentName,
-  startupPrompt: string | undefined
+  _agentName: AgentName,
+  _startupPrompt?: string  
 ): boolean {
-  return agentName === "codex"
-    && (startupPrompt?.trim().length ?? 0) > 0;
+  return false;
 }
 
 function resolveBootstrapStartupPrompt(

@@ -13,7 +13,7 @@
     "deliveryCount": 2,
     "deliveryRecipients": [
       "orchestrator",
-      "codex"
+      "opencode"
     ],
     "deliveryTargetRoles": [
       "status",

@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
 import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
@@ -6,7 +6,6 @@ import type {
   PairflowCommandProfile,
   RoleMcpPolicy
 } from "../config/bubbleConfigVocabulary.js";
-import { normalizePairflowCommandErrorInput } from "../errors/commandErrorDetails.js";
 import { shellQuote } from "../foundation/shellQuote.js";
 import {
   buildPairflowCommandBootstrap,
@@ -24,28 +23,7 @@ export interface BuildAgentCommandInput {
   pairflowCommandProfile?: PairflowCommandProfile;
   externalPairflowCommand?: string;
   remoteWorkspaceAuthority?: PairflowRemoteWorkspaceAuthority;
-  codexMcpDisableArgs?: string[];
   startupPrompt?: string | undefined;
-}
-
-export interface ResolveCodexMcpDisableArgsInput {
-  roleName: AgentRole;
-  bubbleId: string;
-  codexCommand?: string;
-  timeoutMs?: number;
-}
-
-export class CodexMcpDisableArgsError extends Error {
-  public readonly reasonCode: string | undefined;
-  public readonly context: PairflowCommandErrorContext | undefined;
-
-  public constructor(input: PairflowCommandErrorInput) {
-    const normalized = normalizePairflowCommandErrorInput(input);
-    super(normalized.message, { cause: normalized.cause });
-    this.name = "CodexMcpDisableArgsError";
-    this.reasonCode = normalized.reasonCode;
-    this.context = normalized.context;
-  }
 }
 
 function buildAgentLaunchCommand(
@@ -58,17 +36,7 @@ function buildAgentLaunchCommand(
   const args: string[] = [agentName];
   const hasStartupPrompt = (startupPrompt?.trim().length ?? 0) > 0;
 
-  if (agentName === "codex") {
-    if (roleMcpPolicy === "disabled") {
-      args.push("\"${PAIRFLOW_ROLE_MCP_DISABLE_ARGS[@]}\"");
-    }
-    args.push("--dangerously-bypass-approvals-and-sandbox");
-  } else if (agentName === "claude") {
-    args.push("--dangerously-skip-permissions", "--permission-mode", "bypassPermissions");
-    if (roleMcpPolicy === "disabled") {
-      args.push("--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}');
-    }
-  } else if (agentName === "opencode") {
+  if (agentName === "opencode") {
     // AC1: Map opencode to PF-implementer or PF-reviewer agent identity.
     if (roleName !== undefined) {
       const agentIdentity =
@@ -82,162 +50,10 @@ function buildAgentLaunchCommand(
   }
 
   if (hasStartupPrompt) {
-    if (agentName === "claude" && roleMcpPolicy === "disabled") {
-      args.push("--");
-    }
     args.push(startupPrompt as string);
   }
 
-  return args
-    .map((arg) =>
-      arg === "\"${PAIRFLOW_ROLE_MCP_DISABLE_ARGS[@]}\"" ? arg : shellQuote(arg)
-    )
-    .join(" ");
-}
-
-function toTomlString(value: string): string {
-  return JSON.stringify(value);
-}
-
-function hasUnsupportedControlCharacter(value: string): boolean {
-  for (let index = 0; index < value.length; index += 1) {
-    const charCode = value.charCodeAt(index);
-    if (charCode <= 0x1f || charCode === 0x7f) {
-      return true;
-    }
-  }
-  return false;
-}
-
-function parseCodexMcpListOutput(input: {
-  stdout: string;
-}): string[] {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(input.stdout);
-  } catch (error) {
-    throw new CodexMcpDisableArgsError({
-      message: `codex mcp list --json returned malformed JSON: ${error instanceof Error ? error.message : String(error)}`,
-      reasonCode: "CODEX_MCP_LIST_JSON_MALFORMED",
-      context: { command_name: "codex mcp list --json" },
-      cause: error
-    });
-  }
-
-  if (!Array.isArray(parsed)) {
-    throw new CodexMcpDisableArgsError({
-      message: "codex mcp list --json must return a top-level array",
-      reasonCode: "CODEX_MCP_LIST_JSON_SHAPE_INVALID",
-      context: { command_name: "codex mcp list --json" }
-    });
-  }
-
-  const disabledServerEntries: string[] = [];
-  for (const [index, entry] of parsed.entries()) {
-    if (entry === null || typeof entry !== "object" || Array.isArray(entry)) {
-      throw new CodexMcpDisableArgsError({
-        message: `codex MCP entry ${index} must be an object`,
-        reasonCode: "CODEX_MCP_ENTRY_SHAPE_INVALID",
-        context: { command_name: "codex mcp list --json", index }
-      });
-    }
-    const mcpEntry = entry as Record<string, unknown>;
-    if (typeof mcpEntry.enabled !== "boolean") {
-      throw new CodexMcpDisableArgsError({
-        message: `codex MCP entry ${index} has unsupported enabled value`,
-        reasonCode: "CODEX_MCP_ENTRY_ENABLED_INVALID",
-        context: { command_name: "codex mcp list --json", index }
-      });
-    }
-    if (mcpEntry.enabled !== true) {
-      continue;
-    }
-    if (typeof mcpEntry.name !== "string" || mcpEntry.name.length === 0) {
-      throw new CodexMcpDisableArgsError({
-        message: `enabled codex MCP entry ${index} must have a non-empty string name`,
-        reasonCode: "CODEX_MCP_ENTRY_NAME_INVALID",
-        context: { command_name: "codex mcp list --json", index }
-      });
-    }
-    if (hasUnsupportedControlCharacter(mcpEntry.name)) {
-      throw new CodexMcpDisableArgsError({
-        message: `enabled codex MCP entry ${index} name contains unsupported control characters`,
-        reasonCode: "CODEX_MCP_ENTRY_NAME_CONTROL_CHARACTER",
-        context: { command_name: "codex mcp list --json", index }
-      });
-    }
-    disabledServerEntries.push(
-      `${toTomlString(mcpEntry.name)}={command="node",args=["-e","process.exit(0)"],enabled=false}`
-    );
-  }
-
-  if (disabledServerEntries.length === 0) {
-    return [];
-  }
-
-  return ["-c", `mcp_servers={${disabledServerEntries.join(",")}}`];
-}
-
-export async function resolveCodexMcpDisableArgs(
-  input: ResolveCodexMcpDisableArgsInput
-): Promise<string[]> {
-  const codexCommand = input.codexCommand ?? "codex";
-  const timeoutMs = input.timeoutMs ?? 5000;
-
-  return await new Promise<string[]>((resolvePromise, rejectPromise) => {
-    const child = spawn(codexCommand, ["mcp", "list", "--json"], {
-      stdio: ["ignore", "pipe", "pipe"]
-    });
-    let stdout = "";
-    let stderr = "";
-    let settled = false;
-
-    const fail = (message: string) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      clearTimeout(timer);
-      if (!child.killed) {
-        child.kill("SIGTERM");
-      }
-      rejectPromise(new CodexMcpDisableArgsError(message));
-    };
-
-    const timer = setTimeout(() => {
-      fail(`codex mcp list --json timed out after ${timeoutMs}ms`);
-    }, timeoutMs);
-
-    child.stdout.setEncoding("utf8");
-    child.stderr.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
-      stdout += chunk;
-    });
-    child.stderr.on("data", (chunk: string) => {
-      stderr += chunk;
-    });
-    child.on("error", (error) => {
-      fail(error.message);
-    });
-    child.on("close", (code, signal) => {
-      if (settled) {
-        return;
-      }
-      settled = true;
-      clearTimeout(timer);
-      if (code !== 0 || signal !== null) {
-        rejectPromise(new CodexMcpDisableArgsError(
-          `codex mcp list --json failed for role ${input.roleName} in bubble ${input.bubbleId}: code=${code ?? "null"} signal=${signal ?? "null"} ${stderr.trim()}`
-        ));
-        return;
-      }
-      try {
-        resolvePromise(parseCodexMcpListOutput({ stdout }));
-      } catch (error) {
-        rejectPromise(error instanceof Error ? error : new Error(String(error)));
-      }
-    });
-  });
+  return args.map(shellQuote).join(" ");
 }
 
 function buildOpencodePreparation(agentName: AgentName): string[] {
@@ -264,19 +80,8 @@ function buildOpencodePreparation(agentName: AgentName): string[] {
   ];
 }
 
-function buildCodexMcpDisablePreparation(input: {
-  args: string[];
-}): string[] {
-  const quotedArgs = input.args.map((arg) => shellQuote(arg)).join(" ");
-  return [
-    `PAIRFLOW_ROLE_MCP_DISABLE_ARGS=(${quotedArgs})`
-  ];
-}
-
 export function buildAgentCommand(input: BuildAgentCommandInput): string {
   const agentName = input.agentName;
-  const roleName = input.roleName ?? "implementer";
-  const roleMcpPolicy = input.roleMcpPolicy ?? "disabled";
   const bubbleId = input.bubbleId;
   const workspacePath = (input.workspacePath ?? input.worktreePath ?? "").trim();
   if (workspacePath.length === 0) {
@@ -284,23 +89,14 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
   }
   const missingBinaryMessage = `${agentName} CLI not found in PATH for bubble ${bubbleId}. Install it or configure agent command mapping.`;
   const worktreePinningMessage = `Failed to pin agent root to workspace ${workspacePath} for bubble ${bubbleId}.`;
-  const mcpPreparation =
-    agentName === "codex" && roleMcpPolicy === "disabled"
-      ? buildCodexMcpDisablePreparation({
-        args: input.codexMcpDisableArgs ?? (() => {
-          throw new Error(
-            `Codex MCP disable args must be resolved before building a disabled Codex agent command for role ${roleName} in bubble ${bubbleId}.`
-          );
-        })()
-      })
-      : [];
+
   const opencodePreparation = buildOpencodePreparation(agentName);
   const launchCommand = buildAgentLaunchCommand(
     agentName,
     input.roleName,
     input.model,
     input.startupPrompt,
-    roleMcpPolicy
+    input.roleMcpPolicy ?? "disabled"
   );
   const pairflowBootstrap = buildPairflowCommandBootstrap(
     workspacePath,
@@ -318,7 +114,6 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
     "fi",
     ...pairflowBootstrap,
     `if command -v ${agentName} >/dev/null 2>&1; then`,
-    ...mcpPreparation,
     ...opencodePreparation,
     `  ${launchCommand}`,
     "  agent_exit_code=$?",

@@ -9,7 +9,7 @@ import type {
 } from "../../../shared/delivery/tmuxDeliveryContract.js";
 import {
   confirmTmuxPaneMarkerSubmission,
-  maybeAcceptClaudeTrustPrompt,
+  maybeAcceptOpencodeTrustPrompt,
   sendAndSubmitTmuxPaneMessage
 } from "./tmuxInput.js";
 import { waitForOpencodePaneReady } from "./tmuxOpencodeReadiness.js";
@@ -181,7 +181,7 @@ export async function attemptTmuxDelivery(input: {
         });
       }
     }
-    await maybeAcceptClaudeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
+    await maybeAcceptOpencodeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
     await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
       requireSuccess: true,
       maxChunkLength: 1024,

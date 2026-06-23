@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { readRuntimeSessionsRegistry } from "../../executor/sessionRuntime/runtimeSessionsRegistry.js";
 import {
   getSharedTopologySlotPaneIndexForRole
@@ -9,7 +10,7 @@ import {
 } from "./tmuxManager.js";
 import { sendAndSubmitTmuxPaneMessage, submitTmuxPaneInput } from "./tmuxInput.js";
 import { buildAgentCommand } from "../../../shared/command/agentCommand.js";
-import { resolveCodexMcpDisableArgs } from "../../../shared/command/agentCommand.js";
+
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../shared/runtimeSessionWorkspaceAuthority.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../config/defaults.js";
 import type {
@@ -38,15 +39,14 @@ function sleep(ms: number): Promise<void> {
 
 function shouldSubmitStartupPrompt(
   agentName: string,
-  startupPrompt: string | undefined
+  startupPrompt?: string
 ): boolean {
-  return agentName === "codex"
-    && (startupPrompt?.trim().length ?? 0) > 0;
+  return false;
 }
 
 function shouldSendStartupPromptPostSpawn(
   agentName: string,
-  startupPrompt: string | undefined
+  startupPrompt?: string
 ): boolean {
   return agentName === "opencode"
     && (startupPrompt?.trim().length ?? 0) > 0;
@@ -127,13 +127,6 @@ export async function refreshReviewerContext(
   const roleMcpPolicy =
     input.bubbleConfig.role_mcp?.reviewer
     ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.reviewer;
-  const codexMcpDisableArgs =
-    input.bubbleConfig.agents.reviewer === "codex" && roleMcpPolicy === "disabled"
-      ? await resolveCodexMcpDisableArgs({
-        roleName: "reviewer",
-        bubbleId: input.bubbleId
-      })
-      : undefined;
   const reviewerCommand = buildAgentCommand({
     agentName: input.bubbleConfig.agents.reviewer,
     roleName: "reviewer",
@@ -144,7 +137,6 @@ export async function refreshReviewerContext(
     bubbleId: input.bubbleId,
     workspacePath,
     pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile,
-    ...(codexMcpDisableArgs !== undefined ? { codexMcpDisableArgs } : {}),
     ...(input.bubbleConfig.executor?.type === "ssh"
       ? {
           remoteWorkspaceAuthority: {
@@ -152,10 +144,7 @@ export async function refreshReviewerContext(
           }
         }
       : {}),
-    startupPrompt:
-      input.bubbleConfig.agents.reviewer === "opencode"
-        ? undefined
-        : input.reviewerStartupPrompt
+    startupPrompt: undefined
   });
 
   try {

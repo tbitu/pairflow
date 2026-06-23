@@ -180,8 +180,8 @@ describe("launchBubbleSessionAck", () => {
       bubbleId: "b_start_ack",
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       runner
     });
 
@@ -203,8 +203,8 @@ describe("launchBubbleSessionAck", () => {
       bubbleId: "b_start_exists",
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       runner
     });
 
@@ -222,8 +222,8 @@ describe("launchBubbleSessionAck", () => {
       bubbleId: "b_start_missing_workspace_ack",
       workspacePath: "   ",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude"
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode"
     });
 
     expect(ack).toEqual({
@@ -260,8 +260,8 @@ describe("launchBubbleSessionAck", () => {
       bubbleId: "b_start_tmux_fail_ack",
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       runner
     });
 
@@ -280,8 +280,8 @@ describe("launchBubbleSessionAck", () => {
       bubbleId,
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       implementerBootstrapMessage: "bootstrap implementer",
       runner: (args: string[]) => {
         if (args[0] === "has-session") {
@@ -319,8 +319,8 @@ describe("launchBubbleSessionAck", () => {
       bubbleId,
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       runner: () => Promise.reject(new Error("tmux has-session transport failed"))
     });
 
@@ -340,8 +340,8 @@ describe("launchBubbleSessionAck", () => {
       bubbleId,
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       runner: () =>
         Promise.resolve({
           stdout: "",
@@ -366,8 +366,8 @@ describe("launchBubbleSessionAck", () => {
         bubbleId: "b_start_parse_failure_ack",
         workspacePath: "/tmp/worktree",
         statusCommand: "status",
-        implementerCommand: "codex",
-        reviewerCommand: "claude",
+        implementerCommand: "opencode",
+        reviewerCommand: "opencode",
         runner: (args: string[]) =>
           Promise.resolve({
             stdout:
@@ -410,8 +410,8 @@ describe("launchBubbleSessionAck orchestration", () => {
       bubbleId: "b_start_01",
       workspacePath: "/tmp/worktree",
       statusCommand: "pairflow bubble status --id b_start_01",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       runner
     });
 
@@ -565,7 +565,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       `pf-b_start_01:0.${String(getTopologySlotPaneIndex("implementer"))}`,
       "-c",
       "/tmp/worktree",
-      "codex"
+      "opencode"
     ]);
     expect(calls[18]?.args).toEqual([
       "respawn-pane",
@@ -574,7 +574,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       `pf-b_start_01:0.${String(getTopologySlotPaneIndex("reviewer"))}`,
       "-c",
       "/tmp/worktree",
-      "claude"
+      "opencode"
     ]);
     expect(calls[19]?.args).toEqual([
       "respawn-pane",
@@ -583,7 +583,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       `pf-b_start_01:0.${String(getTopologySlotPaneIndex("meta_reviewer"))}`,
       "-c",
       "/tmp/worktree",
-      "claude"
+      "opencode"
     ]);
   });
 
@@ -602,7 +602,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       bubbleId: "b_start_active_only",
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
+      implementerCommand: "opencode",
       reviewerCommand: "codex reviewer",
       metaReviewerCommand: "codex meta",
       launchImplementerAgent: true,
@@ -624,7 +624,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       `pf-b_start_active_only:0.${String(getTopologySlotPaneIndex("implementer"))}`,
       "-c",
       "/tmp/worktree",
-      "codex"
+      "opencode"
     ]);
   });
 
@@ -643,8 +643,8 @@ describe("launchBubbleSessionAck orchestration", () => {
       bubbleId: "b_start_kickoff",
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       implementerKickoffMessage: "implementer kickoff message",
       runner
     });
@@ -744,8 +744,8 @@ describe("launchBubbleSessionAck orchestration", () => {
       bubbleId: "b_start_kickoff_retry",
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       implementerKickoffMessage: kickoffMessage,
       runner
     });
@@ -778,8 +778,8 @@ describe("launchBubbleSessionAck orchestration", () => {
       bubbleId: "b_start_kickoff_reviewer",
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       reviewerKickoffMessage: "reviewer kickoff message",
       runner
     });
@@ -842,8 +842,8 @@ describe("launchBubbleSessionAck orchestration", () => {
       bubbleId: "b_start_kickoff_fail",
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       implementerKickoffMessage: "# [pairflow] bubble=b_start_kickoff_fail kickoff message",
       runner
     });
@@ -881,7 +881,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
       implementerCommand: "codex 'seeded prompt'",
-      reviewerCommand: "claude",
+      reviewerCommand: "opencode",
       implementerSubmitStartupPrompt: true,
       implementerKickoffMessage: "kickoff message",
       runner
@@ -923,8 +923,8 @@ describe("launchBubbleSessionAck orchestration", () => {
       bubbleId: "b_start_02",
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       runner
     });
 
@@ -942,8 +942,8 @@ describe("launchBubbleSessionAck orchestration", () => {
       bubbleId: "b_start_missing_workspace",
       workspacePath: "   ",
       statusCommand: "status",
-      implementerCommand: "codex",
-      reviewerCommand: "claude",
+      implementerCommand: "opencode",
+      reviewerCommand: "opencode",
       runner: vi.fn()
     });
 
@@ -1034,7 +1034,7 @@ describe("respawnTmuxPaneCommand", () => {
       sessionName: "pf-b_start_01",
       paneIndex: 2,
       cwd: "/tmp/worktree",
-      command: "claude",
+      command: "opencode",
       runner
     });
 
@@ -1046,7 +1046,7 @@ describe("respawnTmuxPaneCommand", () => {
         "pf-b_start_01:0.2",
         "-c",
         "/tmp/worktree",
-        "claude"
+        "opencode"
       ]
     ]);
   });

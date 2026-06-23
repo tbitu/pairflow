@@ -25,9 +25,9 @@ const baseConfig: BubbleConfig = {
   commit_requires_approval: true,
   attach_launcher: "auto",
   agents: {
-    implementer: "codex",
-    reviewer: "claude",
-    meta_reviewer: "codex"
+    implementer: "opencode",
+    reviewer: "opencode",
+    meta_reviewer: "opencode"
   },
   commands: {
     test: "pnpm test",
@@ -124,7 +124,7 @@ describe("refreshReviewerContext", () => {
         ...baseConfig,
         agents: {
           ...baseConfig.agents,
-          reviewer: "codex"
+          reviewer: "opencode"
         },
         role_mcp: {
           implementer: "disabled",
@@ -292,7 +292,7 @@ describe("refreshReviewerContext", () => {
         ...baseConfig,
         agents: {
           ...baseConfig.agents,
-          reviewer: "codex"
+          reviewer: "opencode"
         },
         role_mcp: {
           implementer: "disabled",
@@ -339,7 +339,7 @@ describe("refreshReviewerContext", () => {
         ...baseConfig,
         agents: {
           ...baseConfig.agents,
-          reviewer: "codex"
+          reviewer: "opencode"
         },
         role_mcp: {
           implementer: "disabled",

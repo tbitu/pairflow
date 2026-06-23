@@ -17,14 +17,14 @@
     "envelopeType": "CONVERGENCE",
     "convergenceRecipient": "orchestrator",
     "approvalRequestEnvelopeType": "TASK",
-    "approvalRequestRecipient": "codex",
+    "approvalRequestRecipient": "opencode",
     "approvalRequestSender": "orchestrator",
     "stateSubset": {
       "state": "RUNNING"
     },
     "deliveryCount": 1,
     "deliveryRecipients": [
-      "codex"
+      "opencode"
     ],
     "deliveryTargetRoles": [
       "meta_reviewer"

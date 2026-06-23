@@ -1,7 +1,7 @@
 import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import {
   confirmTmuxPaneMarkerSubmission,
-  maybeAcceptClaudeTrustPrompt,
+  maybeAcceptOpencodeTrustPrompt,
   sendAndSubmitTmuxPaneMessage,
   submitTmuxPaneInput,
   waitForTuiReady
@@ -93,7 +93,7 @@ async function sendPaneMessage(
     return;
   }
 
-  await maybeAcceptClaudeTrustPrompt(runner, targetPane).catch(() => undefined);
+  await maybeAcceptOpencodeTrustPrompt(runner, targetPane).catch(() => undefined);
   const concreteMessage = message as string;
   const marker = resolvePairflowPaneMessageMarker(concreteMessage);
   const isStructuredPairflowEnvelope = marker !== undefined;
@@ -133,7 +133,7 @@ export async function seedBubbleTmuxPaneMessages(
     input.metaReviewerPaneId,
     input.metaReviewerSubmitStartupPrompt
   );
-  // When a startup prompt was submitted for an agent (currently Codex), the
+  // When a startup prompt was submitted for an agent, the
   // agent already received its full context via the CLI argument that launched
   // it.
   // Sending a separate bootstrap+kickoff message through tmux paste would
