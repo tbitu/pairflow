@@ -1,7 +1,7 @@
 ---
 artifact_type: Task
 artifact_id: task_opencode_migration_test_fixes_v1
-status: draft
+status: archived
 phase: null
 target_files:
   - tests/core/runtime/reviewerContext.test.ts
@@ -14,7 +14,7 @@ task_family_id: opencode-migration-test-fixes
 sequence_key: "1c"
 task_id: 1c-opencode-migration-test-fixes
 doc_bubble_id: null
-impl_bubble_id: null
+impl_bubble_id: 1c-opencode-migration-test-fixes
 supersedes: []
 superseded_by: null
 ---

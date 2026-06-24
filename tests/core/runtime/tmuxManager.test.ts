@@ -460,7 +460,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       "-t",
       "pf-b_start_01:0",
       "pane-border-format",
-      "#{?#{==:#{pane_index},0},[orchestrator/status]-[b_start_01],#{?#{==:#{pane_index},1},[codex/implementer],#{?#{==:#{pane_index},2},[claude/reviewer],#{?#{==:#{pane_index},3},[meta-reviewer],pane-#{pane_index}}}}}"
+      "#{?#{==:#{pane_index},0},[orchestrator/status]-[b_start_01],#{?#{==:#{pane_index},1},[opencode/implementer],#{?#{==:#{pane_index},2},[opencode/reviewer],#{?#{==:#{pane_index},3},[meta-reviewer],pane-#{pane_index}}}}}"
     ]);
     // Unset CLAUDECODE from server global env and session env.
     expect(calls[5]?.args).toEqual([
@@ -603,8 +603,8 @@ describe("launchBubbleSessionAck orchestration", () => {
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
       implementerCommand: "opencode",
-      reviewerCommand: "codex reviewer",
-      metaReviewerCommand: "codex meta",
+      reviewerCommand: "opencode",
+      metaReviewerCommand: "opencode",
       launchImplementerAgent: true,
       launchReviewerAgent: false,
       launchMetaReviewerAgent: false,
@@ -632,6 +632,17 @@ describe("launchBubbleSessionAck orchestration", () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args: string[]) => {
       calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "Ask anything...",
+            "Build · Qwen3.6 35B a3b-mtp Q6 XL (Implementer) LM Studio (local)",
+            "tab agents  ctrl+p commands"
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
       return Promise.resolve({
         stdout: buildSplitPaneStdout(args),
         stderr: "",
@@ -707,7 +718,7 @@ describe("launchBubbleSessionAck orchestration", () => {
         captureCount += 1;
         if (captureCount === 1) {
           return Promise.resolve({
-            stdout: "Codex ready.",
+            stdout: "Opencode ready.",
             stderr: "",
             exitCode: 0
           });
@@ -715,7 +726,7 @@ describe("launchBubbleSessionAck orchestration", () => {
         if (captureCount === 2) {
           return Promise.resolve({
             stdout: [
-              "Codex ready.",
+              "Opencode ready.",
               "",
               `❯ ${kickoffMessage}`
             ].join("\n"),
@@ -760,13 +771,24 @@ describe("launchBubbleSessionAck orchestration", () => {
         call[2] === "%11" &&
         call[3] === "Enter"
     );
-    expect(implementerEnterCalls.length).toBeGreaterThanOrEqual(2);
+    expect(implementerEnterCalls.length).toBe(1);
   });
 
   it("sends kickoff message to reviewer pane when provided", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args: string[]) => {
       calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "Ask anything...",
+            "Build · Qwen3.6 35B a3b-mtp Q6 XL (Reviewer) LM Studio (local)",
+            "tab agents  ctrl+p commands"
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
       return Promise.resolve({
         stdout: buildSplitPaneStdout(args),
         stderr: "",
@@ -821,6 +843,17 @@ describe("launchBubbleSessionAck orchestration", () => {
         args,
         allowFailure: options.allowFailure ?? false
       });
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "Ask anything...",
+            "Build · Qwen3.6 35B a3b-mtp Q6 XL (Implementer) LM Studio (local)",
+            "tab agents  ctrl+p commands"
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
       if (
         args[0] === "send-keys" &&
         args[2] === "%11"
@@ -864,11 +897,22 @@ describe("launchBubbleSessionAck orchestration", () => {
     }
   });
 
-  it("skips kickoff message when codex startup prompt was submitted", async () => {
+  it("skips kickoff message when opencode startup prompt was submitted", async () => {
     vi.useFakeTimers();
     const calls: string[][] = [];
     const runner: TmuxRunner = (args: string[]) => {
       calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "Ask anything...",
+            "Build · Qwen3.6 35B a3b-mtp Q6 XL (Implementer) LM Studio (local)",
+            "tab agents  ctrl+p commands"
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
       return Promise.resolve({
         stdout: buildSplitPaneStdout(args),
         stderr: "",
@@ -880,7 +924,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       bubbleId: "b_start_submit_prompt",
       workspacePath: "/tmp/worktree",
       statusCommand: "status",
-      implementerCommand: "codex 'seeded prompt'",
+      implementerCommand: "opencode 'seeded prompt'",
       reviewerCommand: "opencode",
       implementerSubmitStartupPrompt: true,
       implementerKickoffMessage: "kickoff message",
@@ -901,7 +945,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       "%11",
       "Enter"
     ]);
-    // No kickoff message should be pasted: Codex already received its full
+    // No kickoff message should be pasted: Opencode already received its full
     // context from the startup prompt passed as a CLI argument. Sending a
     // separate kickoff via tmux paste would deliver semi-duplicate content,
     // causing "double input" steering confusion.
