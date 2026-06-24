@@ -98,16 +98,14 @@ describe("refreshReviewerContext", () => {
       `pf-b_reviewer_ctx_01:0.${String(getTopologySlotPaneIndexForRole("reviewer"))}`
     );
     expect(calls[0]?.[5]).toBe("/tmp/runtime-workspace");
-    expect(calls[0]?.join(" ")).toContain(
-      "Reviewer brief (persisted artifact `reviewer-brief.md`): Verify each claim."
-    );
+
     const reviewerCommand = calls[0]?.[6];
     expect(typeof reviewerCommand).toBe("string");
     const script = extractBashLcScript(reviewerCommand as string);
     expect(script).toContain(`if ! cd ${shellQuote("/tmp/runtime-workspace")}; then`);
   });
 
-  it("submits Codex reviewer startup prompts after reviewer pane refresh", async () => {
+  it("submits Opencode reviewer startup prompts via send-keys after reviewer pane refresh", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
@@ -152,6 +150,14 @@ describe("refreshReviewerContext", () => {
       refreshed: true
     });
     expect(calls[0]?.[0]).toBe("respawn-pane");
+    // Opencode startup prompt is delivered via send-keys post-spawn, not in respawn command.
+    expect(calls).toContainEqual([
+      "send-keys",
+      "-t",
+      reviewerTargetPane,
+      "-l",
+      "Reviewer brief: verify the current handoff."
+    ]);
     expect(calls).toContainEqual([
       "send-keys",
       "-t",
@@ -275,7 +281,7 @@ describe("refreshReviewerContext", () => {
     ]);
   });
 
-  it("uses bubble-local reviewer MCP opt-in when refreshing a Codex reviewer", async () => {
+  it("uses bubble-local reviewer MCP opt-in when refreshing an Opencode reviewer", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
@@ -322,7 +328,7 @@ describe("refreshReviewerContext", () => {
     expect(reviewerCommand).not.toContain("PAIRFLOW_ROLE_MCP_DISABLE_ARGS");
   });
 
-  it("does not submit Codex reviewer pane input when refresh has no startup prompt", async () => {
+  it("does not submit Opencode reviewer pane input when refresh has no startup prompt", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
