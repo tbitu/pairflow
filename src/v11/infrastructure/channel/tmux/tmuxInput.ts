@@ -188,7 +188,12 @@ export async function waitForTuiReady(
     });
     if (capture.exitCode === 0) {
       const lines = capture.stdout.split("\n");
-      const isOpencode = lines.some((line) => /▀▀▀▀/u.test(line));
+      const isOpencode =
+        lines.some((line) => /▀▀▀▀/u.test(line)) ||
+        capture.stdout.toLowerCase().includes("ask anything") ||
+        capture.stdout.toLowerCase().includes("tab agents") ||
+        capture.stdout.toLowerCase().includes("ctrl+p commands") ||
+        lines.some((line) => /^\s*┃/u.test(line));
       const hasOpencodeReady = capture.stdout.toLowerCase().includes("ask anything") || capture.stdout.toLowerCase().includes("tab agents") || capture.stdout.toLowerCase().includes("ctrl+p commands");
       const hasPrompt = isOpencode ? hasOpencodeReady : lines.some((line) => isAgentPromptLine(line));
       if (hasPrompt) {
@@ -283,7 +288,17 @@ export async function confirmTmuxPaneMarkerSubmission(
         { allowFailure: true }
       );
       if (promptCheck.exitCode === 0) {
-        const hasPromptLine = /\s*(?:[|│┃]\s*)*[>❯]/u.test(promptCheck.stdout);
+        const lines = promptCheck.stdout.split("\n");
+        const isOpencode =
+          lines.some((line) => /▀▀▀▀/u.test(line)) ||
+          promptCheck.stdout.toLowerCase().includes("ask anything") ||
+          promptCheck.stdout.toLowerCase().includes("tab agents") ||
+          promptCheck.stdout.toLowerCase().includes("ctrl+p commands") ||
+          lines.some((line) => /^\s*┃/u.test(line));
+        const hasPromptLine = isOpencode
+          ? true
+          : lines.some((line) => isAgentPromptLine(line));
+
         if (!hasPromptLine) {
           // Pane is still processing previous input; wait longer instead of
           // blindly resending Enter.
@@ -348,6 +363,14 @@ export async function maybeAcceptOpencodeTrustPrompt(
     }
 
     const normalized = capture.stdout.toLowerCase();
+    if (
+      normalized.includes("ask anything")
+      || normalized.includes("tab agents")
+      || normalized.includes("ctrl+p commands")
+    ) {
+      return accepted;
+    }
+
     const looksLikeOpencodeFolderTrustPrompt =
       normalized.includes("security guide") &&
       normalized.includes("trust this folder");

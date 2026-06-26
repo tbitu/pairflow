@@ -29,6 +29,8 @@ async function createTempPath(prefix: string): Promise<string> {
 
 describe("remoteDeleteExecutionContext", () => {
   it("returns undefined when no remote delete env is set", () => {
+    vi.stubEnv(remoteDeleteModeEnvVar, "");
+    vi.stubEnv(remoteDeleteWorkspaceRootEnvVar, "");
     expect(resolveRemoteDeleteExecutionContextFromEnv()).toBeUndefined();
   });
 

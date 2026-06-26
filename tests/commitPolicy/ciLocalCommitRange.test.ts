@@ -226,7 +226,7 @@ describe("ci-local commit range integration", () => {
       PAIRFLOW_CI_ALLOW_CODEX: "0"
     });
 
-    expect(result.stdout).toContain("opencode visibility: hidden");
+    expect(result.stdout).toContain("codex visibility: hidden");
     expect(await readFile(commandLog, "utf8")).not.toContain("opencode-visible");
   });
 });

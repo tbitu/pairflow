@@ -38,6 +38,7 @@ import {
   repeatCleanTriggerNotMetReasonCode
 } from "../../../src/v11/domain/convergence/repeatCleanAutoconverge.js";
 import { createDocContractGateArtifact } from "../../../src/v11/shared/gates/docContractGates.js";
+import { renderBubbleConfigToml } from "../../../src/config/bubbleConfig.js";
 import {
   readDocContractGateArtifact,
   writeDocContractGateArtifact
@@ -1339,6 +1340,13 @@ present`,
       task: "Implement pass flow"
     });
 
+    bubble.config.reviewer_context_mode = "fresh";
+    await writeFile(
+      bubble.paths.bubbleTomlPath,
+      renderBubbleConfigToml(bubble.config),
+      "utf8"
+    );
+
     const refreshCalls: Array<{ bubbleId: string }> = [];
     const deliveryCalls: Array<{
       sender: string;
@@ -1408,7 +1416,10 @@ present`,
     ]);
 
     const implementerToReviewerDeliveries = deliveryCalls.filter(
-      (call) => call.sender === "opencode" && call.recipient === "opencode"
+      (call) =>
+        call.sender === "opencode" &&
+        call.recipient === "opencode" &&
+        call.initialDelayMs === 1500
     );
     expect(implementerToReviewerDeliveries).toEqual([
       {

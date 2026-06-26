@@ -75,10 +75,10 @@ describe("package metadata", () => {
     expect(packageJson.files).toEqual([
       "dist/**",
       "ui/dist/**",
-      ".opencode/skills/INSTALL.md",
-      ".opencode/skills/UsePairflow/**",
-      ".opencode/skills/CreatePairflowSpec/**",
-      ".opencode/skills/ExecutePairflowPlan/**",
+      ".claude/skills/INSTALL.md",
+      ".claude/skills/UsePairflow/**",
+      ".claude/skills/CreatePairflowSpec/**",
+      ".claude/skills/ExecutePairflowPlan/**",
       "README.md"
     ]);
     expect(packageJson.pairflow?.skillSourcePackaging).toBe("included");

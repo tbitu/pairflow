@@ -552,7 +552,8 @@ describe("emitActorProtocol runtime", () => {
       expectedRole: "meta_reviewer",
       expectedRound: 2,
       fingerprint: "fp_actor_protocol_policy_meta_01",
-      activeAgent: "opencode"
+      activeAgent: "opencode",
+      metaReviewerAgent: "review-gpt" as never
     });
     const plan = resolveActorRuntimeDispatchPlan({
       expectedRole: authoritativeContext.expected_role,
@@ -566,7 +567,7 @@ describe("emitActorProtocol runtime", () => {
         authoritativeContext
       })
     ).toThrowErrorMatchingInlineSnapshot(
-      "[ActorEmitContextError: ACTOR_EMIT_CONTEXT_INVALID: canonical meta-reviewer authority requires the configured meta-reviewer agent when active_agent is present (active_agent=opencode, configured=opencode).]"
+      `[ActorEmitContextError: ACTOR_EMIT_CONTEXT_INVALID: canonical meta-reviewer authority requires the configured meta-reviewer agent when active_agent is present (active_agent=opencode, configured=review-gpt).]`
     );
   });
 
@@ -1026,7 +1027,7 @@ describe("emitActorProtocol runtime", () => {
           expectedRole: "meta_reviewer",
           expectedRound: 2,
           fingerprint: "fp_actor_protocol_dispatch_meta_review_non_opencode_01",
-          activeAgent: "opencode"
+          activeAgent: "review-gpt" as never
         }) as never
       })
     ).rejects.toThrow(

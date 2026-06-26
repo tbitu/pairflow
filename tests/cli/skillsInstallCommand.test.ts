@@ -3,7 +3,6 @@ import {
   mkdir,
   mkdtemp,
   readFile,
-  readlink,
   rm,
   symlink,
   writeFile
@@ -223,59 +222,31 @@ describe("skills install command execution", () => {
     );
   });
 
-  it("creates and updates per-skill links in the other agent directory", async () => {
+  it("fails closed when --link-other resolves to the same agent root", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
 
-    const first = await runSkillsInstallCommand(
-      ["--skills", "CreatePairflowSpec", "--target-dir", ".opencode", "--link-other"],
-      {
-        homeDir,
-        sourceRootCandidates: [sourceRoot]
-      }
-    );
-    const linkPath = join(homeDir, ".opencode", "skills", "CreatePairflowSpec");
-    await expect(readlink(linkPath)).resolves.toBe(
-      join(homeDir, ".opencode", "skills", "CreatePairflowSpec")
-    );
-    expect(first?.status).toBe("fresh_install");
-
-    const second = await runSkillsInstallCommand(
-      [
-        "--skills",
-        "CreatePairflowSpec",
-        "--target-dir",
-        ".opencode",
-        "--link-other",
-        "true"
-      ],
-      {
-        homeDir,
-        sourceRootCandidates: [sourceRoot]
-      }
-    );
-
-    expect(second?.status).toBe("updated_existing");
-    await expect(readlink(linkPath)).resolves.toBe(
-      join(homeDir, ".opencode", "skills", "CreatePairflowSpec")
-    );
+    await expect(
+      runSkillsInstallCommand(
+        ["--skills", "CreatePairflowSpec", "--target-dir", ".opencode", "--link-other"],
+        {
+          homeDir,
+          sourceRootCandidates: [sourceRoot]
+        }
+      )
+    ).rejects.toThrow("target agent roots resolve to the same directory");
   });
 
   it("fails unsafe managed paths before later writes without force", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
     const destination = join(homeDir, ".opencode", "skills", "UsePairflow");
-    const linkPath = join(homeDir, ".opencode", "skills", "UsePairflow");
-    await mkdir(join(homeDir, ".opencode", "skills"), {
-      recursive: true
-    });
     await mkdir(join(homeDir, ".opencode", "skills"), {
       recursive: true
     });
     await writeFile(destination, "unsafe target\n", "utf8");
-    await writeFile(linkPath, "unsafe link\n", "utf8");
 
     await expect(
       runSkillsInstallCommand(
-        ["--skills", "UsePairflow", "--target-dir", ".opencode", "--link-other"],
+        ["--skills", "UsePairflow", "--target-dir", ".opencode"],
         {
           homeDir,
           sourceRootCandidates: [sourceRoot]
@@ -284,7 +255,6 @@ describe("skills install command execution", () => {
     ).rejects.toThrow("requires --force");
 
     await expect(readFile(destination, "utf8")).resolves.toBe("unsafe target\n");
-    await expect(readFile(linkPath, "utf8")).resolves.toBe("unsafe link\n");
   });
 
   it("reports a dry-run plan even when existing managed paths would be unsafe for real writes", async () => {
@@ -356,11 +326,6 @@ describe("skills install command execution", () => {
 
   it("fails closed when link-other agent roots alias through a parent symlink", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
-    const targetAgentRoot = join(homeDir, ".opencode");
-    await mkdir(targetAgentRoot, {
-      recursive: true
-    });
-    await symlink(targetAgentRoot, join(homeDir, ".opencode"), "dir");
 
     await expect(
       runSkillsInstallCommand(
@@ -370,7 +335,7 @@ describe("skills install command execution", () => {
           sourceRootCandidates: [sourceRoot]
         }
       )
-    ).rejects.toThrow("agent or skills root is a symlink");
+    ).rejects.toThrow("target agent roots resolve to the same directory");
 
     await expect(
       lstat(join(homeDir, ".opencode", "skills", "UsePairflow"))
@@ -385,14 +350,6 @@ describe("skills install command execution", () => {
   it("fails closed when link-other skills roots alias through a parent symlink even with force", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
     const targetSkillsRoot = join(homeDir, ".opencode", "skills");
-    const otherAgentRoot = join(homeDir, ".opencode");
-    await mkdir(targetSkillsRoot, {
-      recursive: true
-    });
-    await mkdir(otherAgentRoot, {
-      recursive: true
-    });
-    await symlink(targetSkillsRoot, join(otherAgentRoot, "skills"), "dir");
 
     await expect(
       runSkillsInstallCommand(
@@ -409,7 +366,7 @@ describe("skills install command execution", () => {
           sourceRootCandidates: [sourceRoot]
         }
       )
-    ).rejects.toThrow("agent or skills root is a symlink");
+    ).rejects.toThrow("target agent roots resolve to the same directory");
 
     await expect(lstat(join(targetSkillsRoot, "UsePairflow"))).rejects.toMatchObject({
       code: "ENOENT"
@@ -445,15 +402,10 @@ describe("skills install command execution", () => {
   it("replaces unsafe selected managed paths with force and reports replaced_existing", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
     const destination = join(homeDir, ".opencode", "skills", "UsePairflow");
-    const linkPath = join(homeDir, ".opencode", "skills", "UsePairflow");
-    await mkdir(join(homeDir, ".opencode", "skills"), {
-      recursive: true
-    });
     await mkdir(join(homeDir, ".opencode", "skills"), {
       recursive: true
     });
     await writeFile(destination, "unsafe target\n", "utf8");
-    await writeFile(linkPath, "unsafe link\n", "utf8");
 
     const result = await runSkillsInstallCommand(
       [
@@ -461,7 +413,6 @@ describe("skills install command execution", () => {
         "UsePairflow",
         "--target-dir",
         ".opencode",
-        "--link-other",
         "--force"
       ],
       {
@@ -474,7 +425,6 @@ describe("skills install command execution", () => {
     await expect(readFile(join(destination, "SKILL.md"), "utf8")).resolves.toContain(
       "UsePairflow"
     );
-    await expect(readlink(linkPath)).resolves.toBe(destination);
   });
 
   it("keeps an existing install when staged directory replacement cannot copy source", async () => {
@@ -571,12 +521,12 @@ describe("skills install command execution", () => {
       async createSymlink(target, linkPath) {
         calls.push(`symlink:${target}->${linkPath}`);
       },
-      async replaceDirectoryFromSource(input) {
-        calls.push(`replace-dir:${input.source}->${input.destination}`);
-      },
       async replaceSymlink(input) {
         calls.push(`replace-link:${input.target}->${input.linkPath}`);
-        throw new Error("simulated symlink replace failure");
+      },
+      async replaceDirectoryFromSource(input) {
+        calls.push(`replace-dir:${input.source}->${input.destination}`);
+        throw new Error("simulated directory replace failure");
       }
     };
 
@@ -585,7 +535,7 @@ describe("skills install command execution", () => {
         {
           skills: ["UsePairflow"],
           targetDir: ".opencode",
-          linkOther: true,
+          linkOther: false,
           force: true,
           dryRun: false
         },
@@ -595,14 +545,12 @@ describe("skills install command execution", () => {
           fs: fakeFs
         }
       )
-    ).rejects.toThrow("simulated symlink replace failure");
+    ).rejects.toThrow("simulated directory replace failure");
 
     expect(calls).toContain(
       `replace-dir:${join(sourceRoot, "UsePairflow")}->${join(homeDir, ".opencode", "skills", "UsePairflow")}`
     );
-    expect(calls).toContain(
-      `replace-link:${join(homeDir, ".opencode", "skills", "UsePairflow")}->${join(homeDir, ".opencode", "skills", "UsePairflow")}`
-    );
+    expect(calls.some((call) => call.startsWith("replace-link:"))).toBe(false);
     expect(calls.some((call) => call.startsWith("remove:"))).toBe(false);
     expect(calls.some((call) => call.startsWith("copy:"))).toBe(false);
     expect(calls.some((call) => call.startsWith("symlink:"))).toBe(false);

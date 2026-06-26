@@ -58,7 +58,10 @@ describe("timelinePresenter lenient fallback", () => {
         summary: "Forward-compatible payload fields",
         pass_intent: "review",
         findings_claim_state: "open_findings",
-        findings_claim_source: "payload_findings_count"
+        findings_claim_source: "payload_findings_count",
+        metadata: {
+          delivery_target_role: "reviewer"
+        }
       },
       refs: [".pairflow/evidence/typecheck.log"]
     });

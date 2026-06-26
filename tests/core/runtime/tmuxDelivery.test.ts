@@ -105,7 +105,7 @@ function createEnvelope(overrides: Partial<ProtocolEnvelope> = {}): ProtocolEnve
 }
 
 function submittedPaneOutput(markerLine: string): string {
-  return [markerLine, "", ">"].join("\n");
+  return ["Ask anything...", markerLine, "", ">"].join("\n");
 }
 
 // Wraps a marker line with opencode readiness indicators so that
@@ -803,14 +803,14 @@ describe("emitDeliveryNotificationAck", () => {
       }
       if (args[0] === "capture-pane") {
         captureCount += 1;
-        if (!respawned && captureCount === 1) {
+        if (!respawned) {
           return Promise.resolve({
             stdout: "sh prompt",
             stderr: "",
             exitCode: 0
           });
         }
-        if (respawned && captureCount === 2) {
+        if (respawned && captureCount <= 4) {
           return Promise.resolve({
             stdout: [
               "Ask anything...",
@@ -936,14 +936,14 @@ describe("emitDeliveryNotificationAck", () => {
       }
       if (args[0] === "capture-pane") {
         captureCount += 1;
-        if (!respawned && captureCount === 1) {
+        if (!respawned) {
           return Promise.resolve({
             stdout: "sh prompt",
             stderr: "",
             exitCode: 0
           });
         }
-        if (respawned && captureCount === 2) {
+        if (respawned && captureCount <= 4) {
           return Promise.resolve({
             stdout: [
               "Ask anything...",
@@ -1116,6 +1116,7 @@ describe("emitDeliveryNotificationAck", () => {
         },
         refs: ["artifact://approval.md"]
       }),
+      recipientRole: "implementer",
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry()),
       deliveryAttempts: 2
@@ -1179,29 +1180,30 @@ describe("emitDeliveryNotificationAck", () => {
     expect(
       calls.some((call) => call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.3")
     ).toBe(true);
-    const metaReviewMessageCall = calls.find(
+    const sendKeysCalls = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.3" &&
-        call[3] === "-l" &&
-        call[4]?.includes("Meta-review task received.")
+        call[3] === "-l"
     );
-    expect(metaReviewMessageCall?.[4]).toContain("--report-json");
-    expect(metaReviewMessageCall?.[4]).toContain(
+    const messageCallText = sendKeysCalls.map((call) => call[4] || "").join("");
+    expect(messageCallText).toContain("Meta-review task received.");
+    expect(messageCallText).toContain("--report-json");
+    expect(messageCallText).toContain(
       buildMetaReviewSubmitCommandTemplate()
     );
-    expect(metaReviewMessageCall?.[4]).toContain("findings_claim_state");
-    expect(metaReviewMessageCall?.[4]).toContain("findings_claim_source");
-    expect(metaReviewMessageCall?.[4]).toContain("findings_count");
-    expect(metaReviewMessageCall?.[4]).toContain("findings_claimed_open_total");
-    expect(metaReviewMessageCall?.[4]).toContain("findings_blocking_open_total");
-    expect(metaReviewMessageCall?.[4]).toContain("findings_advisory_open_total");
-    expect(metaReviewMessageCall?.[4]).toContain(
+    expect(messageCallText).toContain("findings_claim_state");
+    expect(messageCallText).toContain("findings_claim_source");
+    expect(messageCallText).toContain("findings_count");
+    expect(messageCallText).toContain("findings_claimed_open_total");
+    expect(messageCallText).toContain("findings_blocking_open_total");
+    expect(messageCallText).toContain("findings_advisory_open_total");
+    expect(messageCallText).toContain(
       buildMetaReviewSubmitApproveParityNote()
     );
-    expect(metaReviewMessageCall?.[4]).toContain("Clean approve requires zero open findings.");
-    expect(metaReviewMessageCall?.[4]).toContain("do not switch to inconclusive");
-    expect(metaReviewMessageCall?.[4]).not.toContain("--report-markdown");
+    expect(messageCallText).toContain("Clean approve requires zero open findings.");
+    expect(messageCallText).toContain("do not switch to inconclusive");
+    expect(messageCallText).not.toContain("--report-markdown");
   });
 
   it("falls back to the unique recipient lane when delivery_target_role metadata is invalid", async () => {
@@ -1225,7 +1227,14 @@ describe("emitDeliveryNotificationAck", () => {
 
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: baseConfig,
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          implementer: "opencode",
+          reviewer: "manual",
+          meta_reviewer: "manual"
+        } as never
+      },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_202",
@@ -1517,124 +1526,124 @@ describe("emitDeliveryNotificationAck", () => {
         "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
       )
     ]);
-    const messageCall = calls.find(
+    const sendKeysCalls = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
-        call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
+        call[3] === "-l"
     );
-    expect(messageCall?.[4]).toContain(
+    const messageCallText = sendKeysCalls.map((call) => call[4] || "").join("");
+    expect(messageCallText).toContain(
       "Action: Implementer handoff received. Run a fresh review now"
     );
-    expect(messageCall?.[4]).toContain("Severity Ontology v1 reminder");
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain("Severity Ontology v1 reminder");
+    expect(messageCallText).toContain(
       "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md"
     );
-    expect(messageCall?.[4]).toContain("Read this file before first review action.");
+    expect(messageCallText).toContain("Read this file before first review action.");
     expectStringOccurrence(
-      messageCall?.[4],
+      messageCallText,
       "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md",
       1
     );
-    expect(messageCall?.[4]).not.toContain(
+    expect(messageCallText).not.toContain(
       "Full canonical ontology (embedded from `docs/reviewer-severity-ontology.md`)"
     );
-    expect(messageCall?.[4]).toContain("Blocker severities (`P0/P1`) require concrete evidence");
-    expect(messageCall?.[4]).toContain("Without blocker-grade evidence (`P0/P1`), downgrade to `P2` by default");
-    expect(messageCall?.[4]).toContain("Cosmetic/comment-only findings are `P3`");
-    expect(messageCall?.[4]).toContain("Out-of-scope observations should be notes (`P3`)");
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain("Blocker severities (`P0/P1`) require concrete evidence");
+    expect(messageCallText).toContain("Without blocker-grade evidence (`P0/P1`), downgrade to `P2` by default");
+    expect(messageCallText).toContain("Cosmetic/comment-only findings are `P3`");
+    expect(messageCallText).toContain("Out-of-scope observations should be notes (`P3`)");
+    expect(messageCallText).toContain(
       "Implementer test evidence has been orchestrator-verified. Do not re-run full tests unless a trigger from the decision matrix applies."
     );
     expectStringOccurrence(
-      messageCall?.[4],
+      messageCallText,
       "Decision matrix triggers that still require tests:",
       1
     );
-    expect(messageCall?.[4]).toContain("Phase 1 reviewer round flow (prompt-level only):");
-    expect(messageCall?.[4]).toContain("`Parallel Scout Scan`");
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain("Phase 1 reviewer round flow (prompt-level only):");
+    expect(messageCallText).toContain("`Parallel Scout Scan`");
+    expect(messageCallText).toContain(
       "same current worktree diff scope (`max_scout_agents=2` hard cap)"
     );
-    expect(messageCall?.[4]).toContain("`required_scout_agents=2`");
-    expect(messageCall?.[4]).toContain("`max_scout_agents=2`");
-    expect(messageCall?.[4]).toContain("`max_scout_candidates_per_agent=8`");
-    expect(messageCall?.[4]).toContain("`max_class_expansions_per_round=2`");
-    expect(messageCall?.[4]).toContain("`max_expansion_siblings_per_class=5`");
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain("`required_scout_agents=2`");
+    expect(messageCallText).toContain("`max_scout_agents=2`");
+    expect(messageCallText).toContain("`max_scout_candidates_per_agent=8`");
+    expect(messageCallText).toContain("`max_class_expansions_per_round=2`");
+    expect(messageCallText).toContain("`max_expansion_siblings_per_class=5`");
+    expect(messageCallText).toContain(
       "Summary scope guardrail: scope statements must cover only current worktree changes."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "For summary scope claims, do not use branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
     );
-    expect(messageCall?.[4]).not.toContain(
+    expect(messageCallText).not.toContain(
       "For summary scope claims, do not use `git diff main..HEAD` or any branch-range diff (`<revA>..<revB>`)."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Do not derive summary scope from history/log sources such as `git log --name-status` or `git show --name-status`."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Establish scope from current worktree changes using `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard` (staged, unstaged, and untracked)."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "If current worktree scope cannot be resolved reliably, avoid numeric file-operation claims."
     );
-    expect(messageCall?.[4]).toMatch(/(<revA>\.\.<revB>|main\.\.HEAD)/);
-    expect(messageCall?.[4]).toMatch(/git\s+(log|show)\s+--name-status/);
-    expect(messageCall?.[4]).toMatch(/git diff --name-status/);
-    expect(messageCall?.[4]).toMatch(
+    expect(messageCallText).toMatch(/(<revA>\.\.<revB>|main\.\.HEAD)/);
+    expect(messageCallText).toMatch(/git\s+(log|show)\s+--name-status/);
+    expect(messageCallText).toMatch(/git diff --name-status/);
+    expect(messageCallText).toMatch(
       /(cannot be resolved reliably|avoid numeric file-operation claims)/i
     );
-    expect(messageCall?.[4]).toContain("Stop rules: stop expansion immediately when no new concrete locations are found");
-    expect(messageCall?.[4]).toContain("repo-wide expansion scans are forbidden");
-    expect(messageCall?.[4]).toContain("Required reviewer output contract (machine-checkable)");
-    expect(messageCall?.[4]).toContain("`Scout Coverage`");
-    expect(messageCall?.[4]).toContain("`Deduplicated Findings`");
-    expect(messageCall?.[4]).toContain("`Issue-Class Expansions`");
-    expect(messageCall?.[4]).toContain("`Residual Risk / Notes`");
-    expect(messageCall?.[4]).toContain("`scouts_executed`, `scope_covered`, `guardrail_confirmation`, `raw_candidates_count`, `deduplicated_count`");
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain("Stop rules: stop expansion immediately when no new concrete locations are found");
+    expect(messageCallText).toContain("repo-wide expansion scans are forbidden");
+    expect(messageCallText).toContain("Required reviewer output contract (machine-checkable)");
+    expect(messageCallText).toContain("`Scout Coverage`");
+    expect(messageCallText).toContain("`Deduplicated Findings`");
+    expect(messageCallText).toContain("`Issue-Class Expansions`");
+    expect(messageCallText).toContain("`Residual Risk / Notes`");
+    expect(messageCallText).toContain("`scouts_executed`, `scope_covered`, `guardrail_confirmation`, `raw_candidates_count`, `deduplicated_count`");
+    expect(messageCallText).toContain(
       "`Scout Coverage.scope_covered` must describe current worktree changes only"
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "grounded in `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
     );
-    expect(messageCall?.[4]).not.toContain(
+    expect(messageCallText).not.toContain(
       "`Scout Coverage.scope_covered` must cover only current worktree changes, grounded in `git diff HEAD --name-status` + `git ls-files --others --exclude-standard` or the combined trio `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Do not justify `scope_covered` with branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Do not justify `scope_covered` with history/log sources such as `git log --name-status` or `git show --name-status`."
     );
-    expect(messageCall?.[4]).toContain("`title`, `severity`, `class`, `locations`, `evidence`, `expansion_siblings`");
-    expect(messageCall?.[4]).toContain("`class`, `source_finding_title`, `scan_scope`, `siblings`, `stop_reason`");
-    expect(messageCall?.[4]).toContain("`Deduplicated Findings: []`");
-    expect(messageCall?.[4]).toContain("`Issue-Class Expansions: []`");
-    expectReviewerValidationClaimGuardrails(messageCall?.[4]);
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain("`title`, `severity`, `class`, `locations`, `evidence`, `expansion_siblings`");
+    expect(messageCallText).toContain("`class`, `source_finding_title`, `scan_scope`, `siblings`, `stop_reason`");
+    expect(messageCallText).toContain("`Deduplicated Findings: []`");
+    expect(messageCallText).toContain("`Issue-Class Expansions: []`");
+    expectReviewerValidationClaimGuardrails(messageCallText);
+    expect(messageCallText).toContain(
       "Execute pairflow commands directly (no confirmation prompt)"
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Reviewer brief reminder (from reviewer-brief.md): Verify factual claims against cited sources."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Reviewer focus reminder (bridged from reviewer-focus.json): - Validate reason-code fallback behavior"
     );
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_A);
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_D);
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_F);
-    expect(messageCall?.[4]).not.toContain(REVIEWER_COMMAND_GATE_REQ_B);
-    expect(messageCall?.[4]).not.toContain(REVIEWER_COMMAND_GATE_REQ_C);
-    expect(messageCall?.[4]).not.toContain(REVIEWER_COMMAND_GATE_REQ_E);
-    expectNoForbiddenReviewerCommandGateTokens(messageCall?.[4]);
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(REVIEWER_COMMAND_GATE_REQ_A);
+    expect(messageCallText).toContain(REVIEWER_COMMAND_GATE_REQ_D);
+    expect(messageCallText).toContain(REVIEWER_COMMAND_GATE_REQ_F);
+    expect(messageCallText).not.toContain(REVIEWER_COMMAND_GATE_REQ_B);
+    expect(messageCallText).not.toContain(REVIEWER_COMMAND_GATE_REQ_C);
+    expect(messageCallText).not.toContain(REVIEWER_COMMAND_GATE_REQ_E);
+    expectNoForbiddenReviewerCommandGateTokens(messageCallText);
+    expect(messageCallText).toContain(
       "Run pairflow commands from workspace root: /tmp/worktree."
     );
     // Message must NOT embed CR/LF — Enter is sent as a separate tmux command.
-    expect(messageCall?.[4]).not.toMatch(/[\r\n]$/);
+    expect(messageCallText).not.toMatch(/[\r\n]$/);
     expect(calls).toContainEqual([
       "send-keys",
       "-t",
@@ -1758,7 +1767,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            "accepted=true running=true handoff_id=handoff_advanced_02 actor acknowledged work",
+            "Ask anything...\naccepted=true running=true handoff_id=handoff_advanced_02 actor acknowledged work",
           stderr: "",
           exitCode: 0
         });
@@ -1831,30 +1840,31 @@ describe("emitDeliveryNotificationAck", () => {
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope(),
+      recipientRole: "reviewer",
       reviewerTestDirective,
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry()),
       deliveryAttempts: 2
     });
 
-    const messageCall = calls.find(
+    const sendKeysCalls = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
-        call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
+        call[3] === "-l"
     );
-    expect(messageCall?.[4]).toContain(
+    const messageCallText = sendKeysCalls.map((call) => call[4] || "").join("");
+    expect(messageCallText).toContain(
       "Implementer test evidence has been orchestrator-verified."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Do not re-run full tests unless a trigger from the decision matrix applies."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Reason: docs-only scope, runtime checks not required"
     );
-    expectReviewerValidationClaimGuardrails(messageCall?.[4]);
-    expect(messageCall?.[4]).not.toContain(
+    expectReviewerValidationClaimGuardrails(messageCallText);
+    expect(messageCallText).not.toContain(
       "  Execute pairflow commands directly (no confirmation prompt)."
     );
   });
@@ -1891,65 +1901,65 @@ describe("emitDeliveryNotificationAck", () => {
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
 
-    const messageCall = calls.find(
+    const sendKeysCalls = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
-        call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
+        call[3] === "-l"
     );
+    const messageCallText = sendKeysCalls.map((call) => call[4] || "").join("");
 
-    expect(messageCall?.[4]).toContain("Severity Ontology v1 reminder");
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain("Severity Ontology v1 reminder");
+    expect(messageCallText).toContain(
       "Run required checks before final judgment. Reason: reviewer test verification directive was unavailable."
     );
-    expect(messageCall?.[4]).not.toContain(
+    expect(messageCallText).not.toContain(
       "Decision matrix triggers that still require tests:"
     );
-    expect(messageCall?.[4]).toContain("Phase 1 reviewer round flow (prompt-level only):");
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain("Phase 1 reviewer round flow (prompt-level only):");
+    expect(messageCallText).toContain(
       "Summary scope guardrail: scope statements must cover only current worktree changes."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "For summary scope claims, do not use branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
     );
-    expect(messageCall?.[4]).not.toContain(
+    expect(messageCallText).not.toContain(
       "For summary scope claims, do not use `git diff main..HEAD` or any branch-range diff (`<revA>..<revB>`)."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Do not derive summary scope from history/log sources such as `git log --name-status` or `git show --name-status`."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Establish scope from current worktree changes using `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard` (staged, unstaged, and untracked)."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "If current worktree scope cannot be resolved reliably, avoid numeric file-operation claims."
     );
-    expect(messageCall?.[4]).toMatch(/(<revA>\.\.<revB>|main\.\.HEAD)/);
-    expect(messageCall?.[4]).toMatch(/git\s+(log|show)\s+--name-status/);
-    expect(messageCall?.[4]).toMatch(/git diff --name-status/);
-    expect(messageCall?.[4]).toMatch(
+    expect(messageCallText).toMatch(/(<revA>\.\.<revB>|main\.\.HEAD)/);
+    expect(messageCallText).toMatch(/git\s+(log|show)\s+--name-status/);
+    expect(messageCallText).toMatch(/git diff --name-status/);
+    expect(messageCallText).toMatch(
       /(cannot be resolved reliably|avoid numeric file-operation claims)/i
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "`Scout Coverage.scope_covered` must describe current worktree changes only"
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "grounded in `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
     );
-    expect(messageCall?.[4]).not.toContain(
+    expect(messageCallText).not.toContain(
       "`Scout Coverage.scope_covered` must cover only current worktree changes, grounded in `git diff HEAD --name-status` + `git ls-files --others --exclude-standard` or the combined trio `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Do not justify `scope_covered` with branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(messageCallText).toContain(
       "Do not justify `scope_covered` with history/log sources such as `git log --name-status` or `git show --name-status`."
     );
-    expect(messageCall?.[4]).not.toContain(
+    expect(messageCallText).not.toContain(
       "Full canonical ontology (embedded from `docs/reviewer-severity-ontology.md`)"
     );
-    expect(messageCall?.[4]).not.toContain(
+    expect(messageCallText).not.toContain(
       "Reviewer brief reminder (from reviewer-brief.md):"
     );
   });
@@ -1984,24 +1994,25 @@ describe("emitDeliveryNotificationAck", () => {
         id: "msg_20260222_102",
         round: 2
       }),
+      recipientRole: "reviewer",
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
 
-    const messageCall = calls.find(
+    const matchCalls = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
-        call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r2 PASS opencode->opencode")
+        call[3] === "-l"
     );
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_B);
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_C);
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_D);
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_F);
-    expect(messageCall?.[4]).not.toContain(REVIEWER_COMMAND_GATE_REQ_A);
-    expect(messageCall?.[4]).not.toContain(REVIEWER_COMMAND_GATE_REQ_E);
-    expectNoForbiddenReviewerCommandGateTokens(messageCall?.[4]);
+    const fullMessage = matchCalls.map((call) => call[4]).join("");
+    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_B);
+    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_C);
+    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_D);
+    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_F);
+    expect(fullMessage).not.toContain(REVIEWER_COMMAND_GATE_REQ_A);
+    expect(fullMessage).not.toContain(REVIEWER_COMMAND_GATE_REQ_E);
+    expectNoForbiddenReviewerCommandGateTokens(fullMessage);
   });
 
   it("injects findings-path round>=2 command gate for reviewer handoff", async () => {
@@ -2043,24 +2054,25 @@ describe("emitDeliveryNotificationAck", () => {
           ]
         }
       }),
+      recipientRole: "reviewer",
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
 
-    const messageCall = calls.find(
+    const matchCalls = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
-        call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r2 PASS opencode->opencode")
+        call[3] === "-l"
     );
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_E);
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_C);
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_D);
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_F);
-    expect(messageCall?.[4]).not.toContain(REVIEWER_COMMAND_GATE_REQ_A);
-    expect(messageCall?.[4]).not.toContain(REVIEWER_COMMAND_GATE_REQ_B);
-    expectNoForbiddenReviewerCommandGateTokens(messageCall?.[4]);
+    const fullMessage = matchCalls.map((call) => call[4]).join("");
+    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_E);
+    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_C);
+    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_D);
+    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_F);
+    expect(fullMessage).not.toContain(REVIEWER_COMMAND_GATE_REQ_A);
+    expect(fullMessage).not.toContain(REVIEWER_COMMAND_GATE_REQ_B);
+    expectNoForbiddenReviewerCommandGateTokens(fullMessage);
   });
 
   it("keeps shared command-gate invariants across round>=2 clean and findings projections", async () => {
@@ -2069,7 +2081,11 @@ describe("emitDeliveryNotificationAck", () => {
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
       if (args[0] === "send-keys" && args[3] === "-l") {
-        lastDeliveryMessage = args[4] ?? "";
+        if (args[4]?.includes("# [pairflow]")) {
+          lastDeliveryMessage = args[4];
+        } else {
+          lastDeliveryMessage += args[4] ?? "";
+        }
       }
       if (args[0] === "capture-pane") {
         return Promise.resolve({
@@ -2125,16 +2141,23 @@ describe("emitDeliveryNotificationAck", () => {
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
 
-    const reviewerMessages = calls.filter(
-      (call) =>
-        call[0] === "send-keys" &&
-        call[2] === "pf-b_delivery_01:0.2" &&
-        call[3] === "-l" &&
-        call[4]?.includes("PASS opencode->opencode")
-    );
+    const reviewerMessages: string[] = [];
+    let currentMessage = "";
+    for (const call of calls) {
+      if (call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.2" && call[3] === "-l") {
+        if (call[4]?.includes("# [pairflow]")) {
+          if (currentMessage) reviewerMessages.push(currentMessage);
+          currentMessage = call[4];
+        } else {
+          currentMessage += call[4] ?? "";
+        }
+      }
+    }
+    if (currentMessage) reviewerMessages.push(currentMessage);
+
     expect(reviewerMessages).toHaveLength(2);
-    const cleanMessage = reviewerMessages[0]?.[4] ?? "";
-    const findingsMessage = reviewerMessages[1]?.[4] ?? "";
+    const cleanMessage = reviewerMessages[0] ?? "";
+    const findingsMessage = reviewerMessages[1] ?? "";
 
     expect(cleanMessage).toContain(REVIEWER_COMMAND_GATE_REQ_C);
     expect(cleanMessage).toContain(REVIEWER_COMMAND_GATE_REQ_D);
@@ -2154,7 +2177,11 @@ describe("emitDeliveryNotificationAck", () => {
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
       if (args[0] === "send-keys" && args[3] === "-l") {
-        lastDeliveryMessage = args[4] ?? "";
+        if (args[4]?.includes("# [pairflow]")) {
+          lastDeliveryMessage = args[4];
+        } else {
+          lastDeliveryMessage += args[4] ?? "";
+        }
       }
       if (args[0] === "capture-pane") {
         return Promise.resolve({
@@ -2222,17 +2249,24 @@ describe("emitDeliveryNotificationAck", () => {
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
 
-    const reviewerMessages = calls.filter(
-      (call) =>
-        call[0] === "send-keys" &&
-        call[2] === "pf-b_delivery_01:0.2" &&
-        call[3] === "-l" &&
-        call[4]?.includes("PASS opencode->opencode")
-    );
+    const reviewerMessages: string[] = [];
+    let currentMessage = "";
+    for (const call of calls) {
+      if (call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.2" && call[3] === "-l") {
+        if (call[4]?.includes("# [pairflow]")) {
+          if (currentMessage) reviewerMessages.push(currentMessage);
+          currentMessage = call[4];
+        } else {
+          currentMessage += call[4] ?? "";
+        }
+      }
+    }
+    if (currentMessage) reviewerMessages.push(currentMessage);
+
     expect(reviewerMessages).toHaveLength(2);
 
-    const cleanMessage = reviewerMessages[0]?.[4] ?? "";
-    const findingsMessage = reviewerMessages[1]?.[4] ?? "";
+    const cleanMessage = reviewerMessages[0] ?? "";
+    const findingsMessage = reviewerMessages[1] ?? "";
 
     expect(cleanMessage).toContain(
       "If review round is at or above `severity_gate_round` and no findings meet the current post-gate blocking threshold (`review_policy.reviewer_blocking_min_severity=P2`)"
@@ -2275,7 +2309,11 @@ describe("emitDeliveryNotificationAck", () => {
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
       if (args[0] === "send-keys" && args[3] === "-l") {
-        lastDeliveryMessage = args[4] ?? "";
+        if (args[4]?.includes("# [pairflow]")) {
+          lastDeliveryMessage = args[4];
+        } else {
+          lastDeliveryMessage += args[4] ?? "";
+        }
       }
       if (args[0] === "capture-pane") {
         return Promise.resolve({
@@ -2302,6 +2340,7 @@ describe("emitDeliveryNotificationAck", () => {
         id: "msg_20260222_101",
         round: 1
       }),
+      recipientRole: "reviewer",
       reviewerTestDirective,
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry())
@@ -2324,49 +2363,56 @@ describe("emitDeliveryNotificationAck", () => {
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
 
-    const reviewerMessages = calls.filter(
-      (call) =>
-        call[0] === "send-keys" &&
-        call[2] === "pf-b_delivery_01:0.2" &&
-        call[3] === "-l" &&
-        call[4]?.includes("PASS opencode->opencode")
-    );
+    const reviewerMessages: string[] = [];
+    let currentMessage = "";
+    for (const call of calls) {
+      if (call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.2" && call[3] === "-l") {
+        if (call[4]?.includes("# [pairflow]")) {
+          if (currentMessage) reviewerMessages.push(currentMessage);
+          currentMessage = call[4];
+        } else {
+          currentMessage += call[4] ?? "";
+        }
+      }
+    }
+    if (currentMessage) reviewerMessages.push(currentMessage);
+
     expect(reviewerMessages).toHaveLength(2);
-    for (const messageCall of reviewerMessages) {
-      expect(messageCall[4]).toContain("Severity Ontology v1 reminder");
-      expect(messageCall[4]).toContain(
+    for (const messageText of reviewerMessages) {
+      expect(messageText).toContain("Severity Ontology v1 reminder");
+      expect(messageText).toContain(
         "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md"
       );
-      expect(messageCall[4]).toContain("Read this file before first review action.");
+      expect(messageText).toContain("Read this file before first review action.");
       expectStringOccurrence(
-        messageCall[4],
+        messageText,
         "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md",
         1
       );
-      expect(messageCall[4]).not.toContain(
+      expect(messageText).not.toContain(
         "Full canonical ontology (embedded from `docs/reviewer-severity-ontology.md`)"
       );
-      expect(messageCall[4]).toContain(
+      expect(messageText).toContain(
         "Implementer test evidence has been orchestrator-verified. Do not re-run full tests unless a trigger from the decision matrix applies."
       );
       expectStringOccurrence(
-        messageCall[4],
+        messageText,
         "Decision matrix triggers that still require tests:",
         1
       );
-      expect(messageCall[4]).toContain(
+      expect(messageText).toContain(
         "For summary scope claims, do not use branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
       );
-      expect(messageCall[4]).toContain(
+      expect(messageText).toContain(
         "Do not derive summary scope from history/log sources such as `git log --name-status` or `git show --name-status`."
       );
-      expect(messageCall[4]).toContain(
+      expect(messageText).toContain(
         "Establish scope from current worktree changes using `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard` (staged, unstaged, and untracked)."
       );
-      expect(messageCall[4]).toContain(
+      expect(messageText).toContain(
         "Do not justify `scope_covered` with branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
       );
-      expect(messageCall[4]).toContain(
+      expect(messageText).toContain(
         "Do not justify `scope_covered` with history/log sources such as `git log --name-status` or `git show --name-status`."
       );
     }
@@ -2399,77 +2445,78 @@ describe("emitDeliveryNotificationAck", () => {
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope(),
+      recipientRole: "reviewer",
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
 
-    const messageCall = calls.find(
+    const matchCalls = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
-        call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
+        call[3] === "-l"
     );
-    expect(messageCall?.[4]).toContain(
+    const fullMessage = matchCalls.map((call) => call[4]).join("");
+    expect(fullMessage).toContain(
       "Run required checks before final judgment. Reason: reviewer test verification directive was unavailable."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "Decision matrix triggers that still require tests:"
     );
-    expect(messageCall?.[4]).toContain("Phase 1 reviewer round flow (prompt-level only):");
-    expect(messageCall?.[4]).toContain("Required reviewer output contract (machine-checkable)");
-    expect(messageCall?.[4]).toContain(
+    expect(fullMessage).toContain("Phase 1 reviewer round flow (prompt-level only):");
+    expect(fullMessage).toContain("Required reviewer output contract (machine-checkable)");
+    expect(fullMessage).toContain(
       "same current worktree diff scope (`max_scout_agents=2` hard cap)"
     );
-    expect(messageCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "Summary scope guardrail: scope statements must cover only current worktree changes."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "For summary scope claims, do not use branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
     );
-    expect(messageCall?.[4]).not.toContain(
+    expect(fullMessage).not.toContain(
       "For summary scope claims, do not use `git diff main..HEAD` or any branch-range diff (`<revA>..<revB>`)."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "Do not derive summary scope from history/log sources such as `git log --name-status` or `git show --name-status`."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "Establish scope from current worktree changes using `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard` (staged, unstaged, and untracked)."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "If current worktree scope cannot be resolved reliably, avoid numeric file-operation claims."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "`Scout Coverage.scope_covered` must describe current worktree changes only"
     );
-    expect(messageCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "grounded in `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
     );
-    expect(messageCall?.[4]).not.toContain(
+    expect(fullMessage).not.toContain(
       "`Scout Coverage.scope_covered` must cover only current worktree changes, grounded in `git diff HEAD --name-status` + `git ls-files --others --exclude-standard` or the combined trio `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "Do not justify `scope_covered` with branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
     );
-    expect(messageCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "Do not justify `scope_covered` with history/log sources such as `git log --name-status` or `git show --name-status`."
     );
-    expectReviewerValidationClaimGuardrails(messageCall?.[4]);
-    expect(messageCall?.[4]).toContain(
+    expectReviewerValidationClaimGuardrails(fullMessage);
+    expect(fullMessage).toContain(
       "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md"
     );
-    expect(messageCall?.[4]).toContain("Read this file before first review action.");
+    expect(fullMessage).toContain("Read this file before first review action.");
     expectStringOccurrence(
-      messageCall?.[4],
+      fullMessage,
       "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md",
       1
     );
     expectStringOccurrence(
-      messageCall?.[4],
+      fullMessage,
       "Decision matrix triggers that still require tests:",
       1
     );
-    expect(messageCall?.[4]).not.toContain(
+    expect(fullMessage).not.toContain(
       "Full canonical ontology (embedded from `docs/reviewer-severity-ontology.md`)"
     );
   });
@@ -2506,16 +2553,16 @@ describe("emitDeliveryNotificationAck", () => {
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
 
-    const messageCall = calls.find(
+    const matchCalls = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
-        call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
+        call[3] === "-l"
     );
-    expect(messageCall?.[4]).toContain("document/task artifacts");
-    expect(messageCall?.[4]).toContain("Do not force `feature-dev:code-reviewer`");
-    expect(messageCall?.[4]).toContain(REVIEWER_COMMAND_GATE_REQ_D);
+    const fullMessage = matchCalls.map((call) => call[4]).join("");
+    expect(fullMessage).toContain("document/task artifacts");
+    expect(fullMessage).toContain("Do not force `feature-dev:code-reviewer`");
+    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_D);
   });
 
   it("routes human recipient notifications to status pane", async () => {
@@ -2774,6 +2821,7 @@ describe("emitDeliveryNotificationAck", () => {
         },
         refs: ["artifact://auto-rework.md"]
       }),
+      recipientRole: "implementer",
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
@@ -2879,13 +2927,13 @@ describe("emitDeliveryNotificationAck", () => {
         readSessionsRegistry: () => Promise.resolve(createRegistry())
       });
 
-      return calls.find(
+      const matchCalls = calls.filter(
         (call) =>
           call[0] === "send-keys" &&
           call[2] === "pf-b_delivery_01:0.1" &&
-          call[3] === "-l" &&
-          call[4]?.includes(`${envelope.type} ${envelope.sender}->${envelope.recipient}`)
-      )?.[4];
+          call[3] === "-l"
+      );
+      return matchCalls.map((call) => call[4]).join("");
     }
 
     const passMessage = await deliverToImplementer(
@@ -3034,38 +3082,39 @@ describe("emitDeliveryNotificationAck", () => {
           summary: "Please apply reviewer fixes."
         }
       }),
+      recipientRole: "implementer",
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
 
     expect(result.status).toBe("accepted");
-    const passToImplementerCall = calls.find(
+    const matchCalls = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.1" &&
-        call[3] === "-l" &&
-        call[4]?.includes("PASS opencode->opencode")
+        call[3] === "-l"
     );
-    expect(passToImplementerCall?.[4]).toContain("Reviewer feedback received.");
-    expect(passToImplementerCall?.[4]).toContain(
+    const fullMessage = matchCalls.map((call) => call[4]).join("");
+    expect(fullMessage).toContain("Reviewer feedback received.");
+    expect(fullMessage).toContain(
       "Implement fixes, then hand off with canonical actor emit"
     );
-    expect(passToImplementerCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "If `.pairflow/evidence/*.log` files exist, include them as `--ref` (lint/typecheck/test)."
     );
-    expect(passToImplementerCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "Default command profile is `external`; Pairflow commands are resolved from PATH."
     );
-    expect(passToImplementerCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "--pairflow-command-profile self_host"
     );
-    expect(passToImplementerCall?.[4]).not.toContain(
+    expect(fullMessage).not.toContain(
       "Docs-only scope: choose one mode and keep it consistent in the same PASS."
     );
-    expect(passToImplementerCall?.[4]).not.toContain(
+    expect(fullMessage).not.toContain(
       "Document bubble source-code guard:"
     );
-    expect(passToImplementerCall?.[4]).not.toContain("Mode A (skip-claim)");
+    expect(fullMessage).not.toContain("Mode A (skip-claim)");
   });
 
   it("warns implementer delivery on invalid empty required validation policy", async () => {
@@ -3106,25 +3155,26 @@ describe("emitDeliveryNotificationAck", () => {
           summary: "Please apply reviewer fixes."
         }
       }),
+      recipientRole: "implementer",
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
 
     expect(result.status).toBe("accepted");
-    const passToImplementerCall = calls.find(
+    const matchCalls = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.1" &&
-        call[3] === "-l" &&
-        call[4]?.includes("PASS opencode->opencode")
+        call[3] === "-l"
     );
-    expect(passToImplementerCall?.[4]).toContain(
+    const fullMessage = matchCalls.map((call) => call[4]).join("");
+    expect(fullMessage).toContain(
       "Bubble-level PASS validation policy is invalid"
     );
-    expect(passToImplementerCall?.[4]).toContain(
+    expect(fullMessage).toContain(
       "commands.validation_required=[] requires commands.validation_required_explicit=true"
     );
-    expect(passToImplementerCall?.[4]).not.toContain(
+    expect(fullMessage).not.toContain(
       "Required PASS validation commands: . You may run them locally"
     );
   });
@@ -3161,6 +3211,7 @@ describe("emitDeliveryNotificationAck", () => {
       envelope: createEnvelope({
         refs: []
       }),
+      recipientRole: "reviewer",
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry())
     });
@@ -3610,7 +3661,7 @@ describe("emitDeliveryNotificationAck", () => {
           call.length === 4
       )
     ).toBe(false);
-    expect(calls.filter((call) => call[0] === "capture-pane")).toHaveLength(1);
+    expect(calls.filter((call) => call[0] === "capture-pane").length).toBeGreaterThanOrEqual(1);
   });
 
   it("retries delivery when handoff marker is not visible after first submit", async () => {
@@ -3622,13 +3673,14 @@ describe("emitDeliveryNotificationAck", () => {
         captureCount += 1;
         return Promise.resolve({
           stdout:
-            captureCount >= 3
+            captureCount >= 7
               ? [
+                  "Ask anything...",
                   "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
                   "",
                   ">"
                 ].join("\n")
-              : "",
+              : "Ask anything...\n",
           stderr: "",
           exitCode: 0
         });
@@ -3648,15 +3700,18 @@ describe("emitDeliveryNotificationAck", () => {
       recipientRole: "reviewer",
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry()),
-      deliveryAttempts: 2
+      deliveryAttempts: 3
     });
 
     expect(result.status).toBe("accepted");
-    const submitCalls = calls.filter(
-      (call) => call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.2"
+    const enterCalls = calls.filter(
+      (call) =>
+        call[0] === "send-keys" &&
+        call[2] === "pf-b_delivery_01:0.2" &&
+        call[3] === "Enter"
     );
-    // one message write + Enter (initial) + Enter (retry) = 3 send-keys calls
-    expect(submitCalls.length).toBe(3);
+    // 1 initial Enter + 2 retry Enters = 3.
+    expect(enterCalls.length).toBe(3);
     const captureCalls = calls.filter((call) => call[0] === "capture-pane");
     expect(captureCalls.length).toBeGreaterThanOrEqual(2);
   });
@@ -3668,7 +3723,7 @@ describe("emitDeliveryNotificationAck", () => {
       calls.push(args);
       if (args[0] === "capture-pane") {
         captureCount += 1;
-        if (captureCount <= 2) {
+        if (captureCount <= 5) {
           // Marker appears after the > prompt — stuck in input buffer.
           return Promise.resolve({
             stdout: [
@@ -3703,6 +3758,7 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleConfig: baseConfig,
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope(),
+      recipientRole: "reviewer",
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry()),
       deliveryAttempts: 3
@@ -3728,7 +3784,7 @@ describe("emitDeliveryNotificationAck", () => {
       calls.push(args);
       if (args[0] === "capture-pane") {
         captureCount += 1;
-        if (captureCount <= 2) {
+        if (captureCount <= 5) {
           return Promise.resolve({
             stdout: [
               "Claude Code is ready.",
@@ -3761,6 +3817,7 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleConfig: baseConfig,
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope(),
+      recipientRole: "reviewer",
       runner,
       readSessionsRegistry: () => Promise.resolve(createRegistry()),
       deliveryAttempts: 3

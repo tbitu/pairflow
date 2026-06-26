@@ -51,7 +51,7 @@ describe("startCommandResumeKickoffMessages", () => {
 
   it("fails closed with a diagnostic when RUNNING meta-review authority does not match the configured agent", () => {
     const resolved = resolveResumeKickoffMessages(
-      createBaseInput(createRunningMetaReviewerState("opencode"))
+      createBaseInput(createRunningMetaReviewerState("review-gpt" as never))
     );
 
     expect(resolved.metaReviewerKickoffMessage).toBeUndefined();
@@ -59,7 +59,7 @@ describe("startCommandResumeKickoffMessages", () => {
       "RUNNING meta-review state active context is inconsistent;"
     );
     expect(resolved.kickoffDiagnostic).toContain("active_role=meta_reviewer,");
-    expect(resolved.kickoffDiagnostic).toContain("active_agent=opencode.");
+    expect(resolved.kickoffDiagnostic).toContain("active_agent=review-gpt.");
     expect(resolved.kickoffDiagnostic).toContain(
       "configured_meta_reviewer=opencode."
     );

@@ -21,7 +21,6 @@ export const isolatedTestFiles = [
   "tests/cli/requestReworkDeliveryWarning.test.ts",
   "tests/core/archive/archiveLocking.test.ts",
   "tests/core/bubble/deleteBubble.removeBubbleDirectory.test.ts",
-  "tests/core/bubble/startBubble.test.ts",
   "tests/core/runtime/tmuxManager.test.ts",
   "tests/core/ui/router.test.ts",
   "tests/core/util/pathExists.test.ts",

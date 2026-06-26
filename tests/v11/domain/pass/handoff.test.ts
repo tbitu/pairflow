@@ -199,7 +199,7 @@ describe("resolvePassHandoff", () => {
       resolveFromState(
         buildRunningState({
           active_role: "reviewer",
-          active_agent: implementer
+          active_agent: "review-gpt" as never
         })
       )
     ).toThrowError(

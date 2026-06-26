@@ -1,83 +1,96 @@
 import type { BubbleConfig } from "../../../shared/config/bubbleConfigTypes.js";
 import {
-  getSharedTopologySlotPaneIndex,
-  getSharedTopologySlotPaneIndexForRole
-} from "../../../shared/topology/topologySlotPaneProjection.js";
-import type { ProtocolParticipant } from "../../../../contracts/kernel/protocol.js";
-import {
-  parseDeliveryTargetRoleMetadata,
-  type DeliveryTargetRole
-} from "../../../shared/delivery/deliveryTargetMetadataContract.js";
-import {
-  isLegacyMetaReviewerProtocolRecipient,
-  type LegacyMetaReviewerProtocolRecipient
-} from "../../../shared/protocol/legacyMetaReviewerRecipientContract.js";
-import type { ProtocolEnvelope } from "../../../shared/protocol/protocolEnvelopeContract.js";
-import type { DeliveryTargetReasonCode } from "../../../shared/delivery/tmuxDeliveryContract.js";
-import type { DeliveryMessageRecipientRole } from "./tmuxDeliveryMessageBuilder.js";
+   getSharedTopologySlotPaneIndex,
+   getSharedTopologySlotPaneIndexForRole
+ } from "../../../shared/topology/topologySlotPaneProjection.js";
+ import { isAgentName } from "../../../../contracts/kernel/agentIdentity.js";
+ import type { ProtocolParticipant } from "../../../../contracts/kernel/protocol.js";
+ import {
+   parseDeliveryTargetRoleMetadata,
+   type DeliveryTargetRole
+ } from "../../../shared/delivery/deliveryTargetMetadataContract.js";
+ import {
+   isLegacyMetaReviewerProtocolRecipient,
+   type LegacyMetaReviewerProtocolRecipient
+ } from "../../../shared/protocol/legacyMetaReviewerRecipientContract.js";
+ import type { ProtocolEnvelope } from "../../../shared/protocol/protocolEnvelopeContract.js";
+ import type { DeliveryTargetReasonCode } from "../../../shared/delivery/tmuxDeliveryContract.js";
+ import type { DeliveryMessageRecipientRole } from "./tmuxDeliveryMessageBuilder.js";
+ import { resolveUniquelyConfiguredRoleForAgent } from "../../../domain/agentIdentity/agentIdentity.js";
+ 
+ type CompatProtocolRecipient =
+   | ProtocolParticipant
+   | LegacyMetaReviewerProtocolRecipient;
+ 
+ function normalizePaneIndex(value: unknown): number | undefined {
+   return typeof value === "number" && Number.isInteger(value) && value >= 0
+     ? value
+     : undefined;
+ }
+ 
+ function resolveCompatDeliveryTargetRoleFromRecipient(
+   recipient: CompatProtocolRecipient
+ ): DeliveryTargetRole | undefined {
+   if (recipient === "human" || recipient === "orchestrator") {
+     return "status";
+   }
+   if (isLegacyMetaReviewerProtocolRecipient(recipient)) {
+     return "meta_reviewer";
+   }
+   return undefined;
+ }
 
-type CompatProtocolRecipient =
-  | ProtocolParticipant
-  | LegacyMetaReviewerProtocolRecipient;
-
-function normalizePaneIndex(value: unknown): number | undefined {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0
-    ? value
-    : undefined;
-}
-
-function resolveCompatDeliveryTargetRoleFromRecipient(
-  recipient: CompatProtocolRecipient
-): DeliveryTargetRole | undefined {
-  if (recipient === "human" || recipient === "orchestrator") {
-    return "status";
-  }
-  if (isLegacyMetaReviewerProtocolRecipient(recipient)) {
-    return "meta_reviewer";
-  }
-  return undefined;
-}
-
-export function resolveTargetPaneIndex(
-  recipient: CompatProtocolRecipient,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _bubbleConfig: BubbleConfig
-): number | undefined {
-  const resolvedRole = resolveCompatDeliveryTargetRoleFromRecipient(
-    recipient
-  );
-  if (resolvedRole === undefined) {
-    return undefined;
-  }
-  return normalizePaneIndex(
-    resolvedRole === "status"
-      ? getSharedTopologySlotPaneIndex("status")
-      : getSharedTopologySlotPaneIndexForRole(resolvedRole)
-  );
-}
-
-function resolveRecipientRoleFromRecipient(
-  recipient: CompatProtocolRecipient,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  bubbleConfig: BubbleConfig
-): DeliveryMessageRecipientRole {
-  const resolvedRole = resolveCompatDeliveryTargetRoleFromRecipient(
-    recipient
-  );
-  if (resolvedRole === "meta_reviewer") {
-    return "meta-reviewer";
-  }
-  if (resolvedRole === "implementer" || resolvedRole === "reviewer") {
-    return resolvedRole;
-  }
-  return recipient;
-}
-
-function resolveRecipientRoleFromDeliveryTargetRole(
-  role: DeliveryTargetRole
-): DeliveryMessageRecipientRole {
-  return role === "meta_reviewer" ? "meta-reviewer" : role;
-}
+ function resolveConfiguredRoleFromRecipient(
+   recipient: CompatProtocolRecipient,
+   bubbleConfig: BubbleConfig
+ ): DeliveryTargetRole | undefined {
+   if (!isAgentName(recipient)) {
+     return undefined;
+   }
+   return resolveUniquelyConfiguredRoleForAgent({
+     agents: bubbleConfig.agents,
+     agent: recipient
+   });
+ }
+ 
+ export function resolveTargetPaneIndex(
+   recipient: CompatProtocolRecipient,
+   bubbleConfig: BubbleConfig
+ ): number | undefined {
+   const resolvedRole = resolveCompatDeliveryTargetRoleFromRecipient(
+   recipient
+   ) ?? resolveConfiguredRoleFromRecipient(recipient, bubbleConfig);
+   if (resolvedRole === undefined) {
+     return undefined;
+   }
+   return normalizePaneIndex(
+     resolvedRole === "status"
+       ? getSharedTopologySlotPaneIndex("status")
+       : getSharedTopologySlotPaneIndexForRole(resolvedRole)
+   );
+ }
+ 
+ function resolveRecipientRoleFromRecipient(
+   recipient: CompatProtocolRecipient,
+   bubbleConfig: BubbleConfig
+ ): DeliveryMessageRecipientRole {
+   const resolvedRole = resolveCompatDeliveryTargetRoleFromRecipient(
+   recipient
+   ) ?? resolveConfiguredRoleFromRecipient(recipient, bubbleConfig);
+   if (resolvedRole === "meta_reviewer") {
+     return "meta-reviewer";
+   }
+   if (resolvedRole === "implementer" || resolvedRole === "reviewer") {
+     return resolvedRole;
+   }
+   return recipient;
+ }
+ 
+ function resolveRecipientRoleFromDeliveryTargetRole(
+   role: DeliveryTargetRole
+ ): DeliveryMessageRecipientRole {
+   return role === "meta_reviewer" ? "meta-reviewer" : role;
+ }
 
 export function resolveEnvelopeRecipientRole(
   envelope: ProtocolEnvelope,

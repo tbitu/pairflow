@@ -157,6 +157,7 @@ describe("buildRunningExecutionContext", () => {
       "resume_state_context_line",
       "transcript_context_line",
       "canonical_actor_emit_lookup_guidance",
+      "implementer_emit_handoff_contract",
       "implementer_evidence_handoff_guidance",
       "implementer_resume_role_instruction",
       "kickoff_diagnostic_line"
@@ -198,6 +199,7 @@ describe("buildRunningExecutionContext", () => {
       "document_primary_artifact_reviewer_guardrail",
       "reviewer_scout_expansion_workflow_guidance",
       "reviewer_pass_output_contract_guidance",
+      "reviewer_findings_pass_instruction",
       "reviewer_brief_overlay",
       "reviewer_focus_bridge_overlay",
       "reviewer_canonical_command_gate_lines",
@@ -224,6 +226,9 @@ describe("buildRunningExecutionContext", () => {
       "resume_state_context_line",
       "transcript_context_line",
       "canonical_actor_emit_lookup_guidance",
+      "meta_review_submit_command_template",
+      "meta_review_submit_approve_parity_note",
+      "meta_review_finding_severity_contract",
       "kickoff_diagnostic_line"
     ]);
   });

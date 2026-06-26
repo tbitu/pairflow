@@ -71,6 +71,13 @@ function resolvePreviousReviewerVerdict(input: {
     if (envelope.type === "PASS" && envelope.recipient !== input.implementer) {
       continue;
     }
+    if (
+      isRecord(envelope.payload) &&
+      isRecord(envelope.payload.metadata) &&
+      envelope.payload.metadata.delivery_target_role === "reviewer"
+    ) {
+      continue;
+    }
     if (envelope.type === "CONVERGENCE" && envelope.recipient !== "orchestrator") {
       continue;
     }

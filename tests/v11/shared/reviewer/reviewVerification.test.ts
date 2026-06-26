@@ -366,7 +366,7 @@ describe("review verification I/O helpers", () => {
     expect(staleRound.status).toBe("invalid");
 
     const wrongReviewer = await readReviewVerificationArtifactStatus(artifactPath, {
-      expectedReviewer: "opencode"
+      expectedReviewer: "review-gpt" as never
     });
     expect(wrongReviewer.status).toBe("invalid");
   });

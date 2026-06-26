@@ -122,7 +122,7 @@ describe("metaReviewCommandSubmitValidation", () => {
         sessionsPath: "/tmp/runtime-sessions.json",
         readRuntimeSessions: async () => ({}),
         state: createMetaReviewRunningState({
-          active_agent: "opencode"
+          active_agent: "review-gpt" as never
         })
       })
     ).rejects.toMatchObject({

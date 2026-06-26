@@ -119,6 +119,17 @@ async function assertLinkOtherRootsDoNotAlias(input: {
   otherRoot: string;
   fs: SkillsInstallFileSystem;
 }): Promise<void> {
+  if (resolve(input.targetAgentRoot) === resolve(input.otherAgentRoot)) {
+    throw new SkillsInstallError(
+      `Cannot use --link-other when target agent roots resolve to the same directory: ${input.targetAgentRoot} and ${input.otherAgentRoot}`
+    );
+  }
+  if (resolve(input.targetRoot) === resolve(input.otherRoot)) {
+    throw new SkillsInstallError(
+      `Cannot use --link-other when target skills roots resolve to the same directory: ${input.targetRoot} and ${input.otherRoot}`
+    );
+  }
+
   const [targetStatus, otherStatus, targetSkillsStatus, otherSkillsStatus] = await Promise.all([
     input.fs.pathStatus(input.targetAgentRoot),
     input.fs.pathStatus(input.otherAgentRoot),

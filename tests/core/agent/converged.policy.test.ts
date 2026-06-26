@@ -1038,7 +1038,10 @@ describe("emitConvergedFromWorkspace", () => {
         type: "PASS",
         round: 2,
         payload: {
-          summary: "Implementation pass in previous round"
+          summary: "Implementation pass in previous round",
+          metadata: {
+            delivery_target_role: "reviewer"
+          }
         },
         refs: []
       }

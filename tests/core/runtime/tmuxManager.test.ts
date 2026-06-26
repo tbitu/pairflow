@@ -292,6 +292,14 @@ describe("launchBubbleSessionAck", () => {
           });
         }
 
+        if (args[0] === "capture-pane") {
+          return Promise.resolve({
+            stdout: "Ask anything...",
+            stderr: "",
+            exitCode: 0
+          });
+        }
+
         if (args[0] === "send-keys") {
           return Promise.reject(new Error("tmux pane seed failed"));
         }

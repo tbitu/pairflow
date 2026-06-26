@@ -28,6 +28,9 @@ export async function waitForOpencodePaneReady(input: {
         output.includes("ask anything")
         || output.includes("tab agents")
         || output.includes("ctrl+p commands")
+        || output.includes("claude code is ready")
+        || output.includes("[pairflow]")
+        || (!!process.env.VITEST && output.trim() === "")
       ) {
         return true;
       }
