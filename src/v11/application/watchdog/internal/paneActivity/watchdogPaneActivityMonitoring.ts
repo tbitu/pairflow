@@ -9,6 +9,7 @@ import { type WatchdogRuntimeContext } from "../flow/watchdogCommandFlow.js";
 import {
   resolveWatchdogTargetPaneIndex
 } from "../../../../shared/watchdog/watchdogPaneTargeting.js";
+import type { SendAndSubmitTmuxPaneMessagePort } from "../../../../ports/tmuxDelivery.js";
 import { WATCHDOG_PANE_ACTIVITY_SAMPLE_INTERVAL_MS } from "./watchdogPaneActivitySampler.js";
 import type {
   ReadWatchdogPaneActivityPort,
@@ -81,6 +82,11 @@ function buildNextPaneActivityRecord(input: {
       ? input.sampleResult.sampled_at
       : input.previous.last_changed_at;
 
+  const previousLastSeenEsc = input.previous?.last_seen_esc_interrupt_at;
+  const nextLastSeenEsc = input.sampleResult.has_esc_interrupt === false
+    ? (previousLastSeenEsc ?? input.sampleResult.sampled_at)
+    : input.sampleResult.sampled_at;
+
   return {
     bubble_id: input.bubbleId,
     sampled_at: input.sampleResult.sampled_at,
@@ -88,7 +94,9 @@ function buildNextPaneActivityRecord(input: {
     last_changed_at: nextLastChangedAt,
     session_name: input.sampleResult.session_name,
     target_pane: input.sampleResult.target_pane,
-    last_sample_status: "sampled"
+    last_sample_status: "sampled",
+    last_seen_esc_interrupt_at: nextLastSeenEsc,
+    ...(input.previous?.last_nudge_at !== undefined ? { last_nudge_at: input.previous.last_nudge_at } : {})
   };
 }
 
@@ -123,6 +131,7 @@ export async function maybeMonitorWatchdogPaneActivity(input: {
   samplePaneActivity: SampleWatchdogPaneActivityFn;
   readRuntimeSessionsRegistry: BubbleWatchdogDependencies["readRuntimeSessionsRegistry"];
   runTmux: BubbleWatchdogDependencies["runTmux"];
+  sendAndSubmitTmuxPaneMessage?: SendAndSubmitTmuxPaneMessagePort;
 }): Promise<WatchdogPaneActivityState | null> {
   if (
     !input.monitored
@@ -177,6 +186,34 @@ export async function maybeMonitorWatchdogPaneActivity(input: {
       previousReadStatus: readResult.status,
       sampleResult
     });
+
+    if (
+      input.context.state.state === "RUNNING" &&
+      input.context.state.active_role !== null &&
+      sampleResult.has_esc_interrupt === false
+    ) {
+      const lastSeenMs = parseIsoTimestamp(currentRecord.last_seen_esc_interrupt_at) ?? input.context.now.getTime();
+      const elapsedSinceLastSeenMs = input.context.now.getTime() - lastSeenMs;
+
+      const lastNudgeMs = parseIsoTimestamp(currentRecord.last_nudge_at) ?? 0;
+      const elapsedSinceLastNudgeMs = input.context.now.getTime() - lastNudgeMs;
+
+      if (elapsedSinceLastSeenMs >= 2 * 60_000 && elapsedSinceLastNudgeMs >= 2 * 60_000) {
+        const nudgeMessage = 'Continue exactly where you left off. Do not summarize or repeat the previous text. Remember your task only ends when you run "pairflow agent emit", never before.';
+        const paneIndex = resolveWatchdogTargetPaneIndex(input.context.state.active_role);
+        const targetPane = `${sampleResult.session_name}:0.${paneIndex}`;
+
+        if (input.sendAndSubmitTmuxPaneMessage) {
+          try {
+            await input.sendAndSubmitTmuxPaneMessage(input.runTmux, targetPane, nudgeMessage);
+            currentRecord.last_nudge_at = input.context.now.toISOString();
+          } catch {
+            // Best effort logging
+          }
+        }
+      }
+    }
+
     await input.writePaneActivity({
       runtimeDir: input.context.resolved.bubblePaths.runtimeDir,
       bubbleId: input.context.resolved.bubbleId,

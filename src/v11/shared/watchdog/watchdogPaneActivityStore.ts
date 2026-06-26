@@ -9,6 +9,8 @@ export interface WatchdogPaneActivityRecord {
   target_pane?: string;
   last_sample_status?: "sampled" | "no_session" | "pane_unreadable";
   last_sample_error?: string;
+  last_seen_esc_interrupt_at?: string;
+  last_nudge_at?: string;
 }
 
 export type ReadWatchdogPaneActivityResult =

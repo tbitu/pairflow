@@ -160,7 +160,8 @@ describe("watchdogPaneActivitySampler", () => {
       pane_hash: paneHash,
       changed: false,
       session_name: "pf-watchdog-sampler",
-      target_pane: "pf-watchdog-sampler:0.1"
+      target_pane: "pf-watchdog-sampler:0.1",
+      has_esc_interrupt: false
     });
     expect(runner).toHaveBeenCalledWith(
       [
@@ -172,5 +173,46 @@ describe("watchdogPaneActivitySampler", () => {
       ],
       { allowFailure: true }
     );
+  });
+
+  it("returns has_esc_interrupt=true when the sampled pane stdout contains 'esc interrupt'", async () => {
+    const stdout = "some text\n[esc] interrupt\n";
+    const paneHash = createHash("sha1").update(stdout).digest("hex");
+    const runner = vi.fn<TmuxRunner>(() =>
+      Promise.resolve({
+        stdout,
+        stderr: "",
+        exitCode: 0
+      })
+    );
+
+    const result = await sampleWatchdogPaneActivity({
+      bubbleId: "b_watchdog_sampler_active",
+      bubbleConfig,
+      sessionsPath: "/tmp/runtime-sessions.json",
+      activeRole: "implementer",
+      now: new Date("2026-03-27T20:23:00.000Z"),
+      runner,
+      readSessionsRegistry: () =>
+        Promise.resolve({
+          b_watchdog_sampler_active: {
+            bubbleId: "b_watchdog_sampler_active",
+            repoPath: "/tmp/pairflow",
+            worktreePath: "/tmp/pairflow-worktree",
+            tmuxSessionName: "pf-watchdog-sampler",
+            updatedAt: "2026-03-27T20:21:30.000Z"
+          }
+        })
+    });
+
+    expect(result).toEqual({
+      status: "sampled",
+      sampled_at: "2026-03-27T20:23:00.000Z",
+      pane_hash: paneHash,
+      changed: true,
+      session_name: "pf-watchdog-sampler",
+      target_pane: "pf-watchdog-sampler:0.1",
+      has_esc_interrupt: true
+    });
   });
 });

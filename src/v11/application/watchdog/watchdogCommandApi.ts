@@ -93,7 +93,10 @@ export async function runBubbleWatchdog(
     writePaneActivity,
     samplePaneActivity,
     readRuntimeSessionsRegistry,
-    runTmux
+    runTmux,
+    ...(dependencies.sendAndSubmitTmuxPaneMessage !== undefined
+      ? { sendAndSubmitTmuxPaneMessage: dependencies.sendAndSubmitTmuxPaneMessage }
+      : {})
   });
   const result = await resolveWatchdogLifecycleRoute({
     context,

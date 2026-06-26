@@ -80,12 +80,15 @@ export async function sampleWatchdogPaneActivity(input: {
   }
 
   const paneHash = createHash("sha1").update(capture.stdout).digest("hex");
+  const lower = capture.stdout.toLowerCase();
+  const hasEscInterrupt = lower.includes("esc interrupt") || /\besc\b.*?\binterrupt\b/i.test(lower);
   return {
     status: "sampled",
     sampled_at: sampledAt,
     pane_hash: paneHash,
     changed: input.priorPaneHash === undefined || input.priorPaneHash !== paneHash,
     session_name: sessionName,
-    target_pane: targetPane
+    target_pane: targetPane,
+    has_esc_interrupt: hasEscInterrupt
   };
 }

@@ -5,7 +5,8 @@ import type { AppendProtocolEnvelopePort } from "../../ports/transcript.js";
 import type {
   EmitDeliveryNotificationAckPort,
   ResolveDeliveryMessageRefPort,
-  RetryStuckAgentInputPort
+  RetryStuckAgentInputPort,
+  SendAndSubmitTmuxPaneMessagePort
 } from "../../ports/tmuxDelivery.js";
 import type {
   ReadStateSnapshotPort,
@@ -31,6 +32,7 @@ export type PaneActivitySampleResult =
       changed: boolean;
       session_name: string;
       target_pane: string;
+      has_esc_interrupt?: boolean;
     }
   | {
       status: "no_session";
@@ -79,6 +81,7 @@ export interface BubbleWatchdogDependencies {
   ensureBubbleInstanceIdForMutation: EnsureBubbleInstanceIdForMutationPort;
   resolveDeliveryMessageRef: ResolveDeliveryMessageRefPort;
   retryStuckAgentInput: RetryStuckAgentInputPort;
+  sendAndSubmitTmuxPaneMessage?: SendAndSubmitTmuxPaneMessagePort;
 }
 
 export type BubbleWatchdogNoopReason =

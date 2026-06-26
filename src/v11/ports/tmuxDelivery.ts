@@ -27,6 +27,14 @@ export type ResolveDeliveryMessageRefPort = (
   input: ResolveDeliveryMessageRefInput
 ) => string;
 
+import type { TmuxRunner } from "./tmuxSessions.js";
+
 export type RetryStuckAgentInputPort = (
   input: TmuxDeliveryContract.RetryStuckAgentInputOptions
 ) => Promise<TmuxDeliveryContract.RetryStuckAgentInputResult>;
+
+export type SendAndSubmitTmuxPaneMessagePort = (
+  runner: TmuxRunner,
+  targetPane: string,
+  message: string
+) => Promise<void>;
