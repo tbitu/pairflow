@@ -134,11 +134,9 @@ describe("executePassDelivery", () => {
     expect(refreshCalls[0]).toMatchObject({
       bubbleId: "b_delivery_v11_01"
     });
-    expect(refreshCalls[0]).toHaveProperty("reviewerStartupPrompt");
-    expect(String((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt))
-      .toContain("Verify claims against evidence.");
-    expect(String((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt))
-      .toContain("Prioritize boundary and transition gates.");
+    // OVERFLOW_3: opencode reviewer should not receive startup prompt (avoids double-paste).
+    expect((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt)
+      .toBeUndefined();
 
     expect(emitCalls).toHaveLength(1);
     expect(emitCalls[0]).toMatchObject({
@@ -254,10 +252,9 @@ describe("executePassDelivery", () => {
     );
 
     expect(refreshCalls).toHaveLength(1);
-    expect(String((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt))
-      .toContain("Brief should still appear.");
-    expect(String((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt))
-      .not.toContain("Reviewer Focus (bridged from task artifact `reviewer-focus.json`):");
+    // OVERFLOW_3: opencode reviewer should not receive startup prompt (avoids double-paste).
+    expect((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt)
+      .toBeUndefined();
     expect(result.retried).toBe(false);
   });
 
@@ -652,5 +649,83 @@ describe("executePassDelivery", () => {
       },
       retried: true
     });
+  });
+
+  it("passes reviewer startup prompt for non-opencode reviewers on implementer handoff", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "pairflow-reviewer-delivery-"));
+    const briefPath = join(tempDir, "reviewer-brief.md");
+    const focusPath = join(tempDir, "reviewer-focus.json");
+    await writeFile(briefPath, "Verify claims against evidence.\n", "utf8");
+    await writeFile(
+      focusPath,
+      JSON.stringify({
+        status: "present",
+        source: "section",
+        focus_text: "Prioritize boundary and transition gates."
+      }),
+      "utf8"
+    );
+
+    const refreshCalls: unknown[] = [];
+    const emitCalls: unknown[] = [];
+    const refreshReviewerContext: NonNullable<
+      PassDeliveryDependencies["refreshReviewerContext"]
+    > = async (input) => {
+      refreshCalls.push(input);
+      return {
+        refreshed: true
+      };
+    };
+    const emitDeliveryNotificationAck: NonNullable<
+      PassDeliveryDependencies["emitDeliveryNotificationAck"]
+    > = async (input) => {
+      emitCalls.push(input);
+      return {
+        status: "accepted",
+        message: "ok",
+        sessionName: "pf_bubble",
+        targetPaneIndex: 1
+      };
+    };
+    const reviewerDeliveryDependencies: PassDeliveryDependencies = {
+      refreshReviewerContext,
+      emitDeliveryNotificationAck,
+      readReviewerBriefArtifact,
+      readReviewerFocusArtifact,
+      resolveDeliveryMessageRef
+    };
+
+    // Use a non-opencode agent to verify backward compatibility.
+    const result = await executePassDelivery(
+      {
+        bubbleId: "b_delivery_v11_02",
+        bubbleConfig: {
+          ...createBubbleConfig("fresh"),
+          id: "b_delivery_v11_02",
+          agents: {
+            implementer: "opencode",
+            reviewer: "codex" as never,
+            meta_reviewer: "opencode"
+          }
+        },
+        sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+        reviewerBriefArtifactPath: briefPath,
+        reviewerFocusArtifactPath: focusPath,
+        envelope: createEnvelope(),
+        senderRole: "implementer",
+        recipientRole: "reviewer"
+      },
+      reviewerDeliveryDependencies
+    );
+
+    expect(refreshCalls).toHaveLength(1);
+    // Non-opencode reviewers should still receive startup prompt.
+    expect((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt)
+      .toBeDefined();
+    expect(String((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt))
+      .toContain("Verify claims against evidence.");
+
+    expect(emitCalls).toHaveLength(1);
+    expect(result.retried).toBe(false);
   });
 });
