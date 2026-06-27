@@ -88,7 +88,39 @@ function buildImplementerDeliveryAction(input: {
   envelope: ProtocolEnvelope;
   bubbleConfig: BubbleConfig;
   actorLabel: string | null;
+  isOpencodeRecipient?: boolean;
 }): string {
+  // OVERFLOW_2: For opencode recipients, return minimal action text only.
+  if (input.isOpencodeRecipient) {
+    const event = toImplementerDeliveryEvent(input.envelope.type);
+    switch (event) {
+      case "TASK":
+        return "Implementation task received. Continue implementation.";
+      case "PASS":
+        return "Reviewer feedback received. Implement fixes.";
+      case "HUMAN_REPLY":
+        return "Human response received. Continue implementation using this input.";
+      case "APPROVAL_DECISION": {
+        if (input.envelope.type === "APPROVAL_DECISION" && input.envelope.payload.decision === "rework") {
+          const origin = resolveImplementerReworkOrigin(input.envelope);
+          if (origin === "meta_review_auto_rework") {
+            return "Meta-review auto-rework received. Implement fixes.";
+          }
+          return "Rework received. Implement fixes.";
+        }
+        return "Human approved this bubble. Wait for commit/merge flow and do not continue new implementation in this round.";
+      }
+      case "APPROVAL_REQUEST": {
+        if (input.actorLabel === "meta-reviewer") {
+          return "Meta-reviewer requested human gate decision. Stop coding and wait for human decision (`bubble approve` or `bubble request-rework`). Do not run canonical pass emit now.";
+        }
+        return "Bubble is READY_FOR_HUMAN_APPROVAL. Stop coding and wait for human decision (`bubble approve` or `bubble request-rework`). Do not run canonical pass emit now.";
+      }
+      default:
+        return "Continue protocol from this event.";
+    }
+  }
+
   const docsOnly = input.bubbleConfig.review_artifact_type === "document";
   const validationGuidance = buildImplementerDeliveryValidationGuidance(
     input.bubbleConfig.commands
@@ -114,6 +146,30 @@ function buildReviewerDeliveryAction(input: {
   reviewerFocus?: ReviewerFocusExtractionResult;
 }): string {
   if (input.envelope.type === "PASS") {
+    const isOpencodeReviewer = input.bubbleConfig.agents.reviewer === "opencode";
+
+    // OVERFLOW_1: For opencode reviewers, return minimal handoff text only.
+    if (isOpencodeReviewer) {
+      const parts = [
+        "Implementer handoff received. Run a fresh review now."
+      ];
+      if (input.reviewerTestDirective !== undefined) {
+        parts.push(formatReviewerTestExecutionDirective(input.reviewerTestDirective));
+      } else {
+        const includeFallbackDecisionMatrixReminder =
+          input.bubbleConfig.reviewer_context_mode === "fresh";
+        parts.push(
+          [
+            "Run required checks before final judgment. Reason: reviewer test verification directive was unavailable.",
+            ...(includeFallbackDecisionMatrixReminder
+              ? [buildReviewerDecisionMatrixReminder()]
+              : [])
+          ].join(" ")
+        );
+      }
+      return parts.join(" ");
+    }
+
     const reviewerPolicySnapshotPath = resolveReviewerPolicySnapshotPath(
       input.bubbleConfig
     );
@@ -205,10 +261,12 @@ export function buildTmuxDeliveryMessage(input: {
 
   let action = "Continue protocol from this event.";
   if (input.recipientRole === "implementer") {
+    const isOpencodeRecipient = input.bubbleConfig.agents.implementer === "opencode";
     action = buildImplementerDeliveryAction({
       envelope: input.envelope,
       bubbleConfig: input.bubbleConfig,
-      actorLabel
+      actorLabel,
+      ...(isOpencodeRecipient ? { isOpencodeRecipient } : {})
     });
   } else if (input.recipientRole === "reviewer") {
     action = buildReviewerDeliveryAction({
@@ -226,8 +284,10 @@ export function buildTmuxDeliveryMessage(input: {
         : {})
     });
   } else if (input.recipientRole === "meta-reviewer") {
-    action =
-      `Meta-review task received. Produce autonomous meta-review output and return only through structured submit with required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitApproveParityNote()}`;
+    const isOpencodeRecipient = input.bubbleConfig.agents.meta_reviewer === "opencode";
+    action = isOpencodeRecipient
+      ? "Meta-review task received. Produce autonomous meta-review output."
+      : `Meta-review task received. Produce autonomous meta-review output and return only through structured submit with required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitApproveParityNote()}`;
   } else if (
     input.recipientRole === "human" ||
     input.recipientRole === "orchestrator" ||

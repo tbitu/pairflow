@@ -80,6 +80,16 @@ function requireNonEmptyString(value: unknown, fieldName: string): string {
   return trimmed;
 }
 
+function getOptionalTrimmedString(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+  }
+  return undefined;
+}
+
 function parseWatchdogPaneActivityRecord(value: unknown): WatchdogPaneActivityRecord {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw createPaneActivityStoreError({
@@ -120,21 +130,25 @@ function parseWatchdogPaneActivityRecord(value: unknown): WatchdogPaneActivityRe
     lastSampleStatus = lastSampleStatusRaw;
   }
 
+  const session_name = getOptionalTrimmedString(typed.session_name);
+  const target_pane = getOptionalTrimmedString(typed.target_pane);
+  const last_seen_esc_interrupt_at = getOptionalTrimmedString(typed.last_seen_esc_interrupt_at);
+  const last_nudge_at = getOptionalTrimmedString(typed.last_nudge_at);
+  const last_sample_error = typeof typed.last_sample_error === "string" && typed.last_sample_error.length > 0
+    ? typed.last_sample_error
+    : undefined;
+
   return {
     bubble_id: requireNonEmptyString(typed.bubble_id, "bubble_id"),
     sampled_at: requireNonEmptyString(typed.sampled_at, "sampled_at"),
     pane_hash: requireNonEmptyString(typed.pane_hash, "pane_hash"),
     last_changed_at: requireNonEmptyString(typed.last_changed_at, "last_changed_at"),
-    ...(typeof typed.session_name === "string" && typed.session_name.trim().length > 0
-      ? { session_name: typed.session_name.trim() }
-      : {}),
-    ...(typeof typed.target_pane === "string" && typed.target_pane.trim().length > 0
-      ? { target_pane: typed.target_pane.trim() }
-      : {}),
+    ...(session_name !== undefined ? { session_name } : {}),
+    ...(target_pane !== undefined ? { target_pane } : {}),
     ...(lastSampleStatus !== undefined ? { last_sample_status: lastSampleStatus } : {}),
-    ...(typeof typed.last_sample_error === "string" && typed.last_sample_error.length > 0
-      ? { last_sample_error: typed.last_sample_error }
-      : {})
+    ...(last_sample_error !== undefined ? { last_sample_error } : {}),
+    ...(last_seen_esc_interrupt_at !== undefined ? { last_seen_esc_interrupt_at } : {}),
+    ...(last_nudge_at !== undefined ? { last_nudge_at } : {})
   };
 }
 

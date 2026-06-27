@@ -79,13 +79,17 @@ export async function resolveDeliveryInitialDelayMs(input: {
     return undefined;
   }
 
+  // OVERFLOW_3: Skip startup prompt for opencode reviewers to avoid double-paste.
+  const isOpencodeReviewer = input.executeInput.bubbleConfig.agents.reviewer === "opencode";
+  const effectivePrompt = isOpencodeReviewer ? undefined : input.reviewerStartupPrompt;
+
   // Best effort only; protocol/state progression must not fail if tmux refresh fails.
   const refreshResult = await input.refreshReviewer({
     bubbleId: input.executeInput.bubbleId,
     bubbleConfig: input.executeInput.bubbleConfig,
     sessionsPath: input.executeInput.sessionsPath,
-    ...(input.reviewerStartupPrompt !== undefined
-      ? { reviewerStartupPrompt: input.reviewerStartupPrompt }
+    ...(effectivePrompt !== undefined
+      ? { reviewerStartupPrompt: effectivePrompt }
       : {})
   }).catch(() => undefined);
   if (refreshResult?.refreshed === true) {

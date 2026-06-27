@@ -48,4 +48,30 @@ describe("metaReviewSubmitGuidance", () => {
     expect(note).toContain("do not switch to inconclusive");
     expect(note).toContain("findings_claim_state=open_findings");
   });
+
+  it("returns empty string for opencode meta-reviewer agent", () => {
+    const prompt = buildMetaReviewerStartupPrompt({
+      bubbleId: "bubble_demo",
+      repoPath: "/tmp/repo",
+      workspacePath: "/tmp/repo/.pairflow-worktrees/bubble_demo",
+      taskArtifactPath: "/tmp/repo/.pairflow/bubbles/bubble_demo/artifacts/task.md",
+      pairflowCommandProfile: "external",
+      agentName: "opencode"
+    });
+
+    expect(prompt).toBe("");
+  });
+
+  it("returns full prompt when agent is not opencode", () => {
+    const prompt = buildMetaReviewerStartupPrompt({
+      bubbleId: "bubble_demo",
+      repoPath: "/tmp/repo",
+      workspacePath: "/tmp/repo/.pairflow-worktrees/bubble_demo",
+      taskArtifactPath: "/tmp/repo/.pairflow/bubbles/bubble_demo/artifacts/task.md",
+      pairflowCommandProfile: "external",
+      agentName: "codex" as never
+    });
+
+    expect(prompt).toContain(buildMetaReviewSubmitCommandTemplate());
+  });
 });

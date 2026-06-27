@@ -100,7 +100,12 @@ export function buildMetaReviewerStartupPrompt(input: {
   workspacePath: string;
   taskArtifactPath: string;
   pairflowCommandProfile: PairflowCommandProfile;
+  agentName?: AgentName;
 }): string {
+  if (input.agentName === "opencode") {
+    return "";
+  }
+
   return buildRolePromptConcernLines({
     role: "meta_reviewer",
     phase: "startup",

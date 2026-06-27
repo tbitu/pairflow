@@ -54,7 +54,9 @@ describe("watchdogPaneActivityStore", () => {
         last_changed_at: "2026-03-27T18:55:00.000Z",
         session_name: "pf-watchdog-store",
         target_pane: "pf-watchdog-store:0.1",
-        last_sample_status: "sampled"
+        last_sample_status: "sampled",
+        last_seen_esc_interrupt_at: "2026-03-27T18:58:00.000Z",
+        last_nudge_at: "2026-03-27T18:59:00.000Z"
       }
     });
 
@@ -63,6 +65,8 @@ describe("watchdogPaneActivityStore", () => {
     );
     const raw = await readFile(path, "utf8");
     expect(raw).toContain("\"pane_hash\": \"pane-hash-01\"");
+    expect(raw).toContain("\"last_seen_esc_interrupt_at\": \"2026-03-27T18:58:00.000Z\"");
+    expect(raw).toContain("\"last_nudge_at\": \"2026-03-27T18:59:00.000Z\"");
 
     const result = await readWatchdogPaneActivity({
       runtimeDir,
@@ -78,7 +82,9 @@ describe("watchdogPaneActivityStore", () => {
         last_changed_at: "2026-03-27T18:55:00.000Z",
         session_name: "pf-watchdog-store",
         target_pane: "pf-watchdog-store:0.1",
-        last_sample_status: "sampled"
+        last_sample_status: "sampled",
+        last_seen_esc_interrupt_at: "2026-03-27T18:58:00.000Z",
+        last_nudge_at: "2026-03-27T18:59:00.000Z"
       }
     });
   });
