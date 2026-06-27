@@ -12,6 +12,7 @@ owners:
 task_order:
   - 1a-prompt-delivery-dedup
   - 1b-prompt-weighting-consistency
+  - 3-opencode-prompt-overflow-fix
 active_task_id: null
 archive_group: 2026-06-20-prompt-validation-v1
 task_tracker:
@@ -20,6 +21,9 @@ task_tracker:
     status: draft
   - task_id: 1b-prompt-weighting-consistency
     task_path: plans/tasks/1b-prompt-weighting-consistency.md
+    status: draft
+  - task_id: 3-opencode-prompt-overflow-fix
+    task_path: plans/tasks/3-opencode-prompt-overflow-fix.md
     status: draft
 ---
 
@@ -104,6 +108,7 @@ This plan covers three validation surfaces:
 |---|---|---|---|---|---|
 | `1a-prompt-delivery-dedup` | `null` | Build delivery dedup registry and audit/migrate callers | N/A | Delivery double-send prevention | not_created |
 | `1b-prompt-weighting-consistency` | `null` | Audit role prompts for agent-emit weighting; add validation test | N/A | Agent finish-by-emit enforcement consistency | not_created |
+| `3-opencode-prompt-overflow-fix` | `plans/tasks/3-opencode-prompt-overflow-fix.md` | Fix opencode prompt overflow and duplicate handover/refresh prompts | N/A | Opencode input pane overflow and duplicate handover prompts | draft |
 
 ## Coverage Map
 
@@ -112,6 +117,7 @@ This plan covers three validation surfaces:
 | Multiple callers can independently deliver the same envelope type | `1a-prompt-delivery-dedup` | Dedup registry + caller audit covers all entry points in one task since they share a common dependency (`emitDeliveryNotificationAck`) and the fix is centralized. |
 | Watchdog retry could produce duplicates | `1a-prompt-delivery-dedup` | Included in dedup task — watchdog's `retryStuckAgentInput` must use same dedup registry to verify pre-retry status. |
 | Agent-emit directive varies across roles/phases | `1b-prompt-weighting-consistency` | Prompt concern catalog audit + validation test. |
+| Opencode input pane overflow and duplicate prompts during handover/refresh | `3-opencode-prompt-overflow-fix` | Minimizes handover delivery prompts and avoids duplicate context refresh pastes for opencode. |
 
 ## Dependencies and Order
 
