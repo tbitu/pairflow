@@ -1114,7 +1114,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 TASK orchestrator->opencode msg=msg_20260222_201 ref=artifact://meta-review-task.md."),
+            submittedOpencodeReadyPaneOutput("# [pairflow] r1 TASK orchestrator->codex msg=msg_20260222_201 ref=artifact://meta-review-task.md."),
           stderr: "",
           exitCode: 0
         });
@@ -1128,12 +1128,19 @@ describe("emitDeliveryNotificationAck", () => {
 
     const result = await emitDeliveryNotificationAck({
       bubbleId: "b_delivery_01",
-      bubbleConfig: createSharedAgentConfig("opencode"),
+      bubbleConfig: {
+        ...createSharedAgentConfig("opencode"),
+        agents: {
+          implementer: "codex" as never,
+          reviewer: "codex" as never,
+          meta_reviewer: "codex" as never
+        }
+      },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_201",
         sender: "orchestrator",
-        recipient: "opencode",
+        recipient: "codex" as never,
         type: "TASK",
         payload: {
           summary: "Run meta-review now.",
@@ -1458,7 +1465,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleId: "b_delivery_01",
       bubbleConfig: {
         ...baseConfig,
-        reviewer_context_mode: "fresh"
+        reviewer_context_mode: "fresh",
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope(),
@@ -1724,7 +1735,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleConfig: {
         ...baseConfig,
         review_artifact_type: "document",
-        reviewer_context_mode: "fresh"
+        reviewer_context_mode: "fresh",
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope(),
@@ -1779,7 +1794,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleId: "b_delivery_01",
       bubbleConfig: {
         ...baseConfig,
-        reviewer_context_mode: "persistent"
+        reviewer_context_mode: "persistent",
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope(),
@@ -1830,7 +1849,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleId: "b_delivery_01",
       bubbleConfig: {
         ...baseConfig,
-        reviewer_context_mode: "fresh"
+        reviewer_context_mode: "fresh",
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
@@ -1890,7 +1913,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleId: "b_delivery_01",
       bubbleConfig: {
         ...baseConfig,
-        reviewer_context_mode: "fresh"
+        reviewer_context_mode: "fresh",
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
@@ -1962,7 +1989,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleId: "b_delivery_01",
       bubbleConfig: {
         ...baseConfig,
-        reviewer_context_mode: "fresh"
+        reviewer_context_mode: "fresh",
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
@@ -1977,7 +2008,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleId: "b_delivery_01",
       bubbleConfig: {
         ...baseConfig,
-        reviewer_context_mode: "fresh"
+        reviewer_context_mode: "fresh",
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
@@ -2069,6 +2104,10 @@ describe("emitDeliveryNotificationAck", () => {
           reviewer_blocking_min_severity: "P2",
           meta_review_auto_rework_min_severity: "P3",
           meta_review_consecutive_clean_runs_required: 1,
+        },
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
         }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
@@ -2090,6 +2129,10 @@ describe("emitDeliveryNotificationAck", () => {
           reviewer_blocking_min_severity: "P1",
           meta_review_auto_rework_min_severity: "P3",
           meta_review_consecutive_clean_runs_required: 1,
+        },
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
         }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
@@ -2180,7 +2223,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleId: "b_delivery_01",
       bubbleConfig: {
         ...baseConfig,
-        reviewer_context_mode: "fresh"
+        reviewer_context_mode: "fresh",
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
@@ -2197,7 +2244,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleId: "b_delivery_01",
       bubbleConfig: {
         ...baseConfig,
-        reviewer_context_mode: "fresh"
+        reviewer_context_mode: "fresh",
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
@@ -2263,7 +2314,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleId: "b_delivery_01",
       bubbleConfig: {
         ...baseConfig,
-        reviewer_context_mode: "fresh"
+        reviewer_context_mode: "fresh",
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope(),
@@ -2319,7 +2374,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleId: "b_delivery_01",
       bubbleConfig: {
         ...baseConfig,
-        review_artifact_type: "document"
+        review_artifact_type: "document",
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope(),
@@ -2694,7 +2753,11 @@ describe("emitDeliveryNotificationAck", () => {
         bubbleId: "b_delivery_01",
         bubbleConfig: {
           ...baseConfig,
-          review_artifact_type: "document"
+          review_artifact_type: "document",
+          agents: {
+            ...baseConfig.agents,
+            implementer: "codex" as never
+          }
         },
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
         envelope,
@@ -2752,7 +2815,11 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleId: "b_delivery_01",
       bubbleConfig: {
         ...baseConfig,
-        review_artifact_type: "code"
+        review_artifact_type: "code",
+        agents: {
+          ...baseConfig.agents,
+          implementer: "codex" as never
+        }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
@@ -2814,6 +2881,10 @@ describe("emitDeliveryNotificationAck", () => {
         commands: {
           ...baseConfig.commands,
           validation_required: []
+        },
+        agents: {
+          ...baseConfig.agents,
+          implementer: "codex" as never
         }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
