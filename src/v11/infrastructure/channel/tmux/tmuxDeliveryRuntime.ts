@@ -107,7 +107,7 @@ export interface TmuxDeliveryTimingOptions {
   markerRetryDelayMs?: number;
 }
 
-async function ensureOpencodePaneReady(input: {
+export async function ensureOpencodePaneReady(input: {
   runner: TmuxRunner;
   targetPane: string;
   respawnExpectedPaneAgent?: () => Promise<void>;

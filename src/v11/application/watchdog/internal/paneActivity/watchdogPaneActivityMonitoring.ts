@@ -17,6 +17,11 @@ import type {
   WatchdogPaneActivityRecord,
   WriteWatchdogPaneActivityPort
 } from "../../../../ports/watchdogPaneActivity.js";
+import { ensureOpencodePaneReady } from "../../../../infrastructure/channel/tmux/tmuxDeliveryRuntime.js";
+import { buildAgentCommand } from "../../../../shared/command/agentCommand.js";
+import { respawnTmuxPaneCommand } from "../../../../infrastructure/channel/tmux/tmuxManager.js";
+import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
+import { resolveRuntimeSessionWorkspaceAuthority } from "../../../../shared/runtimeSessionWorkspaceAuthority.js";
 
 export interface WatchdogPaneActivityState {
   readStatus: "ok" | "missing" | "invalid";
@@ -205,6 +210,71 @@ export async function maybeMonitorWatchdogPaneActivity(input: {
 
         if (input.sendAndSubmitTmuxPaneMessage) {
           try {
+            const activeRole = input.context.state.active_role;
+            const expectedPaneAgent = activeRole === "implementer"
+              ? input.context.resolved.bubbleConfig.agents.implementer
+              : activeRole === "reviewer"
+              ? input.context.resolved.bubbleConfig.agents.reviewer
+              : activeRole === "meta_reviewer"
+              ? input.context.resolved.bubbleConfig.agents.meta_reviewer
+              : undefined;
+
+            if (expectedPaneAgent === "opencode") {
+              const expectedAgentRole = activeRole;
+              const roleModel = activeRole === "implementer"
+                ? input.context.resolved.bubbleConfig.agents.implementer_model
+                : activeRole === "reviewer"
+                ? input.context.resolved.bubbleConfig.agents.reviewer_model
+                : activeRole === "meta_reviewer"
+                ? input.context.resolved.bubbleConfig.agents.meta_reviewer_model
+                : undefined;
+              const roleMcpPolicy =
+                input.context.resolved.bubbleConfig.role_mcp?.[expectedAgentRole]
+                ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE[expectedAgentRole];
+
+              const registry = await input.readRuntimeSessionsRegistry(
+                input.context.resolved.bubblePaths.sessionsPath,
+                { allowMissing: true }
+              );
+              const sessionRecord = registry[input.context.resolved.bubbleId];
+              const workspaceAuthority = resolveRuntimeSessionWorkspaceAuthority({
+                runtimeSessionRecord: sessionRecord
+              });
+              const workspacePath = workspaceAuthority.status === "resolved"
+                ? workspaceAuthority.authority.workspacePath
+                : input.context.resolved.bubblePaths.worktreePath;
+
+              const opencodePaneReady = await ensureOpencodePaneReady({
+                runner: input.runTmux,
+                targetPane,
+                respawnExpectedPaneAgent: async (): Promise<void> => {
+                  const respawnCommand = buildAgentCommand({
+                    agentName: "opencode",
+                    roleName: expectedAgentRole,
+                    roleMcpPolicy,
+                    ...(roleModel !== undefined ? { model: roleModel } : {}),
+                    bubbleId: input.context.resolved.bubbleId,
+                    workspacePath,
+                    pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile
+                  });
+                  await respawnTmuxPaneCommand({
+                    sessionName: sampleResult.session_name,
+                    paneIndex,
+                    cwd: workspacePath,
+                    command: respawnCommand,
+                    runner: input.runTmux
+                  });
+                }
+              });
+              if (!opencodePaneReady) {
+                return {
+                  readStatus: readResult.status,
+                  currentRecord,
+                  sampleResult
+                };
+              }
+            }
+
             await input.sendAndSubmitTmuxPaneMessage(input.runTmux, targetPane, nudgeMessage);
             currentRecord.last_nudge_at = input.context.now.toISOString();
           } catch {
