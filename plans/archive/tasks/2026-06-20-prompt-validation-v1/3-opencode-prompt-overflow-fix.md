@@ -1,7 +1,7 @@
 ---
 artifact_type: Task
 artifact_id: task_opencode_prompt_overflow_fix_v1
-status: draft
+status: archived
 phase: null
 target_files:
   - src/v11/infrastructure/channel/tmux/tmuxDeliveryMessageBuilder.ts

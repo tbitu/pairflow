@@ -13,7 +13,8 @@ task_order:
   - 1a-prompt-delivery-dedup
   - 1b-prompt-weighting-consistency
   - 3-opencode-prompt-overflow-fix
-active_task_id: null
+active_task_id: 1a-prompt-delivery-dedup
+last_completed_task_id: 3-opencode-prompt-overflow-fix
 archive_group: 2026-06-20-prompt-validation-v1
 task_tracker:
   - task_id: 1a-prompt-delivery-dedup
@@ -23,8 +24,8 @@ task_tracker:
     task_path: plans/tasks/1b-prompt-weighting-consistency.md
     status: draft
   - task_id: 3-opencode-prompt-overflow-fix
-    task_path: plans/tasks/3-opencode-prompt-overflow-fix.md
-    status: draft
+    task_path: plans/archive/tasks/2026-06-20-prompt-validation-v1/3-opencode-prompt-overflow-fix.md
+    status: archived
 ---
 
 # Plan: Prompt Sending and Processing Validation
@@ -108,7 +109,7 @@ This plan covers three validation surfaces:
 |---|---|---|---|---|---|
 | `1a-prompt-delivery-dedup` | `null` | Build delivery dedup registry and audit/migrate callers | N/A | Delivery double-send prevention | not_created |
 | `1b-prompt-weighting-consistency` | `null` | Audit role prompts for agent-emit weighting; add validation test | N/A | Agent finish-by-emit enforcement consistency | not_created |
-| `3-opencode-prompt-overflow-fix` | `plans/tasks/3-opencode-prompt-overflow-fix.md` | Fix opencode prompt overflow and duplicate handover/refresh prompts | N/A | Opencode input pane overflow and duplicate handover prompts | draft |
+| `3-opencode-prompt-overflow-fix` | `plans/archive/tasks/2026-06-20-prompt-validation-v1/3-opencode-prompt-overflow-fix.md` | Fix opencode prompt overflow and duplicate handover/refresh prompts | N/A | Opencode input pane overflow and duplicate handover prompts | archived |
 
 ## Coverage Map
 
