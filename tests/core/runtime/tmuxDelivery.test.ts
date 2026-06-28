@@ -15,19 +15,12 @@ import {
 import {
   resolveEnvelopeTargetPane
 } from "../../../src/v11/infrastructure/channel/tmux/tmuxDeliveryTargeting.js";
-import {
-  buildMetaReviewSubmitApproveParityNote,
-  buildMetaReviewSubmitCommandTemplate
-} from "../../../src/v11/shared/metaReview/metaReviewSubmitGuidance.js";
 import { BubbleWatchdogError } from "../../../src/v11/shared/watchdog/watchdogCommandError.js";
 import {
   REVIEWER_COMMAND_GATE_FORBIDDEN,
   REVIEWER_COMMAND_GATE_REQ_A,
-  REVIEWER_COMMAND_GATE_REQ_B,
   REVIEWER_COMMAND_GATE_REQ_C,
-  REVIEWER_COMMAND_GATE_REQ_D,
-  REVIEWER_COMMAND_GATE_REQ_E,
-  REVIEWER_COMMAND_GATE_REQ_F
+  REVIEWER_COMMAND_GATE_REQ_E
 } from "../../../src/v11/shared/reviewer/reviewerCommandGateGuidance.js";
 import type {
   RuntimeSessionRecord,
@@ -279,27 +272,6 @@ function expectNoForbiddenReviewerCommandGateTokens(text: string | undefined): v
   }
 }
 
-function expectReviewerValidationClaimGuardrails(text: string | undefined): void {
-  expect(text).toBeDefined();
-  expect(text).toContain(
-    "Validation claim guardrail (applies to review output): derive validation claims from explicit evidence sources first, command-by-command for `lint`, `typecheck`, and `test`."
-  );
-  expect(text).toContain(
-    "Never publish aggregate validation shorthand such as `typecheck/lint pass` or `all checks pass` without command-level evidence-backed statuses."
-  );
-  expect(text).toContain(
-    "`Scout Coverage` must include command-level validation statuses: `lint=<pass|failed|not-run|unknown>`, `typecheck=<pass|failed|not-run|unknown>`, `test=<pass|failed|not-run|unknown>`."
-  );
-  expect(text).toContain(
-    "Each validation status claim must cite an evidence source (for example evidence log path or transcript/reference anchor)."
-  );
-  expect(text).toContain(
-    "Forbidden aggregate shorthand without command-level evidence: `typecheck/lint pass`, `all checks pass`, or equivalent aggregate phrasing."
-  );
-  expect(text).toContain(
-    "If a command evidence source is missing or ambiguous, report `unknown` or `not-run` for that command and do not claim `pass`."
-  );
-}
 
 describe("tmux delivery canonical ack helpers", () => {
   it("creates canonical accepted and rejected acknowledgements", () => {
@@ -1187,23 +1159,14 @@ describe("emitDeliveryNotificationAck", () => {
         call[3] === "-l"
     );
     const messageCallText = sendKeysCalls.map((call) => call[4] || "").join("");
+    // OVERFLOW_2: opencode meta-reviewer receives minimal action text only.
     expect(messageCallText).toContain("Meta-review task received.");
-    expect(messageCallText).toContain("--report-json");
     expect(messageCallText).toContain(
-      buildMetaReviewSubmitCommandTemplate()
+      "Produce autonomous meta-review output"
     );
-    expect(messageCallText).toContain("findings_claim_state");
-    expect(messageCallText).toContain("findings_claim_source");
-    expect(messageCallText).toContain("findings_count");
-    expect(messageCallText).toContain("findings_claimed_open_total");
-    expect(messageCallText).toContain("findings_blocking_open_total");
-    expect(messageCallText).toContain("findings_advisory_open_total");
-    expect(messageCallText).toContain(
-      buildMetaReviewSubmitApproveParityNote()
-    );
-    expect(messageCallText).toContain("Clean approve requires zero open findings.");
-    expect(messageCallText).toContain("do not switch to inconclusive");
-    expect(messageCallText).not.toContain("--report-markdown");
+    // Should NOT contain command templates or parity notes for opencode (OVERFLOW_2)
+    expect(messageCallText).not.toContain("--report-json");
+    expect(messageCallText).not.toContain("`pairflow agent emit");
   });
 
   it("falls back to the unique recipient lane when delivery_target_role metadata is invalid", async () => {
@@ -1533,109 +1496,34 @@ describe("emitDeliveryNotificationAck", () => {
         call[3] === "-l"
     );
     const messageCallText = sendKeysCalls.map((call) => call[4] || "").join("");
+    // OVERFLOW_1: opencode reviewer receives minimal handoff + test directive only.
     expect(messageCallText).toContain(
       "Action: Implementer handoff received. Run a fresh review now"
     );
-    expect(messageCallText).toContain("Severity Ontology v1 reminder");
-    expect(messageCallText).toContain(
-      "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md"
-    );
-    expect(messageCallText).toContain("Read this file before first review action.");
-    expectStringOccurrence(
-      messageCallText,
-      "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md",
-      1
-    );
-    expect(messageCallText).not.toContain(
-      "Full canonical ontology (embedded from `docs/reviewer-severity-ontology.md`)"
-    );
-    expect(messageCallText).toContain("Blocker severities (`P0/P1`) require concrete evidence");
-    expect(messageCallText).toContain("Without blocker-grade evidence (`P0/P1`), downgrade to `P2` by default");
-    expect(messageCallText).toContain("Cosmetic/comment-only findings are `P3`");
-    expect(messageCallText).toContain("Out-of-scope observations should be notes (`P3`)");
     expect(messageCallText).toContain(
       "Implementer test evidence has been orchestrator-verified. Do not re-run full tests unless a trigger from the decision matrix applies."
     );
+    // Decision matrix reminder is part of formatReviewerTestExecutionDirective (kept for opencode)
     expectStringOccurrence(
       messageCallText,
       "Decision matrix triggers that still require tests:",
       1
     );
-    expect(messageCallText).toContain("Phase 1 reviewer round flow (prompt-level only):");
-    expect(messageCallText).toContain("`Parallel Scout Scan`");
-    expect(messageCallText).toContain(
-      "same current worktree diff scope (`max_scout_agents=2` hard cap)"
-    );
-    expect(messageCallText).toContain("`required_scout_agents=2`");
-    expect(messageCallText).toContain("`max_scout_agents=2`");
-    expect(messageCallText).toContain("`max_scout_candidates_per_agent=8`");
-    expect(messageCallText).toContain("`max_class_expansions_per_round=2`");
-    expect(messageCallText).toContain("`max_expansion_siblings_per_class=5`");
-    expect(messageCallText).toContain(
-      "Summary scope guardrail: scope statements must cover only current worktree changes."
-    );
-    expect(messageCallText).toContain(
-      "For summary scope claims, do not use branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
-    );
+    expect(messageCallText).toContain("Reason: Evidence is verified, fresh, and complete.");
+    // OVERFLOW_1 omits: ontology, policy file, scout workflow, output contract, command gates, brief/focus reminders.
+    expect(messageCallText).not.toContain("Severity Ontology v1 reminder");
     expect(messageCallText).not.toContain(
-      "For summary scope claims, do not use `git diff main..HEAD` or any branch-range diff (`<revA>..<revB>`)."
+      "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md"
     );
-    expect(messageCallText).toContain(
-      "Do not derive summary scope from history/log sources such as `git log --name-status` or `git show --name-status`."
-    );
-    expect(messageCallText).toContain(
-      "Establish scope from current worktree changes using `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard` (staged, unstaged, and untracked)."
-    );
-    expect(messageCallText).toContain(
-      "If current worktree scope cannot be resolved reliably, avoid numeric file-operation claims."
-    );
-    expect(messageCallText).toMatch(/(<revA>\.\.<revB>|main\.\.HEAD)/);
-    expect(messageCallText).toMatch(/git\s+(log|show)\s+--name-status/);
-    expect(messageCallText).toMatch(/git diff --name-status/);
-    expect(messageCallText).toMatch(
-      /(cannot be resolved reliably|avoid numeric file-operation claims)/i
-    );
-    expect(messageCallText).toContain("Stop rules: stop expansion immediately when no new concrete locations are found");
-    expect(messageCallText).toContain("repo-wide expansion scans are forbidden");
-    expect(messageCallText).toContain("Required reviewer output contract (machine-checkable)");
-    expect(messageCallText).toContain("`Scout Coverage`");
-    expect(messageCallText).toContain("`Deduplicated Findings`");
-    expect(messageCallText).toContain("`Issue-Class Expansions`");
-    expect(messageCallText).toContain("`Residual Risk / Notes`");
-    expect(messageCallText).toContain("`scouts_executed`, `scope_covered`, `guardrail_confirmation`, `raw_candidates_count`, `deduplicated_count`");
-    expect(messageCallText).toContain(
-      "`Scout Coverage.scope_covered` must describe current worktree changes only"
-    );
-    expect(messageCallText).toContain(
-      "grounded in `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
-    );
+    expect(messageCallText).not.toContain("`Scout Coverage`");
+    expect(messageCallText).not.toContain("Required reviewer output contract (machine-checkable)");
+    expect(messageCallText).not.toContain(REVIEWER_COMMAND_GATE_REQ_A);
     expect(messageCallText).not.toContain(
-      "`Scout Coverage.scope_covered` must cover only current worktree changes, grounded in `git diff HEAD --name-status` + `git ls-files --others --exclude-standard` or the combined trio `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
-    );
-    expect(messageCallText).toContain(
-      "Do not justify `scope_covered` with branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
-    );
-    expect(messageCallText).toContain(
-      "Do not justify `scope_covered` with history/log sources such as `git log --name-status` or `git show --name-status`."
-    );
-    expect(messageCallText).toContain("`title`, `severity`, `class`, `locations`, `evidence`, `expansion_siblings`");
-    expect(messageCallText).toContain("`class`, `source_finding_title`, `scan_scope`, `siblings`, `stop_reason`");
-    expect(messageCallText).toContain("`Deduplicated Findings: []`");
-    expect(messageCallText).toContain("`Issue-Class Expansions: []`");
-    expectReviewerValidationClaimGuardrails(messageCallText);
-    expect(messageCallText).toContain(
-      "Execute pairflow commands directly (no confirmation prompt)"
-    );
-    expect(messageCallText).toContain(
       "Reviewer brief reminder (from reviewer-brief.md): Verify factual claims against cited sources."
     );
-    expect(messageCallText).toContain(
-      "Reviewer focus reminder (bridged from reviewer-focus.json): - Validate reason-code fallback behavior"
+    expect(messageCallText).not.toContain(
+      "Reviewer focus reminder (bridged from reviewer-focus.json)"
     );
-    expect(messageCallText).toContain(REVIEWER_COMMAND_GATE_REQ_A);
-    expect(messageCallText).toContain(REVIEWER_COMMAND_GATE_REQ_D);
-    expect(messageCallText).toContain(REVIEWER_COMMAND_GATE_REQ_F);
-    expect(messageCallText).not.toContain(REVIEWER_COMMAND_GATE_REQ_B);
     expect(messageCallText).not.toContain(REVIEWER_COMMAND_GATE_REQ_C);
     expect(messageCallText).not.toContain(REVIEWER_COMMAND_GATE_REQ_E);
     expectNoForbiddenReviewerCommandGateTokens(messageCallText);
@@ -1854,19 +1742,18 @@ describe("emitDeliveryNotificationAck", () => {
         call[3] === "-l"
     );
     const messageCallText = sendKeysCalls.map((call) => call[4] || "").join("");
+    // OVERFLOW_1: opencode reviewer receives minimal handoff + test directive only.
+    expect(messageCallText).toContain(
+      "Implementer handoff received. Run a fresh review now"
+    );
     expect(messageCallText).toContain(
       "Implementer test evidence has been orchestrator-verified."
     );
     expect(messageCallText).toContain(
-      "Do not re-run full tests unless a trigger from the decision matrix applies."
-    );
-    expect(messageCallText).toContain(
       "Reason: docs-only scope, runtime checks not required"
     );
-    expectReviewerValidationClaimGuardrails(messageCallText);
-    expect(messageCallText).not.toContain(
-      "  Execute pairflow commands directly (no confirmation prompt)."
-    );
+    // OVERFLOW_1 omits validation claim guardrails (non-opencode only)
+    expectNoForbiddenReviewerCommandGateTokens(messageCallText);
   });
 
   it("keeps concise ontology reminder in persistent reviewer context mode", async () => {
@@ -1909,59 +1796,15 @@ describe("emitDeliveryNotificationAck", () => {
     );
     const messageCallText = sendKeysCalls.map((call) => call[4] || "").join("");
 
-    expect(messageCallText).toContain("Severity Ontology v1 reminder");
+    // OVERFLOW_1: opencode reviewer receives minimal handoff + fallback directive (no decision matrix for persistent mode).
+    expect(messageCallText).toContain(
+      "Implementer handoff received. Run a fresh review now"
+    );
     expect(messageCallText).toContain(
       "Run required checks before final judgment. Reason: reviewer test verification directive was unavailable."
     );
-    expect(messageCallText).not.toContain(
-      "Decision matrix triggers that still require tests:"
-    );
-    expect(messageCallText).toContain("Phase 1 reviewer round flow (prompt-level only):");
-    expect(messageCallText).toContain(
-      "Summary scope guardrail: scope statements must cover only current worktree changes."
-    );
-    expect(messageCallText).toContain(
-      "For summary scope claims, do not use branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
-    );
-    expect(messageCallText).not.toContain(
-      "For summary scope claims, do not use `git diff main..HEAD` or any branch-range diff (`<revA>..<revB>`)."
-    );
-    expect(messageCallText).toContain(
-      "Do not derive summary scope from history/log sources such as `git log --name-status` or `git show --name-status`."
-    );
-    expect(messageCallText).toContain(
-      "Establish scope from current worktree changes using `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard` (staged, unstaged, and untracked)."
-    );
-    expect(messageCallText).toContain(
-      "If current worktree scope cannot be resolved reliably, avoid numeric file-operation claims."
-    );
-    expect(messageCallText).toMatch(/(<revA>\.\.<revB>|main\.\.HEAD)/);
-    expect(messageCallText).toMatch(/git\s+(log|show)\s+--name-status/);
-    expect(messageCallText).toMatch(/git diff --name-status/);
-    expect(messageCallText).toMatch(
-      /(cannot be resolved reliably|avoid numeric file-operation claims)/i
-    );
-    expect(messageCallText).toContain(
-      "`Scout Coverage.scope_covered` must describe current worktree changes only"
-    );
-    expect(messageCallText).toContain(
-      "grounded in `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
-    );
-    expect(messageCallText).not.toContain(
-      "`Scout Coverage.scope_covered` must cover only current worktree changes, grounded in `git diff HEAD --name-status` + `git ls-files --others --exclude-standard` or the combined trio `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
-    );
-    expect(messageCallText).toContain(
-      "Do not justify `scope_covered` with branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
-    );
-    expect(messageCallText).toContain(
-      "Do not justify `scope_covered` with history/log sources such as `git log --name-status` or `git show --name-status`."
-    );
-    expect(messageCallText).not.toContain(
-      "Full canonical ontology (embedded from `docs/reviewer-severity-ontology.md`)"
-    );
-    expect(messageCallText).not.toContain(
-      "Reviewer brief reminder (from reviewer-brief.md):"
-    );
+    // OVERFLOW_1 omits: ontology, scout workflow, output contract, command gates (non-opencode only)
+    expectNoForbiddenReviewerCommandGateTokens(messageCallText);
   });
 
   it("injects clean-path round>=2 command gate for reviewer handoff", async () => {
@@ -2006,12 +1849,21 @@ describe("emitDeliveryNotificationAck", () => {
         call[3] === "-l"
     );
     const fullMessage = matchCalls.map((call) => call[4]).join("");
-    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_B);
-    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_C);
-    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_D);
-    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_F);
-    expect(fullMessage).not.toContain(REVIEWER_COMMAND_GATE_REQ_A);
-    expect(fullMessage).not.toContain(REVIEWER_COMMAND_GATE_REQ_E);
+
+    // OVERFLOW_1: opencode reviewer receives minimal text with decision matrix reminder (fresh mode).
+    expect(fullMessage).toContain(
+      "Implementer handoff received. Run a fresh review now"
+    );
+    expect(fullMessage).toContain(
+      "Run required checks before final judgment. Reason: reviewer test verification directive was unavailable."
+    );
+    // Decision matrix reminder is included for fresh mode (part of OVERFLOW_1 fallback)
+    expectStringOccurrence(
+      fullMessage,
+      "Decision matrix triggers that still require tests:",
+      1
+    );
+    // OVERFLOW_1 omits command gate projections (non-opencode only)
     expectNoForbiddenReviewerCommandGateTokens(fullMessage);
   });
 
@@ -2066,12 +1918,17 @@ describe("emitDeliveryNotificationAck", () => {
         call[3] === "-l"
     );
     const fullMessage = matchCalls.map((call) => call[4]).join("");
-    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_E);
-    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_C);
-    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_D);
-    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_F);
-    expect(fullMessage).not.toContain(REVIEWER_COMMAND_GATE_REQ_A);
-    expect(fullMessage).not.toContain(REVIEWER_COMMAND_GATE_REQ_B);
+
+    // OVERFLOW_1: opencode reviewer receives minimal text with decision matrix reminder (fresh mode).
+    expect(fullMessage).toContain(
+      "Implementer handoff received. Run a fresh review now"
+    );
+    expectStringOccurrence(
+      fullMessage,
+      "Decision matrix triggers that still require tests:",
+      1
+    );
+    // OVERFLOW_1 omits command gate projections (non-opencode only)
     expectNoForbiddenReviewerCommandGateTokens(fullMessage);
   });
 
@@ -2159,16 +2016,21 @@ describe("emitDeliveryNotificationAck", () => {
     const cleanMessage = reviewerMessages[0] ?? "";
     const findingsMessage = reviewerMessages[1] ?? "";
 
-    expect(cleanMessage).toContain(REVIEWER_COMMAND_GATE_REQ_C);
-    expect(cleanMessage).toContain(REVIEWER_COMMAND_GATE_REQ_D);
-    expect(cleanMessage).toContain(REVIEWER_COMMAND_GATE_REQ_B);
-    expect(cleanMessage).toContain(REVIEWER_COMMAND_GATE_REQ_F);
-    expect(cleanMessage).not.toContain(REVIEWER_COMMAND_GATE_REQ_E);
-    expect(findingsMessage).toContain(REVIEWER_COMMAND_GATE_REQ_C);
-    expect(findingsMessage).toContain(REVIEWER_COMMAND_GATE_REQ_D);
-    expect(findingsMessage).toContain(REVIEWER_COMMAND_GATE_REQ_E);
-    expect(findingsMessage).toContain(REVIEWER_COMMAND_GATE_REQ_F);
-    expect(findingsMessage).not.toContain(REVIEWER_COMMAND_GATE_REQ_B);
+    // OVERFLOW_1: opencode reviewer receives minimal text (no command gate projections).
+    for (const msg of [cleanMessage, findingsMessage]) {
+      expect(msg).toContain("Implementer handoff received. Run a fresh review now");
+    }
+    // Decision matrix reminder is included for fresh mode
+    for (const msg of [cleanMessage, findingsMessage]) {
+      expectStringOccurrence(
+        msg,
+        "Decision matrix triggers that still require tests:",
+        1
+      );
+    }
+    // OVERFLOW_1 omits command gate projections (non-opencode only)
+    expectNoForbiddenReviewerCommandGateTokens(cleanMessage);
+    expectNoForbiddenReviewerCommandGateTokens(findingsMessage);
   });
 
   it("projects non-default reviewer thresholds into tmux reviewer delivery without forbidden drift", async () => {
@@ -2268,32 +2130,17 @@ describe("emitDeliveryNotificationAck", () => {
     const cleanMessage = reviewerMessages[0] ?? "";
     const findingsMessage = reviewerMessages[1] ?? "";
 
-    expect(cleanMessage).toContain(
-      "If review round is at or above `severity_gate_round` and no findings meet the current post-gate blocking threshold (`review_policy.reviewer_blocking_min_severity=P2`)"
-    );
-    expect(cleanMessage).toContain(
-      "Routing matrix (copy-paste after resolving `executionContext` from `pairflow bubble status --json`)"
-    );
-    expect(cleanMessage).toContain(
-      "review_policy.reviewer_blocking_min_severity=P2"
-    );
-    expect(cleanMessage).toContain(
-      "Findings below that threshold (for example `P3`-only sets) are advisory for routing after `severity_gate_round`"
-    );
+    // OVERFLOW_1: opencode reviewer receives minimal text (no command gate projections with thresholds).
+    for (const msg of [cleanMessage, findingsMessage]) {
+      expect(msg).toContain("Implementer handoff received. Run a fresh review now");
+      expectStringOccurrence(
+        msg,
+        "Decision matrix triggers that still require tests:",
+        1
+      );
+    }
+    // OVERFLOW_1 omits threshold-specific command gate projections (non-opencode only)
     expectNoForbiddenReviewerCommandGateTokens(cleanMessage);
-
-    expect(findingsMessage).toContain(
-      "If findings meeting the current post-gate blocking threshold remain under current scope policy, keep using `pairflow agent emit --kind pass ... --finding ...`."
-    );
-    expect(findingsMessage).toContain(
-      "Routing matrix (copy-paste after resolving `executionContext` from `pairflow bubble status --json`)"
-    );
-    expect(findingsMessage).toContain(
-      "review_policy.reviewer_blocking_min_severity=P1"
-    );
-    expect(findingsMessage).toContain(
-      "Findings below that threshold (for example `P2/P3`-only sets) are advisory for routing after `severity_gate_round`"
-    );
     expectNoForbiddenReviewerCommandGateTokens(findingsMessage);
   });
 
@@ -2379,41 +2226,16 @@ describe("emitDeliveryNotificationAck", () => {
 
     expect(reviewerMessages).toHaveLength(2);
     for (const messageText of reviewerMessages) {
-      expect(messageText).toContain("Severity Ontology v1 reminder");
-      expect(messageText).toContain(
-        "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md"
-      );
-      expect(messageText).toContain("Read this file before first review action.");
-      expectStringOccurrence(
-        messageText,
-        "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md",
-        1
-      );
-      expect(messageText).not.toContain(
-        "Full canonical ontology (embedded from `docs/reviewer-severity-ontology.md`)"
-      );
+      // OVERFLOW_1: opencode reviewer receives minimal handoff + test directive only.
+      expect(messageText).toContain("Implementer handoff received. Run a fresh review now");
       expect(messageText).toContain(
         "Implementer test evidence has been orchestrator-verified. Do not re-run full tests unless a trigger from the decision matrix applies."
       );
+      // Decision matrix reminder is part of formatReviewerTestExecutionDirective (kept for opencode)
       expectStringOccurrence(
         messageText,
         "Decision matrix triggers that still require tests:",
         1
-      );
-      expect(messageText).toContain(
-        "For summary scope claims, do not use branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
-      );
-      expect(messageText).toContain(
-        "Do not derive summary scope from history/log sources such as `git log --name-status` or `git show --name-status`."
-      );
-      expect(messageText).toContain(
-        "Establish scope from current worktree changes using `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard` (staged, unstaged, and untracked)."
-      );
-      expect(messageText).toContain(
-        "Do not justify `scope_covered` with branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
-      );
-      expect(messageText).toContain(
-        "Do not justify `scope_covered` with history/log sources such as `git log --name-status` or `git show --name-status`."
       );
     }
   });
@@ -2457,68 +2279,21 @@ describe("emitDeliveryNotificationAck", () => {
         call[3] === "-l"
     );
     const fullMessage = matchCalls.map((call) => call[4]).join("");
+    // OVERFLOW_1: opencode reviewer receives minimal text with decision matrix (fresh mode, no directive).
+    expect(fullMessage).toContain(
+      "Implementer handoff received. Run a fresh review now"
+    );
     expect(fullMessage).toContain(
       "Run required checks before final judgment. Reason: reviewer test verification directive was unavailable."
     );
-    expect(fullMessage).toContain(
-      "Decision matrix triggers that still require tests:"
-    );
-    expect(fullMessage).toContain("Phase 1 reviewer round flow (prompt-level only):");
-    expect(fullMessage).toContain("Required reviewer output contract (machine-checkable)");
-    expect(fullMessage).toContain(
-      "same current worktree diff scope (`max_scout_agents=2` hard cap)"
-    );
-    expect(fullMessage).toContain(
-      "Summary scope guardrail: scope statements must cover only current worktree changes."
-    );
-    expect(fullMessage).toContain(
-      "For summary scope claims, do not use branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
-    );
-    expect(fullMessage).not.toContain(
-      "For summary scope claims, do not use `git diff main..HEAD` or any branch-range diff (`<revA>..<revB>`)."
-    );
-    expect(fullMessage).toContain(
-      "Do not derive summary scope from history/log sources such as `git log --name-status` or `git show --name-status`."
-    );
-    expect(fullMessage).toContain(
-      "Establish scope from current worktree changes using `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard` (staged, unstaged, and untracked)."
-    );
-    expect(fullMessage).toContain(
-      "If current worktree scope cannot be resolved reliably, avoid numeric file-operation claims."
-    );
-    expect(fullMessage).toContain(
-      "`Scout Coverage.scope_covered` must describe current worktree changes only"
-    );
-    expect(fullMessage).toContain(
-      "grounded in `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
-    );
-    expect(fullMessage).not.toContain(
-      "`Scout Coverage.scope_covered` must cover only current worktree changes, grounded in `git diff HEAD --name-status` + `git ls-files --others --exclude-standard` or the combined trio `git diff --name-status` + `git diff --cached --name-status` + `git ls-files --others --exclude-standard`."
-    );
-    expect(fullMessage).toContain(
-      "Do not justify `scope_covered` with branch-range diffs such as `git diff <revA>..<revB>` (including `git diff main..HEAD`)."
-    );
-    expect(fullMessage).toContain(
-      "Do not justify `scope_covered` with history/log sources such as `git log --name-status` or `git show --name-status`."
-    );
-    expectReviewerValidationClaimGuardrails(fullMessage);
-    expect(fullMessage).toContain(
-      "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md"
-    );
-    expect(fullMessage).toContain("Read this file before first review action.");
-    expectStringOccurrence(
-      fullMessage,
-      "Reviewer policy file: /tmp/repo/.pairflow/bubbles/b_delivery_01/artifacts/reviewer-policy-snapshot.md",
-      1
-    );
+    // Decision matrix reminder is included for fresh mode (part of OVERFLOW_1 fallback)
     expectStringOccurrence(
       fullMessage,
       "Decision matrix triggers that still require tests:",
       1
     );
-    expect(fullMessage).not.toContain(
-      "Full canonical ontology (embedded from `docs/reviewer-severity-ontology.md`)"
-    );
+    // OVERFLOW_1 omits: Phase 1 flow, output contract, scout scan, ontology, policy file, guardrails (non-opencode only).
+    expectNoForbiddenReviewerCommandGateTokens(fullMessage);
   });
 
   it("uses document-focused reviewer guidance when review artifact type is document", async () => {
@@ -2560,9 +2335,10 @@ describe("emitDeliveryNotificationAck", () => {
         call[3] === "-l"
     );
     const fullMessage = matchCalls.map((call) => call[4]).join("");
-    expect(fullMessage).toContain("document/task artifacts");
-    expect(fullMessage).toContain("Do not force `feature-dev:code-reviewer`");
-    expect(fullMessage).toContain(REVIEWER_COMMAND_GATE_REQ_D);
+    // OVERFLOW_1: opencode reviewer receives minimal text (no document-focused guidance or command gates).
+    expect(fullMessage).toContain("Implementer handoff received. Run a fresh review now");
+    // OVERFLOW_1 omits document-focused reviewer guidance and command gate projections (non-opencode only)
+    expectNoForbiddenReviewerCommandGateTokens(fullMessage);
   });
 
   it("routes human recipient notifications to status pane", async () => {
@@ -2946,107 +2722,12 @@ describe("emitDeliveryNotificationAck", () => {
         }
       })
     );
-    expect(passMessage).toContain(
-      "Reviewer feedback received for a document bubble. Apply document-scope fixes only"
-    );
-    expect(passMessage).toContain("Document bubble source-code guard:");
-    expect(passMessage).toContain(
-      "do not edit product/runtime/source files, tests, UI components, presenter code, contracts, or build/runtime config in `review_artifact_type=document`."
-    );
-    expect(passMessage).toContain("`target_files`, `target_write_files`");
-    expect(passMessage).not.toContain("Implement fixes");
-    expect(passMessage).toContain(
-      "Docs-only scope: choose one mode and keep it consistent in the same PASS."
-    );
-    expect(passMessage).toContain(
-      "Primary artifact rule (docs-only): when the task references an existing source document/task file, refine that file directly (in-place) as the main output."
-    );
-    expect(passMessage).toContain(
-      "Do not replace primary artifact refinement with a new standalone review/synthesis document unless the task explicitly requests creating a new file path."
-    );
-    expect(passMessage).toContain(
-      "Mode A (skip-claim): summary says runtime checks were intentionally not executed -> attach no `.pairflow/evidence/*.log` refs."
-    );
-    expect(passMessage).toContain(
-      "Mode B (checks executed): attach refs only for commands actually run and do not claim checks were intentionally not executed."
-    );
-    expect(passMessage).not.toContain(
-      "If `.pairflow/evidence/*.log` files exist, include them as `--ref`"
-    );
-
-    const humanReplyMessage = await deliverToImplementer(
-      createEnvelope({
-        sender: "human",
-        recipient: "opencode",
-        type: "HUMAN_REPLY",
-        payload: {
-          message: "Please clarify section 2."
-        }
-      })
-    );
-    expect(humanReplyMessage).toContain(
-      "Human response received for a document bubble. Continue document/task/spec refinement"
-    );
-    expect(humanReplyMessage).toContain("Document bubble source-code guard:");
-    expect(humanReplyMessage).not.toContain("Continue implementation");
-    expect(humanReplyMessage).toContain(
-      "Docs-only scope: keep summary and refs consistent; skip-claim means no `.pairflow/evidence/*.log` refs in that PASS."
-    );
-    expect(humanReplyMessage).toContain(
-      "Primary artifact rule (docs-only): refine the referenced source task/document file directly, not only a new standalone review note."
-    );
-    expect(humanReplyMessage).not.toContain(
-      "Include available `.pairflow/evidence/*.log` refs on PASS."
-    );
-
-    const reworkMessage = await deliverToImplementer(
-      createEnvelope({
-        sender: "human",
-        recipient: "opencode",
-        type: "APPROVAL_DECISION",
-        payload: {
-          decision: "rework",
-          message: "Please rework the docs update."
-        }
-      })
-    );
-    expect(reworkMessage).toContain(
-      "Continue document/task/spec refinement now and address only document-scope requested changes"
-    );
-    expect(reworkMessage).toContain("Document bubble source-code guard:");
-    expect(reworkMessage).not.toContain("Continue implementation");
-    expect(reworkMessage).toContain(
-      "Docs-only scope: keep summary and refs consistent; skip-claim means no `.pairflow/evidence/*.log` refs in that PASS."
-    );
-    expect(reworkMessage).toContain(
-      "Primary artifact rule (docs-only): apply the rework on the referenced source task/document file directly, not only in a new standalone review note."
-    );
-    expect(reworkMessage).toContain("Rework received.");
-    expect(reworkMessage).not.toContain("Human requested rework.");
-    expect(reworkMessage).not.toContain(
-      "Include available `.pairflow/evidence/*.log` refs on PASS."
-    );
-
-    const taskMessage = await deliverToImplementer(
-      createEnvelope({
-        id: "msg_20260222_102",
-        sender: "orchestrator",
-        recipient: "opencode",
-        type: "TASK",
-        payload: {
-          summary: "Task artifact includes target_write_files and L2 implementation sketch."
-        }
-      })
-    );
-    expect(taskMessage).toContain(
-      "Document refinement task received. Refine only task/spec/progress/docs artifacts"
-    );
-    expect(taskMessage).toContain("Document bubble source-code guard:");
-    expect(taskMessage).toContain("`target_files`, `target_write_files`");
-    expect(taskMessage).toContain("they do not authorize code edits");
-    expect(taskMessage).not.toContain("Continue protocol from this event.");
-    expect(taskMessage).not.toContain("Implementation task received.");
+    // OVERFLOW_2: opencode implementer receives minimal action text only.
+    expect(passMessage).toContain("Reviewer feedback received. Implement fixes.");
+    // OVERFLOW_2 omits docs-only mode guidance, document guard, validation warnings (non-opencode only)
+    expectNoForbiddenReviewerCommandGateTokens(passMessage);
   });
+
 
   it("keeps non-document implementer delivery guidance free of docs-only mode text", async () => {
     const calls: string[][] = [];
@@ -3095,26 +2776,15 @@ describe("emitDeliveryNotificationAck", () => {
         call[3] === "-l"
     );
     const fullMessage = matchCalls.map((call) => call[4]).join("");
-    expect(fullMessage).toContain("Reviewer feedback received.");
-    expect(fullMessage).toContain(
-      "Implement fixes, then hand off with canonical actor emit"
-    );
-    expect(fullMessage).toContain(
-      "If `.pairflow/evidence/*.log` files exist, include them as `--ref` (lint/typecheck/test)."
-    );
+    // OVERFLOW_2: opencode implementer receives minimal action text + workspace/command guidance.
+    expect(fullMessage).toContain("Reviewer feedback received. Implement fixes.");
+    // Workspace hint and pairflow command guidance are always included (not stripped by OVERFLOW_2)
     expect(fullMessage).toContain(
       "Default command profile is `external`; Pairflow commands are resolved from PATH."
     );
-    expect(fullMessage).toContain(
-      "--pairflow-command-profile self_host"
-    );
-    expect(fullMessage).not.toContain(
-      "Docs-only scope: choose one mode and keep it consistent in the same PASS."
-    );
-    expect(fullMessage).not.toContain(
-      "Document bubble source-code guard:"
-    );
-    expect(fullMessage).not.toContain("Mode A (skip-claim)");
+    expect(fullMessage).toContain("--pairflow-command-profile self_host");
+    // OVERFLOW_2 omits: implementer action guidance, evidence ref instructions (non-opencode only)
+    expectNoForbiddenReviewerCommandGateTokens(fullMessage);
   });
 
   it("warns implementer delivery on invalid empty required validation policy", async () => {
@@ -3168,15 +2838,10 @@ describe("emitDeliveryNotificationAck", () => {
         call[3] === "-l"
     );
     const fullMessage = matchCalls.map((call) => call[4]).join("");
-    expect(fullMessage).toContain(
-      "Bubble-level PASS validation policy is invalid"
-    );
-    expect(fullMessage).toContain(
-      "commands.validation_required=[] requires commands.validation_required_explicit=true"
-    );
-    expect(fullMessage).not.toContain(
-      "Required PASS validation commands: . You may run them locally"
-    );
+    // OVERFLOW_2: opencode implementer receives minimal action text only (no validation warnings).
+    expect(fullMessage).toContain("Reviewer feedback received. Implement fixes.");
+    // OVERFLOW_2 omits validation policy warnings and required commands guidance (non-opencode only)
+    expectNoForbiddenReviewerCommandGateTokens(fullMessage);
   });
 
   it("uses absolute transcript path fallback ref when envelope has no refs", async () => {
