@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import type { TmuxRunOptions, TmuxRunResult } from "../../../../../src/v11/ports/tmuxSessions.js";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { topologySlotPaneIndexCatalog} from "../../../../../src/v11/shared/topology/topologySlotPaneProjection.js";
 import {
   postEmitInterruptOpencodePane,
@@ -25,6 +25,35 @@ describe("resolveSessionsPath", () => {
 });
 
 describe("postEmitInterruptOpencodePane", () => {
+  let savedTmuxPane: string | undefined;
+  let savedTmuxSession: string | undefined;
+
+  beforeEach(() => {
+    // Clear TMUX_PANE and TMUX env vars so tests always exercise the
+    // session-registry-based pane targeting path, not the invoking-pane shortcut.
+    // Without this, running tests inside a tmux session would cause every test
+    // to use process.env.TMUX_PANE as the target pane instead of the expected
+    // `${sessionName}:0.${index}` format.
+    savedTmuxPane = process.env.TMUX_PANE;
+    savedTmuxSession = process.env.TMUX;
+    delete process.env.TMUX_PANE;
+    delete process.env.TMUX;
+  });
+
+  afterEach(() => {
+    // Restore original env vars after each test.
+    if (savedTmuxPane !== undefined) {
+      process.env.TMUX_PANE = savedTmuxPane;
+    } else {
+      delete process.env.TMUX_PANE;
+    }
+    if (savedTmuxSession !== undefined) {
+      process.env.TMUX = savedTmuxSession;
+    } else {
+      delete process.env.TMUX;
+    }
+  });
+
   it.each([
     ["implementer", "implementer", topologySlotPaneIndexCatalog.implementer],
     ["reviewer", "reviewer", topologySlotPaneIndexCatalog.reviewer],

@@ -102,6 +102,7 @@ export function buildMetaReviewerStartupPrompt(input: {
   pairflowCommandProfile: PairflowCommandProfile;
   agentName?: AgentName;
 }): string {
+  // AC2: For opencode agents, do not inject generic startup prompts.
   if (input.agentName === "opencode") {
     return "";
   }
