@@ -85,7 +85,7 @@ describe("implementerHandoffDelivery", () => {
 
     expect(calls).toHaveLength(2);
     expect(calls[1]).toMatchObject({
-      initialDelayMs: 5000,
+      initialDelayMs: 30000,
       deliveryAttempts: 6
     });
     expect(result).toEqual({
@@ -149,7 +149,7 @@ describe("implementerHandoffDelivery", () => {
 
     expect(calls).toHaveLength(2);
     expect(calls[1]).toMatchObject({
-      initialDelayMs: 5000,
+      initialDelayMs: 30000,
       deliveryAttempts: 6
     });
     expect(result).toEqual({
@@ -245,7 +245,7 @@ describe("implementerHandoffDelivery", () => {
 
     expect(calls).toHaveLength(2);
     expect(calls[1]).toMatchObject({
-      initialDelayMs: 5000,
+      initialDelayMs: 30000,
       deliveryAttempts: 6
     });
     expect(result).toEqual({

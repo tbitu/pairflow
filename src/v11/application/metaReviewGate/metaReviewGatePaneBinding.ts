@@ -124,6 +124,15 @@ function buildMetaReviewerCommand(input: {
     input.metaReviewerMcpPolicy
     ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer;
 
+  const startupPrompt =
+    input.metaReviewerAgent === "opencode"
+      ? ""
+      : buildMetaReviewGateRunPrompt({
+          bubbleId: input.bubbleId,
+          round: input.round,
+          repoPath: input.repoPath,
+          taskArtifactPath: input.taskArtifactPath
+        });
 
   return input.buildAgentCommand({
     agentName: input.metaReviewerAgent,
@@ -132,13 +141,7 @@ function buildMetaReviewerCommand(input: {
     bubbleId: input.bubbleId,
     workspacePath: input.workspacePath,
     pairflowCommandProfile: input.pairflowCommandProfile,
-
-    startupPrompt: buildMetaReviewGateRunPrompt({
-      bubbleId: input.bubbleId,
-      round: input.round,
-      repoPath: input.repoPath,
-      taskArtifactPath: input.taskArtifactPath
-    })
+    startupPrompt
   });
 }
 

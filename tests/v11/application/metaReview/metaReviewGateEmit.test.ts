@@ -426,7 +426,22 @@ describe("metaReviewGate V11 defaults", () => {
       bubbleId: "b_meta_review_apply_v11_builtin_delivery",
       task: "Verify built-in pane-binding launch-prompt delivery."
     });
-    await enableMetaReviewerMcp(bubble);
+    await writeFile(
+      bubble.paths.bubbleTomlPath,
+      renderBubbleConfigToml({
+        ...bubble.config,
+        agents: {
+          ...bubble.config.agents,
+          meta_reviewer: "codex"
+        },
+        role_mcp: {
+          implementer: "disabled",
+          reviewer: "disabled",
+          meta_reviewer: "enabled"
+        }
+      }),
+      "utf8"
+    );
     const submittedMessages: string[] = [];
     const notifyRunner = async () => ({
       stdout: submittedMessages.at(-1) ?? "",

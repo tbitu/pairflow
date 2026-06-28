@@ -445,7 +445,7 @@ describe("executeConvergedExecution", () => {
     expect(deliveryOptions).toEqual([
       {},
       {
-        initialDelayMs: 5000,
+        initialDelayMs: 30000,
         deliveryAttempts: 6
       }
     ]);

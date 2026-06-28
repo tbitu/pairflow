@@ -396,7 +396,7 @@ describe("executePassDelivery", () => {
 
     expect(calls).toHaveLength(2);
     expect(calls[1]).toMatchObject({
-      initialDelayMs: 5000,
+      initialDelayMs: 30000,
       deliveryAttempts: 6
     });
     expect(result).toEqual({
@@ -454,7 +454,7 @@ describe("executePassDelivery", () => {
 
     expect(calls).toHaveLength(2);
     expect(calls[1]).toMatchObject({
-      initialDelayMs: 5000,
+      initialDelayMs: 30000,
       deliveryAttempts: 6
     });
     expect(result).toEqual({
@@ -523,7 +523,7 @@ describe("executePassDelivery", () => {
     expect(refreshCalls).toHaveLength(0);
     expect(calls).toHaveLength(2);
     expect(calls[1]).toMatchObject({
-      initialDelayMs: 5000,
+      initialDelayMs: 30000,
       deliveryAttempts: 6
     });
     expect(result).toEqual({
@@ -637,7 +637,7 @@ describe("executePassDelivery", () => {
     expect(calls).toHaveLength(2);
     expect(calls[1]).toMatchObject({
       recipientRole: "meta_reviewer",
-      initialDelayMs: 5000,
+      initialDelayMs: 30000,
       deliveryAttempts: 6
     });
     expect(result).toEqual({

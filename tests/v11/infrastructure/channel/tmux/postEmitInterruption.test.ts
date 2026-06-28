@@ -84,6 +84,9 @@ describe("postEmitInterruptOpencodePane", () => {
       const tmuxCalls: string[][] = [];
         function mockRunner(args: string[]): Promise<TmuxRunResult> {
           tmuxCalls.push(args);
+          if (args[0] === "capture-pane") {
+            return Promise.resolve({ stdout: "esc again to interrupt", stderr: "", exitCode: 0 });
+          }
           return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
         }
 
@@ -94,9 +97,10 @@ describe("postEmitInterruptOpencodePane", () => {
           tmuxRunner: mockRunner,
         });
 
-        expect(tmuxCalls.length).toBeGreaterThanOrEqual(2);
-        const firstSendKeysCall = tmuxCalls[0];
-        const secondSendKeysCall = tmuxCalls[1];
+        const sendKeysCalls = tmuxCalls.filter((c) => c[0] === "send-keys");
+        expect(sendKeysCalls).toHaveLength(2);
+        const firstSendKeysCall = sendKeysCalls[0];
+        const secondSendKeysCall = sendKeysCalls[1];
         // expectedIndex comes from it.each data, pre-validated against the catalog.
         expect(firstSendKeysCall).toEqual([
           "send-keys",
@@ -196,6 +200,9 @@ describe("postEmitInterruptOpencodePane", () => {
       function mockRunner(args: string[], opts?: TmuxRunOptions): Promise<TmuxRunResult> {
         tmuxCalls.push(args);
         capturedOptions = opts ?? {};
+        if (args[0] === "capture-pane") {
+          return Promise.resolve({ stdout: "esc again to interrupt", stderr: "", exitCode: 0 });
+        }
         return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
       }
 
@@ -205,9 +212,10 @@ describe("postEmitInterruptOpencodePane", () => {
         tmuxRunner: mockRunner,
       });
 
-      expect(tmuxCalls.length).toBeGreaterThanOrEqual(2);
-      const firstSendKeysCall = tmuxCalls[0];
-      const secondSendKeysCall = tmuxCalls[1];
+      const sendKeysCalls = tmuxCalls.filter((c) => c[0] === "send-keys");
+      expect(sendKeysCalls).toHaveLength(2);
+      const firstSendKeysCall = sendKeysCalls[0];
+      const secondSendKeysCall = sendKeysCalls[1];
       expect(firstSendKeysCall).toEqual([
         "send-keys",
         "-t",
@@ -343,6 +351,9 @@ describe("postEmitInterruptOpencodePane", () => {
       const delayCalls: number[] = [];
       function mockRunner(args: string[]): Promise<TmuxRunResult> {
         tmuxCalls.push(args);
+        if (args[0] === "capture-pane") {
+          return Promise.resolve({ stdout: "esc again to interrupt", stderr: "", exitCode: 0 });
+        }
         return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
       }
       const sleepForDelayMs = async (delayMs: number): Promise<void> => {
@@ -357,11 +368,57 @@ describe("postEmitInterruptOpencodePane", () => {
         sleepForDelayMs
       });
 
-      expect(tmuxCalls.slice(0, 2)).toEqual([
+      const sendKeysCalls = tmuxCalls.filter((c) => c[0] === "send-keys");
+      expect(sendKeysCalls).toHaveLength(2);
+      expect(sendKeysCalls).toEqual([
         ["send-keys", "-t", `${sessionName}:0.1`, "Escape"],
         ["send-keys", "-t", `${sessionName}:0.1`, "Escape"]
       ]);
       expect(delayCalls).toContain(100);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it("should not send the second Escape if 'esc again to interrupt' is not detected", async () => {
+    const tmpDir = `/tmp/pf-test-sessions-${randomUUID().slice(0, 8)}`;
+    const sessionsPath = `${tmpDir}/sessions.json`;
+    const bubbleId = "test-bubble-no-detect";
+    const sessionName = "pf-no-detect-test";
+    const nowIso = new Date().toISOString();
+
+    await mkdir(tmpDir, { recursive: true });
+    await writeFile(
+      sessionsPath,
+      JSON.stringify({
+        [bubbleId]: {
+          bubbleId,
+          repoPath: "/home/user/repo",
+          worktreePath: `/tmp/worktrees/${bubbleId}`,
+          tmuxSessionName: sessionName,
+          updatedAt: nowIso
+        }
+      })
+    );
+
+    try {
+      const tmuxCalls: string[][] = [];
+      function mockRunner(args: string[]): Promise<TmuxRunResult> {
+        tmuxCalls.push(args);
+        // Return stdout that does not contain 'esc again to interrupt'
+        return Promise.resolve({ stdout: "some other terminal output", stderr: "", exitCode: 0 });
+      }
+
+      await postEmitInterruptOpencodePane({
+        sessionsPath,
+        bubbleId,
+        tmuxRunner: mockRunner,
+      });
+
+      const sendKeysCalls = tmuxCalls.filter((c) => c[0] === "send-keys");
+      // Only the first Escape should be sent
+      expect(sendKeysCalls).toHaveLength(1);
+      expect(sendKeysCalls[0]).toEqual(["send-keys", "-t", `${sessionName}:0.1`, "Escape"]);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }

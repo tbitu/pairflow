@@ -278,6 +278,21 @@ export async function confirmTmuxPaneMarkerSubmission(
     if (status === "submitted") {
       return true;
     }
+    const capture = await input.runner(
+      ["capture-pane", "-p", "-t", input.targetPane],
+      { allowFailure: true }
+    );
+    if (capture.exitCode === 0) {
+      const lowerOutput = capture.stdout.toLowerCase();
+      if (
+        lowerOutput.includes("esc again to interrupt") ||
+        lowerOutput.includes("esc to interrupt") ||
+        lowerOutput.includes("escape to interrupt") ||
+        lowerOutput.includes("esc interrupt")
+      ) {
+        return true;
+      }
+    }
     if (attempt < attempts - 1) {
       // Guard: only resend Enter when an active agent prompt line is visible.
       // If tmux hasn't yet reflected the initial submission in capture, blindly

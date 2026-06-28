@@ -47,9 +47,9 @@ export async function executeImplementerHandoffDelivery(input: {
     const initialFailureResult = deliveryResult;
     deliveryResult = await input.emitDelivery({
       ...input.deliveryInput,
-      // Newly activated implementer panes can still be warming up.
-      // Retry once with the same timing used by the stable reviewer handoff flow.
-      initialDelayMs: 5000,
+      // Newly activated implementer/meta-reviewer panes can still be warming up.
+      // Retry once with the same timing used by the stable reviewer handoff flow (30 seconds).
+      initialDelayMs: 30000,
       deliveryAttempts: 6
     }).catch(() => initialFailureResult);
   }

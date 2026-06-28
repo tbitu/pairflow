@@ -1,4 +1,4 @@
-export const agentNames = ["opencode"] as const;
+export const agentNames = ["opencode", "codex"] as const;
 
 export type AgentName = (typeof agentNames)[number];
 

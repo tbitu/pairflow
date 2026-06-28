@@ -36,10 +36,32 @@ async function sendDoubleEscape(input: {
   sleepForDelayMs: (delayMs: number) => Promise<void>;
 }): Promise<void> {
   await input.runner(["send-keys", "-t", input.targetPane, "Escape"], input.tmuxOpts);
-  if (input.interEscapeDelayMs > 0) {
-    await input.sleepForDelayMs(input.interEscapeDelayMs);
+
+  const maxAttempts = 30;
+  const pollIntervalMs = 50;
+  let detected = false;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const capture = await input.runner(
+      ["capture-pane", "-p", "-t", input.targetPane],
+      { ...input.tmuxOpts, allowFailure: true }
+    );
+    if (capture.exitCode === 0) {
+      const output = capture.stdout.toLowerCase();
+      if (output.includes("esc again to interrupt")) {
+        detected = true;
+        break;
+      }
+    }
+    await input.sleepForDelayMs(pollIntervalMs);
   }
-  await input.runner(["send-keys", "-t", input.targetPane, "Escape"], input.tmuxOpts);
+
+  if (detected) {
+    if (input.interEscapeDelayMs > 0) {
+      await input.sleepForDelayMs(input.interEscapeDelayMs);
+    }
+    await input.runner(["send-keys", "-t", input.targetPane, "Escape"], input.tmuxOpts);
+  }
 }
 
 /**

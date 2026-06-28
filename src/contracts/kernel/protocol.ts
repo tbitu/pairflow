@@ -1,5 +1,6 @@
 export const protocolParticipants = [
   "opencode",
+  "codex",
   "orchestrator",
   "human"
 ] as const;

@@ -521,7 +521,7 @@ describe("metaReviewGatePaneBinding", () => {
     const buildAgentCommand = vi.fn(
       (input: { startupPrompt?: string | undefined }) => {
         void input;
-        return "opencode meta-review";
+        return "codex meta-review";
       }
     );
     const respawnPaneCommand = vi.fn(async () => undefined);
@@ -566,7 +566,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:15:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_notify_forwarding/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "opencode",
+      metaReviewerAgent: "codex",
       metaReviewerMcpPolicy: "enabled"
     });
 
@@ -595,10 +595,67 @@ describe("metaReviewGatePaneBinding", () => {
       sessionName: "pf-b_meta_review_gate_notify_forwarding",
       paneIndex: getTopologySlotPaneIndexForRole("meta_reviewer"),
       cwd: "/workspace",
-      command: "opencode meta-review",
+      command: "codex meta-review",
       runner: paneRunner
     });
     expect(notifySubmissionRequest).not.toHaveBeenCalled();
+  });
+
+  it("does not pass startup prompt as a CLI parameter for opencode meta-reviewer", async () => {
+    const paneRunner = vi.fn();
+    const buildAgentCommand = vi.fn(
+      (input: { startupPrompt?: string | undefined }) => {
+        void input;
+        return "opencode meta-review";
+      }
+    );
+    const respawnPaneCommand = vi.fn(async () => undefined);
+
+    const result = await resolveMetaReviewerPaneWarning({
+      setMetaReviewerPane: async () => ({
+        updated: true,
+        record: {
+          bubbleId: "b_meta_review_gate_notify_opencode",
+          repoPath: "/repo",
+          worktreePath: "/worktree",
+          workspacePath: "/workspace",
+          workspaceKind: "clone",
+          tmuxSessionName: "pf-b_meta_review_gate_notify_opencode",
+          updatedAt: "2026-04-13T00:15:00.000Z",
+          metaReviewerPane: {
+            role: "meta-reviewer",
+            paneIndex: 5,
+            active: true,
+            updatedAt: "2026-04-13T00:15:00.000Z"
+          }
+        }
+      }),
+      notifySubmissionRequest: vi.fn(),
+      runtime: {
+        paneBinding: {
+          buildAgentCommand,
+          tmux: {
+            runner: paneRunner,
+            respawnPaneCommand
+          }
+        }
+      },
+      sessionsPath: "/repo/.pairflow/runtime/sessions.json",
+      bubbleId: "b_meta_review_gate_notify_opencode",
+      round: 4,
+      now: new Date("2026-04-13T00:15:00.000Z"),
+      taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_notify_opencode/artifacts/task.md",
+      pairflowCommandProfile: "external",
+      metaReviewerAgent: "opencode",
+      metaReviewerMcpPolicy: "enabled"
+    });
+
+    expect(result.delivery.status).toBe("confirmed");
+    expect(buildAgentCommand).toHaveBeenCalledTimes(1);
+    const commandInput = buildAgentCommand.mock.calls[0]?.[0] as
+      | { startupPrompt?: string }
+      | undefined;
+    expect(commandInput?.startupPrompt).toBe("");
   });
 
   it("does not require notify runtime forwarding when request is delivered at launch", async () => {

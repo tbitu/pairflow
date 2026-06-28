@@ -939,7 +939,7 @@ describe("emitConvergedFromWorkspace", () => {
     expect(calls[0]?.deliveryAttempts).toBeUndefined();
     expect(calls[1]).toMatchObject({
       recipient: bubble.config.agents.implementer,
-      initialDelayMs: 5000,
+      initialDelayMs: 30000,
       deliveryAttempts: 6
     });
     expect(result.gateRoute).toBe("auto_rework");

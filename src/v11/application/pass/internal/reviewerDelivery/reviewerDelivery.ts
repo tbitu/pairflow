@@ -126,8 +126,8 @@ export async function executePassDelivery(
     deliveryResult = await emitDelivery({
       ...deliveryInput,
       // Respawned reviewer CLIs can take a few seconds to become input-ready.
-      // Retry once with a longer warm-up window before giving up.
-      initialDelayMs: 5000,
+      // Retry once with a longer warm-up window (30 seconds) before giving up.
+      initialDelayMs: 30000,
       deliveryAttempts: 6
     }).catch(() => deliveryResult);
   }

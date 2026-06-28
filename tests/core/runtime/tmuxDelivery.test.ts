@@ -227,7 +227,7 @@ function resolveLegacyRecipientRoleForTest(input: {
   if (input.envelope.recipient === "meta-reviewer") {
     return "meta_reviewer";
   }
-  if (input.envelope.recipient === "opencode" || input.envelope.recipient === "opencode") {
+  if (input.envelope.recipient === "opencode" || input.envelope.recipient === "codex") {
     return resolveUniquelyConfiguredRoleForAgent({
       agents: input.bubbleConfig.agents,
       agent: input.envelope.recipient,
@@ -1131,16 +1131,16 @@ describe("emitDeliveryNotificationAck", () => {
       bubbleConfig: {
         ...createSharedAgentConfig("opencode"),
         agents: {
-          implementer: "codex" as never,
-          reviewer: "codex" as never,
-          meta_reviewer: "codex" as never
+          implementer: "opencode",
+          reviewer: "opencode",
+          meta_reviewer: "opencode"
         }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
       envelope: createEnvelope({
         id: "msg_20260222_201",
         sender: "orchestrator",
-        recipient: "codex" as never,
+        recipient: "opencode",
         type: "TASK",
         payload: {
           summary: "Run meta-review now.",
@@ -1468,7 +1468,7 @@ describe("emitDeliveryNotificationAck", () => {
         reviewer_context_mode: "fresh",
         agents: {
           ...baseConfig.agents,
-          reviewer: "codex" as never
+          reviewer: "opencode"
         }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
@@ -2756,7 +2756,7 @@ describe("emitDeliveryNotificationAck", () => {
           review_artifact_type: "document",
           agents: {
             ...baseConfig.agents,
-            implementer: "codex" as never
+            implementer: "opencode"
           }
         },
         sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
@@ -2818,7 +2818,7 @@ describe("emitDeliveryNotificationAck", () => {
         review_artifact_type: "code",
         agents: {
           ...baseConfig.agents,
-          implementer: "codex" as never
+          implementer: "opencode"
         }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
@@ -2884,7 +2884,7 @@ describe("emitDeliveryNotificationAck", () => {
         },
         agents: {
           ...baseConfig.agents,
-          implementer: "codex" as never
+          implementer: "opencode"
         }
       },
       sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
