@@ -232,9 +232,10 @@ runs ahead of L1's role/action checks, and the document is ordered to match — 
 pseudocode diffs against L0c, and L1 (placed last) diffs against the full L0e kernel.
 Scope brake: L0d owns the generic terminal disposition paths and the lifecycle guard;
 operator authority (who may START/KICKOFF/CANCEL) stays dormant (→ L7/L10); the post-approval resume
-*actions/mechanics* — v1's `APPROVED_FOR_COMMIT → COMMITTED → DONE` (commit before `DONE`), with the
-merge a *separate* post-`DONE` command and teardown — are later (running git commit, the MERGE action,
-teardown/archive), while the minimal COMMIT resume *contract* lands at L3 (`RESUME_WAIT`); not a
+*actions/mechanics* — running git commit and the MERGE action (v1's `APPROVED_FOR_COMMIT → COMMITTED →
+DONE`, commit before `DONE`, with the merge a *separate* post-`DONE` command) — are later, and
+teardown/storage/archive are covered by the runtime-context lifecycle-close block (after L3), while the
+minimal COMMIT resume *contract* lands at L3 (`RESUME_WAIT`); not a
 privileged finalization phase; only `kickoff_pending` waits exist
 (human → L3, child → L4, timeout → L9). `KICKOFF` is the first *specialized* WAITING resume (activation);
 the generic bare-wait resume contract (`RESUME_WAIT`: resume any WAITING from a matching event → `apply_target_entry_effects`)
@@ -305,6 +306,44 @@ trust (L13). Typed slots stay minimal (type + default + required), not a full
 schema/validation system.
 Conceptually L0-family (pre-kernel project binding/resolution). **Realized in
 core-model.html.**
+
+**Run-scoped mode / variants — an L0f-family resolution extension. Realized in core-model.html as a separate `L0f+`
+section after ④ (a delta on the ③b / L0f baselines, not folded in).**
+A single workflow that runs in two modes — v1's `review_artifact_type` (create-time, immutable, run-scoped;
+default `code`). The v3 cut: a **start-fixed run-scoped `mode`** (values `code | doc`) that the **L0f resolution
+normalizes into a pinned, mode-specific `ResolvedDefinition`** — the kernel then runs a **mode-agnostic** template.
+No runtime mode-conditional, no expression DSL, no overlay/patch, no step-graph rewrite, no agent_config override.
+Mechanism: a uniform `modes: [...]` membership tag on **two carriers**, resolved at start, **fail-closed** (an
+unknown start mode, a tag on an unsupported surface, or a tag naming an undeclared mode is rejected, like slots).
+Breadth is fenced by the *mechanism* (a membership tag), not by adding surfaces. Two surfaces (v1 reality-checked):
+- **gate binding** — `gates[].modes`. A transition point may declare a `[code]` binding **and** a `[doc]` binding
+  (same `uses` / different `config`, or a different `uses`); resolution keeps the mode’s. This covers both gate
+  *presence* (v1: the runtime validation gate runs only in `code` — `passValidationGate.ts:407`) and mode-specific
+  *policy config* (v1: doc-contract reviewer gate `docContractGates.ts`; finding-priority demotion
+  `docContractReviewerGatePolicy.ts`; meta-review approve docs-only-null `metaReviewApproveValidationPolicy.ts`).
+  The surviving gate’s evaluator is the consumer; the kernel passes it **no mode** — mode-specific behavior is
+  already in the surviving binding’s `config` (one source of truth, no runtime mode check inside the policy).
+- **context contribution** — the `modes:` tag rides a `*_refs` entry (a `prompt_concern_refs` on a role/step, a
+  `context_block_refs` on a gate), **not** the catalog `context_blocks` entry (tagging the shared catalog block
+  would dangle the other mode’s refs). v1: the docs-only edit guard (`documentBubbleSourceEditGuard.ts`,
+  `rolePromptImplementerScope.ts`), reviewer doc-scope guidance, "runtime checks not required" (`roleActionGuidance.ts`).
+**The one not-a-transition-gate piece** (why an earlier `mode_profiles` surface was dropped): v1’s doc default test
+directive — `skip_full_rerun: true`, `verification_status: trusted`, "docs-only scope, runtime checks not required"
+(`reviewerTestDirectiveResolver.ts:80`), plus the skip-claim-vs-runtime-refs conflict guard
+(`docsOnlyRuntimeSkipGuard.ts`) — is evidence **production**, not a boolean check. It is modeled as a
+`docs_only_runtime_evidence` **gate** (`[doc]`, same `implement.PASS` point as the `[code]` validation gate) whose
+`allow` result produces that as **durable evidence** and records its **ref** (`GateDecision.evidence_refs` — L2/L2a; ① INV-3, no inline blob).
+So "docs-only is an explicit gate, not gate-absence" is preserved, with a **visible consumer** — unlike a
+free-floating `mode_profiles` policy-ref map, which had none (in this kernel a policy is only ever applied at a
+gate). v1 does **not** condition the step graph, the model / `agent_config`, or the reviewer loop topology — the
+cut excludes mode-on-steps / mode-on-agent_config (a tag there is `mode_tag_on_unsupported_surface`). Placement:
+an **L0f-family resolution-layer extension**, not an L2 runtime conditional; **L2 (gates) / L2b (context)** are the
+pure **consumers**. Parallel to the lifecycle-close and L4 work; does not block them. Realized in core-model.html
+as a separate **`L0f+`** section after ④: the Pseudocode lens diffs against `l0f-pseudocode`, the Config lens
+against `auto-action-template-config` (③b, the latest template), both leaving the baselines untouched, with a
+forward pointer in L0f. **Invariant preserved:** docs-only evidence/review behavior is an *explicit gate/policy
+binding, not inferred from gate absence*; and the kernel never passes `mode` to a gate evaluator (mode selects the
+binding, behavior rides its `config`).
 
 **L1 — Capability matrix.**
 Concepts: `CapabilityProfile` (matrix `role × current_step → allowed actions`); the Capability
@@ -494,12 +533,13 @@ external-token ask (→ L7), multi-channel delivery (→ L8), a *dynamic* recomm
 upstream step emitting its own) plus any open predicate language for override/routing beyond the
 single *chosen ≠ recommended* rule, a timeout on a human wait (→ L9), and the post-approval resume *actions* — approve routes to ordinary later steps, not
 a privileged "finalization" phase. The minimal COMMIT resume *contract* is realized at L3 (`RESUME_WAIT`:
-`commit_pending` `on_resume: { COMMIT: done }`); the resume *actions/mechanics* — running git commit, the
-`MERGE` resume, teardown, archive — are later slices (`merge_pending` is another operator `type: wait`, a
-perf-test a process wait). v1 order (reality-checked): `APPROVED_FOR_COMMIT → COMMITTED → DONE`, with the git
-commit *before* `DONE` and the **merge a separate command *after* `DONE`**; runtime teardown is the
-symmetric close of L0e's provider, archiving is kernel-side. "Finalization" stays an informal name, not
-a kernel step type.
+`commit_pending` `on_resume: { COMMIT: done }`); the resume *actions/mechanics* — running git commit and
+the `MERGE` resume — plus resource teardown / storage / archive concerns are later slices (`merge_pending`
+is another operator `type: wait`, a perf-test a process wait). v1 order (reality-checked): `APPROVED_FOR_COMMIT → COMMITTED → DONE`, with the git
+commit *before* `DONE` and the **merge a separate command *after* `DONE`**; runtime teardown + storage
+scope are their own milestone block (below, after L3 / before L4): the canonical record is born durable
+during the run, teardown only releases runtime resources, and archive is optional — not a preservation
+step. "Finalization" stays an informal name, not a kernel step type.
 Anchor: the converged result routes to a `human_approval` human_gate; `decisions: { approve: { target:
 commit_pending }, request_rework: { target: implement, payload: { instruction: { required: true }, refs: {
 required: false } } } }`, with `recommends: approve` on the `review.CONVERGED` edge, where `commit_pending`
@@ -510,7 +550,174 @@ matrix-first **Human Decision Contract** (input · wait.kind · correlation · a
 transcript entry · routing target · round effect · context cleanup · override · rejects), plus the
 bare-wait `RESUME_WAIT` resume that closes the `commit_pending` anchor.
 
-**L4 — Child workflow instances + internal lifecycle events.**
+**Runtime-context lifecycle close — durable record + teardown.**
+*Build order: after L3, before L4 — L4's child instances must already inherit a durable record and a
+release-not-preservation teardown, or parent/child storage and resource release collide. Conceptually this
+**completes L0e's runtime-context lifecycle** (`provision` ↔ `release`); realized here at the forcing
+point, per the `RESUME_WAIT` precedent — we do **not** renumber L0e. The v1 "archive" is a placement
+symptom, not a primitive — the same bias-removal as the finalization seam.*
+Core invariant (the whole topic in one line): **canonical run history is written during the run, into
+durable storage; teardown only releases runtime resources — teardown must never be the step that
+preserves history.** Operationally and checkably: **no canonical-record ref points into a resource
+being released.** Storage Scope (①) guarantees this by construction; Teardown (②) only asserts it,
+fail-closed. **All four strands are now realized in core-model.html** across the two axes below: ① storage scope,
+② runtime teardown, ③ workflow actions (③a operator commit/merge, ③b auto `perf_test`), and ④ archive/export/purge
+(storage-lifecycle ops). The lifecycle-close topic is complete; what follows is the per-strand record:
+
+**Two axes, so "cleanup" never re-conflates the strands.** Each strand is one combination of *who owns
+the thing* (kernel/engine · runtime provider · workflow/author) × *the nature of the operation* (resource
+teardown · workflow action · storage/archive/purge). The word "cleanup" spanned both axes and caused
+drift, so it is retired as a category name. The v1 commands each span strands rather than mapping to one:
+**`bubble delete` = ② (runtime teardown: worktree/branch/tmux/session) + ④ (archive snapshot + per-bubble
+record purge)**; **`bubble merge` = ③a (the merge *action*) + ② (the same provider teardown)**
+(verified — both v1 commands run identical runtime teardown; only `delete` purges the record and archives).
+So `delete` is **not** ③, and the runtime teardown both commands share is **②**, not "workflow cleanup".
+
+**① Durable Run Record / Storage Scope** *(cross-cutting invariant, not a step — first-class milestone).*
+**Realized in core-model.html** (section `①`, after L3) — matrix-first, the **Canonical Home Table** as
+the central artifact, plus five invariants INV-1..INV-5 and three checkable predicates
+(`evidence_ref_ok` / `projection_authoritative` / `release_safe`). Two review refinements baked in: the
+v1 grounding does **not** overclaim (the v1 bubble dir is workspace-separated but still delete-sensitive,
+*not* a born-durable T1 authority — which is why archive currently preserves history), and
+snapshot-authority is narrowed to a **sealed projection snapshot anchored to its T1 source
+range/version** (never a rival truth). The lone new runtime-affecting rule is the evidence-ref discipline
+(INV-3); `release_safe` (INV-5) is the handle ② asserts.
+Capability: one canonical run record — the append-only history/event log — is authored to durable
+storage during the run (instance/template/project refs, lifecycle events, transcript/envelopes,
+decisions, gate outcomes, timings, actor/role metadata, terminal disposition, evidence **refs**). The
+current-state projection **may** be materialized for cheap reads, but is authoritative only when
+reconstructable/consistent from the record or under an explicit snapshot-authority rule — the runtime
+workspace is never the *only* truth. Evidence: the outcome/metadata is inline in the record; large
+blobs (test log, diff snapshot, report) live in a durable evidence store referenced by a durable ref —
+never the workspace's implicit contents.
+Why first: it is the boundary that keeps teardown and archive from re-entangling; ② can only assert an
+invariant ① establishes. Depends: L0a (transcript = the canonical log), L2 (gate evidence), L0e (where
+it runs vs where truth lives). Not in scope: release mechanics (②), optional archive/export (④).
+Note: v3 already treats transcript/instance as durable abstract stores, so this is mostly *making the
+boundary explicit* + the evidence-ref rule — not a rewrite.
+
+**② Runtime Resource Teardown / Provider Close** *(capability slice — L0e's `release` mirror).*
+**Realized in core-model.html** (section `②`, after `①`) — matrix-first, the **Runtime Resource Lifecycle
+Contract** as the central artifact (provision recap + release initiate / complete / failed / initiation-failed /
+context-free rows), diffed against L3. Review refinements baked in: (1) under `release.policy: required` the
+obligation is **tracked through failure until discharged, and never dropped silently** — *not* "eventually
+released" (auto-retry/timeout/watchdog is L9); `retained` / `external` carry **no** obligation (explicit
+ownership); (2) a failed release lands in a new **`release_failed(ref)`** state — a retriable release handle,
+*not* a usable runtime (partial release lands here, not back in `ready`); (3) the durable in-flight marker
+**`releasing(req, ref)`** (carrying the ref) is written **before** dispatch, and **every** `initiate_release`
+state write is a **CAS single-winner** (`COMMIT atomically at expected_version`, `REQUIRE ready(ref)`) — the
+marker *and* the two pre-dispatch failure transitions alike — so concurrent boundary hooks on the same
+`ready(ref)` race, exactly one wins, the rest no-op; a dispatch error is a follow-up versioned commit guarded by
+`REQUIRE releasing(req, ref)`; (4) release initiation is a **post-commit** boundary hook (never inside another transition's
+commit); (5) the boundary is **not** a kernel default — the template declares a **release policy**
+(`release: { policy: required, boundaries: [...] }`); a **teardown-managed** provider (worktree) MUST declare it
+(`validate_release_policy` → `Rejected(release_policy_undeclared)` / `release_boundaries_empty` /
+`release_boundaries_not_allowed` for non-empty boundaries under retained/external), keyed on the
+provider, *not* on `runtime_context: required` (preserving the retained / external space). The terminal transition
+only **emits** a `terminal` event; `release.boundaries` decides if it is a boundary. The anchor declares
+`release: { policy: required, boundaries: [terminal] }` (the earlier "zero new author config / terminal default"
+claim was itself the bias, now retracted). `Committed` stays a kernel-outcome term (a namespace note disambiguates
+it from the workflow `COMMIT` event and a later git-commit ③a action — no rename). Release is orthogonal to
+lifecycle.
+Capability: under `release.policy: required` the kernel tracks a release obligation for a `ready`
+runtime_context, discharged at a **declared release boundary** (`release.boundaries`) — terminal is **not** a
+kernel default, only a boundary if the template lists it; it is deferred past any workflow-owned post-completion
+action that still needs the resource (v1: the worktree/branch survive `DONE` for the separate post-`DONE` merge
+command, and are released *there*).
+Reached by either flow — verified: both v1 `merge` and `delete` run the **identical** runtime teardown,
+so release is reached by either path — a `merge_completed` declared boundary or a `delete` ④ `force_release` (delete is **not** a declared boundary). On release — whichever path reaches it — the provider releases what
+it provisioned (worktree, temporary branch, tmux/runtime session, remote clone) plus engine support data
+(runtime-session registry entry, watchdog markers, locks), with explicit result/evidence/failure policy.
+This is the resource-teardown axis owned by the runtime provider — **not** "workflow cleanup" (③ is a
+different axis): worktree/branch/tmux are the runtime_context the provider provisioned, so releasing them
+is its `release` mirror, not an author-chosen step. The kernel guarantees the obligation is
+**tracked through failure until discharged, and never dropped silently** (eventual liveness — auto-retry/timeout/
+watchdog — is the L9 slice); it does not hardcode terminal as the release instant. Precondition (the teeth):
+durable-record closure complete — no canonical ref points into the resource being released (guaranteed
+by ①, asserted here fail-closed); **not** "everything archived". Ordering: ② release of a resource
+follows any ③a post-completion action that consumes it (e.g. release the worktree *after* the merge that
+needs it). Why (① then ②): closes the current dangling provision — the model provisions a worktree
+(L0d/e) and never releases it. Depends: ① (so release is pure), L3 terminal lifecycle (the earliest
+boundary), L0e (provision). Not in scope: workflow actions (③), archive/purge (④). L4-orthogonal: a
+child is just another runtime_context the same contract releases; L4 multiplies the count, not the
+contract.
+
+**③ Workflow Actions** *(author-owned axis — `type: action` steps the workflow chooses; split by maturity.
+Renamed from "Workflow Post-Actions": "post" was first-anchor bias — an action can run anywhere in the graph,
+not only at the end.)*
+Capability (the axis): a `type: action` step is the **automated sibling of `human_gate`** — a declared
+operation runs (via a runner), produces a structured **outcome**, and the outcome **selects a route** from an
+`outcomes` map. Same de-vocabularized keyed routing map as a `human_gate`'s `decisions` (kernel knows no key
+meanings), same `apply_target_entry_effects`; only the *selector* differs — a human picks (`SUBMIT_DECISION`)
+vs a runner's result picks (`RUN_ACTION`). **Action vs gate:** a gate (L2) *filters* an already-chosen
+transition (`allow|warn|block`); an action *produces* the key that *selects* the transition. Distinct from ②'s
+provider resource teardown and ④'s storage/archive/purge.
+
+> **③a Workflow Actions — commit / merge (operator-triggered).** **Realized in core-model.html** (section
+> `③a`, after ②, diffed against ②). The first cut: `trigger: operator_intent`, anchored on COMMIT + MERGE.
+> A `type: action` step parks `WAITING(action_pending)` with an `ActionRequest` (the decision-less
+> `HumanDecisionRequest` analog); the operator's `RUN_ACTION` (trigger `{ instance_id, op_id, expected_version,
+> action_key, payload, by }`) is version-checked (`Stale`) + op_id-idempotent (`Duplicate`), validates the
+> **payload** only (commit message policy — `missing_required_field`, the `human_gate` analog), then — **marker-first,
+> single-winner, like ② release** — CAS-claims `action_pending → action_running` before running the runner (so two
+> concurrent triggers never both reach the git-mutating runner), and the classified `outcome_key` routes via
+> `outcomes` (a self-target = re-park + retry; `infra_error` / undeclared = re-park + audit, never a post-side-effect reject).
+> Workspace reality (nothing staged, merge conflict) is an **action business_failure** outcome, not a trigger
+> reject; a crashed runner is `infra_error`. An outcome may `emits:` a release boundary — `merged ⇒
+> merge_completed` → ② releases the worktree (the ② deferral, now realized; the anchor's `release.boundaries`
+> moves `[terminal] → [merge_completed]`). Evidence: `ACTION_RESULT` (sha/exit/hash inline T1, logs T3 — ①
+> INV-3). v1 grounding: commit/merge commands RUN git in the workspace, conflict → abort + retry, distinct
+> business-vs-infra reason codes. **v3 semantic shift (stated):** the anchor puts workflow-`done` *after*
+> merge (merge is a normal pre-terminal action step); v1's `DONE` was commit-complete with merge a separate
+> post-`DONE` command — accepted to avoid a post-terminal action shape.
+
+> **③b Auto Workflow Actions.** **Realized in core-model.html** (section `③b`, after ③a, diffed against ③a).
+> The `auto` trigger: an action runs **on arrival** (no operator), still **marker-first** — the arrival commit
+> claims `WAITING(action_running)` + `ACTION_RUNNING`, then an `ActionIntent` (produce-not-perform, the
+> `DispatchIntent` analog) is delivered **post-commit**, the runner runs, and the result returns as an
+> `ACTION_RESULT` **kernel-event** (correlated by `request_id`, the `RUNTIME_CONTEXT_READY` sibling; inline ⇒
+> immediate, deferred ⇒ later — same contract). Outcome-routing: `pass → human_approval` (the L3 `recommends`
+> moves onto `perf_test.pass`, the edge that now enters the gate), `regression → implement` + instruction (the
+> automated `request_rework`). **Bounded retry**, opt-in per outcome that declares `retry { max_attempts,
+> on_exhausted }`: re-claims within an **episode** (attempt = transcript `ACTION_RUNNING` count for the
+> `episode_ref`, reconstructable — a fresh arrival opens a new episode), exhausted ⇒ escalate. Anchor: a
+> `perf_test` between converge and the human gate (an action can be anywhere, not a "post" phase). v1 grounding:
+> auto-run-and-route exists inline (`passValidationGate` *filters*, `auto_rework` *routes* + bounded
+> `auto_rework_count/limit`); async delivery is the greenfield generalization. **Out** (thin / later): the
+> deferred async driver + timeout (L9), unbounded retry / watchdog (L9), **pure computed-routing** (verdict +
+> counter with no runner — v1 `auto_rework`'s process-less half, a routing-policy concern), a rich
+> outcome-predicate DSL, a packaged action library (publish/notify are examples).
+
+Depends: L3 (the de-vocabularized routing + `apply_target_entry_effects`, the wait machinery), L2a (the
+process-runner family), ② (the release boundary an action outcome emits).
+
+**④ Archive / Export / Purge** *(storage-lifecycle ops — not correctness).*
+**Realized in core-model.html** (section `④`, after ③b) — matrix-first (operation · operator intent · allowed
+state · lifecycle · release interaction · storage effect · surviving audit · idempotency · rejects · v1 map),
+a **standalone ops contract** like ①. Three independent axes: **delete-intent · release (②) · storage**.
+The v3 home of the *other* half of v1 `bubble delete` (the archive + per-bubble **record purge**; the
+runtime-teardown half is ②). Settled with two review refinements:
+- **The destructive precondition is on the purge commit, not the delete intent.** `DELETE_REQUESTED` (a
+  `CANCEL`-sibling operator intent, **not** a workflow action) is accepted on a live run (with `force`) and
+  drives **cancel → ② release → purge**; the irreversible `hard_purge` runs **only** when **terminal &&
+  release discharged** (else deferred). The delete chain releases via `force_release` — ②'s machinery minus the
+  declared-boundary gate (`release_safe` still holds), not a declared boundary.
+- **Purge is closure-scoped and crash-safe.** It removes the full T1 run record + the run's closure-owned T3
+  blobs (MVP: run-owned), write-ahead the `run_index` tombstone (carrying the closure manifest) first — the surviving **T1-family** idempotency
+  authority and re-drive source (`purged` is not an instance axis). Per-operation / per-state / ordering authority lives in the
+  core-model ④ tables (Operation Contract · State Authority · Hard-Purge Ordering).
+Under ① the purge is *safe by construction* — durable + ref-disciplined evidence (INV-3) ⇒ complete with **no
+dangling refs** (the v1 evidence-loss bug is impossible). **Not** the preservation path: audit / metrics / eval
+compute from the durable record (or the surviving **global metrics stream**); archive/export is an optional cold
+copy (read-only w.r.t. the run record/runtime, writes a `run_index` catalog entry), never read back. No author config (operator/ops commands). Out (later/ops): retention / auto-purge / TTL / GC, an
+archive query CLI, restore/re-hydration, a shared/dedup blob store, export formats, federation purge (L11+).
+Ops/tooling, ~L8 area. Depends: ① (makes archive optional + purge safe), ② (release before purge), L3 (CANCEL
+sibling). **This closes the lifecycle-close topic (①②③④).**
+
+Cross-ref: the **wait/resume contract** these build on is already realized at L3 (`RESUME_WAIT`); later
+resource/action slices reuse it.
+
+**L4 — Child workflow instances + internal lifecycle events. Realized in core-model.html (L4 section after L0f+).**
 Concepts: `ChildWorkflowLink`; parent waits on a child lifecycle event; **kernel-emitted
 lifecycle events as an internal channel**; orphaned-child recovery. This is the
 deterministic-internal form of the wait condition (correlated by child id).
@@ -519,6 +726,22 @@ subflow of L5. This is the WF-7 unlock and it must come early, before the full
 distributed stack: it needs only internal events, not external channels or correlation.
 Note the coherence bonus: "internal lifecycle events as a channel" is the smallest form
 of the channel abstraction, prefiguring external channels (L8).
+Realized as five kernel primitives (the rest is parent-template authoring): a `type: child_workflow`
+step; the canonical `ChildWorkflowLink` (parent record) + a `parent_ref` back-link on the child;
+`WAITING(child_event)`; the `CHILD_LIFECYCLE` internal kernel event (a child's subscribable lifecycle
+transition commit, delivered to the parent — the `RUNTIME_CONTEXT_RELEASED` / `ACTION_RESULT` sibling);
+and a load-bearing `child_key` for idempotent spawn (≤1 active link per parent+step+child_key). Spawn is
+produce-not-perform (`SpawnIntent`), with the child's id written back into the link by a correlated, CAS'd `CHILD_SPAWNED` event (the `RUNTIME_CONTEXT_READY` analog); resume reuses `arrive()`. The mechanism is transition-based but the
+MVP anchor subscribes only **terminal** lifecycles (`done | failed | cancelled`); `wait_for` keys are
+`lifecycle → route config`, and `validate_child_steps` requires a route for **every** terminal disposition
+(fail-closed, so no terminal is ever unhandled). A spawn that cannot start (a child `CREATE_INSTANCE` rejected
+past load — a static / typo'd `template_ref` is caught at load) is delivered as `CHILD_SPAWN_FAILED` (the ②
+initiation-failure analog) and routes through the required `failed` path; a transient spawn-dispatch crash leaves
+the link durably `spawning` → L9. Round is instance-local. Config anchor = a new `plan-exec-v0` parent template
+(the task list is the plan **document**, not kernel state). Absent (→ later / L9 / L8): fan-out / fan-in,
+intermediate-lifecycle subscription (`ready_for_human_approval`), lost-event reconciliation, and the
+durable / external channel. v1 reality check (Explore): `plan watch` is external polling (read each child's
+`state.json` ~60s) with no event / join / reverse link; L4 replaces it with a first-class link + channel.
 
 > **MVP cut — build until local WF-7 runs:** parent plan workflow, child bubble
 > workflow, internal lifecycle events, human approval/rework gates, no polling. This
