@@ -47,7 +47,10 @@ export async function resolveCleanRerunPaneBinding(input: {
       metaReviewerAgent: finalizeInput.resolved.bubbleConfig.agents.meta_reviewer,
       metaReviewerMcpPolicy:
         finalizeInput.resolved.bubbleConfig.role_mcp?.meta_reviewer
-        ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer
+        ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer,
+      ...(finalizeInput.resolved.bubbleConfig.agents.meta_reviewer_model !== undefined
+        ? { metaReviewerModel: finalizeInput.resolved.bubbleConfig.agents.meta_reviewer_model }
+        : {})
     });
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);

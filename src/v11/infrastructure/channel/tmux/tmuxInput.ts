@@ -258,6 +258,49 @@ export async function checkTmuxPaneMarkerStatus(
   return "not_found";
 }
 
+const INTERRUPT_PROMPT_PATTERNS = [
+  /esc again to interrupt/iu,
+  /esc to interrupt/u,
+  /escape to interrupt/u,
+  /esc interrupt/ui
+];
+
+/**
+ * Checks whether captured pane output contains any interrupt prompt text.
+ */
+function hasInterruptPrompt(output: string): boolean {
+  const lower = output.toLowerCase();
+  for (const pattern of INTERRUPT_PROMPT_PATTERNS) {
+    if (pattern.test(lower)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Checks whether the pane shows a visible agent prompt line.
+ */
+function hasVisiblePromptLine(capture: { exitCode: number; stdout: string }): boolean {
+  if (capture.exitCode !== 0) {
+    return false;
+  }
+  const lines = capture.stdout.split("\n");
+
+  // Opencode-specific markers
+  const isOpencode = lines.some((line) => /▀▀▀▀/u.test(line))
+    || /ask anything/iu.test(capture.stdout)
+    || /tab agents/iu.test(capture.stdout)
+    || /ctrl\+p commands/iu.test(capture.stdout)
+    || lines.some((line) => /^\s*┃/u.test(line));
+
+  if (isOpencode) {
+    return true;
+  }
+
+  return lines.some((line) => isAgentPromptLine(line));
+}
+
 export async function confirmTmuxPaneMarkerSubmission(
   input: ConfirmTmuxPaneMarkerSubmissionInput
 ): Promise<boolean> {
@@ -284,12 +327,7 @@ export async function confirmTmuxPaneMarkerSubmission(
     );
     if (capture.exitCode === 0) {
       const lowerOutput = capture.stdout.toLowerCase();
-      if (
-        lowerOutput.includes("esc again to interrupt") ||
-        lowerOutput.includes("esc to interrupt") ||
-        lowerOutput.includes("escape to interrupt") ||
-        lowerOutput.includes("esc interrupt")
-      ) {
+      if (hasInterruptPrompt(lowerOutput)) {
         return true;
       }
     }
@@ -302,28 +340,17 @@ export async function confirmTmuxPaneMarkerSubmission(
         ["capture-pane", "-p", "-S", "-200", "-t", input.targetPane],
         { allowFailure: true }
       );
-      if (promptCheck.exitCode === 0) {
-        const lines = promptCheck.stdout.split("\n");
-        const isOpencode =
-          lines.some((line) => /▀▀▀▀/u.test(line)) ||
-          promptCheck.stdout.toLowerCase().includes("ask anything") ||
-          promptCheck.stdout.toLowerCase().includes("tab agents") ||
-          promptCheck.stdout.toLowerCase().includes("ctrl+p commands") ||
-          lines.some((line) => /^\s*┃/u.test(line));
-        const hasPromptLine = isOpencode
-          ? true
-          : lines.some((line) => isAgentPromptLine(line));
 
-        if (!hasPromptLine) {
-          // Pane is still processing previous input; wait longer instead of
-          // blindly resending Enter.
-          if (retryDelayMs > 0) {
-            await sleepForDelayMs(retryDelayMs);
-          }
-
-          continue;
+      if (!hasVisiblePromptLine(promptCheck)) {
+        // Pane is still processing previous input; wait longer instead of
+        // blindly resending Enter.
+        if (retryDelayMs > 0) {
+          await sleepForDelayMs(retryDelayMs);
         }
+
+        continue;
       }
+
       if (retryDelayMs > 0) {
         await sleepForDelayMs(retryDelayMs);
       }

@@ -78,7 +78,10 @@ export async function applyMetaReviewGateOnConvergence(
     metaReviewerAgent: context.resolved.bubbleConfig.agents.meta_reviewer,
     metaReviewerMcpPolicy:
       context.resolved.bubbleConfig.role_mcp?.meta_reviewer
-      ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer
+      ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer,
+    ...(context.resolved.bubbleConfig.agents.meta_reviewer_model !== undefined
+      ? { metaReviewerModel: context.resolved.bubbleConfig.agents.meta_reviewer_model }
+      : {})
   });
   if (paneBinding.shouldDeactivate && paneBinding.delivery.status !== "confirmed") {
     await context.deactivateMetaReviewerPane();

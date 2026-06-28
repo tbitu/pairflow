@@ -370,7 +370,7 @@ function validateRepoDefaultsConfig(
           errors
         });
         if (value !== undefined) {
-          validatedAgents[key] = value;
+          validatedAgents[key] = value.replace(/\/+$/, "");
         }
       }
       if (Object.keys(validatedAgents).length > 0) {

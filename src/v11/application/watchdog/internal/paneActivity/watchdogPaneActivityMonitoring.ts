@@ -29,6 +29,119 @@ export interface WatchdogPaneActivityState {
   sampleResult: PaneActivitySampleResult | null;
 }
 
+interface NudgeInput {
+  activeRole: AgentRole;
+  bubbleConfig: WatchdogRuntimeContext["resolved"]["bubbleConfig"];
+  bubbleId: string;
+  worktreePath: string;
+  sessionsPath: string;
+  runTmux: BubbleWatchdogDependencies["runTmux"];
+  readRuntimeSessionsRegistry: BubbleWatchdogDependencies["readRuntimeSessionsRegistry"];
+  sendAndSubmitTmuxPaneMessage: SendAndSubmitTmuxPaneMessagePort;
+  targetPane: string;
+  nudgeMessage: string;
+  sessionName: string;
+}
+
+type NudgeEligibility = { eligible: false } | { eligible: true; elapsedSinceLastSeenMs: number; elapsedSinceLastNudgeMs: number };
+
+/**
+ * Determines whether a watchdog nudge should be attempted, using early returns.
+ */
+function shouldAttemptNudge(input: {
+  state: WatchdogRuntimeContext["state"];
+  currentRecord: WatchdogPaneActivityRecord | null;
+  hasEscInterrupt: boolean;
+  now: Date;
+}): NudgeEligibility {
+  if (input.state.state !== "RUNNING") {
+    return { eligible: false };
+  }
+  if (input.hasEscInterrupt) {
+    return { eligible: false };
+  }
+  const lastSeenMs = parseIsoTimestamp(input.currentRecord?.last_seen_esc_interrupt_at) ?? input.now.getTime();
+  const elapsedSinceLastSeenMs = input.now.getTime() - lastSeenMs;
+
+  const lastNudgeMs = parseIsoTimestamp(input.currentRecord?.last_nudge_at) ?? 0;
+  const elapsedSinceLastNudgeMs = input.now.getTime() - lastNudgeMs;
+
+  return { eligible: true, elapsedSinceLastSeenMs, elapsedSinceLastNudgeMs };
+}
+
+/**
+ * Attempts to nudge an agent pane when watchdog detects inactivity.
+ */
+async function trySendWatchdogNudge(input: NudgeInput): Promise<"ok" | "pane_not_ready"> {
+  const expectedPaneAgent = input.activeRole === "implementer"
+    ? input.bubbleConfig.agents.implementer
+    : input.activeRole === "reviewer"
+    ? input.bubbleConfig.agents.reviewer
+    : input.activeRole === "meta_reviewer"
+    ? input.bubbleConfig.agents.meta_reviewer
+    : undefined;
+
+  if (expectedPaneAgent !== "opencode") {
+    return "ok";
+  }
+
+  const expectedAgentRole = input.activeRole;
+  const roleModel = input.activeRole === "implementer"
+    ? input.bubbleConfig.agents.implementer_model
+    : input.activeRole === "reviewer"
+    ? input.bubbleConfig.agents.reviewer_model
+    : input.activeRole === "meta_reviewer"
+    ? input.bubbleConfig.agents.meta_reviewer_model
+    : undefined;
+
+  const roleMcpPolicy =
+    input.bubbleConfig.role_mcp?.[expectedAgentRole]
+    ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE[expectedAgentRole];
+
+  const registry = await input.readRuntimeSessionsRegistry(
+    input.sessionsPath,
+    { allowMissing: true }
+  );
+  const sessionRecord = registry[input.bubbleId];
+  const workspaceAuthority = resolveRuntimeSessionWorkspaceAuthority({
+    runtimeSessionRecord: sessionRecord
+  });
+  const workspacePath = workspaceAuthority.status === "resolved"
+    ? workspaceAuthority.authority.workspacePath
+    : input.worktreePath;
+
+  const opencodePaneReady = await ensureOpencodePaneReady({
+    runner: input.runTmux,
+    targetPane: input.targetPane,
+    respawnExpectedPaneAgent: async (): Promise<void> => {
+      const respawnCommand = buildAgentCommand({
+        agentName: "opencode",
+        roleName: expectedAgentRole,
+        roleMcpPolicy,
+        ...(roleModel !== undefined ? { model: roleModel } : {}),
+        bubbleId: input.bubbleId,
+        workspacePath,
+        pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile
+      });
+      const paneIndex = resolveWatchdogTargetPaneIndex(input.activeRole);
+      await respawnTmuxPaneCommand({
+        sessionName: input.sessionName,
+        paneIndex,
+        cwd: workspacePath,
+        command: respawnCommand,
+        runner: input.runTmux
+      });
+    }
+  });
+
+  if (!opencodePaneReady) {
+    return "pane_not_ready";
+  }
+
+  await input.sendAndSubmitTmuxPaneMessage(input.runTmux, input.targetPane, input.nudgeMessage);
+  return "ok";
+}
+
 function parseIsoTimestamp(value: string | undefined): number | null {
   if (value === undefined) {
     return null;
@@ -129,48 +242,21 @@ function buildFailedSampleRecord(input: {
 }
 
 export async function maybeMonitorWatchdogPaneActivity(input: {
-  context: WatchdogRuntimeContext;
-  monitored: boolean;
-  readPaneActivity: ReadWatchdogPaneActivityPort;
-  writePaneActivity: WriteWatchdogPaneActivityPort;
-  samplePaneActivity: SampleWatchdogPaneActivityFn;
-  readRuntimeSessionsRegistry: BubbleWatchdogDependencies["readRuntimeSessionsRegistry"];
-  runTmux: BubbleWatchdogDependencies["runTmux"];
-  sendAndSubmitTmuxPaneMessage?: SendAndSubmitTmuxPaneMessagePort;
+  context: WatchdogRuntimeContext; monitored: boolean; readPaneActivity: ReadWatchdogPaneActivityPort; writePaneActivity: WriteWatchdogPaneActivityPort; samplePaneActivity: SampleWatchdogPaneActivityFn; readRuntimeSessionsRegistry: BubbleWatchdogDependencies["readRuntimeSessionsRegistry"]; runTmux: BubbleWatchdogDependencies["runTmux"]; sendAndSubmitTmuxPaneMessage?: SendAndSubmitTmuxPaneMessagePort;
 }): Promise<WatchdogPaneActivityState | null> {
-  if (
-    !input.monitored
-    || input.context.state.active_agent === null
-    || input.context.state.active_role === null
-  ) {
+  if (!input.monitored || input.context.state.active_agent === null || input.context.state.active_role === null) {
     return null;
   }
 
-  const readResult = await input.readPaneActivity({
-    runtimeDir: input.context.resolved.bubblePaths.runtimeDir,
-    bubbleId: input.context.resolved.bubbleId
-  });
+  const readResult = await input.readPaneActivity({ runtimeDir: input.context.resolved.bubblePaths.runtimeDir, bubbleId: input.context.resolved.bubbleId });
   let currentRecord = readResult.status === "ok" ? readResult.record : null;
 
-  if (!shouldSamplePaneActivity(
-    readResult,
-    input.context.now,
-    input.context.state.active_role
-  )) {
-    return {
-      readStatus: readResult.status,
-      currentRecord,
-      sampleResult: null
-    };
+  if (!shouldSamplePaneActivity(readResult, input.context.now, input.context.state.active_role)) {
+    return { readStatus: readResult.status, currentRecord, sampleResult: null };
   }
 
-  if (
-    input.readRuntimeSessionsRegistry === undefined
-    || input.runTmux === undefined
-  ) {
-    throw new BubbleWatchdogError(
-      "Watchdog runtime dependencies missing: readRuntimeSessionsRegistry or runTmux."
-    );
+  if (input.readRuntimeSessionsRegistry === undefined || input.runTmux === undefined) {
+    throw new BubbleWatchdogError("Watchdog runtime dependencies missing: readRuntimeSessionsRegistry or runTmux.");
   }
 
   const sampleResult = await input.samplePaneActivity({
@@ -186,131 +272,33 @@ export async function maybeMonitorWatchdogPaneActivity(input: {
 
   if (sampleResult.status === "sampled") {
     currentRecord = buildNextPaneActivityRecord({
-      bubbleId: input.context.resolved.bubbleId,
-      previous: currentRecord,
-      previousReadStatus: readResult.status,
-      sampleResult
+      bubbleId: input.context.resolved.bubbleId, previous: currentRecord, previousReadStatus: readResult.status, sampleResult
     });
 
-    if (
-      input.context.state.state === "RUNNING" &&
-      input.context.state.active_role !== null &&
-      sampleResult.has_esc_interrupt === false
-    ) {
-      const lastSeenMs = parseIsoTimestamp(currentRecord.last_seen_esc_interrupt_at) ?? input.context.now.getTime();
-      const elapsedSinceLastSeenMs = input.context.now.getTime() - lastSeenMs;
+    const nudgeEligibility = shouldAttemptNudge({ state: input.context.state, currentRecord, hasEscInterrupt: sampleResult.has_esc_interrupt ?? false, now: input.context.now });
+    if (!nudgeEligibility.eligible) { /* not eligible */ }
+    else if (nudgeEligibility.elapsedSinceLastSeenMs >= 2 * 60_000 && nudgeEligibility.elapsedSinceLastNudgeMs >= 2 * 60_000) {
+      const paneIndex = resolveWatchdogTargetPaneIndex(input.context.state.active_role);
+      const targetPane = `${sampleResult.session_name}:0.${paneIndex}`;
 
-      const lastNudgeMs = parseIsoTimestamp(currentRecord.last_nudge_at) ?? 0;
-      const elapsedSinceLastNudgeMs = input.context.now.getTime() - lastNudgeMs;
-
-      if (elapsedSinceLastSeenMs >= 2 * 60_000 && elapsedSinceLastNudgeMs >= 2 * 60_000) {
-        const nudgeMessage = 'Continue exactly where you left off. Do not summarize or repeat the previous text. Remember your task only ends when you run "pairflow agent emit", never before.';
-        const paneIndex = resolveWatchdogTargetPaneIndex(input.context.state.active_role);
-        const targetPane = `${sampleResult.session_name}:0.${paneIndex}`;
-
-        if (input.sendAndSubmitTmuxPaneMessage) {
-          try {
-            const activeRole = input.context.state.active_role;
-            const expectedPaneAgent = activeRole === "implementer"
-              ? input.context.resolved.bubbleConfig.agents.implementer
-              : activeRole === "reviewer"
-              ? input.context.resolved.bubbleConfig.agents.reviewer
-              : activeRole === "meta_reviewer"
-              ? input.context.resolved.bubbleConfig.agents.meta_reviewer
-              : undefined;
-
-            if (expectedPaneAgent === "opencode") {
-              const expectedAgentRole = activeRole;
-              const roleModel = activeRole === "implementer"
-                ? input.context.resolved.bubbleConfig.agents.implementer_model
-                : activeRole === "reviewer"
-                ? input.context.resolved.bubbleConfig.agents.reviewer_model
-                : activeRole === "meta_reviewer"
-                ? input.context.resolved.bubbleConfig.agents.meta_reviewer_model
-                : undefined;
-              const roleMcpPolicy =
-                input.context.resolved.bubbleConfig.role_mcp?.[expectedAgentRole]
-                ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE[expectedAgentRole];
-
-              const registry = await input.readRuntimeSessionsRegistry(
-                input.context.resolved.bubblePaths.sessionsPath,
-                { allowMissing: true }
-              );
-              const sessionRecord = registry[input.context.resolved.bubbleId];
-              const workspaceAuthority = resolveRuntimeSessionWorkspaceAuthority({
-                runtimeSessionRecord: sessionRecord
-              });
-              const workspacePath = workspaceAuthority.status === "resolved"
-                ? workspaceAuthority.authority.workspacePath
-                : input.context.resolved.bubblePaths.worktreePath;
-
-              const opencodePaneReady = await ensureOpencodePaneReady({
-                runner: input.runTmux,
-                targetPane,
-                respawnExpectedPaneAgent: async (): Promise<void> => {
-                  const respawnCommand = buildAgentCommand({
-                    agentName: "opencode",
-                    roleName: expectedAgentRole,
-                    roleMcpPolicy,
-                    ...(roleModel !== undefined ? { model: roleModel } : {}),
-                    bubbleId: input.context.resolved.bubbleId,
-                    workspacePath,
-                    pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile
-                  });
-                  await respawnTmuxPaneCommand({
-                    sessionName: sampleResult.session_name,
-                    paneIndex,
-                    cwd: workspacePath,
-                    command: respawnCommand,
-                    runner: input.runTmux
-                  });
-                }
-              });
-              if (!opencodePaneReady) {
-                return {
-                  readStatus: readResult.status,
-                  currentRecord,
-                  sampleResult
-                };
-              }
-            }
-
-            await input.sendAndSubmitTmuxPaneMessage(input.runTmux, targetPane, nudgeMessage);
-            currentRecord.last_nudge_at = input.context.now.toISOString();
-          } catch {
-            // Best effort logging
-          }
-        }
+      if (input.sendAndSubmitTmuxPaneMessage) {
+        try {
+          const nudgeResult = await trySendWatchdogNudge({
+            activeRole: input.context.state.active_role, bubbleConfig: input.context.resolved.bubbleConfig, bubbleId: input.context.resolved.bubbleId, worktreePath: input.context.resolved.bubblePaths.worktreePath, sessionsPath: input.context.resolved.bubblePaths.sessionsPath, runTmux: input.runTmux, readRuntimeSessionsRegistry: input.readRuntimeSessionsRegistry, sendAndSubmitTmuxPaneMessage: input.sendAndSubmitTmuxPaneMessage, targetPane, nudgeMessage: 'Continue exactly where you left off. Do not summarize or repeat the previous text. Remember your task only ends when you run "pairflow agent emit", never before.', sessionName: sampleResult.session_name
+          });
+          if (nudgeResult === "pane_not_ready") { return { readStatus: readResult.status, currentRecord, sampleResult }; }
+        } catch { /* best effort */ }
       }
     }
 
-    await input.writePaneActivity({
-      runtimeDir: input.context.resolved.bubblePaths.runtimeDir,
-      bubbleId: input.context.resolved.bubbleId,
-      record: currentRecord
-    });
-    return {
-      readStatus: readResult.status,
-      currentRecord,
-      sampleResult
-    };
+    await input.writePaneActivity({ runtimeDir: input.context.resolved.bubblePaths.runtimeDir, bubbleId: input.context.resolved.bubbleId, record: currentRecord });
+    return { readStatus: readResult.status, currentRecord, sampleResult };
   }
 
   if (currentRecord !== null) {
-    currentRecord = buildFailedSampleRecord({
-      previous: currentRecord,
-      sampleResult
-    });
-    await input.writePaneActivity({
-      runtimeDir: input.context.resolved.bubblePaths.runtimeDir,
-      bubbleId: input.context.resolved.bubbleId,
-      record: currentRecord
-    });
+    currentRecord = buildFailedSampleRecord({ previous: currentRecord, sampleResult });
+    await input.writePaneActivity({ runtimeDir: input.context.resolved.bubblePaths.runtimeDir, bubbleId: input.context.resolved.bubbleId, record: currentRecord });
   }
 
-  return {
-    readStatus: readResult.status,
-    currentRecord,
-    sampleResult
-  };
+  return { readStatus: readResult.status, currentRecord, sampleResult };
 }

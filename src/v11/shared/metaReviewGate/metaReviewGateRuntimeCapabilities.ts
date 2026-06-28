@@ -79,6 +79,7 @@ export interface MetaReviewGatePaneBindingRuntimeCapabilities {
     pairflowCommandProfile?: PairflowCommandProfile;
     roleName?: "implementer" | "reviewer" | "meta_reviewer";
     roleMcpPolicy?: RoleMcpPolicy;
+    model?: string;
     opencodeMcpDisableArgs?: string[];
     startupPrompt?: string | undefined;
   }) => string;
@@ -102,6 +103,7 @@ export interface ResolveMetaReviewerPaneWarningInput {
   pairflowCommandProfile: PairflowCommandProfile;
   metaReviewerAgent: AgentName;
   metaReviewerMcpPolicy?: RoleMcpPolicy;
+  metaReviewerModel?: string;
 }
 
 export type ResolveMetaReviewerPaneWarning = (

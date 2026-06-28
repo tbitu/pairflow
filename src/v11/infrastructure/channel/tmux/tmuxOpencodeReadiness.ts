@@ -55,6 +55,48 @@ function isOpencodeDescendantOf(pid: number): boolean {
   return false;
 }
 
+const EXITED_SHELL_PATTERNS = [
+  /dropping to interactive shell/i,
+  /exited \(code/u,
+  /cli not found in path/ui
+];
+
+const READY_TEXT_PATTERNS = [
+  /ask anything/i,
+  /tab agents/i,
+  /ctrl\+p commands/i,
+  /claude code is ready/i,
+  /\[pairflow\]/u
+];
+
+/**
+ * Checks whether captured output indicates the pane has exited or dropped to a shell.
+ */
+function isPaneExitedOrDropped(output: string): boolean {
+  for (const pattern of EXITED_SHELL_PATTERNS) {
+    if (pattern.test(output)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Checks whether captured output indicates the agent is ready.
+ */
+function isPaneReadyByText(output: string): boolean {
+  for (const pattern of READY_TEXT_PATTERNS) {
+    if (pattern.test(output)) {
+      return true;
+    }
+  }
+  // In test environments, an empty pane also counts as ready.
+  if (process.env.VITEST && output.trim() === "") {
+    return true;
+  }
+  return false;
+}
+
 export async function waitForOpencodePaneReady(input: {
   runner: TmuxRunner;
   targetPane: string;
@@ -72,20 +114,19 @@ export async function waitForOpencodePaneReady(input: {
         ["display-message", "-p", "-t", input.targetPane, "#{pane_pid}"],
         { allowFailure: true }
       );
-      if (pidResult.exitCode === 0) {
-        const pidStr = pidResult.stdout.trim();
-        const pid = parseInt(pidStr, 10);
-        if (!isNaN(pid) && pid > 0) {
-          if (isOpencodeDescendantOf(pid)) {
-            return true;
+      if (pidResult.exitCode !== 0) {
+        continue;
+      }
+      const pid = parseInt(pidResult.stdout.trim(), 10);
+      if (!isNaN(pid) && pid > 0) {
+        if (isOpencodeDescendantOf(pid)) {
+          return true;
+        }
+        if (!process.env.VITEST) {
+          if (attempt < attempts - 1 && retryDelayMs > 0) {
+            await sleepForDelayMs(retryDelayMs);
           }
-          if (!process.env.VITEST) {
-            if (attempt < attempts - 1 && retryDelayMs > 0) {
-              await sleepForDelayMs(retryDelayMs);
-              continue;
-            }
-            return false;
-          }
+          return false;
         }
       }
     } catch {
@@ -98,20 +139,9 @@ export async function waitForOpencodePaneReady(input: {
     );
     if (captureResult.exitCode === 0) {
       const output = captureResult.stdout.toLowerCase();
-      if (
-        output.includes("dropping to interactive shell") ||
-        output.includes("exited (code") ||
-        output.includes("cli not found in path")
-      ) {
-        // Exited / dropped to shell, not ready
-      } else if (
-        output.includes("ask anything")
-        || output.includes("tab agents")
-        || output.includes("ctrl+p commands")
-        || output.includes("claude code is ready")
-        || output.includes("[pairflow]")
-        || (!!process.env.VITEST && output.trim() === "")
-      ) {
+      if (isPaneExitedOrDropped(output)) {
+        // Exited / dropped to shell, not ready.
+      } else if (isPaneReadyByText(output)) {
         return true;
       }
     }

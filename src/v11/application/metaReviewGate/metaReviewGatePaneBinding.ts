@@ -119,6 +119,7 @@ function buildMetaReviewerCommand(input: {
   taskArtifactPath: string;
   pairflowCommandProfile: PairflowCommandProfile;
   metaReviewerMcpPolicy: RoleMcpPolicy;
+  metaReviewerModel?: string;
 }): string {
   const roleMcpPolicy =
     input.metaReviewerMcpPolicy
@@ -138,6 +139,7 @@ function buildMetaReviewerCommand(input: {
     agentName: input.metaReviewerAgent,
     roleName: "meta_reviewer",
     roleMcpPolicy,
+    ...(input.metaReviewerModel !== undefined ? { model: input.metaReviewerModel } : {}),
     bubbleId: input.bubbleId,
     workspacePath: input.workspacePath,
     pairflowCommandProfile: input.pairflowCommandProfile,
@@ -265,7 +267,10 @@ export const resolveMetaReviewerPaneWarning: ResolveMetaReviewerPaneWarning = as
       pairflowCommandProfile: input.pairflowCommandProfile,
       metaReviewerMcpPolicy:
         input.metaReviewerMcpPolicy
-        ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer
+        ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer,
+      ...(input.metaReviewerModel !== undefined
+        ? { metaReviewerModel: input.metaReviewerModel }
+        : {})
     });
     await respawnPaneCommand({
       sessionName: bindStart.record.tmuxSessionName,

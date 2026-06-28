@@ -217,6 +217,26 @@ round_gate_applies_after = 2
     });
   });
 
+  it("trims trailing slashes from default agent model names", () => {
+    const parsed = parsePairflowRepoConfigToml(`
+[defaults.agents]
+implementer = "opencode"
+implementer_model = "gpt-5.2/"
+reviewer = "opencode"
+reviewer_model = "opencode-sonnet-4-5//"
+meta_reviewer = "opencode"
+meta_reviewer_model = "gpt-5.2-mini/"
+`);
+    expect(parsed.defaults?.agents).toEqual({
+      implementer: "opencode",
+      implementer_model: "gpt-5.2",
+      reviewer: "opencode",
+      reviewer_model: "opencode-sonnet-4-5",
+      meta_reviewer: "opencode",
+      meta_reviewer_model: "gpt-5.2-mini"
+    });
+  });
+
   it("parses plan-watch runner backend selection", () => {
     const parsed = parsePairflowRepoConfigToml(`
 [plan_watch.runner]

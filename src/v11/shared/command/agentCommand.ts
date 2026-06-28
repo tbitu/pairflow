@@ -38,15 +38,15 @@ function buildAgentLaunchCommand(
 
   if (agentName === "opencode") {
     // AC1: Map opencode to PF-implementer or PF-reviewer agent identity.
-    if (roleName !== undefined) {
-      const agentIdentity =
-        roleName === "implementer" ? "PF-implementer" : "PF-reviewer";
-      args.push("--agent", agentIdentity);
+    if (roleName === "implementer") {
+      args.push("--agent", "PF-implementer");
+    } else if (roleName === "reviewer" || roleName === "meta_reviewer") {
+      args.push("--agent", "PF-reviewer");
     }
   }
 
   if ((model?.trim().length ?? 0) > 0) {
-    args.push("--model", model as string);
+    args.push("--model", (model as string).trim().replace(/\/+$/, ""));
   }
 
   if (hasStartupPrompt) {

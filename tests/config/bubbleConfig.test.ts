@@ -174,6 +174,48 @@ observer = "enabled"
     );
   });
 
+  it("trims trailing whitespace from agent model names in bubble config", () => {
+    const config = parseBubbleConfigToml(
+      baseToml.replace(
+        '[agents]\nimplementer = "opencode"\nreviewer = "opencode"',
+        [
+          "[agents]",
+          'implementer = "opencode"',
+          'implementer_model = "gpt-5.2 "',
+          'reviewer = "opencode"',
+          'reviewer_model = " opencode-sonnet-4-5"',
+          'meta_reviewer = "opencode"',
+          'meta_reviewer_model = " gpt-5.2-mini "'
+        ].join("\n")
+      )
+    );
+
+    expect(config.agents.implementer_model).toBe("gpt-5.2");
+    expect(config.agents.reviewer_model).toBe("opencode-sonnet-4-5");
+    expect(config.agents.meta_reviewer_model).toBe("gpt-5.2-mini");
+  });
+
+  it("trims trailing slashes from agent model names in bubble config", () => {
+    const config = parseBubbleConfigToml(
+      baseToml.replace(
+        '[agents]\nimplementer = "opencode"\nreviewer = "opencode"',
+        [
+          "[agents]",
+          'implementer = "opencode"',
+          'implementer_model = "gpt-5.2/"',
+          'reviewer = "opencode"',
+          'reviewer_model = "opencode-sonnet-4-5//"',
+          'meta_reviewer = "opencode"',
+          'meta_reviewer_model = "gpt-5.2-mini/"'
+        ].join("\n")
+      )
+    );
+
+    expect(config.agents.implementer_model).toBe("gpt-5.2");
+    expect(config.agents.reviewer_model).toBe("opencode-sonnet-4-5");
+    expect(config.agents.meta_reviewer_model).toBe("gpt-5.2-mini");
+  });
+
   it("fails closed when agents.meta_reviewer is invalid", () => {
     const result = validateBubbleConfig(
       parseToml(

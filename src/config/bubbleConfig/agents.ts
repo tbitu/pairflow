@@ -31,6 +31,9 @@ function readOptionalAgentModel(input: {
     return undefined;
   }
 
+  if (value !== undefined) {
+    return value.trim().replace(/\/+$/, "");
+  }
   return value;
 }
 
