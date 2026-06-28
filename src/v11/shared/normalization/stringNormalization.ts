@@ -18,3 +18,11 @@ export function requireNonEmptyString(
 
   return normalized;
 }
+
+/**
+ * Trims leading/trailing whitespace and strips trailing slashes.
+ * Used for model names that may contain trailing slashes from config values.
+ */
+export function trimAndStripTrailingSlashes(value: string): string {
+  return value.trim().replace(/\/+$/, "");
+}

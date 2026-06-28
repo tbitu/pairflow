@@ -11,6 +11,7 @@ import {
   buildPairflowCommandBootstrap,
   type PairflowRemoteWorkspaceAuthority
 } from "./pairflowCommandBootstrap.js";
+import { trimAndStripTrailingSlashes } from "../normalization/stringNormalization.js";
 
 export interface BuildAgentCommandInput {
   agentName: AgentName;
@@ -46,7 +47,7 @@ function buildAgentLaunchCommand(
   }
 
   if ((model?.trim().length ?? 0) > 0) {
-    args.push("--model", (model as string).trim().replace(/\/+$/, ""));
+    args.push("--model", trimAndStripTrailingSlashes(model as string));
   }
 
   if (hasStartupPrompt) {

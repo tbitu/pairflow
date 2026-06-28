@@ -4,6 +4,7 @@ import {
   type AgentName
 } from "../../contracts/kernel/agentIdentity.js";
 import type { ValidationError } from "../../v11/shared/validation/primitives.js";
+import { trimAndStripTrailingSlashes } from "../../v11/shared/normalization/stringNormalization.js";
 import { readString } from "./readers.js";
 
 function readOptionalAgentModel(input: {
@@ -32,7 +33,7 @@ function readOptionalAgentModel(input: {
   }
 
   if (value !== undefined) {
-    return value.trim().replace(/\/+$/, "");
+    return trimAndStripTrailingSlashes(value);
   }
   return value;
 }
