@@ -16,6 +16,9 @@ import {
   resolveMetaReviewGatePaneBindingTmuxCapabilities
 } from "./metaReviewGateRuntimeCapabilityResolution.js";
 import {
+  buildMetaReviewGateRunPrompt
+} from "./internal/prompts/metaReviewGatePrompt.js";
+import {
   resolveRuntimeSessionWorkspaceAuthority
 } from "../../shared/runtimeSessionWorkspaceAuthority.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../config/defaults.js";
@@ -123,10 +126,13 @@ function buildMetaReviewerCommand(input: {
     input.metaReviewerMcpPolicy
     ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer;
 
-  // Phase 4 Principle: Don't duplicate prompt building in delivery paths.
-  // Pass metadata directly to buildAgentCommand; let opencode reconstruct situational context
-  // based on role and artifacts. This leverages opencode's base agent capabilities instead of
-  // duplicating prompt logic here.
+  const startupPrompt = buildMetaReviewGateRunPrompt({
+    bubbleId: input.bubbleId,
+    round: input.round,
+    repoPath: input.repoPath,
+    taskArtifactPath: input.taskArtifactPath
+  });
+
   return input.buildAgentCommand({
     agentName: input.metaReviewerAgent,
     roleName: "meta_reviewer",
@@ -135,10 +141,10 @@ function buildMetaReviewerCommand(input: {
     bubbleId: input.bubbleId,
     workspacePath: input.workspacePath,
     pairflowCommandProfile: input.pairflowCommandProfile,
-    // Phase 4: Pass metadata for agent to reconstruct situational context
     round: input.round,
     repoPath: input.repoPath,
-    taskArtifactPath: input.taskArtifactPath
+    taskArtifactPath: input.taskArtifactPath,
+    startupPrompt
   });
 }
 
