@@ -16,7 +16,7 @@ function item(
     ts: "2026-02-24T12:01:00.000Z",
     round: 3,
     role: "implementer",
-    senderLabel: "codex",
+    senderLabel: "opencode",
     title: "Display summary.",
     summaryText: "Display summary.",
     tone: "neutral",
@@ -46,7 +46,7 @@ describe("BubbleTimeline", () => {
           item({
             id: "env-reviewer",
             role: "reviewer",
-            senderLabel: "claude",
+            senderLabel: "opencode",
             title: "Display reviewer text.",
             summaryText: "Display reviewer text."
           })
@@ -68,7 +68,7 @@ describe("BubbleTimeline", () => {
     const reviewerRow = screen.getByText("Display reviewer text.").closest("div.flex.items-start");
     expect(reviewerRow).not.toBeNull();
     expect(within(reviewerRow as HTMLElement).getByText("reviewer")).toHaveTextContent(
-      /reviewer \(claude\)/u
+      /reviewer \(opencode\)/u
     );
   });
 
@@ -152,7 +152,7 @@ describe("BubbleTimeline", () => {
           item({
             id: "env-convergence",
             role: "system",
-            senderLabel: "codex",
+            senderLabel: "opencode",
             title: "Reviewer converged.",
             summaryText: "Reviewer converged.",
             convergence: true

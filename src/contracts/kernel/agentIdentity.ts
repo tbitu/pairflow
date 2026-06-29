@@ -1,4 +1,5 @@
-export const agentNames = ["opencode", "codex"] as const;
+// Only opencode is supported; no multi-agent choice.
+export const agentNames = ["opencode"] as const;
 
 export type AgentName = (typeof agentNames)[number];
 

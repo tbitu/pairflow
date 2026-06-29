@@ -2,7 +2,6 @@ import { homedir } from "node:os";
 
 import { shellQuote } from "../../../../shared/foundation/shellQuote.js";
 import { buildPinnedPairflowCommand } from "../../startCommandPromptRuntime.js";
-import type { ReviewerFocusExtractionResult } from "../../../../shared/reviewer/reviewerBrief.js";
 
 import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
 import type {
@@ -13,9 +12,9 @@ import type {
   ReviewArtifactType
 } from "../../../../shared/config/bubbleConfigVocabulary.js";
 import {
-  buildDocumentPrimaryArtifactReviewerGuardrail,
-  buildRolePromptConcernLines
+  buildDocumentPrimaryArtifactReviewerGuardrail
 } from "../../../../shared/role/prompts/rolePromptConcerns.js";
+import type { ReviewerFocusExtractionResult } from "../../../../shared/reviewer/reviewerBrief.js";
 export {
   buildAgentEvidenceHandoffGuidance,
   buildImplementerIdeationKickoffMessage,
@@ -102,16 +101,10 @@ export function buildMetaReviewerStartupPrompt(input: {
   pairflowCommandProfile: PairflowCommandProfile;
   agentName?: AgentName;
 }): string {
-  // AC2: For opencode agents, do not inject generic startup prompts.
-  if (input.agentName === "opencode") {
-    return "";
-  }
-
-  return buildRolePromptConcernLines({
-    role: "meta_reviewer",
-    phase: "startup",
-    context: input
-  }).join(" ");
+  void input;
+  // Phase 4: No longer build prompts. Agents reconstruct based on role and metadata.
+  // This function is retained for backward compatibility but returns empty string.
+  return "";
 }
 
 export function buildReviewerStartupPrompt(input: {
@@ -127,16 +120,10 @@ export function buildReviewerStartupPrompt(input: {
   reviewerBriefText?: string;
   reviewerFocus?: ReviewerFocusExtractionResult;
 }): string {
-  // AC2: For opencode agents, do not inject generic startup prompts.
-  if (input.agentName === "opencode") {
-    return "";
-  }
-
-  return buildRolePromptConcernLines({
-    role: "reviewer",
-    phase: "startup",
-    context: input
-  }).join(" ");
+  void input;
+  // Phase 4: No longer build prompts. Agents reconstruct based on role and metadata.
+  // This function is retained for backward compatibility but returns empty string.
+  return "";
 }
 
 export { buildDocumentPrimaryArtifactReviewerGuardrail };

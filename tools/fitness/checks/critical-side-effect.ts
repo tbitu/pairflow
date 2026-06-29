@@ -26,42 +26,42 @@ const commandInvariantDefinitions: readonly CommandInvariantDefinition[] = [
   {
     command: "kickoff",
     folderScopes: ["application", "shared"],
-    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification"],
+    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification", "deliverToRole"],
     resultPropertyNames: ["delivery"],
     acceptedOutcomePropertyNames: ["delivered", "status", "failure", "error", "reason_code", "reasonCode"]
   },
   {
     command: "pass",
     folderScopes: ["application", "shared"],
-    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification"],
+    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification", "deliverToRole"],
     resultPropertyNames: ["delivery"],
     acceptedOutcomePropertyNames: ["delivered", "status", "failure", "error", "reason_code", "reasonCode"]
   },
   {
     command: "converged",
     folderScopes: ["application", "shared"],
-    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification"],
+    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification", "deliverToRole"],
     resultPropertyNames: ["delivery"],
     acceptedOutcomePropertyNames: ["delivered", "status", "failure", "error", "reason_code", "reasonCode"]
   },
   {
     command: "approval",
     folderScopes: ["application", "shared"],
-    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification"],
+    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification", "deliverToRole"],
     resultPropertyNames: ["delivery"],
     acceptedOutcomePropertyNames: ["delivered", "status", "failure", "error", "reason_code", "reasonCode"]
   },
   {
     command: "reply",
     folderScopes: ["application", "shared"],
-    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification"],
+    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification", "deliverToRole"],
     resultPropertyNames: ["delivery"],
     acceptedOutcomePropertyNames: ["delivered", "status", "failure", "error", "reason_code", "reasonCode"]
   },
   {
     command: "askHuman",
     folderScopes: ["application", "shared"],
-    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification"],
+    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification", "deliverToRole"],
     resultPropertyNames: ["delivery"],
     acceptedOutcomePropertyNames: ["delivered", "status", "failure", "error", "reason_code", "reasonCode"]
   }

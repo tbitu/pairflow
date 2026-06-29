@@ -1,6 +1,3 @@
-import {
-  type ReviewerFocusExtractionResult
-} from "../../../../shared/reviewer/reviewerBrief.js";
 import type {
   BubbleReviewAutoReworkSeverity
 } from "../../../../shared/reviewPolicy/reviewPolicyTypes.js";
@@ -12,8 +9,9 @@ import type {
   ReviewArtifactType
 } from "../../../../shared/config/bubbleConfigVocabulary.js";
 import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
-import { buildRolePromptConcernLines } from "../../../../shared/role/prompts/rolePromptConcerns.js";
-import { joinPromptLines } from "../../../../shared/role/prompts/resumePromptShared.js";
+import type {
+  ReviewerFocusExtractionResult
+} from "../../../../shared/reviewer/reviewerBrief.js";
 export { buildResumeImplementerStartupPrompt } from "./startCommandResumeImplementerPrompt.js";
 
 export function buildResumeMetaReviewerStartupPrompt(input: {
@@ -27,18 +25,10 @@ export function buildResumeMetaReviewerStartupPrompt(input: {
   agentName?: AgentName;
   kickoffDiagnostic?: string;
 }): string {
-  // AC2: For opencode agents, do not inject generic startup prompts.
-  if (input.agentName === "opencode") {
-    return "";
-  }
-
-  return joinPromptLines(
-    buildRolePromptConcernLines({
-      role: "meta_reviewer",
-      phase: "resume",
-      context: input
-    })
-  );
+  void input;
+  // Phase 4: No longer build prompts. Agents reconstruct based on role and metadata.
+  // This function is retained for backward compatibility but returns empty string.
+  return "";
 }
 
 export function buildResumeReviewerStartupPrompt(input: {
@@ -58,18 +48,10 @@ export function buildResumeReviewerStartupPrompt(input: {
   reviewerBriefText?: string;
   reviewerFocus?: ReviewerFocusExtractionResult;
 }): string {
-  // AC2: For opencode agents, do not inject generic startup prompts.
-  if (input.agentName === "opencode") {
-    return "";
-  }
-
-  return joinPromptLines(
-    buildRolePromptConcernLines({
-      role: "reviewer",
-      phase: "resume",
-      context: input
-    })
-  );
+  void input;
+  // Phase 4: No longer build prompts. Agents reconstruct based on role and metadata.
+  // This function is retained for backward compatibility but returns empty string.
+  return "";
 }
 
 export { resolveResumeKickoffMessages } from "./startCommandResumeKickoffMessages.js";

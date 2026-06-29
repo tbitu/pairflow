@@ -134,7 +134,7 @@ describe("executePassDelivery", () => {
     expect(refreshCalls[0]).toMatchObject({
       bubbleId: "b_delivery_v11_01"
     });
-    // OVERFLOW_3: opencode reviewer should not receive startup prompt (avoids double-paste).
+    // Phase 4 consolidation: Startup prompts are not passed. Agents reconstruct from metadata.
     expect((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt)
       .toBeUndefined();
 
@@ -252,7 +252,7 @@ describe("executePassDelivery", () => {
     );
 
     expect(refreshCalls).toHaveLength(1);
-    // OVERFLOW_3: opencode reviewer should not receive startup prompt (avoids double-paste).
+    // Phase 4 consolidation: Startup prompts are not passed. Agents reconstruct from metadata.
     expect((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt)
       .toBeUndefined();
     expect(result.retried).toBe(false);
@@ -719,11 +719,9 @@ describe("executePassDelivery", () => {
     );
 
     expect(refreshCalls).toHaveLength(1);
-    // Non-opencode reviewers should still receive startup prompt.
+    // Phase 4 consolidation: Startup prompts are not passed. Agents reconstruct from metadata.
     expect((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt)
-      .toBeDefined();
-    expect(String((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt))
-      .toContain("Verify claims against evidence.");
+      .toBeUndefined();
 
     expect(emitCalls).toHaveLength(1);
     expect(result.retried).toBe(false);

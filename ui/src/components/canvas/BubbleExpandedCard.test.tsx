@@ -218,7 +218,7 @@ describe("BubbleExpandedCard", () => {
             type: "HUMAN_QUESTION",
             ts: "2026-02-24T12:01:00.000Z",
             round: 3,
-            sender: "codex",
+            sender: "opencode",
             summary: longQuestion,
             refs: []
           }

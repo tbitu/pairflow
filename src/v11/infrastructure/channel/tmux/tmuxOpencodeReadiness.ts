@@ -65,7 +65,6 @@ const READY_TEXT_PATTERNS = [
   /ask anything/i,
   /tab agents/i,
   /ctrl\+p commands/i,
-  /claude code is ready/i,
   /\[pairflow\]/u
 ];
 

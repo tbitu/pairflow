@@ -27,6 +27,15 @@ import {
 } from "./reviewerDeliveryHelpers.js";
 import { executeImplementerHandoffDelivery } from "../../../../shared/delivery/implementerHandoffDelivery.js";
 import {
+  createEmitDeliveryOrchestrator,
+  mapDeliveryResultToDeliveryAck
+} from "../../../../shared/delivery/deliveryOrchestratorFactory.js";
+import {
+  CleanupPolicy,
+  ConvergencePolicy,
+  StartupStrategy
+} from "../../../../shared/delivery/unifiedDeliveryOrchestrator.js";
+import {
   reviewerDeliveryDefaults
 } from "../../reviewerDeliveryDefaults.js";
 
@@ -85,8 +94,8 @@ export async function executePassDelivery(
 
   const {
     reviewerBriefText,
-    reviewerFocus,
-    reviewerStartupPrompt
+    reviewerFocus
+    // Phase 4: Do not load startup prompts; agents reconstruct based on role and metadata.
   } = await loadReviewerStartupPrompt({
     reviewerBriefArtifactPath: input.reviewerBriefArtifactPath,
     reviewerFocusArtifactPath: input.reviewerFocusArtifactPath,
@@ -101,9 +110,10 @@ export async function executePassDelivery(
   const refreshReviewer =
     dependencies.refreshReviewerContext
     ?? reviewerDeliveryDefaults.refreshReviewerContext;
+  // Phase 4: Do not pass reviewer startup prompt to delivery.
   const deliveryInitialDelayMs = await resolveDeliveryInitialDelayMs({
     executeInput: input,
-    reviewerStartupPrompt,
+    reviewerStartupPrompt: undefined,
     refreshReviewer
   });
 
@@ -114,8 +124,23 @@ export async function executePassDelivery(
     initialDelayMs: deliveryInitialDelayMs,
     resolveDeliveryMessageRef: resolveMessageRef
   });
-  let deliveryResult = await emitDelivery(deliveryInput)
-    .catch(() => undefined);
+  let deliveryResult = await createEmitDeliveryOrchestrator({ emitDelivery }).deliverToRole({
+    bubbleId: deliveryInput.bubbleId,
+    bubbleConfig: deliveryInput.bubbleConfig,
+    sessionsPath: deliveryInput.sessionsPath,
+    envelope: deliveryInput.envelope,
+    ...(deliveryInput.recipientRole !== undefined ? { role: deliveryInput.recipientRole } : {}),
+    ...(deliveryInput.messageRef !== undefined ? { messageRef: deliveryInput.messageRef } : {}),
+    ...(deliveryInput.initialDelayMs !== undefined ? { initialDelayMs: deliveryInput.initialDelayMs } : {}),
+    ...(deliveryInput.reviewerBrief !== undefined ? { reviewerBrief: deliveryInput.reviewerBrief } : {}),
+    ...(deliveryInput.reviewerFocus !== undefined ? { reviewerFocus: deliveryInput.reviewerFocus } : {}),
+    ...(deliveryInput.reviewerTestDirective !== undefined
+      ? { reviewerTestDirective: deliveryInput.reviewerTestDirective }
+      : {}),
+    strategy: StartupStrategy.PostReadinessTmux,
+    cleanupPolicy: CleanupPolicy.Persist,
+    convergencePolicy: ConvergencePolicy.Respawn
+  }).then((result) => mapDeliveryResultToDeliveryAck(result)).catch(() => undefined);
   let deliveryRetried = false;
   const shouldRetryDelivery = shouldRetryPassDelivery({
     executeInput: input,
@@ -123,13 +148,26 @@ export async function executePassDelivery(
   });
   if (shouldRetryDelivery) {
     deliveryRetried = true;
-    deliveryResult = await emitDelivery({
-      ...deliveryInput,
+    deliveryResult = await createEmitDeliveryOrchestrator({ emitDelivery }).deliverToRole({
+      bubbleId: deliveryInput.bubbleId,
+      bubbleConfig: deliveryInput.bubbleConfig,
+      sessionsPath: deliveryInput.sessionsPath,
+      envelope: deliveryInput.envelope,
+      ...(deliveryInput.recipientRole !== undefined ? { role: deliveryInput.recipientRole } : {}),
+      ...(deliveryInput.messageRef !== undefined ? { messageRef: deliveryInput.messageRef } : {}),
       // Respawned reviewer CLIs can take a few seconds to become input-ready.
       // Retry once with a longer warm-up window (30 seconds) before giving up.
       initialDelayMs: 30000,
-      deliveryAttempts: 6
-    }).catch(() => deliveryResult);
+      deliveryAttempts: 6,
+      ...(deliveryInput.reviewerBrief !== undefined ? { reviewerBrief: deliveryInput.reviewerBrief } : {}),
+      ...(deliveryInput.reviewerFocus !== undefined ? { reviewerFocus: deliveryInput.reviewerFocus } : {}),
+      ...(deliveryInput.reviewerTestDirective !== undefined
+        ? { reviewerTestDirective: deliveryInput.reviewerTestDirective }
+        : {}),
+      strategy: StartupStrategy.PostReadinessTmux,
+      cleanupPolicy: CleanupPolicy.Persist,
+      convergencePolicy: ConvergencePolicy.Respawn
+    }).then((result) => mapDeliveryResultToDeliveryAck(result)).catch(() => deliveryResult);
   }
 
   return {

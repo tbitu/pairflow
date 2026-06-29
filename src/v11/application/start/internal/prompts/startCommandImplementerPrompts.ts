@@ -1,7 +1,6 @@
 import {
   buildCanonicalActorEmitLookupGuidance,
-  buildAgentEvidenceHandoffGuidance as buildAgentEvidenceHandoffGuidanceFromRegistry,
-  buildRolePromptConcernLines
+  buildAgentEvidenceHandoffGuidance as buildAgentEvidenceHandoffGuidanceFromRegistry
 } from "../../../../shared/role/prompts/rolePromptConcerns.js";
 import { buildDocumentBubbleSourceEditGuard } from "../../../../shared/document/documentBubbleSourceEditGuard.js";
 import { buildPairflowCommandGuidance } from "../../startCommandPromptRuntime.js";
@@ -25,16 +24,10 @@ export function buildImplementerStartupPrompt(input: {
   agentName?: AgentName;
   validationCommands?: BubbleCommandsConfig;
 }): string {
-  // AC2: For opencode agents, do not inject generic startup prompts.
-  if (input.agentName === "opencode") {
-    return "";
-  }
-
-  return buildRolePromptConcernLines({
-    role: "implementer",
-    phase: "startup",
-    context: input
-  }).join(" ");
+  void input;
+  // Phase 4: No longer build prompts. Agents reconstruct based on role and metadata.
+  // This function is retained for backward compatibility but returns empty string.
+  return "";
 }
 
 export function buildImplementerKickoffMessage(input: {
@@ -46,15 +39,7 @@ export function buildImplementerKickoffMessage(input: {
   agentName?: AgentName;
   validationCommands?: BubbleCommandsConfig;
 }): string {
-  // AC3: For opencode agents, strip all generic guidance — only bubble ID + task path.
-  if (input.agentName === "opencode") {
-    return [
-      `# [pairflow] bubble=${input.bubbleId} kickoff.`,
-      `Read task file now: ${input.taskArtifactPath}.`,
-    ].join(" ");
-  }
-
-    return [
+  return [
     `# [pairflow] bubble=${input.bubbleId} kickoff.`,
     `Read task file now: ${input.taskArtifactPath}.`,
     buildImplementerKickoffScopeInstruction(input.reviewArtifactType),

@@ -1,14 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { readRuntimeSessionsRegistry } from "../../executor/sessionRuntime/runtimeSessionsRegistry.js";
+import { createDefaultRolePaneLifecycle } from "./rolePaneLifecycleDefaults.js";
+import { runTmux } from "./tmuxRunner.js";
 import {
-  getSharedTopologySlotPaneIndexForRole
-} from "../../../shared/topology/topologySlotPaneProjection.js";
-import {
-  respawnTmuxPaneCommand,
-  runTmux,
-  type TmuxRunner
-} from "./tmuxManager.js";
-import { sendAndSubmitTmuxPaneMessage, submitTmuxPaneInput } from "./tmuxInput.js";
+  sendAndSubmitTmuxPaneMessage, submitTmuxPaneInput
+} from "./tmuxInput.js";
 import { buildAgentCommand } from "../../../shared/command/agentCommand.js";
 
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../shared/runtimeSessionWorkspaceAuthority.js";
@@ -17,6 +13,7 @@ import type {
   RefreshReviewerContextInput,
   RefreshReviewerContextResult
 } from "../../../ports/reviewerContext.js";
+import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
 
 export type {
   RefreshReviewerContextFailureReason,
@@ -37,38 +34,14 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
-function shouldSubmitStartupPrompt(
-  agentName: string,
-  startupPrompt?: string
-): boolean {
-  return false;
-}
-
-function shouldSendStartupPromptPostSpawn(
-  agentName: string,
-  startupPrompt?: string
-): boolean {
-  return agentName === "opencode"
-    && (startupPrompt?.trim().length ?? 0) > 0;
-}
-
-async function maybeSubmitReviewerStartupPrompt(input: {
-  agentName: string;
+async function submitReviewerStartupPrompt(input: {
   startupPrompt?: string | undefined;
   runner: TmuxRunner;
   sessionName: string;
   paneIndex: number;
   startupSubmitDelayMs?: number;
 }): Promise<void> {
-  const shouldSubmit = shouldSubmitStartupPrompt(
-    input.agentName,
-    input.startupPrompt
-  );
-  const shouldSendPostSpawn = shouldSendStartupPromptPostSpawn(
-    input.agentName,
-    input.startupPrompt
-  );
-  if (!shouldSubmit && !shouldSendPostSpawn) {
+  if (!input.startupPrompt?.trim()) {
     return;
   }
 
@@ -77,14 +50,10 @@ async function maybeSubmitReviewerStartupPrompt(input: {
   if (startupSubmitDelayMs > 0) {
     await sleep(startupSubmitDelayMs);
   }
-  if (shouldSubmit) {
-    await submitTmuxPaneInput(input.runner, targetPane);
-    return;
-  }
   await sendAndSubmitTmuxPaneMessage(
     input.runner,
     targetPane,
-    input.startupPrompt as string,
+    input.startupPrompt,
     { maxChunkLength: 1024 }
   );
 }
@@ -122,8 +91,10 @@ export async function refreshReviewerContext(
     };
   }
 
+  // Use unified RolePaneLifecycle to activate reviewer pane
+  const paneLifecycle = createDefaultRolePaneLifecycle();
   const runner = input.runner ?? runTmux;
-  const reviewerPaneIndex = getSharedTopologySlotPaneIndexForRole("reviewer");
+  
   const roleMcpPolicy =
     input.bubbleConfig.role_mcp?.reviewer
     ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.reviewer;
@@ -143,35 +114,38 @@ export async function refreshReviewerContext(
             workspaceRoot: workspacePath
           }
         }
-      : {}),
-    startupPrompt: undefined
+      : {})
   });
 
-  try {
-    await respawnTmuxPaneCommand({
-      sessionName,
-      paneIndex: reviewerPaneIndex,
-      cwd: workspacePath,
-      command: reviewerCommand,
-      runner
-    });
-    await maybeSubmitReviewerStartupPrompt({
-      agentName: input.bubbleConfig.agents.reviewer,
-      ...(input.reviewerStartupPrompt !== undefined
-        ? { startupPrompt: input.reviewerStartupPrompt }
-        : {}),
+  const activateResult = await paneLifecycle.activatePaneForRole({
+    sessionName,
+    role: "reviewer",
+    command: reviewerCommand,
+    cwd: workspacePath,
+    runner
+  });
+
+  if (!activateResult.ok) {
+    return {
+      refreshed: false,
+      reason:
+        activateResult.reason === "respawn_failed"
+          ? "tmux_respawn_failed"
+          : "readiness_timeout"
+    };
+  }
+
+  // Submit startup prompt if provided
+  if (input.reviewerStartupPrompt !== undefined) {
+    await submitReviewerStartupPrompt({
+      startupPrompt: input.reviewerStartupPrompt,
       runner,
       sessionName,
-      paneIndex: reviewerPaneIndex,
+      paneIndex: activateResult.paneIndex,
       ...(input.startupSubmitDelayMs !== undefined
         ? { startupSubmitDelayMs: input.startupSubmitDelayMs }
         : {})
     });
-  } catch {
-    return {
-      refreshed: false,
-      reason: "tmux_respawn_failed"
-    };
   }
 
   return {

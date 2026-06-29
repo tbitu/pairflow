@@ -38,6 +38,16 @@ export type {
 } from "../../../ports/tmuxSessions.js";
 export { runTmux, TmuxCommandError } from "./tmuxRunner.js";
 export type { RespawnTmuxPaneCommandInput } from "./tmuxManagerRuntime.js";
+export { createDefaultRolePaneLifecycle } from "./rolePaneLifecycleDefaults.js";
+export type { RolePaneLifecycle, PaneReadinessConfig, PaneLifecycleResult } from "../../../shared/channel/rolePaneLifecycle.js";
+export { createDefaultUnifiedDeliveryOrchestrator } from "./unifiedDeliveryOrchestrationDefaults.js";
+export type {
+  UnifiedDeliveryOrchestrator,
+  StartupStrategy,
+  CleanupPolicy,
+  ConvergencePolicy,
+  DeliveryResult
+} from "../../../shared/delivery/unifiedDeliveryOrchestrator.js";
 
 export const runtimePaneIndices = Object.freeze({
   status: topologySlotPaneIndexCatalog.status,

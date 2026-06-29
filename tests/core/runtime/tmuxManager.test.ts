@@ -668,7 +668,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       runner
     });
 
-    expect(calls.slice(0, 17).map((call) => call[0])).toEqual([
+    expect(calls.slice(0, 18).map((call) => call[0])).toEqual([
       "has-session",
       "new-session",
       "set-option",
@@ -685,7 +685,8 @@ describe("launchBubbleSessionAck orchestration", () => {
       "resize-pane",
       "set-hook",
       "set-hook",
-      "run-shell"
+      "run-shell",
+      "respawn-pane"
     ]);
     // Trust prompt check before kickoff.
     expect(calls).toContainEqual([

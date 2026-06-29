@@ -37,6 +37,18 @@ pnpm install --frozen-lockfile
 echo "Building Pairflow..."
 pnpm build
 
+cli_entrypoint="$ROOT_DIR/dist/cli/index.js"
+if [ ! -f "$cli_entrypoint" ]; then
+  echo "CLI entrypoint missing after build; forcing clean TypeScript rebuild..."
+  rm -f "$ROOT_DIR/.pairflow/build.tsbuildinfo"
+  pnpm exec tsc -p tsconfig.build.json
+fi
+
+if [ ! -f "$cli_entrypoint" ]; then
+  echo "Build failed: missing CLI entrypoint at $cli_entrypoint" >&2
+  exit 1
+fi
+
 echo "Linking pairflow globally..."
 if ! pnpm link --global 2>/dev/null; then
   echo "Setting up pnpm global bin directory..."
@@ -62,8 +74,8 @@ if command -v pairflow >/dev/null 2>&1; then
     exit 1
   fi
 else
-  if ! node ./dist/cli/index.js bubble list --repo "$ROOT_DIR" --json >/dev/null; then
-    echo "Smoke test failed: node ./dist/cli/index.js bubble list --repo \"$ROOT_DIR\" --json" >&2
+  if ! node "$cli_entrypoint" bubble list --repo "$ROOT_DIR" --json >/dev/null; then
+    echo "Smoke test failed: node $cli_entrypoint bubble list --repo \"$ROOT_DIR\" --json" >&2
     exit 1
   fi
 fi

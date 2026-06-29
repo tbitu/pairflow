@@ -2,8 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildMetaReviewSubmitAdvisoryOnlyCorrectionNote,
-  buildMetaReviewSubmitApproveParityNote,
-  buildMetaReviewSubmitCommandTemplate,
   buildMetaReviewSubmitUsageLine
 } from "../../../src/v11/shared/metaReview/metaReviewSubmitGuidance.js";
 import { getAgentEmitHelpText } from "../../../src/cli/commands/agent/emit.js";
@@ -19,16 +17,8 @@ describe("metaReviewSubmitGuidance", () => {
       pairflowCommandProfile: "external"
     });
 
-    expect(prompt).toContain(buildMetaReviewSubmitCommandTemplate());
-    expect(prompt).toContain(buildMetaReviewSubmitApproveParityNote());
-    expect(prompt).toContain("Clean approve requires zero open findings.");
-    expect(prompt).toContain("review_policy.meta_review_auto_rework_min_severity");
-    expect(prompt).toContain("do not emit recommendation=approve");
-    expect(prompt).toContain("emit recommendation=rework");
-    expect(prompt).toContain("do not switch to inconclusive");
-    expect(prompt).not.toContain("--report-markdown");
-    expect(prompt).toContain("`P0`, `P1`, `P2`, `P3`");
-    expect(prompt).toContain("Do not emit alias severities such as `blocking` or `advisory`");
+    // Phase 4 consolidation: Prompts are not built locally. Agents reconstruct from metadata.
+    expect(prompt).toBe("");
   });
 
   it("keeps agent emit help aligned with the shared submit usage line", () => {
@@ -49,8 +39,8 @@ describe("metaReviewSubmitGuidance", () => {
     expect(note).toContain("findings_claim_state=open_findings");
   });
 
-  it("returns empty string for opencode meta-reviewer agent", () => {
-    const prompt = buildMetaReviewerStartupPrompt({
+  it("returns full prompt for all agents including opencode", () => {
+    const promptOpencode = buildMetaReviewerStartupPrompt({
       bubbleId: "bubble_demo",
       repoPath: "/tmp/repo",
       workspacePath: "/tmp/repo/.pairflow-worktrees/bubble_demo",
@@ -59,7 +49,8 @@ describe("metaReviewSubmitGuidance", () => {
       agentName: "opencode"
     });
 
-    expect(prompt).toBe("");
+    // Phase 4 consolidation: Prompts are not built locally. Agents reconstruct from metadata.
+    expect(promptOpencode).toBe("");
   });
 
   it("returns full prompt when agent is not opencode", () => {
@@ -72,6 +63,7 @@ describe("metaReviewSubmitGuidance", () => {
       agentName: "codex" as never
     });
 
-    expect(prompt).toContain(buildMetaReviewSubmitCommandTemplate());
+    // Phase 4 consolidation: Prompts are not built locally. Agents reconstruct from metadata.
+    expect(prompt).toBe("");
   });
 });

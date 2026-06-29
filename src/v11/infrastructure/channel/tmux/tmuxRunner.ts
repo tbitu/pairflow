@@ -24,6 +24,8 @@ export class TmuxCommandError extends Error {
 
 function buildTmuxSpawnEnvironment(): NodeJS.ProcessEnv {
   const env = { ...process.env };
+  // Note: CLAUDECODE was a legacy environment variable used by Claude Code and other agents.
+  // It is no longer needed with opencode-only deployments.
   delete env.CLAUDECODE;
   delete env.TMUX;
   return env;

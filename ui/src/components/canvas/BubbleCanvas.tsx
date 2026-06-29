@@ -369,7 +369,7 @@ function BubbleCard(props: BubbleCardProps): JSX.Element {
             <span
               className={cn(
                 "inline-block h-1 w-1 rounded-full animate-soft-pulse",
-                props.bubble.activeAgent === "codex" ? "bg-blue-400" : "bg-purple-400"
+                "bg-blue-400"
               )}
             />
             {props.bubble.activeAgent}

@@ -103,6 +103,8 @@ export async function applyBubbleTmuxSessionFrameSetup(
     "pane-border-format",
     paneBorderFormat
   ]);
+  // Legacy environment variable cleanup (for historical agent support).
+  // CLAUDECODE was used by Claude Code and other agents and is no longer needed.
   await input.runner(["set-environment", "-g", "-u", "CLAUDECODE"]);
   await input.runner(["set-environment", "-t", input.sessionName, "-u", "CLAUDECODE"]);
   await input.runner(["set-environment", "-g", "-u", "NO_COLOR"]);

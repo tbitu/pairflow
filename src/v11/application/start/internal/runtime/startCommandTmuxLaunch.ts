@@ -3,7 +3,6 @@ import { createStartBubbleError } from "./startCommandRuntime.js";
 import {
   buildImplementerIdeationKickoffMessage,
   buildImplementerKickoffMessage,
-  buildImplementerStartupPrompt,
   buildStatusPaneCommand
 } from "../prompts/startCommandPrompts.js";
 import {
@@ -12,10 +11,7 @@ import {
   buildResumeReviewerStartupPrompt
 } from "../prompts/startCommandResumePrompts.js";
 import {
-  resolveBootstrapStartupMessages,
-  resolveCommandStartupPrompt,
-  resolveResumeBootstrapStartupMessages,
-  shouldSubmitStartupPrompt
+  resolveCommandStartupPrompt
 } from "./startCommandStartupPromptRouting.js";
 import type { resolveResumeKickoffMessages } from "../prompts/startCommandResumePrompts.js";
 import type { ResolvedStartBubbleDependencies } from "../../startCommandOrchestration.js";
@@ -190,18 +186,8 @@ export async function launchFreshTmuxSession(input: {
     input.context.remoteStartContext?.externalPairflowCommand;
   const remoteWorkspaceAuthority = resolveRemoteWorkspaceAuthority(input.context);
   const metaReviewerAgent = input.context.resolved.bubbleConfig.agents.meta_reviewer;
-  const implementerAgent = input.context.resolved.bubbleConfig.agents.implementer;
-  const implementerStartupPrompt = buildImplementerStartupPrompt({
-    bubbleId: input.context.resolved.bubbleId,
-    repoPath: input.context.resolved.repoPath,
-    workspacePath: input.launchWorkspacePath,
-    taskArtifactPath: input.context.resolved.bubblePaths.taskArtifactPath,
-    reviewArtifactType: input.context.resolved.bubbleConfig.review_artifact_type,
-    pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
-    ideationPending: input.ideationPending,
-    agentName: implementerAgent,
-    validationCommands: input.context.resolved.bubbleConfig.commands
-  });
+  // Phase 4: Do not pre-build prompts. Pass metadata for agents to reconstruct context.
+  const implementerStartupPrompt: string | undefined = undefined;
   const ack = await input.deps.launchSessionAck({
     bubbleId: input.context.resolved.bubbleId,
     workspacePath: input.launchWorkspacePath,
@@ -216,16 +202,9 @@ export async function launchFreshTmuxSession(input: {
     implementerPaneLabel: `[${input.context.resolved.bubbleConfig.agents.implementer}/implementer]`,
     reviewerPaneLabel: `[${input.context.resolved.bubbleConfig.agents.reviewer}/reviewer]`,
     metaReviewerPaneLabel: `[${metaReviewerAgent}/meta-reviewer]`,
-    implementerSubmitStartupPrompt: shouldSubmitStartupPrompt(
-      input.context.resolved.bubbleConfig.agents.implementer,
-      implementerStartupPrompt
-    ),
+    implementerSubmitStartupPrompt: false,
     reviewerSubmitStartupPrompt: false,
     metaReviewerSubmitStartupPrompt: false,
-    ...resolveBootstrapStartupMessages({
-      implementerAgent: input.context.resolved.bubbleConfig.agents.implementer,
-      implementerStartupPrompt
-    }),
     implementerCommand: buildAgentLaunchCommand({
       agentName: input.context.resolved.bubbleConfig.agents.implementer,
       roleName: "implementer",
@@ -337,25 +316,9 @@ export async function launchResumeTmuxSession(input: {
     implementerPaneLabel: `[${input.context.resolved.bubbleConfig.agents.implementer}/implementer]`,
     reviewerPaneLabel: `[${input.context.resolved.bubbleConfig.agents.reviewer}/reviewer]`,
     metaReviewerPaneLabel: `[${metaReviewerAgent}/meta-reviewer]`,
-    implementerSubmitStartupPrompt: shouldSubmitStartupPrompt(
-      input.context.resolved.bubbleConfig.agents.implementer,
-      implementerStartupPrompt
-    ),
-    reviewerSubmitStartupPrompt: shouldSubmitStartupPrompt(
-      input.context.resolved.bubbleConfig.agents.reviewer,
-      reviewerStartupPrompt
-    ),
-    metaReviewerSubmitStartupPrompt: shouldSubmitStartupPrompt(
-      metaReviewerAgent,
-      metaReviewerStartupPrompt
-    ),
-    ...resolveResumeBootstrapStartupMessages({
-      context: input.context,
-      implementerStartupPrompt,
-      reviewerStartupPrompt,
-      metaReviewerStartupPrompt,
-      metaReviewerAgent
-    }),
+    implementerSubmitStartupPrompt: false,
+    reviewerSubmitStartupPrompt: false,
+    metaReviewerSubmitStartupPrompt: false,
     launchImplementerAgent,
     launchReviewerAgent,
     launchMetaReviewerAgent,

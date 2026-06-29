@@ -1778,7 +1778,7 @@ describe("agentRunnerBridge", () => {
 
     expect(result).toMatchObject({
       status: "blocked",
-      reasonCode: "PLAN_WATCH_CODEX_UNAVAILABLE",
+      reasonCode: "PLAN_WATCH_RUNNER_EXECUTABLE_UNAVAILABLE",
       failureStage: "spawn",
       stderr: "spawn failed",
       artifactDir:

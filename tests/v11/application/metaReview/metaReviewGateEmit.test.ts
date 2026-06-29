@@ -432,7 +432,7 @@ describe("metaReviewGate V11 defaults", () => {
         ...bubble.config,
         agents: {
           ...bubble.config.agents,
-          meta_reviewer: "codex"
+          meta_reviewer: "opencode"
         },
         role_mcp: {
           implementer: "disabled",
@@ -504,15 +504,10 @@ describe("metaReviewGate V11 defaults", () => {
 
     expect(result.route).toBe("meta_review_running");
     expect(paneRunnerCalls).toHaveLength(1);
-    expect(paneRunnerCalls[0]).toContain(
-      "Perform autonomous meta-review now"
-    );
-    expect(paneRunnerCalls[0]).toContain(
-      "bubble=b_meta_review_apply_v11_builtin_delivery meta-review request round=1."
-    );
-    expect(paneRunnerCalls[0]).not.toContain(
-      "Stay idle until orchestration signals"
-    );
+    // Phase 4 consolidation: Startup prompts are not built locally. Agents reconstruct from metadata.
+    // The command is "opencode meta-review " (with empty startup prompt).
+    // Metadata (bubbleId, round, etc.) is passed through separate metadata fields, not the startup prompt.
+    expect(paneRunnerCalls[0]).toBe("opencode meta-review ");
     expect(submittedMessages).toHaveLength(0);
     expect(
       result.state.meta_review?.runtime_delivery

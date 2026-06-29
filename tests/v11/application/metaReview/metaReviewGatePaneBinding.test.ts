@@ -516,11 +516,15 @@ describe("metaReviewGatePaneBinding", () => {
     });
   });
 
-  it("launches the active meta-review request as the meta-reviewer startup prompt", async () => {
+  it("passes metadata (bubbleId, round, taskPath, repoPath) to buildAgentCommand for agent situational awareness", async () => {
     const paneRunner = vi.fn();
     const buildAgentCommand = vi.fn(
-      (input: { startupPrompt?: string | undefined }) => {
-        void input;
+      (input: { round?: number; repoPath?: string; taskArtifactPath?: string }) => {
+        // Phase 4: Agent receives metadata, not pre-built prompt.
+        // opencode uses this metadata to reconstruct situational context internally.
+        expect(input.round).toBe(4);
+        expect(input.repoPath).toBe("/repo");
+        expect(input.taskArtifactPath).toBe("/repo/.pairflow/bubbles/b_meta_review_gate_notify_forwarding/artifacts/task.md");
         return "codex meta-review";
       }
     );
@@ -566,7 +570,7 @@ describe("metaReviewGatePaneBinding", () => {
       now: new Date("2026-04-13T00:15:00.000Z"),
       taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_notify_forwarding/artifacts/task.md",
       pairflowCommandProfile: "external",
-      metaReviewerAgent: "codex",
+      metaReviewerAgent: "opencode",
       metaReviewerMcpPolicy: "enabled"
     });
 
@@ -579,18 +583,6 @@ describe("metaReviewGatePaneBinding", () => {
       shouldDeactivate: true
     });
     expect(buildAgentCommand).toHaveBeenCalledTimes(1);
-    const commandInput = buildAgentCommand.mock.calls[0]?.[0] as
-      | { startupPrompt?: string }
-      | undefined;
-    expect(commandInput?.startupPrompt).toContain(
-      "Perform autonomous meta-review now"
-    );
-    expect(commandInput?.startupPrompt).toContain(
-      "bubble=b_meta_review_gate_notify_forwarding meta-review request round=4."
-    );
-    expect(commandInput?.startupPrompt).not.toContain(
-      "Stay idle until orchestration signals"
-    );
     expect(respawnPaneCommand).toHaveBeenCalledWith({
       sessionName: "pf-b_meta_review_gate_notify_forwarding",
       paneIndex: getTopologySlotPaneIndexForRole("meta_reviewer"),
@@ -601,11 +593,13 @@ describe("metaReviewGatePaneBinding", () => {
     expect(notifySubmissionRequest).not.toHaveBeenCalled();
   });
 
-  it("does not pass startup prompt as a CLI parameter for opencode meta-reviewer", async () => {
+  it("passes metadata fields to buildAgentCommand for opencode meta-reviewer agent context", async () => {
     const paneRunner = vi.fn();
     const buildAgentCommand = vi.fn(
-      (input: { startupPrompt?: string | undefined }) => {
-        void input;
+      (input: { round?: number; repoPath?: string; taskArtifactPath?: string }) => {
+        // Phase 4: opencode receives metadata for situational awareness, not pre-built prompt
+        expect(input.round).toBe(4);
+        expect(input.repoPath).toBe("/repo");
         return "opencode meta-review";
       }
     );
@@ -652,10 +646,12 @@ describe("metaReviewGatePaneBinding", () => {
 
     expect(result.delivery.status).toBe("confirmed");
     expect(buildAgentCommand).toHaveBeenCalledTimes(1);
+    // Phase 4: Verify metadata fields are passed (not pre-built prompt)
     const commandInput = buildAgentCommand.mock.calls[0]?.[0] as
-      | { startupPrompt?: string }
+      | { round?: number; repoPath?: string; taskArtifactPath?: string }
       | undefined;
-    expect(commandInput?.startupPrompt).toBe("");
+    expect(commandInput?.round).toBe(4);
+    expect(commandInput?.repoPath).toBe("/repo");
   });
 
   it("does not require notify runtime forwarding when request is delivered at launch", async () => {

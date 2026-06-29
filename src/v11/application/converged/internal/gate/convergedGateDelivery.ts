@@ -24,6 +24,15 @@ import {
 import type { ProtocolEnvelope } from "../../../../shared/protocol/protocolEnvelopeContract.js";
 import { executeImplementerHandoffDelivery } from "../../../../shared/delivery/implementerHandoffDelivery.js";
 import {
+  createEmitDeliveryOrchestrator,
+  mapDeliveryResultToDeliveryAck
+} from "../../../../shared/delivery/deliveryOrchestratorFactory.js";
+import {
+  CleanupPolicy,
+  ConvergencePolicy,
+  StartupStrategy
+} from "../../../../shared/delivery/unifiedDeliveryOrchestrator.js";
+import {
   buildDefaultConvergedGateDeliveryDependencies,
   type ResolvedConvergedGateDeliveryDependencies
 } from "../orchestration/convergedDefaultDependencies.js";
@@ -194,37 +203,9 @@ export async function executeGateDelivery(input: {
     sessionsPath: input.resolved.bubblePaths.sessionsPath,
     envelope: input.gateResult.gateEnvelope
   });
-  const emitDeliveryNotificationAck = async (
-    envelope: ProtocolEnvelope,
-    options?: {
-      initialDelayMs?: number;
-      deliveryAttempts?: number;
-    }
-  ): Promise<DeliveryAck> => {
-    const recipientRole = resolveConvergedDeliveryTargetRole({
-      envelope,
-      bubbleConfig: input.resolved.bubbleConfig
-    });
-    return resolvedDependencies.emitDeliveryNotificationAck({
-      bubbleId: input.resolved.bubbleId,
-      bubbleConfig: input.resolved.bubbleConfig,
-      sessionsPath: input.resolved.bubblePaths.sessionsPath,
-      envelope,
-      ...(recipientRole !== undefined ? { recipientRole } : {}),
-      messageRef: gateRef,
-      ...(options?.initialDelayMs !== undefined
-        ? { initialDelayMs: options.initialDelayMs }
-        : {}),
-      ...(options?.deliveryAttempts !== undefined
-        ? { deliveryAttempts: options.deliveryAttempts }
-        : {})
-    }).catch(() => ({
-      status: "rejected",
-      message: "",
-      reason: "command_failed",
-      reason_code: "DELIVERY_ACK_REJECTED"
-    }));
-  };
+  const orchestrator = createEmitDeliveryOrchestrator({
+    emitDelivery: resolvedDependencies.emitDeliveryNotificationAck
+  });
 
   if (input.gateResult.route === "auto_rework") {
     const autoReworkDeliveryInput = {
@@ -263,7 +244,28 @@ export async function executeGateDelivery(input: {
       : [input.gateResult.gateEnvelope];
 
   const deliveryResults = await Promise.all(
-    recipientEnvelopes.map((envelope) => emitDeliveryNotificationAck(envelope))
+    recipientEnvelopes.map((envelope) => {
+      const recipientRole = resolveConvergedDeliveryTargetRole({
+        envelope,
+        bubbleConfig: input.resolved.bubbleConfig
+      });
+      return orchestrator.deliverToRole({
+        bubbleId: input.resolved.bubbleId,
+        bubbleConfig: input.resolved.bubbleConfig,
+        sessionsPath: input.resolved.bubblePaths.sessionsPath,
+        envelope,
+        ...(recipientRole !== undefined ? { role: recipientRole } : {}),
+        messageRef: gateRef,
+        strategy: StartupStrategy.None,
+        cleanupPolicy: CleanupPolicy.Persist,
+        convergencePolicy: ConvergencePolicy.AssumeRunning
+      }).then((result) => mapDeliveryResultToDeliveryAck(result)).catch(() => ({
+        status: "rejected" as const,
+        message: "",
+        reason: "command_failed" as const,
+        reason_code: "DELIVERY_ACK_REJECTED" as const
+      }));
+    })
   );
 
   return buildConvergedDelivery(deliveryResults, false);

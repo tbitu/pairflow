@@ -6,7 +6,7 @@ import type {
   AgentRunnerArtifactFiles
 } from "../../../../shared/planWatchRunner/agentRunnerBridgeContract.js";
 
-export const CODEX_RUNNER_ARTIFACT_SCHEMA_VERSION = 1;
+export const OPENCODE_RUNNER_ARTIFACT_SCHEMA_VERSION = 1;
 
 export interface PrepareOpencodeRunnerArtifactsInput {
   payload: AgentRunnerContinuationPayload;
@@ -53,7 +53,7 @@ export async function prepareOpencodeRunnerArtifacts(
       metadataFilePath,
       `${JSON.stringify(
         {
-          schemaVersion: CODEX_RUNNER_ARTIFACT_SCHEMA_VERSION,
+          schemaVersion: OPENCODE_RUNNER_ARTIFACT_SCHEMA_VERSION,
           invocationId: input.payload.invocation_id,
           startedAt: input.startedAt,
           repoPath: input.payload.repo_path,

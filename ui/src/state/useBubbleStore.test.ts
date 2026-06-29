@@ -3825,7 +3825,7 @@ describe("deleteBubble store method", () => {
         ts: "2026-04-19T19:20:59.424Z",
         round: 1,
         role: "implementer",
-        senderLabel: "codex",
+        senderLabel: "opencode",
         title: "stale pass only",
         summaryText: "stale pass only"
       })
@@ -3843,7 +3843,7 @@ describe("deleteBubble store method", () => {
       bubbleId: "b-a",
       repoPath: "/repo-a",
       round: 1,
-      activeAgent: "codex",
+      activeAgent: "opencode",
       activeRole: "implementer"
     });
     const laggingDetail = {
@@ -3853,7 +3853,7 @@ describe("deleteBubble store method", () => {
         state: "RUNNING"
       }),
       round: 1,
-      activeAgent: "claude",
+      activeAgent: "opencode",
       activeRole: "reviewer",
       transcript: {
         totalMessages: 2,
@@ -3876,7 +3876,7 @@ describe("deleteBubble store method", () => {
         id: "msg_002",
         round: 1,
         role: "implementer",
-        senderLabel: "codex"
+        senderLabel: "opencode"
       })
     ];
     const retryTimelineRequested = createDeferred<void>();

@@ -11,12 +11,12 @@ bootstrap = "pnpm install --frozen-lockfile && pnpm --dir ui install --frozen-lo
 
 [defaults.agents]
 reviewer = "opencode"
-reviewer_model = "lmstudio/qwen3.6-35b-a3b-mtp@q6_k_xl-reviewer"
+reviewer_model = "lmstudio/qwen3.6-27b-mtp-reviewer"
 implementer = "opencode"
-implementer_model = "lmstudio/qwen3.6-35b-a3b-mtp@q6_k_xl-implementer"
+implementer_model = "lmstudio/qwen3.6-27b-mtp-implementer"
 meta_reviewer = "opencode"
-meta_reviewer_model = "lmstudio/qwen3.6-35b-a3b-mtp@q6_k_xl-reviewer"
+meta_reviewer_model = "lmstudio/qwen3.6-27b-mtp-reviewer"
 
 [plan_watch.runner]
 backend = "opencode"
-idle_timeout_seconds = 900
+idle_timeout_seconds = 1800

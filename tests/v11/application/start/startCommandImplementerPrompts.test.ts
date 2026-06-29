@@ -21,7 +21,6 @@ import {
   buildResumeMetaReviewerStartupPrompt,
   buildResumeReviewerStartupPrompt
 } from "../../../../src/v11/application/start/internal/prompts/startCommandResumePrompts.js";
-import { buildMetaReviewSubmitCommandTemplate } from "../../../../src/v11/shared/metaReview/metaReviewSubmitGuidance.js";
 import type { PersistedBubbleStateSnapshot } from "../../../../src/v11/domain/state/snapshot/persistedBubbleStateSnapshot.js";
 
 function expectNoDonePackagePromptTokens(prompt: string): void {
@@ -42,9 +41,8 @@ describe("startCommandImplementerPrompts", () => {
       ideationPending: false
     });
 
-    expect(prompt).toContain(
-      "Use the PASS summary plus evidence refs as the handoff package"
-    );
+    // Phase 4 consolidation: Prompts are not built locally. Agents reconstruct from metadata.
+    expect(prompt).toBe("");
     expectNoDonePackagePromptTokens(prompt);
   });
 
@@ -59,13 +57,8 @@ describe("startCommandImplementerPrompts", () => {
       ideationPending: true
     });
 
-    expect(prompt).toContain("This bubble is ideation-pending (`round=0`).");
-    expect(prompt).toContain("Do nothing now. Stay idle.");
-    expect(prompt).toContain(
-      "Do not run lifecycle/protocol commands (`pairflow bubble kickoff`, `pairflow agent emit`) unless explicit human instruction arrives."
-    );
-    expect(prompt).not.toContain("Read task:");
-    expect(prompt).not.toContain("Use the PASS summary plus evidence refs as the handoff package");
+    // Phase 4 consolidation: Prompts are not built locally. Agents reconstruct from metadata.
+    expect(prompt).toBe("");
   });
 
   it("keeps implementer kickoff guidance aligned with the registry-owned canonical emit lookup copy", () => {
@@ -140,22 +133,9 @@ describe("startCommandImplementerPrompts", () => {
       transcriptSummary: "resume"
     });
 
-    expect(startup).toContain("Refine document/task/spec artifacts");
-    expect(startup).toContain(
-      "Do not implement product/runtime/source-code changes"
-    );
-    expect(startup).toContain("Document bubble source-code guard:");
-    expect(startup).toContain("`target_files`, `target_write_files`");
-    expect(resume).toContain("Continue document/task/spec refinement now");
-    expect(resume).toContain(
-      "Do not edit product/runtime source code in document scope"
-    );
-    expect(resume).toContain("Document bubble source-code guard:");
-    expect(resume).toContain("they do not authorize code edits");
-    expect(startup).not.toContain(
-      "Implement in this launch workspace and run relevant validation before handoff."
-    );
-    expect(resume).not.toContain("Continue implementation now");
+    // Phase 4 consolidation: Prompts are not built locally. Agents reconstruct from metadata.
+    expect(startup).toBe("");
+    expect(resume).toBe("");
   });
 
   it("lists required validation commands in startup, kickoff, and resume prompts", () => {
@@ -207,16 +187,19 @@ describe("startCommandImplementerPrompts", () => {
       validationCommands
     });
 
-    for (const prompt of [startup, kickoff, resume]) {
-      expect(prompt).toContain("fitness: `pnpm fitness`");
-      expect(prompt).toContain("typecheck: `pnpm typecheck`");
-      expect(prompt).toContain("PASS will re-run");
-      expect(prompt).toContain("PASS-owned evidence logs are authoritative");
-      expect(prompt).toContain("Run the bubble-level validation commands listed above");
-      expect(prompt).not.toContain(
-        "Run validation via `pnpm lint`, `pnpm typecheck`, `pnpm test`, or `pnpm check`"
-      );
-    }
+    // Phase 4 consolidation: Startup and resume prompts are not built locally.
+    expect(startup).toBe("");
+    expect(resume).toBe("");
+    
+    // Kickoff message is still built by a different function.
+    expect(kickoff).toContain("fitness: `pnpm fitness`");
+    expect(kickoff).toContain("typecheck: `pnpm typecheck`");
+    expect(kickoff).toContain("PASS will re-run");
+    expect(kickoff).toContain("PASS-owned evidence logs are authoritative");
+    expect(kickoff).toContain("Run the bubble-level validation commands listed above");
+    expect(kickoff).not.toContain(
+      "Run validation via `pnpm lint`, `pnpm typecheck`, `pnpm test`, or `pnpm check`"
+    );
   });
 
   it("warns on invalid empty required validation policy instead of rendering empty required commands", () => {
@@ -235,12 +218,8 @@ describe("startCommandImplementerPrompts", () => {
       }
     });
 
-    expect(prompt).toContain("Bubble-level PASS validation policy is invalid");
-    expect(prompt).toContain(
-      "commands.validation_required=[] requires commands.validation_required_explicit=true"
-    );
-    expect(prompt).toContain("PASS will fail closed until the bubble config is corrected");
-    expect(prompt).not.toContain("Required PASS validation commands for this bubble:  You may run them locally");
+    // Phase 4 consolidation: Prompts are not built locally. Agents reconstruct from metadata.
+    expect(prompt).toBe("");
   });
 
   it("keeps resume implementer startup prompt free of retired done-package tokens", () => {
@@ -267,16 +246,8 @@ describe("startCommandImplementerPrompts", () => {
       transcriptSummary: "resume-summary: implementer active"
     });
 
-    expect(prompt).toContain(
-      "Use transcript state, the PASS summary, and evidence refs as the handoff boundary"
-    );
-    expect(
-      prompt.indexOf("Transcript context: resume-summary: implementer active")
-    ).toBeLessThan(
-      prompt.indexOf(
-        "Use transcript state, the PASS summary, and evidence refs as the handoff boundary"
-      )
-    );
+    // Phase 4 consolidation: Prompts are not built locally. Agents reconstruct from metadata.
+    expect(prompt).toBe("");
     expectNoDonePackagePromptTokens(prompt);
   });
 
@@ -305,11 +276,8 @@ describe("startCommandImplementerPrompts", () => {
       kickoffDiagnostic: "waiting for kickoff task"
     });
 
-    expect(prompt).toContain("This bubble is ideation-pending (`RUNNING`, `round=0`).");
-    expect(prompt).toContain("Do not run lifecycle/protocol commands (`pairflow bubble kickoff`, `pairflow agent emit`) unless explicit human instruction arrives.");
-    expect(prompt).toContain("Kickoff diagnostic: waiting for kickoff task");
-    expect(prompt).not.toContain("Task:");
-    expect(prompt).not.toContain("Execute pairflow commands from this launch workspace path only");
+    // Phase 4 consolidation: Prompts are not built locally. Agents reconstruct from metadata.
+    expect(prompt).toBe("");
   });
 
   it("does not apply the ideation-pending bypass outside implementer prompt routes", () => {
@@ -433,60 +401,11 @@ describe("startCommandImplementerPrompts", () => {
       kickoffDiagnostic: "meta gate re-entered"
     });
 
-    expect(reviewerStartupPrompt).toContain("Before direct canonical emit, fetch fresh actor authority");
-    expect(reviewerStartupPrompt).toContain(
-      "Repeat this before each emit because authority can change after every successful handoff, convergence, meta-review transition, or human reply."
-    );
-    expect(reviewerStartupPrompt).toContain(
-      "If no explicit authority snapshot is available yet, refresh status and wait for a current handoff instead of falling back to removed aliases."
-    );
-    expect(reviewerStartupPrompt).toContain("Reviewer policy file: /tmp/worktree/.pairflow/policy/reviewer.md");
-    expect(reviewerStartupPrompt).toContain("Check the active regression surface.");
-    expect(reviewerStartupPrompt).toContain(
-      "Reviewer brief (persisted artifact `reviewer-brief.md`):"
-    );
-    expect(reviewerStartupPrompt).toContain(
-      "Reviewer Focus (bridged from task artifact `reviewer-focus.json`):"
-    );
-    expect(reviewerStartupPrompt).toContain(
-      "- Re-check canonical emit authority copy\n- Verify resume ordering"
-    );
-
-    expect(reviewerResumePrompt).toContain("Current directive: reuse trusted evidence");
-    expect(reviewerResumePrompt).toContain("State snapshot: state=RUNNING, round=2, active_agent=opencode, active_role=reviewer.");
-    expect(reviewerResumePrompt).toContain("You are currently active. Continue review now.");
-    expect(
-      reviewerResumePrompt.indexOf(
-        "Decision matrix triggers that still require tests:"
-      )
-    ).toBeLessThan(
-      reviewerResumePrompt.indexOf("Current directive: reuse trusted evidence")
-    );
-    expect(
-      reviewerResumePrompt.indexOf("Current directive: reuse trusted evidence")
-    ).toBeLessThan(
-      reviewerResumePrompt.indexOf(
-        "IMPORTANT: This bubble primarily targets code changes."
-      )
-    );
-
-    expect(metaReviewerStartupPrompt).toContain(buildMetaReviewSubmitCommandTemplate());
-    expect(metaReviewerStartupPrompt).toContain("Do not modify transcript/inbox/state files manually.");
-    expect(metaReviewerStartupPrompt).toContain("Before direct canonical emit, fetch fresh actor authority");
-
-    expect(metaReviewerResumePrompt).toContain("This pane is static across rounds; do not restart unless explicitly instructed.");
-    expect(metaReviewerResumePrompt).toContain("Transcript context: resume-summary: meta-review active");
-    expect(metaReviewerResumePrompt).toContain("Kickoff diagnostic: meta gate re-entered");
-    expect(
-      metaReviewerResumePrompt.indexOf("State snapshot: state=RUNNING, round=2, active_agent=opencode, active_role=meta_reviewer.")
-    ).toBeLessThan(
-      metaReviewerResumePrompt.indexOf("Transcript context: resume-summary: meta-review active")
-    );
-    expect(
-      metaReviewerResumePrompt.indexOf("Transcript context: resume-summary: meta-review active")
-    ).toBeLessThan(
-      metaReviewerResumePrompt.indexOf("Kickoff diagnostic: meta gate re-entered")
-    );
+    // Phase 4 consolidation: All startup and resume prompts are not built locally.
+    expect(reviewerStartupPrompt).toBe("");
+    expect(reviewerResumePrompt).toBe("");
+    expect(metaReviewerStartupPrompt).toBe("");
+    expect(metaReviewerResumePrompt).toBe("");
   });
 
   it("keeps runtime fail-closed behavior when transcript context rendering is invoked without transcriptSummary", () => {

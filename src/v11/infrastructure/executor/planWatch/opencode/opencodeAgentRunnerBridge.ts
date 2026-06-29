@@ -7,7 +7,7 @@ import type {
 import { prepareOpencodeRunnerArtifacts } from "./opencodeAgentRunnerArtifacts.js";
 import { classifyOpencodeJsonProcessResult } from "./opencodeAgentRunnerBridgeResult.js";
 
-export const CODEX_PLAN_WATCH_RUNNER_BACKEND = "opencode";
+export const OPENCODE_PLAN_WATCH_RUNNER_BACKEND = "opencode";
 
 export async function prepareOpencodeRunnerFiles(
   payload: AgentRunnerContinuationPayload,
@@ -71,7 +71,7 @@ export function createOpencodePlanWatchRunnerBackendAdapter(input: {
 } = {}): AgentRunnerBuiltInBackendAdapter {
   const prepareRunnerFiles = input.prepareRunnerFiles ?? prepareOpencodeRunnerFiles;
   return {
-    backend: CODEX_PLAN_WATCH_RUNNER_BACKEND,
+    backend: OPENCODE_PLAN_WATCH_RUNNER_BACKEND,
     async prepareInvocationConfig(input) {
       const payloadValidation = validateContinuationPayload(input.payload);
       if (payloadValidation !== undefined) {
@@ -116,7 +116,7 @@ export function createOpencodePlanWatchRunnerBackendAdapter(input: {
         ok: true,
         config: {
           ...input.config,
-          backend: CODEX_PLAN_WATCH_RUNNER_BACKEND,
+          backend: OPENCODE_PLAN_WATCH_RUNNER_BACKEND,
           command: input.config.command?.trim() || "opencode",
           args: buildOpencodeRunnerArgs({
             payload: input.payload,
@@ -157,7 +157,7 @@ export function createOpencodePlanWatchRunnerBackendAdapter(input: {
     },
     classifySpawnErrorReasonCode(input) {
       return isUnavailableExecutableError(input.error)
-        ? "PLAN_WATCH_CODEX_UNAVAILABLE"
+        ? "PLAN_WATCH_RUNNER_EXECUTABLE_UNAVAILABLE"
         : undefined;
     }
   };

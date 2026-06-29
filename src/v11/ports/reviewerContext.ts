@@ -10,7 +10,8 @@ export interface RefreshReviewerContextInput {
 export type RefreshReviewerContextFailureReason =
   | "no_runtime_session"
   | "registry_read_failed"
-  | "tmux_respawn_failed";
+  | "tmux_respawn_failed"
+  | "readiness_timeout";
 
 export interface RefreshReviewerContextResult {
   refreshed: boolean;

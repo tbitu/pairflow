@@ -3,8 +3,17 @@ import type {
   EmitDeliveryNotificationInput
 } from "./tmuxDeliveryContract.js";
 import type {
-  EmitDeliveryNotificationAckPort
-} from "../../ports/tmuxDelivery.js";
+  UnifiedDeliveryOrchestrator
+} from "../../ports/unifiedDeliveryOrchestrator.js";
+import {
+  CleanupPolicy,
+  ConvergencePolicy,
+  StartupStrategy
+} from "./unifiedDeliveryOrchestrator.js";
+import {
+  createEmitDeliveryOrchestrator,
+  mapDeliveryResultToDeliveryAck
+} from "./deliveryOrchestratorFactory.js";
 
 export interface ExecuteImplementerHandoffDeliveryResult {
   result: DeliveryAck;
@@ -34,23 +43,63 @@ function buildUnexpectedDeliveryFailureResult(): DeliveryAck {
   };
 }
 
+function deliverImplementerHandoffOnce(input: {
+  deliveryInput: EmitDeliveryNotificationInput;
+  orchestrator: UnifiedDeliveryOrchestrator;
+}): Promise<DeliveryAck> {
+  return input.orchestrator.deliverToRole({
+    bubbleId: input.deliveryInput.bubbleId,
+    bubbleConfig: input.deliveryInput.bubbleConfig,
+    sessionsPath: input.deliveryInput.sessionsPath,
+    envelope: input.deliveryInput.envelope,
+    ...(input.deliveryInput.recipientRole !== undefined
+      ? { role: input.deliveryInput.recipientRole }
+      : {}),
+    ...(input.deliveryInput.messageRef !== undefined
+      ? { messageRef: input.deliveryInput.messageRef }
+      : {}),
+    ...(input.deliveryInput.initialDelayMs !== undefined
+      ? { initialDelayMs: input.deliveryInput.initialDelayMs }
+      : {}),
+    ...(input.deliveryInput.deliveryAttempts !== undefined
+      ? { deliveryAttempts: input.deliveryInput.deliveryAttempts }
+      : {}),
+    strategy: StartupStrategy.UpfrontCli,
+    cleanupPolicy: CleanupPolicy.Persist,
+    convergencePolicy: ConvergencePolicy.Respawn
+  }).then((result) => mapDeliveryResultToDeliveryAck(result));
+}
+
 export async function executeImplementerHandoffDelivery(input: {
   deliveryInput: EmitDeliveryNotificationInput;
-  emitDelivery: EmitDeliveryNotificationAckPort;
+  orchestrator?: UnifiedDeliveryOrchestrator;
+  emitDelivery?: (input: EmitDeliveryNotificationInput) => Promise<DeliveryAck>;
 }): Promise<ExecuteImplementerHandoffDeliveryResult> {
-  let deliveryResult = await input.emitDelivery(input.deliveryInput)
+  const orchestrator =
+    input.orchestrator ?? createEmitDeliveryOrchestrator(
+      input.emitDelivery !== undefined
+        ? { emitDelivery: input.emitDelivery }
+        : {}
+    );
+  let deliveryResult = await deliverImplementerHandoffOnce({
+    deliveryInput: input.deliveryInput,
+    orchestrator
+  })
     .catch(() => buildUnexpectedDeliveryFailureResult());
   let deliveryRetried = false;
 
   if (shouldRetryImplementerHandoffDelivery(deliveryResult)) {
     deliveryRetried = true;
     const initialFailureResult = deliveryResult;
-    deliveryResult = await input.emitDelivery({
-      ...input.deliveryInput,
+    deliveryResult = await deliverImplementerHandoffOnce({
+      deliveryInput: {
+        ...input.deliveryInput,
       // Newly activated implementer/meta-reviewer panes can still be warming up.
       // Retry once with the same timing used by the stable reviewer handoff flow (30 seconds).
-      initialDelayMs: 30000,
-      deliveryAttempts: 6
+        initialDelayMs: 30000,
+        deliveryAttempts: 6
+      },
+      orchestrator
     }).catch(() => initialFailureResult);
   }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { EmitDeliveryNotificationInput } from "../../../../src/v11/ports/tmuxDelivery.js";
+import type { UnifiedDeliveryOrchestrator } from "../../../../src/v11/ports/unifiedDeliveryOrchestrator.js";
 import {
   executeImplementerHandoffDelivery,
   shouldRetryImplementerHandoffDelivery
@@ -61,29 +62,37 @@ function createDeliveryInput(): EmitDeliveryNotificationInput {
 
 describe("implementerHandoffDelivery", () => {
   it("retries once with reviewer-parity warm-up on delivery_unconfirmed", async () => {
-    const calls: EmitDeliveryNotificationInput[] = [];
+    const calls: Parameters<UnifiedDeliveryOrchestrator["deliverToRole"]>[0][] = [];
     const result = await executeImplementerHandoffDelivery({
       deliveryInput: createDeliveryInput(),
-      emitDelivery: async (input) => {
+      orchestrator: {
+        deliverToRole: async (input) => {
         calls.push(input);
         if (calls.length === 1) {
-          return {
-            status: "rejected" as const,
-            message: "unconfirmed",
-            reason: "delivery_unconfirmed",
-            reason_code: "DELIVERY_ACK_REJECTED" as const
-          };
+            return {
+              ok: false as const,
+              reason: "pane_not_ready" as const,
+              maxRetryAttempts: 0,
+              lastError: "unconfirmed"
+            };
         }
         return {
-          status: "accepted" as const,
+          ok: true as const,
+          resultCode: "delivery_ok" as const,
           message: "ok",
           sessionName: "pf_bubble",
           targetPaneIndex: 1
         };
+        }
       }
     });
 
     expect(calls).toHaveLength(2);
+    expect(calls[0]).toMatchObject({
+      strategy: "upfront_cli",
+      cleanupPolicy: "persist",
+      convergencePolicy: "respawn"
+    });
     expect(calls[1]).toMatchObject({
       initialDelayMs: 30000,
       deliveryAttempts: 6
@@ -100,20 +109,23 @@ describe("implementerHandoffDelivery", () => {
   });
 
   it("normalizes unexpected throw to command_failed and retries once", async () => {
-    const calls: EmitDeliveryNotificationInput[] = [];
+    const calls: Parameters<UnifiedDeliveryOrchestrator["deliverToRole"]>[0][] = [];
     const result = await executeImplementerHandoffDelivery({
       deliveryInput: createDeliveryInput(),
-      emitDelivery: async (input) => {
+      orchestrator: {
+        deliverToRole: async (input) => {
         calls.push(input);
         if (calls.length === 1) {
           throw new Error("transport exploded");
         }
         return {
-          status: "accepted" as const,
+          ok: true as const,
+          resultCode: "delivery_ok" as const,
           message: "retry recovered",
           sessionName: "pf_bubble",
           targetPaneIndex: 1
         };
+        }
       }
     });
 
@@ -130,20 +142,22 @@ describe("implementerHandoffDelivery", () => {
   });
 
   it("keeps the original retryable failure when the retry attempt throws", async () => {
-    const calls: EmitDeliveryNotificationInput[] = [];
+    const calls: Parameters<UnifiedDeliveryOrchestrator["deliverToRole"]>[0][] = [];
     const result = await executeImplementerHandoffDelivery({
       deliveryInput: createDeliveryInput(),
-      emitDelivery: async (input) => {
+      orchestrator: {
+        deliverToRole: async (input) => {
         calls.push(input);
         if (calls.length === 1) {
           return {
-            status: "rejected" as const,
-            message: "first attempt unconfirmed",
-            reason: "delivery_unconfirmed",
-            reason_code: "DELIVERY_ACK_REJECTED" as const
+            ok: false as const,
+            reason: "pane_not_ready" as const,
+            maxRetryAttempts: 0,
+            lastError: "first attempt unconfirmed"
           };
         }
         throw new Error("retry transport exploded");
+        }
       }
     });
 
@@ -164,17 +178,20 @@ describe("implementerHandoffDelivery", () => {
   });
 
   it("does not retry successful deliveries", async () => {
-    const calls: EmitDeliveryNotificationInput[] = [];
+    const calls: Parameters<UnifiedDeliveryOrchestrator["deliverToRole"]>[0][] = [];
     const result = await executeImplementerHandoffDelivery({
       deliveryInput: createDeliveryInput(),
-      emitDelivery: async (input) => {
+      orchestrator: {
+        deliverToRole: async (input) => {
         calls.push(input);
         return {
-          status: "accepted" as const,
+          ok: true as const,
+          resultCode: "delivery_ok" as const,
           message: "ok",
           sessionName: "pf_bubble",
           targetPaneIndex: 1
         };
+        }
       }
     });
 
@@ -221,25 +238,27 @@ describe("implementerHandoffDelivery", () => {
   });
 
   it("retries once on no_runtime_session to preserve meta-review pane warm-up parity", async () => {
-    const calls: EmitDeliveryNotificationInput[] = [];
+    const calls: Parameters<UnifiedDeliveryOrchestrator["deliverToRole"]>[0][] = [];
     const result = await executeImplementerHandoffDelivery({
       deliveryInput: createDeliveryInput(),
-      emitDelivery: async (input) => {
+      orchestrator: {
+        deliverToRole: async (input) => {
         calls.push(input);
         if (calls.length === 1) {
           return {
-            status: "rejected" as const,
-            message: "pane not ready",
-            reason: "no_runtime_session",
-            reason_code: "DELIVERY_ACK_RUNTIME_SESSION_UNAVAILABLE" as const
+            ok: false as const,
+            reason: "session_not_found" as const,
+            bubbleId: input.bubbleId
           };
         }
         return {
-          status: "accepted" as const,
+          ok: true as const,
+          resultCode: "delivery_ok" as const,
           message: "retry recovered",
           sessionName: "pf_bubble",
           targetPaneIndex: 3
         };
+        }
       }
     });
 

@@ -5,8 +5,6 @@ import type {
 import type {
   BubbleCommandsConfig
 } from "../../../../shared/command/commandConfigTypes.js";
-import { joinPromptLines } from "../../../../shared/role/prompts/resumePromptShared.js";
-import { buildRolePromptConcernLines } from "../../../../shared/role/prompts/rolePromptConcerns.js";
 import type {
   RolePromptStateSnapshot
 } from "../../../../shared/role/prompts/rolePromptConcernTypes.js";
@@ -25,16 +23,8 @@ export function buildResumeImplementerStartupPrompt(input: {
   kickoffDiagnostic?: string;
   validationCommands?: BubbleCommandsConfig;
 }): string {
-  // AC2: For opencode agents, do not inject generic startup prompts.
-  if (input.agentName === "opencode") {
-    return "";
-  }
-
-  return joinPromptLines(
-    buildRolePromptConcernLines({
-      role: "implementer",
-      phase: "resume",
-      context: input
-    })
-  );
+  void input;
+  // Phase 4: No longer build prompts. Agents reconstruct based on role and metadata.
+  // This function is retained for backward compatibility but returns empty string.
+  return "";
 }

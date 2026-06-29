@@ -59,7 +59,9 @@ async function emitSubmitAutoReworkDelivery(input: {
       recipientRole: "implementer",
       messageRef
     },
-    emitDelivery: input.dependencies.emitDeliveryNotification
+    ...(input.dependencies.emitDeliveryNotification !== undefined
+      ? { emitDelivery: input.dependencies.emitDeliveryNotification }
+      : {})
   });
 }
 

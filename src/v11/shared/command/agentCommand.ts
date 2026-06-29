@@ -24,6 +24,11 @@ export interface BuildAgentCommandInput {
   pairflowCommandProfile?: PairflowCommandProfile;
   externalPairflowCommand?: string;
   remoteWorkspaceAuthority?: PairflowRemoteWorkspaceAuthority;
+  // Phase 4: Metadata fields for agent situational awareness.
+  // Agents reconstruct context internally instead of receiving pre-built prompts.
+  round?: number;
+  repoPath?: string;
+  taskArtifactPath?: string;
   startupPrompt?: string | undefined;
 }
 
@@ -37,13 +42,11 @@ function buildAgentLaunchCommand(
   const args: string[] = [agentName];
   const hasStartupPrompt = (startupPrompt?.trim().length ?? 0) > 0;
 
-  if (agentName === "opencode") {
-    // AC1: Map opencode to PF-implementer or PF-reviewer agent identity.
-    if (roleName === "implementer") {
-      args.push("--agent", "PF-implementer");
-    } else if (roleName === "reviewer" || roleName === "meta_reviewer") {
-      args.push("--agent", "PF-reviewer");
-    }
+  // AC1: Map opencode to PF-implementer or PF-reviewer agent identity.
+  if (roleName === "implementer") {
+    args.push("--agent", "PF-implementer");
+  } else if (roleName === "reviewer" || roleName === "meta_reviewer") {
+    args.push("--agent", "PF-reviewer");
   }
 
   if ((model?.trim().length ?? 0) > 0) {
@@ -57,10 +60,7 @@ function buildAgentLaunchCommand(
   return args.map(shellQuote).join(" ");
 }
 
-function buildOpencodePreparation(agentName: AgentName): string[] {
-  if (agentName !== "opencode") {
-    return [];
-  }
+function buildOpencodePreparation(): string[] {
   return [
     `export OPENCODE_CONFIG_CONTENT=${shellQuote(
       JSON.stringify({
@@ -70,9 +70,9 @@ function buildOpencodePreparation(agentName: AgentName): string[] {
           lmstudio: {
             options: {
               baseURL: "http://127.0.0.1:1235/v1",
-              headerTimeout: 60_000,
-              chunkTimeout: 120_000,
-              timeout: 900_000
+              headerTimeout: 600_000,
+              chunkTimeout: 1_800_000,
+              timeout: 3_600_000
             }
           }
         }
@@ -88,10 +88,10 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
   if (workspacePath.length === 0) {
     throw new Error(`Workspace path is required to build agent command for bubble ${bubbleId}.`);
   }
-  const missingBinaryMessage = `${agentName} CLI not found in PATH for bubble ${bubbleId}. Install it or configure agent command mapping.`;
+  const missingBinaryMessage = `opencode CLI not found in PATH for bubble ${bubbleId}. Install opencode.`;
   const worktreePinningMessage = `Failed to pin agent root to workspace ${workspacePath} for bubble ${bubbleId}.`;
 
-  const opencodePreparation = buildOpencodePreparation(agentName);
+  const opencodePreparation = buildOpencodePreparation();
   const launchCommand = buildAgentLaunchCommand(
     agentName,
     input.roleName,

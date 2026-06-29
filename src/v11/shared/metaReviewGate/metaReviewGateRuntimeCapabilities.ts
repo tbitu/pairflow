@@ -81,6 +81,12 @@ export interface MetaReviewGatePaneBindingRuntimeCapabilities {
     roleMcpPolicy?: RoleMcpPolicy;
     model?: string;
     opencodeMcpDisableArgs?: string[];
+    // Phase 4: Pass metadata for agent to reconstruct situational context.
+    // buildAgentCommand should NOT pre-build prompts; instead, let the agent
+    // use these fields to understand context based on role.
+    round?: number;
+    repoPath?: string;
+    taskArtifactPath?: string;
     startupPrompt?: string | undefined;
   }) => string;
   tmux?: MetaReviewGatePaneBindingTmuxCapabilities;

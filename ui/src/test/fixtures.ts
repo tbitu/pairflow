@@ -63,7 +63,7 @@ export function bubbleSummary(input: {
     reviewArtifactType: input.reviewArtifactType ?? "code",
     state,
     round: input.round ?? 3,
-    activeAgent: input.activeAgent ?? "codex",
+    activeAgent: input.activeAgent ?? "opencode",
     activeRole: input.activeRole ?? "implementer",
     activeSince: "2026-02-24T11:50:00.000Z",
     lastCommandAt: "2026-02-24T12:00:00.000Z",
