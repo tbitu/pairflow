@@ -163,6 +163,8 @@ export async function resolveWatchdogLifecycleRoute(input: {
 
   return resolveExpiredRunningRoute({
     context,
-    paneActivity: input.paneActivity
+    ...(input.paneActivity !== undefined
+      ? { paneActivity: input.paneActivity }
+      : {})
   });
 }
