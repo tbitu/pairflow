@@ -9,7 +9,10 @@ const metaReviewSubmitApproveParityNote = [
 ].join(" ");
 
 const metaReviewSubmitAdvisoryOnlyCorrectionNote =
-  "Valid correction for advisory-only reviewer-snapshot conflicts: keep recommendation=approve, do not switch to inconclusive, and re-emit advisory-only approve metadata (findings_claim_state=open_findings; findings_blocking_open_total=0; findings_advisory_open_total>0).";
+  "Valid correction for advisory-only reviewer-snapshot conflicts: keep recommendation=approve, do not switch to inconclusive, and re-emit advisory-only approve metadata (findings_claim_state=open_findings; findings_count>0; findings_claimed_open_total=findings_count; findings_blocking_open_total=0; findings_advisory_open_total=findings_count). If the conflict message includes snapshot totals (for example claimed=0 snapshot_open_total=2), copy the snapshot totals into findings_count/findings_claimed_open_total/findings_advisory_open_total and keep blocking total at 0.";
+
+const metaReviewSubmitFailureRecoveryChecklist =
+  "Meta-review submit failure recovery: Invalid --report-json -> rebuild as valid JSON object with double-quoted keys/strings; CLAIM_SOURCE_INVALID -> set findings_claim_source=meta_review_artifact whenever findings_claim_state is present; findings_count required/invalid -> set findings_count to a non-negative integer and keep claim/count tuple consistent (open_findings => findings_count>0, clean => findings_count=0); META_REVIEW_GATE_REVIEWER_CONVERGENCE_CONFLICT with snapshot totals -> copy snapshot_open_total/snapshot_advisory into findings_count/findings_claimed_open_total/findings_advisory_open_total and keep findings_blocking_open_total=0 for advisory-only approve.";
 
 export function buildMetaReviewSubmitUsageLine(): string {
   return "pairflow agent emit --kind meta_review_result --repo <path> --bubble-id <id> --handoff-id <id> --execution-id <id> --round <n> --recommendation approve|rework|inconclusive --summary <text> [--rework-target-message <text>] --report-json <json> [--ref <artifact-path>]...";
@@ -34,4 +37,8 @@ export function buildMetaReviewSubmitApproveParityNote(): string {
 
 export function buildMetaReviewSubmitAdvisoryOnlyCorrectionNote(): string {
   return metaReviewSubmitAdvisoryOnlyCorrectionNote;
+}
+
+export function buildMetaReviewSubmitFailureRecoveryChecklist(): string {
+  return metaReviewSubmitFailureRecoveryChecklist;
 }

@@ -25,6 +25,47 @@ TASK_FILE: extracted from `--task-file` argument (optional; for ideation kickoff
 - Re-verify after each fix attempt.
 - If diagnosis is inconclusive, stop with a concrete escalation path.
 - For remote started-pointer runtime loss, stay fail-closed: do not imply that `bubble start` or `bubble restart` is already the supported recovery contract on top of preserved remote state.
+- For repeated `pairflow agent emit` failures, classify by error signature and apply the mapped correction once (do not keep mutating flags blindly).
+
+## Agent Emit Failure Playbook
+
+Use this when pane output shows repeated emit failures.
+
+1. Refresh authority first:
+```bash
+pairflow bubble status --id <BUBBLE_ID> --repo <REPO_PATH> --json
+```
+Then copy fresh `executionContext.handoffId` and `executionContext.executionId`.
+
+2. Role-to-kind lock:
+- implementer: `pass|human_question`
+- reviewer: `pass|convergence|human_question`
+- meta-reviewer: `meta_review_result` only
+
+3. Error signature -> correction:
+- `ACTOR_EMIT_OPTIONS_INVALID`:
+  - Rebuild command from canonical template.
+  - Ensure `--repo`, `--bubble-id`, `--handoff-id`, `--execution-id` are all present and non-empty.
+- `ACTOR_EMIT_CONTEXT_INVALID`:
+  - Kind/authority mismatch. Switch to the allowed kind for current active role/authority.
+- `Invalid --report-json value`:
+  - Rebuild `--report-json` as a valid JSON object string (double-quoted keys/strings).
+  - Single-quote the full shell argument.
+- `CLAIM_SOURCE_INVALID`:
+  - If `findings_claim_state` is present, set `findings_claim_source=meta_review_artifact`.
+- `report_json.findings_count is required and must be a non-negative integer`:
+  - Set integer `findings_count>=0`.
+  - Keep tuple consistent: `open_findings => findings_count>0`, `clean => findings_count=0`.
+- `META_REVIEW_GATE_REVIEWER_CONVERGENCE_CONFLICT` with snapshot totals:
+  - Copy snapshot totals into `findings_count`, `findings_claimed_open_total`, `findings_advisory_open_total`.
+  - Keep `findings_blocking_open_total=0` for advisory-only approve.
+
+4. Retry policy:
+- Retry exactly once after applying mapped correction.
+- If it fails again, stop and report the exact error plus the corrected command variant.
+
+5. Reference:
+- See `docs/agent-emit-troubleshooting.md` for canonical examples.
 
 ## Error Messages
 

@@ -22,6 +22,7 @@ import {
 import {
   buildMetaReviewSubmitApproveParityNote,
   buildMetaReviewSubmitAuthorityGuardLine,
+  buildMetaReviewSubmitFailureRecoveryChecklist,
   buildMetaReviewSubmitCommandTemplate
 } from "../../metaReview/metaReviewSubmitGuidance.js";
 import {
@@ -345,7 +346,7 @@ const promptConcernCatalog: Readonly<
   meta_reviewer_task_artifact_context: (input) =>
     `Task: ${requirePromptValue(input.taskArtifactPath, "taskArtifactPath", "meta_reviewer_task_artifact_context")}.`,
   meta_review_submit_command_template: () =>
-    `When signaled, submit only through structured Pairflow CLI and always include required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitAuthorityGuardLine()} Do not leave \`--handoff-id\` or \`--execution-id\` empty. For \`--report-json\`, pass a valid JSON object string with double-quoted keys/strings (single-quote the full shell argument).`,
+    `When signaled, submit only through structured Pairflow CLI and always include required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitAuthorityGuardLine()} Do not leave \`--handoff-id\` or \`--execution-id\` empty. For \`--report-json\`, pass a valid JSON object string with double-quoted keys/strings (single-quote the full shell argument). ${buildMetaReviewSubmitFailureRecoveryChecklist()}`,
   meta_review_submit_approve_parity_note: () =>
     buildMetaReviewSubmitApproveParityNote(),
   meta_review_finding_severity_contract: () => [

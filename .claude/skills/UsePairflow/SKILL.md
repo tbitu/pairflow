@@ -65,6 +65,7 @@ This skill exists to avoid lifecycle mistakes (wrong command in wrong state, los
   - state whether it is blocking now or only future hardening debt.
 24. For started remote bubbles, the laptop/local repo remains the operator control plane. Run lifecycle commands from the local repo so Pairflow can use the retained pointer/cache state and SSH routing; do not SSH into the remote clone and run `approve`, `reply`, `commit`, `merge`, or `delete` there manually.
 25. The only bounded remote-clone local-parity exception in this design slice is `request-rework`, and only when Pairflow can prove the verified remote clone workspace context and no retained clone-local `remote.json` pointer artifacts are present. Default to the laptop-routed path unless that exception is explicitly known to apply.
+26. For recurring actor emit failures, use the error-signature mapping in `Workflows/TroubleshootBubble.md` and the canonical examples in `docs/agent-emit-troubleshooting.md` instead of ad-hoc flag mutation.
 
 ## Execution Modes (Mandatory)
 

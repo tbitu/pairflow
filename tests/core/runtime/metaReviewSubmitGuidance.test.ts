@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildMetaReviewSubmitAuthorityGuardLine,
   buildMetaReviewSubmitAdvisoryOnlyCorrectionNote,
+  buildMetaReviewSubmitFailureRecoveryChecklist,
   buildMetaReviewSubmitUsageLine
 } from "../../../src/v11/shared/metaReview/metaReviewSubmitGuidance.js";
 import { getAgentEmitHelpText } from "../../../src/cli/commands/agent/emit.js";
@@ -45,6 +46,15 @@ describe("metaReviewSubmitGuidance", () => {
 
     expect(line).toContain("emit `--kind meta_review_result` only");
     expect(line).toContain("never `pass`, `convergence`, or `human_question`");
+  });
+
+  it("keeps class-level submit failure recovery checklist explicit", () => {
+    const checklist = buildMetaReviewSubmitFailureRecoveryChecklist();
+
+    expect(checklist).toContain("Invalid --report-json");
+    expect(checklist).toContain("CLAIM_SOURCE_INVALID");
+    expect(checklist).toContain("findings_count required/invalid");
+    expect(checklist).toContain("META_REVIEW_GATE_REVIEWER_CONVERGENCE_CONFLICT");
   });
 
   it("returns full prompt for all agents including opencode", () => {
