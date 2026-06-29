@@ -1,11 +1,10 @@
 import type { EmitHumanReplyDependencies } from "../../replyCommandContract.js";
+import type { RefreshImplementerContextPort } from "../../../../ports/implementerContext.js";
 import {
   appendProtocolEnvelope,
   startCommandContextDefaults
 } from "../../../start/startCommandDependencyDefaults.js";
 import { reviewerDeliveryDefaults } from "../../../pass/reviewerDeliveryDefaults.js";
-import {
-} from "../../../../shared/mutation/mutationBoundaryIO.js";
 
 async function emitDeliveryNotificationAck(
   ...args: Parameters<typeof reviewerDeliveryDefaults.emitDeliveryNotificationAck>
@@ -41,6 +40,15 @@ function resolveDeliveryMessageRef(
   return reviewerDeliveryDefaults.resolveDeliveryMessageRef(...args);
 }
 
+export function refreshImplementerContext(): Promise<
+  Awaited<ReturnType<RefreshImplementerContextPort>>
+> {
+  return Promise.resolve({
+    refreshed: false,
+    reason: "no_runtime_session"
+  });
+}
+
 const writeStateSnapshot = startCommandContextDefaults.writeStateSnapshot;
 
 const replyCommandDependencyDefaults = {
@@ -50,6 +58,7 @@ const replyCommandDependencyDefaults = {
   readStateSnapshot,
   resolveBubbleById,
   resolveDeliveryMessageRef,
+  refreshImplementerContext,
   writeStateSnapshot
 } as const;
 
@@ -65,6 +74,9 @@ export interface ResolvedReplyCommandDependencies {
   resolveBubbleById: NonNullable<EmitHumanReplyDependencies["resolveBubbleById"]>;
   resolveDeliveryMessageRef: NonNullable<
     EmitHumanReplyDependencies["resolveDeliveryMessageRef"]
+  >;
+  refreshImplementerContext: NonNullable<
+    EmitHumanReplyDependencies["refreshImplementerContext"]
   >;
   writeStateSnapshot: NonNullable<EmitHumanReplyDependencies["writeStateSnapshot"]>;
 }
@@ -90,6 +102,9 @@ export function resolveReplyCommandDependencies(
     resolveDeliveryMessageRef:
       dependencies.resolveDeliveryMessageRef
       ?? replyCommandDependencyDefaults.resolveDeliveryMessageRef,
+    refreshImplementerContext:
+      dependencies.refreshImplementerContext
+      ?? replyCommandDependencyDefaults.refreshImplementerContext,
     writeStateSnapshot:
       dependencies.writeStateSnapshot
       ?? replyCommandDependencyDefaults.writeStateSnapshot

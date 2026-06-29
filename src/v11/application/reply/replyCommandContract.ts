@@ -9,6 +9,7 @@ import type {
 import type { ResolveBubbleByIdPort } from "../../ports/bubbleLookup.js";
 import type { ResolveDeliveryMessageRefPort } from "../../ports/tmuxDelivery.js";
 import type { EnsureBubbleInstanceIdForMutationPort } from "../../ports/bubbleIdentity.js";
+import type { RefreshImplementerContextPort } from "../../ports/implementerContext.js";
 import type { BubbleStateSnapshot } from "../../domain/state/snapshot/bubbleStateSnapshot.js";
 import type { ProtocolEnvelope } from "../../shared/protocol/protocolEnvelopeContract.js";
 
@@ -35,5 +36,6 @@ export interface EmitHumanReplyDependencies {
   readStateSnapshot?: ReadStateSnapshotPort;
   resolveBubbleById?: ResolveBubbleByIdPort;
   resolveDeliveryMessageRef?: ResolveDeliveryMessageRefPort;
+  refreshImplementerContext?: RefreshImplementerContextPort;
   writeStateSnapshot?: WriteStateSnapshotPort;
 }
