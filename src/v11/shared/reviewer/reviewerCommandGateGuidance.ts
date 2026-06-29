@@ -51,7 +51,7 @@ export function buildReviewerDocumentScopeThresholdRoutingNote(): string {
 }
 
 export const REVIEWER_COMMAND_GATE_REQ_A =
-  "If review round is 1: do not use canonical convergence emit yet; use `pairflow agent emit --kind pass ...` and declare findings explicitly (`--finding` when findings exist, `--no-findings` only when the review is truly clean).";
+  "If review round is 1: do not use canonical convergence emit yet; use `pairflow agent emit --kind pass ...` and declare findings explicitly (`--finding` when findings exist, `--no-findings` only when the review is truly clean, and never `--no-findings=<value>`).";
 
 export function buildReviewerCommandGateReqB(input: {
   reviewerBlockingMinSeverity?: BubbleReviewAutoReworkSeverity;
@@ -80,7 +80,7 @@ export const REVIEWER_COMMAND_GATE_REQ_E = buildReviewerCommandGateReqE();
 export function buildReviewerCommandGateReqF(input: {
   reviewerBlockingMinSeverity?: BubbleReviewAutoReworkSeverity;
 } = {}): string {
-  return `Routing matrix (copy-paste after resolving \`executionContext\` from \`pairflow bubble status --json\`): meets-threshold findings -> \`pairflow agent emit --kind pass --repo <repo> --bubble-id <id> --handoff-id <handoff-id> --execution-id <execution-id> --summary "..." --finding "<severity>:Title|artifact://ref"\`; below-threshold findings -> \`pairflow agent emit --kind convergence --repo <repo> --bubble-id <id> --handoff-id <handoff-id> --execution-id <execution-id> --summary "..." --finding "<severity>:Title|artifact://ref"\`; clean -> \`pairflow agent emit --kind convergence --repo <repo> --bubble-id <id> --handoff-id <handoff-id> --execution-id <execution-id> --summary "..."\` (no \`--finding\`). ${buildReviewerBlockingThresholdAuthorityLine(input)}`;
+  return `Routing matrix (copy-paste after resolving \`executionContext\` from \`pairflow bubble status --json\`): meets-threshold findings -> \`pairflow agent emit --kind pass --repo <repo> --bubble-id <id> --handoff-id <handoff-id> --execution-id <execution-id> --summary "..." --finding "<severity>:Title|artifact://ref"\`; below-threshold findings -> \`pairflow agent emit --kind convergence --repo <repo> --bubble-id <id> --handoff-id <handoff-id> --execution-id <execution-id> --summary "..." --finding "<severity>:Title|artifact://ref"\`; clean -> \`pairflow agent emit --kind convergence --repo <repo> --bubble-id <id> --handoff-id <handoff-id> --execution-id <execution-id> --summary "..."\` (no \`--finding\`, no \`--no-findings\`). ${buildReviewerBlockingThresholdAuthorityLine(input)}`;
 }
 
 export const REVIEWER_COMMAND_GATE_REQ_F = buildReviewerCommandGateReqF();

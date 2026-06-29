@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildMetaReviewSubmitAuthorityGuardLine,
   buildMetaReviewSubmitAdvisoryOnlyCorrectionNote,
   buildMetaReviewSubmitUsageLine
 } from "../../../src/v11/shared/metaReview/metaReviewSubmitGuidance.js";
@@ -37,6 +38,13 @@ describe("metaReviewSubmitGuidance", () => {
     expect(note).toContain("keep recommendation=approve");
     expect(note).toContain("do not switch to inconclusive");
     expect(note).toContain("findings_claim_state=open_findings");
+  });
+
+  it("keeps meta-review emit authority-kind lock explicit in shared guidance", () => {
+    const line = buildMetaReviewSubmitAuthorityGuardLine();
+
+    expect(line).toContain("emit `--kind meta_review_result` only");
+    expect(line).toContain("never `pass`, `convergence`, or `human_question`");
   });
 
   it("returns full prompt for all agents including opencode", () => {

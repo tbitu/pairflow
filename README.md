@@ -1141,6 +1141,7 @@ The registry is stored at `~/.pairflow/repos.json` (override with `PAIRFLOW_REPO
 #### Agent-facing commands
 
 Canonical actor emission uses explicit authority (`--repo`, `--bubble-id`, `--handoff-id`, `--execution-id`). Resolve the active snapshot first with `pairflow bubble status --id <id> --repo <path> --json`, then copy both `executionContext.handoffId` and `executionContext.executionId` from the JSON output.
+For common emit mistakes (`ACTOR_EMIT_OPTIONS_INVALID`, role/kind mismatches, malformed `--report-json`), see `docs/agent-emit-troubleshooting.md`.
 
 | Command | Description |
 |---------|-------------|

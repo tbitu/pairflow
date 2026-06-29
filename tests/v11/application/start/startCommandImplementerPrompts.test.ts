@@ -77,6 +77,15 @@ describe("startCommandImplementerPrompts", () => {
     expect(kickoffMessage).toContain(
       "If no explicit authority snapshot is available yet, refresh status and wait for a current handoff instead of falling back to removed aliases."
     );
+    expect(kickoffMessage).toContain(
+      "include explicit `--repo`, `--bubble-id`, `--handoff-id`, and `--execution-id`; never leave authority flags empty or guessed"
+    );
+    expect(kickoffMessage).toContain(
+      "role-to-kind lock -> implementer: `pass|human_question`; reviewer: `pass|human_question|convergence`; meta-reviewer: `meta_review_result` only"
+    );
+    expect(kickoffMessage).toContain(
+      "`--no-findings` is a bare flag only (never `--no-findings=false`)"
+    );
   });
 
   it("renders document-scope kickoff as docs refinement instead of code implementation", () => {
@@ -327,6 +336,9 @@ describe("startCommandImplementerPrompts", () => {
     expect(metaReviewerResumePrompt).toContain("Pairflow meta-reviewer resume for bubble");
     expect(metaReviewerResumePrompt).toContain(
       "Transcript context: resume-summary: meta-review round0"
+    );
+    expect(metaReviewerResumePrompt).toContain(
+      "Authority/kind lock: while meta-reviewer authority is active, emit `--kind meta_review_result` only"
     );
     expect(metaReviewerResumePrompt).not.toContain(
       "This bubble is ideation-pending (`RUNNING`, `round=0`)."

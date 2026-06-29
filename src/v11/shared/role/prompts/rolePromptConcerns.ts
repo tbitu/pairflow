@@ -21,6 +21,7 @@ import {
 } from "../../reviewer/reviewerScoutExpansionGuidance.js";
 import {
   buildMetaReviewSubmitApproveParityNote,
+  buildMetaReviewSubmitAuthorityGuardLine,
   buildMetaReviewSubmitCommandTemplate
 } from "../../metaReview/metaReviewSubmitGuidance.js";
 import {
@@ -115,7 +116,12 @@ export function buildCanonicalActorEmitLookupGuidance(input: {
   bubbleId: string;
   repoPath: string;
 }): string {
-  return `Before direct canonical emit, fetch fresh actor authority via \`pairflow bubble status --id ${input.bubbleId} --repo ${input.repoPath} --json\` and copy both \`executionContext.handoffId\` and \`executionContext.executionId\` (plus optional guards) from the JSON output. Repeat this before each emit because authority can change after every successful handoff, convergence, meta-review transition, or human reply. If no explicit authority snapshot is available yet, refresh status and wait for a current handoff instead of falling back to removed aliases.`;
+  return [
+    `Before direct canonical emit, fetch fresh actor authority via \`pairflow bubble status --id ${input.bubbleId} --repo ${input.repoPath} --json\` and copy both \`executionContext.handoffId\` and \`executionContext.executionId\` (plus optional guards) from the JSON output.`,
+    "Emit preflight checklist: (1) include explicit `--repo`, `--bubble-id`, `--handoff-id`, and `--execution-id`; never leave authority flags empty or guessed, (2) role-to-kind lock -> implementer: `pass|human_question`; reviewer: `pass|human_question|convergence`; meta-reviewer: `meta_review_result` only, (3) reviewer clean claim syntax -> `--no-findings` is a bare flag only (never `--no-findings=false`).",
+    "If emit returns `ACTOR_EMIT_OPTIONS_INVALID` or `ACTOR_EMIT_CONTEXT_INVALID`, do not keep mutating flags blindly: re-fetch `bubble status --json`, rebuild the command from the role template, and retry once with fresh authority.",
+    "Repeat this before each emit because authority can change after every successful handoff, convergence, meta-review transition, or human reply. If no explicit authority snapshot is available yet, refresh status and wait for a current handoff instead of falling back to removed aliases."
+  ].join(" ");
 }
 
 function buildImplementerStartActivationContract(
@@ -339,7 +345,7 @@ const promptConcernCatalog: Readonly<
   meta_reviewer_task_artifact_context: (input) =>
     `Task: ${requirePromptValue(input.taskArtifactPath, "taskArtifactPath", "meta_reviewer_task_artifact_context")}.`,
   meta_review_submit_command_template: () =>
-    `When signaled, submit only through structured Pairflow CLI and always include required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`.`,
+    `When signaled, submit only through structured Pairflow CLI and always include required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitAuthorityGuardLine()} Do not leave \`--handoff-id\` or \`--execution-id\` empty. For \`--report-json\`, pass a valid JSON object string with double-quoted keys/strings (single-quote the full shell argument).`,
   meta_review_submit_approve_parity_note: () =>
     buildMetaReviewSubmitApproveParityNote(),
   meta_review_finding_severity_contract: () => [

@@ -24,6 +24,10 @@ export function buildMetaReviewSubmitCommandTemplate(input?: {
   return `pairflow agent emit --kind meta_review_result --repo <repo> --bubble-id ${bubbleId} --handoff-id <handoff-id> --execution-id <execution-id> --round ${round} --recommendation <approve|rework|inconclusive> --summary "<summary>" [--rework-target-message "<message>"] --report-json '${metaReviewSubmitReportJsonParityFields}'`;
 }
 
+export function buildMetaReviewSubmitAuthorityGuardLine(): string {
+  return "Authority/kind lock: while meta-reviewer authority is active, emit `--kind meta_review_result` only (never `pass`, `convergence`, or `human_question`).";
+}
+
 export function buildMetaReviewSubmitApproveParityNote(): string {
   return metaReviewSubmitApproveParityNote;
 }
