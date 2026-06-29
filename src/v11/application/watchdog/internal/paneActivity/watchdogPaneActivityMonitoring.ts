@@ -44,6 +44,7 @@ interface NudgeInput {
 }
 
 type NudgeEligibility = { eligible: false } | { eligible: true; elapsedSinceLastSeenMs: number; elapsedSinceLastNudgeMs: number };
+const WATCHDOG_PANE_NUDGE_GRACE_PERIOD_MS = 2 * 60_000;
 
 /**
  * Determines whether a watchdog nudge should be attempted, using early returns.
@@ -58,6 +59,13 @@ function shouldAttemptNudge(input: {
     return { eligible: false };
   }
   if (input.hasEscInterrupt) {
+    return { eligible: false };
+  }
+  const activeSinceMs = parseIsoTimestamp(input.state.active_since);
+  if (
+    activeSinceMs !== null
+    && input.now.getTime() - activeSinceMs < WATCHDOG_PANE_NUDGE_GRACE_PERIOD_MS
+  ) {
     return { eligible: false };
   }
   const lastSeenMs = parseIsoTimestamp(input.currentRecord?.last_seen_esc_interrupt_at) ?? input.now.getTime();
@@ -277,7 +285,10 @@ export async function maybeMonitorWatchdogPaneActivity(input: {
 
     const nudgeEligibility = shouldAttemptNudge({ state: input.context.state, currentRecord, hasEscInterrupt: sampleResult.has_esc_interrupt ?? false, now: input.context.now });
     if (!nudgeEligibility.eligible) { /* not eligible */ }
-    else if (nudgeEligibility.elapsedSinceLastSeenMs >= 2 * 60_000 && nudgeEligibility.elapsedSinceLastNudgeMs >= 2 * 60_000) {
+    else if (
+      nudgeEligibility.elapsedSinceLastSeenMs >= WATCHDOG_PANE_NUDGE_GRACE_PERIOD_MS
+      && nudgeEligibility.elapsedSinceLastNudgeMs >= WATCHDOG_PANE_NUDGE_GRACE_PERIOD_MS
+    ) {
       const paneIndex = resolveWatchdogTargetPaneIndex(input.context.state.active_role);
       const targetPane = `${sampleResult.session_name}:0.${paneIndex}`;
 

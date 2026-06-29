@@ -598,6 +598,71 @@ describe("watchdogCommandApi", () => {
     expect(stored.record.last_changed_at).toBe("2026-02-22T12:31:00.000Z");
   });
 
+  it("does not send watchdog continue nudge immediately after a short resume", async () => {
+    const repoPath = await createTempRepo();
+    const startedAt = "2026-02-22T12:00:00.000Z";
+    const bubble = await setupWatchdogRunningBubbleFixture({
+      repoPath,
+      bubbleId: "b_watchdog_v11_nudge_grace_01",
+      task: "Watchdog v11 nudge grace after resume",
+      startedAt
+    });
+
+    const loaded = await readStateSnapshot(bubble.paths.statePath);
+    await writeStateSnapshot(
+      bubble.paths.statePath,
+      {
+        ...loaded.state,
+        state: "RUNNING",
+        active_agent: bubble.config.agents.implementer,
+        active_role: "implementer",
+        active_since: "2026-02-22T12:00:30.000Z",
+        last_command_at: "2026-02-22T12:00:30.000Z"
+      },
+      {
+        expectedFingerprint: loaded.fingerprint,
+        expectedState: "RUNNING"
+      }
+    );
+
+    await writeWatchdogPaneActivity({
+      runtimeDir: bubble.paths.runtimeDir,
+      bubbleId: bubble.bubbleId,
+      record: {
+        bubble_id: bubble.bubbleId,
+        sampled_at: "2026-02-22T11:59:00.000Z",
+        pane_hash: "pane-hash-stable",
+        last_changed_at: "2026-02-22T11:55:00.000Z",
+        session_name: "pf-watchdog-v11",
+        target_pane: "pf-watchdog-v11:0.1",
+        last_sample_status: "sampled",
+        last_seen_esc_interrupt_at: "2026-02-22T11:50:00.000Z"
+      }
+    });
+
+    let nudgeCalls = 0;
+    const result = await runBubbleWatchdog(
+      {
+        bubbleId: bubble.bubbleId,
+        cwd: repoPath,
+        now: new Date("2026-02-22T12:01:00.000Z")
+      },
+      baseDependencies({
+        sampleWatchdogPaneActivity: () =>
+          Promise.resolve(
+            sampledPaneActivity("2026-02-22T12:01:00.000Z", "pane-hash-stable", false)
+          ),
+        sendAndSubmitTmuxPaneMessage: async () => {
+          nudgeCalls += 1;
+        }
+      })
+    );
+
+    expect(result.escalated).toBe(false);
+    expect(result.reason).toBe("not_expired");
+    expect(nudgeCalls).toBe(0);
+  });
+
   it("escalates expired RUNNING watchdog after the quiet window is reached", async () => {
     const repoPath = await createTempRepo();
     const startedAt = "2026-02-22T12:00:00.000Z";
