@@ -3,6 +3,7 @@
         "set": true,
         "printf": true,
         "tmux": true,
-        "true": true
+        "true": true,
+        "pnpm": true
     }
 }

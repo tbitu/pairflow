@@ -35,6 +35,89 @@ function isRecentlyResumedRunningState(input: {
   return elapsedMs < 2 * 60 * 1000;
 }
 
+async function resolveExpiredRunningRoute(input: {
+  context: WatchdogRuntimeContext;
+  paneActivity?: {
+    readStatus: "ok" | "missing" | "invalid";
+    currentRecord: WatchdogPaneActivityRecord | null;
+    sampleResult: PaneActivitySampleResult | null;
+  } | null;
+}): Promise<BubbleWatchdogResult> {
+  const { context } = input;
+
+  if (context.state.active_agent === null) {
+    return {
+      bubbleId: context.resolved.bubbleId,
+      escalated: false,
+      reason: "not_monitored",
+      state: context.state
+    };
+  }
+
+  const sampleResult = input.paneActivity?.sampleResult;
+  if (
+    sampleResult?.status === "no_session"
+    || sampleResult?.status === "pane_unreadable"
+  ) {
+    if (
+      isRecentlyResumedRunningState({
+        activeSince: context.state.active_since,
+        now: context.now
+      })
+    ) {
+      return buildNotExpiredResult(context);
+    }
+    return escalateRunningWatchdog(context);
+  }
+
+  const readStatus = input.paneActivity?.readStatus ?? "missing";
+  const currentRecord = input.paneActivity?.currentRecord ?? null;
+  if (readStatus !== "ok" || currentRecord === null) {
+    return buildNotExpiredResult(context);
+  }
+
+  if (
+    sampleResult === null
+    && (
+      currentRecord.last_sample_status === "no_session"
+      || currentRecord.last_sample_status === "pane_unreadable"
+    )
+  ) {
+    return escalateRunningWatchdog(context);
+  }
+
+  const lastChangedAtMs = Date.parse(currentRecord.last_changed_at);
+  if (Number.isNaN(lastChangedAtMs)) {
+    return buildNotExpiredResult(context);
+  }
+
+  const quietWindowElapsedMs = context.now.getTime() - lastChangedAtMs;
+  if (quietWindowElapsedMs < WATCHDOG_PANE_QUIET_WINDOW_MS) {
+    return buildNotExpiredResult(context);
+  }
+
+  if (
+    isRecentlyResumedRunningState({
+      activeSince: context.state.active_since,
+      now: context.now
+    })
+  ) {
+    return buildNotExpiredResult(context);
+  }
+
+  if (await maybeRetryStuckAgentInput(context)) {
+    return {
+      bubbleId: context.resolved.bubbleId,
+      escalated: false,
+      reason: "not_expired",
+      state: context.state,
+      stuckRetried: true
+    };
+  }
+
+  return escalateRunningWatchdog(context);
+}
+
 export async function resolveWatchdogLifecycleRoute(input: {
   context: WatchdogRuntimeContext;
   monitored: boolean;
@@ -78,80 +161,8 @@ export async function resolveWatchdogLifecycleRoute(input: {
     };
   }
 
-  if (context.state.active_agent === null) {
-    return {
-      bubbleId: context.resolved.bubbleId,
-      escalated: false,
-      reason: "not_monitored",
-      state: context.state
-    };
-  }
-
-  const sampleResult = input.paneActivity?.sampleResult;
-  if (
-    sampleResult?.status === "no_session"
-    || sampleResult?.status === "pane_unreadable"
-  ) {
-    // If state was recently resumed, give it grace period before escalating.
-    // Pane may not be ready yet, but delivery should kick in soon.
-    if (
-      isRecentlyResumedRunningState({
-        activeSince: context.state.active_since,
-        now: context.now
-      })
-    ) {
-      return buildNotExpiredResult(context);
-    }
-    return escalateRunningWatchdog(context);
-  }
-
-  const readStatus = input.paneActivity?.readStatus ?? "missing";
-  const currentRecord = input.paneActivity?.currentRecord ?? null;
-  if (readStatus !== "ok" || currentRecord === null) {
-    return buildNotExpiredResult(context);
-  }
-
-  if (
-    sampleResult === null
-    && (
-      currentRecord.last_sample_status === "no_session"
-      || currentRecord.last_sample_status === "pane_unreadable"
-    )
-  ) {
-    return escalateRunningWatchdog(context);
-  }
-
-  const lastChangedAtMs = Date.parse(currentRecord.last_changed_at);
-  if (Number.isNaN(lastChangedAtMs)) {
-    return buildNotExpiredResult(context);
-  }
-
-  const quietWindowElapsedMs = context.now.getTime() - lastChangedAtMs;
-  if (quietWindowElapsedMs < WATCHDOG_PANE_QUIET_WINDOW_MS) {
-    return buildNotExpiredResult(context);
-  }
-
-  // If state was recently resumed from WAITING_HUMAN, give grace period before escalating.
-  // The pane activity may appear stale because it's from before the state transition,
-  // but the reply command has triggered delivery to restart the agent.
-  if (
-    isRecentlyResumedRunningState({
-      activeSince: context.state.active_since,
-      now: context.now
-    })
-  ) {
-    return buildNotExpiredResult(context);
-  }
-
-  if (await maybeRetryStuckAgentInput(context)) {
-    return {
-      bubbleId: context.resolved.bubbleId,
-      escalated: false,
-      reason: "not_expired",
-      state: context.state,
-      stuckRetried: true
-    };
-  }
-
-  return escalateRunningWatchdog(context);
+  return resolveExpiredRunningRoute({
+    context,
+    paneActivity: input.paneActivity
+  });
 }

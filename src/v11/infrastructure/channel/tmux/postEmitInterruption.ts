@@ -18,7 +18,7 @@ export interface PostEmitInterruptionInput {
   tmuxRunner?: typeof runTmux;
   /** Optional tmux command options (for testing). */
   tmuxOptions?: TmuxRunOptions;
-  /** Optional delay between first and second Escape key presses. Defaults to 1000ms. */
+  /** Optional delay between first and second Escape key presses. Defaults to 300ms. */
   interEscapeDelayMs?: number;
   /** Optional sleep override for testing. */
   sleepForDelayMs?: (delayMs: number) => Promise<void>;
@@ -79,7 +79,7 @@ export async function postEmitInterruptOpencodePane(
 ): Promise<void> {
   const tmuxRunner = input.tmuxRunner ?? runTmux;
   const tmuxOpts = input.tmuxOptions ?? { allowFailure: true };
-  const interEscapeDelayMs = Math.max(0, input.interEscapeDelayMs ?? 150);
+  const interEscapeDelayMs = Math.max(0, input.interEscapeDelayMs ?? 300);
   const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
   const invokingPane = process.env.TMUX_PANE?.trim();
 
