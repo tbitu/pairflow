@@ -106,6 +106,7 @@ import type {
 } from "../../ports/bubbleIdentity.js";
 import type { ResolveBubbleByIdPort } from "../../ports/bubbleLookup.js";
 import type { ResolveRemoteBubbleStatusTargetPort } from "../../shared/remote/commitRemoteExecution.js";
+import type { RolePaneLifecyclePort } from "../../ports/rolePaneLifecycle.js";
 
 import { configureStartBubbleDependencyDefaults } from "../../application/start/startBubbleDependencyDefaults.js";
 
@@ -146,8 +147,12 @@ export interface StartBubbleDependencyDefaults {
   resolveBubbleFromWorkspaceCwd: ResolveBubbleFromWorkspaceCwdPort;
   resolveReviewerTestExecutionDirective:
     ResolveReviewerTestExecutionDirectivePort;
-
-
+  /**
+   * Phase 5: Unified pane lifecycle management.
+   * Consolidates pane respawn, readiness polling, and cleanup operations across all roles.
+   * Replaces role-specific ports like RefreshReviewerContextPort (see deprecation note).
+   */
+  rolePaneLifecycle?: RolePaneLifecyclePort;
 }
 
 export const bootstrapWorktreeWorkspace: BootstrapWorktreeWorkspacePort =
