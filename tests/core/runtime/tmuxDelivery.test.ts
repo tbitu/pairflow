@@ -1538,8 +1538,9 @@ describe("emitDeliveryNotificationAck", () => {
     expect(messageCallText).not.toContain(REVIEWER_COMMAND_GATE_REQ_C);
     expect(messageCallText).not.toContain(REVIEWER_COMMAND_GATE_REQ_E);
     expectNoForbiddenReviewerCommandGateTokens(messageCallText);
-    expect(messageCallText).toContain(
-      "Run pairflow commands from workspace root: /tmp/worktree."
+    // Phase 4: opencode agents receive minimal messages without workspace guidance
+    expect(messageCallText).not.toContain(
+      "Run pairflow commands from workspace root:"
     );
     // Message must NOT embed CR/LF — Enter is sent as a separate tmux command.
     expect(messageCallText).not.toMatch(/[\r\n]$/);
@@ -2845,11 +2846,11 @@ describe("emitDeliveryNotificationAck", () => {
     const fullMessage = matchCalls.map((call) => call[4]).join("");
     // OVERFLOW_2: opencode implementer receives minimal action text + workspace/command guidance.
     expect(fullMessage).toContain("Reviewer feedback received. Implement fixes.");
-    // Workspace hint and pairflow command guidance are always included (not stripped by OVERFLOW_2)
-    expect(fullMessage).toContain(
+    // Phase 4: opencode implementer receives minimal action text only, no workspace guidance
+    expect(fullMessage).not.toContain(
       "Default command profile is `external`; Pairflow commands are resolved from PATH."
     );
-    expect(fullMessage).toContain("--pairflow-command-profile self_host");
+    expect(fullMessage).not.toContain("--pairflow-command-profile self_host");
     // OVERFLOW_2 omits: implementer action guidance, evidence ref instructions (non-opencode only)
     expectNoForbiddenReviewerCommandGateTokens(fullMessage);
   });
@@ -3100,8 +3101,9 @@ describe("emitDeliveryNotificationAck", () => {
     });
 
     expect(result.status).toBe("accepted");
-    expect(result.message).toContain(
-      "Run pairflow commands from workspace root: /tmp/runtime-workspace."
+    // Phase 4: opencode reviewer receives minimal messages without workspace guidance
+    expect(result.message).not.toContain(
+      "Run pairflow commands from workspace root:"
     );
     expect(result.message).not.toContain(
       "Run pairflow commands from workspace root: /tmp/worktree."
@@ -3342,8 +3344,9 @@ describe("emitDeliveryNotificationAck", () => {
     expect(result.message).toContain(
       "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
     );
-    expect(result.message).toContain(
-      "Run pairflow commands from workspace root: /tmp/worktree."
+    // Phase 4: opencode reviewer receives minimal messages without workspace guidance
+    expect(result.message).not.toContain(
+      "Run pairflow commands from workspace root:"
     );
   });
 

@@ -254,10 +254,16 @@ export function buildTmuxDeliveryMessage(input: {
   recipientRole: DeliveryMessageRecipientRole;
 }): string {
   const actorLabel = resolvePayloadActor(input.envelope);
+  
+  // Phase 4: Determine if workspace guidance should be included
+  // For opencode agents, omit verbose guidance to keep messages minimal
+  const shouldIncludeWorkspaceGuidance = !isOpencodeRecipient(input);
   const workspaceHint =
-    input.workspacePath === undefined
-      ? "Run pairflow commands from the active workspace root."
-      : `Run pairflow commands from workspace root: ${input.workspacePath}. ${buildPairflowCommandGuidance(input.workspacePath, input.bubbleConfig.pairflow_command_profile)}`;
+    !shouldIncludeWorkspaceGuidance
+      ? ""
+      : input.workspacePath === undefined
+        ? "Run pairflow commands from the active workspace root."
+        : `Run pairflow commands from workspace root: ${input.workspacePath}. ${buildPairflowCommandGuidance(input.workspacePath, input.bubbleConfig.pairflow_command_profile)}`;
 
   let action = "Continue protocol from this event.";
   if (input.recipientRole === "implementer") {
@@ -296,5 +302,26 @@ export function buildTmuxDeliveryMessage(input: {
     action = "Check inbox/status and continue human orchestration flow.";
   }
 
-  return `# [pairflow] r${input.envelope.round} ${input.envelope.type} ${input.envelope.sender}->${input.envelope.recipient} msg=${input.envelope.id} ref=${input.messageRef}. Action: ${action} ${workspaceHint}`;
+  const messageParts = [
+    `# [pairflow] r${input.envelope.round} ${input.envelope.type} ${input.envelope.sender}->${input.envelope.recipient} msg=${input.envelope.id} ref=${input.messageRef}. Action: ${action}`,
+    workspaceHint
+  ].filter(part => part.length > 0);
+
+  return messageParts.join(" ");
+}
+
+function isOpencodeRecipient(input: {
+  bubbleConfig: BubbleConfig;
+  recipientRole: DeliveryMessageRecipientRole;
+}): boolean {
+  if (input.recipientRole === "implementer") {
+    return input.bubbleConfig.agents.implementer === "opencode";
+  }
+  if (input.recipientRole === "reviewer") {
+    return input.bubbleConfig.agents.reviewer === "opencode";
+  }
+  if (input.recipientRole === "meta-reviewer") {
+    return input.bubbleConfig.agents.meta_reviewer === "opencode";
+  }
+  return false;
 }
