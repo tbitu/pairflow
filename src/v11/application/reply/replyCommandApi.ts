@@ -12,7 +12,7 @@ import {
 import { executeReplyMutation } from "./mutation/replyMutationExecution.js";
 import { resolveReplyCommandDependencies } from "./internal/preparation/replyCommandDependencyResolution.js";
 import { normalizeReplyCommandInput } from "./internal/preparation/replyCommandInputNormalization.js";
-import { resolveImplementerDeliveryInitialDelayMs } from "./internal/implementerDeliveryHelpers.js";
+import { resolveDeliveryInitialDelayMsByRole } from "./internal/deliveryHelpers.js";
 
 export async function emitHumanReply(
   input: EmitHumanReplyInput,
@@ -70,13 +70,16 @@ export async function emitHumanReply(
     envelope: appended.envelope
   });
 
-  // Refresh implementer pane before delivery to ensure consistency with reviewer pane refresh in pass delivery.
-  // This fixes the asymmetry where existing panes could become stale during handovers.
-  const implementerDeliveryDelayMs = await resolveImplementerDeliveryInitialDelayMs({
+  // Refresh the pane for the active role before delivery to ensure consistency.
+  // This works for all three roles: implementer, reviewer, meta_reviewer.
+  // Fixes bug where resuming to non-implementer roles had stale panes.
+  const deliveryDelayMs = await resolveDeliveryInitialDelayMsByRole({
     bubbleId: resolved.bubbleId,
     bubbleConfig: resolved.bubbleConfig,
     sessionsPath: resolved.bubblePaths.sessionsPath,
-    refreshImplementer: resolvedDependencies.refreshImplementerContext
+    activeRole: state.active_role,
+    refreshImplementer: resolvedDependencies.refreshImplementerContext,
+    refreshReviewer: resolvedDependencies.refreshReviewerContext
   });
 
   // Optional UX signal; never block protocol/state progression on notification failure.
@@ -87,8 +90,8 @@ export async function emitHumanReply(
     envelope: appended.envelope,
     recipientRole: state.active_role,
     messageRef,
-    ...(implementerDeliveryDelayMs !== undefined
-      ? { initialDelayMs: implementerDeliveryDelayMs }
+    ...(deliveryDelayMs !== undefined
+      ? { initialDelayMs: deliveryDelayMs }
       : {})
   }).catch(() => undefined);
 

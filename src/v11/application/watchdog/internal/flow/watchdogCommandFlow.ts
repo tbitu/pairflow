@@ -78,6 +78,26 @@ export async function maybeRetryStuckAgentInput(
   return false;
 }
 
+/**
+ * Detects if a RUNNING state was recently resumed (just transitioned from WAITING_HUMAN).
+ * Grace period: 2 minutes allows for pane initialization and initial delivery attempt.
+ */
+function isRecentlyResumedRunningState(input: {
+  activeSince: string | null;
+  now: Date;
+}): boolean {
+  if (input.activeSince === null) {
+    return false;
+  }
+  const activeSinceMs = Date.parse(input.activeSince);
+  if (Number.isNaN(activeSinceMs)) {
+    return false;
+  }
+  const elapsedMs = input.now.getTime() - activeSinceMs;
+  // 2 minute grace period for agent to start after resumption
+  return elapsedMs < 2 * 60 * 1000;
+}
+
 export async function buildNotExpiredResult(
   context: WatchdogRuntimeContext
 ): Promise<BubbleWatchdogResult> {

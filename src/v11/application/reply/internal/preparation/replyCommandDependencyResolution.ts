@@ -1,5 +1,6 @@
 import type { EmitHumanReplyDependencies } from "../../replyCommandContract.js";
 import type { RefreshImplementerContextPort } from "../../../../ports/implementerContext.js";
+import type { RefreshReviewerContextPort } from "../../../../ports/reviewerContext.js";
 import {
   appendProtocolEnvelope,
   startCommandContextDefaults
@@ -49,6 +50,15 @@ export function refreshImplementerContext(): Promise<
   });
 }
 
+export function refreshReviewerContext(): Promise<
+  Awaited<ReturnType<RefreshReviewerContextPort>>
+> {
+  return Promise.resolve({
+    refreshed: false,
+    reason: "no_runtime_session"
+  });
+}
+
 const writeStateSnapshot = startCommandContextDefaults.writeStateSnapshot;
 
 const replyCommandDependencyDefaults = {
@@ -59,6 +69,7 @@ const replyCommandDependencyDefaults = {
   resolveBubbleById,
   resolveDeliveryMessageRef,
   refreshImplementerContext,
+  refreshReviewerContext,
   writeStateSnapshot
 } as const;
 
@@ -77,6 +88,9 @@ export interface ResolvedReplyCommandDependencies {
   >;
   refreshImplementerContext: NonNullable<
     EmitHumanReplyDependencies["refreshImplementerContext"]
+  >;
+  refreshReviewerContext: NonNullable<
+    EmitHumanReplyDependencies["refreshReviewerContext"]
   >;
   writeStateSnapshot: NonNullable<EmitHumanReplyDependencies["writeStateSnapshot"]>;
 }
@@ -105,6 +119,9 @@ export function resolveReplyCommandDependencies(
     refreshImplementerContext:
       dependencies.refreshImplementerContext
       ?? replyCommandDependencyDefaults.refreshImplementerContext,
+    refreshReviewerContext:
+      dependencies.refreshReviewerContext
+      ?? replyCommandDependencyDefaults.refreshReviewerContext,
     writeStateSnapshot:
       dependencies.writeStateSnapshot
       ?? replyCommandDependencyDefaults.writeStateSnapshot

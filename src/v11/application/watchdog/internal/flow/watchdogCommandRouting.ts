@@ -15,6 +15,26 @@ import {
   maybeRouteMetaReviewOnExpiry
 } from "./watchdogMetaReviewRouting.js";
 
+/**
+ * Detects if a RUNNING state was recently resumed (just transitioned from WAITING_HUMAN).
+ * Grace period: 2 minutes allows for pane initialization and initial delivery attempt.
+ */
+function isRecentlyResumedRunningState(input: {
+  activeSince: string | null;
+  now: Date;
+}): boolean {
+  if (input.activeSince === null) {
+    return false;
+  }
+  const activeSinceMs = Date.parse(input.activeSince);
+  if (Number.isNaN(activeSinceMs)) {
+    return false;
+  }
+  const elapsedMs = input.now.getTime() - activeSinceMs;
+  // 2 minute grace period for agent to start after resumption
+  return elapsedMs < 2 * 60 * 1000;
+}
+
 export async function resolveWatchdogLifecycleRoute(input: {
   context: WatchdogRuntimeContext;
   monitored: boolean;
@@ -72,6 +92,16 @@ export async function resolveWatchdogLifecycleRoute(input: {
     sampleResult?.status === "no_session"
     || sampleResult?.status === "pane_unreadable"
   ) {
+    // If state was recently resumed, give it grace period before escalating.
+    // Pane may not be ready yet, but delivery should kick in soon.
+    if (
+      isRecentlyResumedRunningState({
+        activeSince: context.state.active_since,
+        now: context.now
+      })
+    ) {
+      return buildNotExpiredResult(context);
+    }
     return escalateRunningWatchdog(context);
   }
 
@@ -98,6 +128,18 @@ export async function resolveWatchdogLifecycleRoute(input: {
 
   const quietWindowElapsedMs = context.now.getTime() - lastChangedAtMs;
   if (quietWindowElapsedMs < WATCHDOG_PANE_QUIET_WINDOW_MS) {
+    return buildNotExpiredResult(context);
+  }
+
+  // If state was recently resumed from WAITING_HUMAN, give grace period before escalating.
+  // The pane activity may appear stale because it's from before the state transition,
+  // but the reply command has triggered delivery to restart the agent.
+  if (
+    isRecentlyResumedRunningState({
+      activeSince: context.state.active_since,
+      now: context.now
+    })
+  ) {
     return buildNotExpiredResult(context);
   }
 
