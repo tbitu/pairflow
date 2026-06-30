@@ -3,6 +3,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  readlink,
   rm,
   symlink,
   writeFile
@@ -224,6 +225,8 @@ describe("skills install command execution", () => {
 
   it("fails closed when --link-other resolves to the same agent root", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
+    await mkdir(join(homeDir, ".opencode"), { recursive: true });
+    await symlink(".opencode", join(homeDir, ".claude"), "dir");
 
     await expect(
       runSkillsInstallCommand(
@@ -233,7 +236,33 @@ describe("skills install command execution", () => {
           sourceRootCandidates: [sourceRoot]
         }
       )
-    ).rejects.toThrow("target agent roots resolve to the same directory");
+    ).rejects.toThrow("when an agent or skills root is a symlink");
+  });
+
+  it("successfully installs skills to target and symlinks them to other agent directories", async () => {
+    const { sourceRoot, homeDir } = await setupSourceAndHome();
+
+    const result = await runSkillsInstallCommand(
+      ["--skills", "UsePairflow", "--target-dir", ".opencode", "--link-other"],
+      {
+        homeDir,
+        sourceRootCandidates: [sourceRoot]
+      }
+    );
+
+    expect(result?.status).toBe("fresh_install");
+
+    // Check target install
+    await expect(readFile(join(homeDir, ".opencode", "skills", "UsePairflow", "SKILL.md"), "utf8")).resolves.toContain("UsePairflow");
+
+    // Check other links
+    for (const dir of [".claude", ".codex", ".copilot", ".gemini"]) {
+      const linkPath = join(homeDir, dir, "skills", "UsePairflow");
+      const statResult = await lstat(linkPath);
+      expect(statResult.isSymbolicLink()).toBe(true);
+      const linkTarget = await readlink(linkPath);
+      expect(linkTarget).toBe(join(homeDir, ".opencode", "skills", "UsePairflow"));
+    }
   });
 
   it("fails unsafe managed paths before later writes without force", async () => {
@@ -326,6 +355,8 @@ describe("skills install command execution", () => {
 
   it("fails closed when link-other agent roots alias through a parent symlink", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
+    await mkdir(join(homeDir, ".opencode"), { recursive: true });
+    await symlink(".opencode", join(homeDir, ".claude"), "dir");
 
     await expect(
       runSkillsInstallCommand(
@@ -335,7 +366,7 @@ describe("skills install command execution", () => {
           sourceRootCandidates: [sourceRoot]
         }
       )
-    ).rejects.toThrow("target agent roots resolve to the same directory");
+    ).rejects.toThrow("when an agent or skills root is a symlink");
 
     await expect(
       lstat(join(homeDir, ".opencode", "skills", "UsePairflow"))
@@ -350,6 +381,8 @@ describe("skills install command execution", () => {
   it("fails closed when link-other skills roots alias through a parent symlink even with force", async () => {
     const { sourceRoot, homeDir } = await setupSourceAndHome();
     const targetSkillsRoot = join(homeDir, ".opencode", "skills");
+    await mkdir(join(homeDir, ".opencode"), { recursive: true });
+    await symlink(".opencode", join(homeDir, ".claude"), "dir");
 
     await expect(
       runSkillsInstallCommand(
@@ -366,7 +399,7 @@ describe("skills install command execution", () => {
           sourceRootCandidates: [sourceRoot]
         }
       )
-    ).rejects.toThrow("target agent roots resolve to the same directory");
+    ).rejects.toThrow("when an agent or skills root is a symlink");
 
     await expect(lstat(join(targetSkillsRoot, "UsePairflow"))).rejects.toMatchObject({
       code: "ENOENT"

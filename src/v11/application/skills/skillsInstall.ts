@@ -24,9 +24,7 @@ interface ManagedPathPreflight {
   unsafe: boolean;
 }
 
-function otherTargetDir(targetDir: ".opencode"): ".opencode" {
-  return targetDir === ".opencode" ? ".opencode" : ".opencode";
-}
+const OTHER_AGENT_DIRS = [".claude", ".codex", ".copilot", ".gemini"] as const;
 
 function isDirectory(status: SkillsInstallPathStatus): boolean {
   return status.exists && status.type === "directory";
@@ -293,8 +291,10 @@ async function executeInstall(input: {
   }
 
   await input.fs.ensureDirectory(input.plan.targetRoot);
-  if (input.plan.otherRoot !== undefined) {
-    await input.fs.ensureDirectory(input.plan.otherRoot);
+  if (input.plan.otherRoots !== undefined) {
+    for (const otherRoot of input.plan.otherRoots) {
+      await input.fs.ensureDirectory(otherRoot);
+    }
   }
 
   const targetPreflights = new Map(
@@ -354,9 +354,11 @@ export async function installPairflowSkills(
   );
   const targetRoot = join(runtime.homeDir, options.targetDir, "skills");
   const targetAgentRoot = join(runtime.homeDir, options.targetDir);
-  const otherAgentRoot = join(runtime.homeDir, otherTargetDir(options.targetDir));
+  const otherRoots = options.linkOther
+    ? OTHER_AGENT_DIRS.map((dir) => join(runtime.homeDir, dir, "skills"))
+    : [];
   const otherRoot = options.linkOther
-    ? join(otherAgentRoot, "skills")
+    ? otherRoots.join(", ")
     : undefined;
 
   const operations: SkillsInstallOperation[] = options.skills.flatMap((skill) => {
@@ -368,18 +370,16 @@ export async function installPairflowSkills(
       source,
       destination
     };
-    if (otherRoot === undefined) {
+    if (!options.linkOther) {
       return [syncOperation];
     }
-    return [
-      syncOperation,
-      {
-        kind: "link_other",
-        skill,
-        linkPath: join(otherRoot, skill),
-        target: destination
-      }
-    ];
+    const linkOps: SkillsInstallOperation[] = otherRoots.map((root) => ({
+      kind: "link_other",
+      skill,
+      linkPath: join(root, skill),
+      target: destination
+    }));
+    return [syncOperation, ...linkOps];
   });
 
   await assertManagedPathsDoNotOverlapSourceRoot({
@@ -397,20 +397,24 @@ export async function installPairflowSkills(
       dryRun: options.dryRun,
       force: options.force,
       linkOther: options.linkOther,
-      ...(otherRoot === undefined ? {} : { otherRoot }),
+      ...(otherRoot === undefined ? {} : { otherRoot, otherRoots }),
       status: "planned",
       operations
     };
   }
 
-  if (otherRoot !== undefined) {
-    await assertLinkOtherRootsDoNotAlias({
-      targetAgentRoot,
-      otherAgentRoot,
-      targetRoot,
-      otherRoot,
-      fs: runtime.fs
-    });
+  if (options.linkOther) {
+    for (const otherDir of OTHER_AGENT_DIRS) {
+      const otherAgentRoot = join(runtime.homeDir, otherDir);
+      const otherRoot = join(otherAgentRoot, "skills");
+      await assertLinkOtherRootsDoNotAlias({
+        targetAgentRoot,
+        otherAgentRoot,
+        targetRoot,
+        otherRoot,
+        fs: runtime.fs
+      });
+    }
   }
 
   const preflight = await preflightManagedPaths({
@@ -432,7 +436,7 @@ export async function installPairflowSkills(
     dryRun: options.dryRun,
     force: options.force,
     linkOther: options.linkOther,
-    ...(otherRoot === undefined ? {} : { otherRoot }),
+    ...(otherRoot === undefined ? {} : { otherRoot, otherRoots }),
     status,
     operations
   };

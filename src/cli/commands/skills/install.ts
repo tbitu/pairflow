@@ -91,11 +91,11 @@ function parseSkills(value: string): PairflowSkillName[] {
 }
 
 function parseTargetDir(value: string): SkillInstallTargetDir {
-  if (value === ".opencode" || value === ".opencode") {
+  if (value === ".opencode") {
     return value;
   }
   throw new SkillsInstallError(
-    `Unsupported target dir: ${value}. Supported target dirs: .opencode, .opencode`
+    `Unsupported target dir: ${value}. Supported target dir: .opencode`
   );
 }
 
@@ -181,7 +181,11 @@ export function parseSkillsInstallCommandOptions(
 function defaultSourceRootCandidates(): string[] {
   const moduleDir = dirname(fileURLToPath(import.meta.url));
   const packageRoot = resolve(moduleDir, "../../../..");
-  return [join(packageRoot, ".opencode", "skills")];
+  return [
+    join(packageRoot, ".opencode", "skills"),
+    // Backward-compatible fallback while repository-local source layout transitions.
+    join(packageRoot, ".claude", "skills")
+  ];
 }
 
 export async function runSkillsInstallCommand(
@@ -210,10 +214,10 @@ export function getSkillsInstallHelpText(): string {
     "Options:",
     "  --skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan[,<name>...]",
     "      Skills to install. Default: all",
-    "  --target-dir .opencode|.opencode",
+    "  --target-dir .opencode",
     "      Global agent directory under $HOME. Default: .opencode",
     "  --link-other [true|false]",
-    "      Link selected skills into the other agent directory. Default: false",
+    "      Link selected skills into all other agent directories (.claude, .codex, .copilot, .gemini). Default: false",
     "  --force",
     "      Replace unsafe existing selected managed paths.",
     "  --dry-run",
@@ -223,7 +227,7 @@ export function getSkillsInstallHelpText(): string {
     "  --help",
     "      Show this help.",
     "",
-    "Source roots are package-local or checkout-local .opencode/skills directories; global installed skill directories are never used as source."
+    "Source roots are package-local or checkout-local skills directories; global installed skill directories are never used as source."
   ].join("\n");
 }
 

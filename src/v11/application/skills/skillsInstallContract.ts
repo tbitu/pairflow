@@ -44,6 +44,7 @@ export interface SkillsInstallPlan {
   force: boolean;
   linkOther: boolean;
   otherRoot?: string;
+  otherRoots?: string[];
   status: SkillsInstallStatus;
   operations: SkillsInstallOperation[];
 }
