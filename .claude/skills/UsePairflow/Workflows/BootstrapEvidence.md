@@ -49,7 +49,7 @@ For each required command, check whether current behavior already provides:
 1. A stable log file location (inside repo/worktree scope).
 2. Command provenance (which command was run).
 3. Explicit result markers (exit code, pass/fail marker).
-4. Easy attachment path for handoff refs (`pairflow pass --ref <log>`).
+4. Easy attachment path for handoff refs (`pairflow agent emit --kind pass --ref <log>`).
 
 Classify each command as:
 - `ready`
@@ -87,7 +87,7 @@ After completing the analysis, present:
 3. **Sample handoff command** with refs:
 
 ```bash
-pairflow pass --summary "Validation complete: lint/typecheck/test" \
+pairflow agent emit --kind pass --summary "Validation complete: lint/typecheck/test" \
   --ref .pairflow/evidence/lint.log \
   --ref .pairflow/evidence/typecheck.log \
   --ref .pairflow/evidence/test.log

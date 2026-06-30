@@ -72,7 +72,7 @@ cat <REPO_PATH>/.pairflow/bubbles/<BUBBLE_ID>/bubble.toml
     # or:
     pairflow bubble kickoff --id <BUBBLE_ID> --repo <REPO_PATH> --task-file <TASK_FILE>
     ```
-- If state is `RUNNING` (non-ideation pending) -> do not approve/rework and do not perform direct implementation edits; report next actor should continue loop (`pass` / `converged`) and stop intervention.
+- If state is `RUNNING` (non-ideation pending) -> do not approve/rework and do not perform direct implementation edits; report next actor should continue loop (using `pairflow agent emit`) and stop intervention.
 - If state is `WAITING_HUMAN` and `MESSAGE` is empty -> STOP and report: `"Error: WAITING_HUMAN requires --message <text> for bubble reply."`
 - If state is `WAITING_HUMAN` and `MESSAGE` is present -> run:
   ```bash

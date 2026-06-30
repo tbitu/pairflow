@@ -20,7 +20,7 @@ Reviewer-side skip decisions are only safe when implementer evidence is both:
 3. Attach evidence logs on implementer handoff:
 
 ```bash
-pairflow pass --summary "Validation complete: lint/typecheck/test" \
+pairflow agent emit --kind pass --summary "Validation complete: lint/typecheck/test" \
   --ref .pairflow/evidence/lint.log \
   --ref .pairflow/evidence/typecheck.log \
   --ref .pairflow/evidence/test.log

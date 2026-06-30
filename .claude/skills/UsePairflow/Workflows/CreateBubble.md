@@ -197,7 +197,7 @@ pairflow bubble status --id <BUBBLE_ID> --json
 - If state is still `CREATED` immediately after start, wait briefly and poll once more.
 - If state is `RUNNING` and this was an ideation create, report:
   - round-0 hold is valid,
-  - kickoff is required before any `pass`/`converged`,
+  - kickoff is required before any loop commands (`pairflow agent emit`),
   - kickoff should be deferred unless the user explicitly asks to start the loop now.
 
 ### 10. Hard stop after lifecycle actions
@@ -263,7 +263,7 @@ pairflow bubble create --id <BUBBLE_ID> --repo <REPO_PATH> --base <BASE_BRANCH> 
 2. Start:
 pairflow bubble start --id <BUBBLE_ID> --repo <REPO_PATH>
 
-3. Kickoff (required before pass/converged):
+3. Kickoff (required before loop commands (`pairflow agent emit`)):
 pairflow bubble kickoff --id <BUBBLE_ID> --repo <REPO_PATH> --task "<TASK_TEXT>"
 # or:
 pairflow bubble kickoff --id <BUBBLE_ID> --repo <REPO_PATH> --task-file <TASK_FILE>

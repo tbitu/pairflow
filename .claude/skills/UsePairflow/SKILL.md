@@ -51,13 +51,13 @@ This skill exists to avoid lifecycle mistakes (wrong command in wrong state, los
 12. `ReviewBubble` uses the surviving direct review contract only; do not expose or suggest any removed source-selection flag.
 13. Hard rule: do not route `ReviewBubble` through `pairflow bubble meta-review *` read-model commands as an operator source-selection path.
 14. Decision separation: `--decide approve|rework` controls lifecycle action only (`bubble approve` / `bubble request-rework`) and is independent from review content gathering.
-15. Ideation lifecycle is explicit: if a bubble was created with `--ideation`, run `pairflow bubble kickoff` before any `pass`/`converged` loop command.
+15. Ideation lifecycle is explicit: if a bubble was created with `--ideation`, run `pairflow bubble kickoff` before any loop commands (`pairflow agent emit`).
 16. If runtime is unhealthy (agent pane unresponsive, tmux/session mismatch, token/login refresh needed), prefer `pairflow bubble restart --id <id> [--repo <path>]` over manual tmux kill/start steps.
 17. Remote exception: if a started remote bubble reports runtime loss (`remoteExecution.pointerKind="started"` with runtime unavailable/missing), treat that fail-closed. Do not assume `bubble start` or `bubble restart` is the supported recovery contract on top of preserved remote state in this phase.
 18. For remote bubble creation, use `pairflow bubble create --remote <host> ...`; execution still begins only at `bubble start`.
 19. Remote attach is a separate operator step. `bubble attach` for remote bubbles uses the persisted started pointer plus optional `--port-forward`, not local tmux attach.
 20. Do not add `--attach` to `pairflow bubble start` unless the user explicitly asks for an interactive attach/switch step right now.
-21. `RUNNING round=0` ideation state is a valid hold state. Do not auto-kickoff. Exception: if the user asks for a loop action (`pass`/`converged`) while still in round-0 ideation, run kickoff first because loop actions require an active round.
+21. `RUNNING round=0` ideation state is a valid hold state. Do not auto-kickoff. Exception: if the user asks for a loop action (e.g. handoff or convergence) while still in round-0 ideation, run kickoff first because loop actions require an active round.
 22. Pre-kickoff manual preparation in the bubble worktree is allowed when explicitly requested by the user. In this pattern, kickoff text should summarize already-applied work and define expected first handoff behavior.
 23. `ReviewBubble` should explain findings in business-technical language by default, not just reviewer shorthand:
   - explain the technical issue,
@@ -67,11 +67,31 @@ This skill exists to avoid lifecycle mistakes (wrong command in wrong state, los
 25. The only bounded remote-clone local-parity exception in this design slice is `request-rework`, and only when Pairflow can prove the verified remote clone workspace context and no retained clone-local `remote.json` pointer artifacts are present. Default to the laptop-routed path unless that exception is explicitly known to apply.
 26. For recurring actor emit failures, use the error-signature mapping in `Workflows/TroubleshootBubble.md` and the canonical examples in `docs/agent-emit-troubleshooting.md` instead of ad-hoc flag mutation.
 
+## Command Ownership & Role Separation
+
+Pairflow CLI commands are strictly divided by role and execution plane:
+
+1. **Operator / Chatbot Commands (`pairflow bubble ...`) [Human / Chatbot Plane]**:
+   - Commands: `pairflow bubble <status|create|start|kickoff|reply|approve|request-rework|restart|stop|commit|merge|delete>`
+   - Who runs them: Human operators, or Chatbot Assistants (like Antigravity/Codex in this chat interface) acting on behalf of the human.
+   - Purpose: Manage bubble orchestration, approvals, replies, state transitions, and workspace lifecycle.
+   - Constraints: NEVER run these commands inside the autonomous loop agent panes or bubble worktrees.
+
+2. **Loop Agent Protocol Commands (`pairflow agent emit ...`) [Autonomous Loop Plane]**:
+   - Commands: `pairflow agent emit --kind <pass|convergence|human_question|meta_review_result>`
+   - Who runs them: Autonomous loop agents (implementer, reviewer, meta-reviewer) running within the bubble's execution panes/workspace.
+   - Purpose: Submit work, raise blocker questions, or declare convergence to advance the loop round.
+   - Constraints: Human operators and chatbot assistants must NEVER run these commands directly, except when explicitly troubleshooting or simulating an agent.
+
+3. **Removed Legacy Commands (Obsolete)**:
+   - The top-level commands `pairflow pass`, `pairflow ask-human`, `pairflow converged`, and `orchestra` are completely removed.
+   - They must never be used by either operators or loop agents. Use `pairflow agent emit` instead.
+
 ## Execution Modes (Mandatory)
 
 - Default execution mode for bubble-scoped requests is `bubble_autonomous`.
 - `bubble_autonomous` mode:
-  - Allowed: Pairflow lifecycle/protocol actions (`bubble ...`, `pass`, `ask-human`, `converged`) and state diagnostics.
+  - Allowed: Pairflow lifecycle/protocol actions (specifically, operator `pairflow bubble ...` commands) and state diagnostics.
   - Forbidden: direct feature implementation via manual file edits/tests as the primary execution path.
   - Exception: ideation pre-kickoff prep edits are allowed only when explicitly requested by the user; after kickoff, return to lifecycle/protocol-driven flow.
 - `manual_assist` mode is allowed only with explicit user opt-in.
@@ -93,7 +113,7 @@ This skill exists to avoid lifecycle mistakes (wrong command in wrong state, los
 - `RUNNING` with ideation pending (`round=0` and `[ideation].task_pending=true`) -> `pairflow bubble kickoff --id <id> (--task <text> | --task-file <path>)`
 - `RUNNING` with ideation pending and no kickoff request yet -> hold in round-0; report status and wait for explicit kickoff decision
 - `RUNNING` document bubble kickoff (`review_artifact_type=document`) -> use a docs/spec refinement task payload. The payload must forbid product/runtime/source-code implementation and must instruct the agent to ask for replanning or a human decision if the requested outcome cannot be completed without code edits.
-- `RUNNING` (active round, typically `round>=1`) -> no approve/rework yet; use normal loop commands (`pass`, `converged`) in agent panes
+- `RUNNING` (active round, typically `round>=1`) -> no approve/rework yet; the autonomous loop agent running in the pane must use the canonical `pairflow agent emit` command.
 - Runtime-health issue in non-final active states (for example stalled pane, refreshed agent login/session) -> `pairflow bubble restart --id <id> [--repo <path>]`
 - Remote started-pointer runtime loss (`remoteExecution.pointerKind="started"` with runtime unavailable/missing) -> inspect `pairflow bubble status --id <id> --repo <path> --json` or `pairflow bubble list --refresh`; report preserved-state fail-closed and do not imply that `start`/`restart` is already the supported recovery path
 - `WAITING_HUMAN` -> use `pairflow bubble reply` (NOT `bubble request-rework`)
@@ -144,7 +164,7 @@ This skill exists to avoid lifecycle mistakes (wrong command in wrong state, los
 - Task input gate for create:
   - Provide exactly one of `--task`, `--task-file`, or `--ideation`.
   - `--ideation` cannot be combined with `--task` or `--task-file`.
-  - If created with `--ideation`, run `bubble kickoff` before any `pass`/`converged`.
+  - If created with `--ideation`, run `bubble kickoff` before any loop commands (`pairflow agent emit`).
   - Do not auto-kickoff immediately after create/start unless the user explicitly asks for kickoff now.
 - Bubble ID gate for create:
   - `pairflow bubble create --id <id>` accepts only `3-40` chars.

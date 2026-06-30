@@ -98,7 +98,7 @@ pairflow bubble inbox --id <BUBBLE_ID> --repo <REPO_PATH>
     - If ideation markers indicate pending kickoff (`round=0` and `bubble.toml` has `[ideation] task_pending=true`):
       - If neither `TASK_TEXT` nor `TASK_FILE` is provided -> STOP and report: `"Error: ideation bubble in RUNNING round 0 requires --task <text> or --task-file <path> for bubble kickoff."`
       - Else run `pairflow bubble kickoff --id <BUBBLE_ID> --repo <REPO_PATH> --task "<TASK_TEXT>"` or `pairflow bubble kickoff --id <BUBBLE_ID> --repo <REPO_PATH> --task-file <TASK_FILE>`.
-    - Otherwise continue normal loop (`pass` / `converged`) instead of approval commands.
+    - Otherwise continue normal loop (using `pairflow agent emit`) instead of approval commands.
   - `META_REVIEW_RUNNING` -> inspect the canonical status snapshot; if routing appears stuck or runtime is unhealthy, run `pairflow bubble restart --id <BUBBLE_ID> --repo <REPO_PATH>` and re-check state.
   - `READY_FOR_HUMAN_APPROVAL` (legacy `READY_FOR_APPROVAL`) -> `approve` or `request-rework`.
     - For remote bubbles, this means the retained laptop-side routed path by default, not manual lifecycle mutation inside the remote clone.
