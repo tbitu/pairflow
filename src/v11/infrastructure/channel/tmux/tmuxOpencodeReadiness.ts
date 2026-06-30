@@ -39,7 +39,12 @@ function isOpencodeDescendantOf(pid: number): boolean {
       const children = parentToChildren.get(current);
       if (children) {
         for (const child of children) {
-          if (child.comm.toLowerCase().includes("opencode")) {
+          const commLower = child.comm.toLowerCase();
+          if (
+            commLower.includes("opencode") ||
+            commLower.includes("node") ||
+            commLower.includes("mainthread")
+          ) {
             return true;
           }
           if (!visited.has(child.pid)) {
@@ -65,7 +70,13 @@ const READY_TEXT_PATTERNS = [
   /ask anything/i,
   /tab agents/i,
   /ctrl\+p commands/i,
-  /\[pairflow\]/u
+  /▀▀▀▀/u,
+  /^\s*┃/u,
+  /\[pairflow\]/ui,
+  /security guide/i,
+  /trust this folder/i,
+  /do you trust the contents of this directory/i,
+  /bypass permissions mode/i
 ];
 
 /**
@@ -103,7 +114,7 @@ export async function waitForOpencodePaneReady(input: {
   attempts?: number;
   retryDelayMs?: number;
 }): Promise<boolean> {
-  const attempts = Math.max(1, input.attempts ?? 20);
+  const attempts = Math.max(1, input.attempts ?? 30);
   const retryDelayMs = input.retryDelayMs ?? 300;
   const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
 
@@ -119,13 +130,18 @@ export async function waitForOpencodePaneReady(input: {
       const pid = parseInt(pidResult.stdout.trim(), 10);
       if (!isNaN(pid) && pid > 0) {
         if (isOpencodeDescendantOf(pid)) {
-          return true;
-        }
-        if (!process.env.VITEST) {
+          // Process exists, but we must fall through to the text-based check
+          // to ensure the TUI is drawn and ready for input.
+        } else if (!process.env.VITEST) {
+          // If the process check fails, wait and retry instead of aborting
+          // immediately, to allow the process time to startup.
+          if (attempt === attempts - 1) {
+            return false;
+          }
           if (attempt < attempts - 1 && retryDelayMs > 0) {
             await sleepForDelayMs(retryDelayMs);
           }
-          return false;
+          continue;
         }
       }
     } catch {

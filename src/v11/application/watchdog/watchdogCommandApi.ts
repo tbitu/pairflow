@@ -23,6 +23,7 @@ import {
   maybeMonitorWatchdogPaneActivity,
   type WatchdogPaneActivityState
 } from "./internal/paneActivity/watchdogPaneActivityMonitoring.js";
+import type { WatchdogPaneActivityRecord } from "../../ports/watchdogPaneActivity.js";
 export { BubbleWatchdogError } from "./internal/error/watchdogCommandRuntime.js";
 
 export async function runBubbleWatchdog(
@@ -68,7 +69,9 @@ export async function runBubbleWatchdog(
     emitDelivery,
     emitNotification,
     resolveDeliveryMessageRef,
-    retryStuckAgentInput
+    retryStuckAgentInput,
+    ...(input.cwd !== undefined ? { cwd: input.cwd } : {}),
+    ...(dependencies.restartBubble !== undefined ? { restartBubble: dependencies.restartBubble } : {})
   };
 
   const pendingRework = await tryApplyPendingReworkIntent({
@@ -98,6 +101,27 @@ export async function runBubbleWatchdog(
       ? { sendAndSubmitTmuxPaneMessage: dependencies.sendAndSubmitTmuxPaneMessage }
       : {})
   });
+  if (paneActivity?.restarted && paneActivity.restartResult) {
+    const result: BubbleWatchdogResult = {
+      bubbleId: resolved.bubbleId,
+      escalated: false,
+      reason: "restarted",
+      state: paneActivity.restartResult.state
+    };
+    await appendTrace({
+      runtimeDir: resolved.bubblePaths.runtimeDir,
+      bubbleId: resolved.bubbleId,
+      entry: buildWatchdogTraceEntry({
+        nowIso,
+        state,
+        watchdog,
+        paneActivity,
+        result
+      })
+    });
+    return result;
+  }
+
   const result = await resolveWatchdogLifecycleRoute({
     context,
     monitored: watchdog.monitored,
@@ -209,17 +233,7 @@ function buildWatchdogTracePaneActivity(
     return {
       read_status: input.readStatus,
       sample_status: "skipped",
-      ...(input.currentRecord !== null
-        ? {
-            current_sampled_at: input.currentRecord.sampled_at,
-            current_last_changed_at: input.currentRecord.last_changed_at,
-            ...(input.currentRecord.last_sample_status !== undefined
-              ? {
-                  current_last_sample_status: input.currentRecord.last_sample_status
-                }
-              : {})
-          }
-        : {})
+      ...buildCurrentRecordTrace(input.currentRecord)
     };
   }
 
@@ -232,17 +246,7 @@ function buildWatchdogTracePaneActivity(
       pane_hash: sampleResult.pane_hash,
       session_name: sampleResult.session_name,
       target_pane: sampleResult.target_pane,
-      ...(input.currentRecord !== null
-        ? {
-            current_sampled_at: input.currentRecord.sampled_at,
-            current_last_changed_at: input.currentRecord.last_changed_at,
-            ...(input.currentRecord.last_sample_status !== undefined
-              ? {
-                  current_last_sample_status: input.currentRecord.last_sample_status
-                }
-              : {})
-          }
-        : {})
+      ...buildCurrentRecordTrace(input.currentRecord)
     };
   }
 
@@ -257,16 +261,33 @@ function buildWatchdogTracePaneActivity(
           target_pane: sampleResult.target_pane
         }
       : {}),
-    ...(input.currentRecord !== null
-      ? {
-          current_sampled_at: input.currentRecord.sampled_at,
-          current_last_changed_at: input.currentRecord.last_changed_at,
-          ...(input.currentRecord.last_sample_status !== undefined
-            ? {
-                current_last_sample_status: input.currentRecord.last_sample_status
-              }
-            : {})
-        }
+    ...buildCurrentRecordTrace(input.currentRecord)
+  };
+}
+
+function buildCurrentRecordTrace(
+  currentRecord: WatchdogPaneActivityRecord | null
+): Partial<NonNullable<WatchdogTraceEntry["pane_activity"]>> {
+  if (currentRecord === null) {
+    return {};
+  }
+  return {
+    current_sampled_at: currentRecord.sampled_at,
+    current_last_changed_at: currentRecord.last_changed_at,
+    ...(currentRecord.last_sample_status !== undefined
+      ? { current_last_sample_status: currentRecord.last_sample_status }
+      : {}),
+    ...(currentRecord.last_nudge_count !== undefined
+      ? { current_last_nudge_count: currentRecord.last_nudge_count }
+      : {}),
+    ...(currentRecord.last_nudge_round !== undefined
+      ? { current_last_nudge_round: currentRecord.last_nudge_round }
+      : {}),
+    ...(currentRecord.last_nudge_role !== undefined
+      ? { current_last_nudge_role: currentRecord.last_nudge_role }
+      : {}),
+    ...(currentRecord.last_nudge_execution_id !== undefined
+      ? { current_last_nudge_execution_id: currentRecord.last_nudge_execution_id }
       : {})
   };
 }

@@ -360,7 +360,7 @@ describe("Delivery Message Builder Comprehensive Audit", () => {
           envelope: createEnvelope({
             type,
             ...(type === "APPROVAL_DECISION" ? { payload: { decision: "rework" as const } } : {})
-          }),
+          } as unknown as Partial<ProtocolEnvelope>),
           messageRef: "artifact://test.md",
           bubbleConfig: createBubbleConfig(),
           recipientRole: "implementer",

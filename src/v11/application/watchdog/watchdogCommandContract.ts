@@ -1,3 +1,8 @@
+import type {
+  RestartBubbleDependencies,
+  RestartBubbleInput,
+  RestartBubbleResult
+} from "../restart/restartCommandContract.js";
 import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
 import type { BubbleConfig } from "../../shared/config/bubbleConfigTypes.js";
 import type { EmitBubbleNotificationPort } from "../../ports/notifications.js";
@@ -82,6 +87,10 @@ export interface BubbleWatchdogDependencies {
   resolveDeliveryMessageRef: ResolveDeliveryMessageRefPort;
   retryStuckAgentInput: RetryStuckAgentInputPort;
   sendAndSubmitTmuxPaneMessage?: SendAndSubmitTmuxPaneMessagePort;
+  restartBubble?: (
+    input: RestartBubbleInput,
+    dependencies?: RestartBubbleDependencies
+  ) => Promise<RestartBubbleResult>;
 }
 
 export type BubbleWatchdogNoopReason =
@@ -89,7 +98,8 @@ export type BubbleWatchdogNoopReason =
   | "not_expired"
   | "state_not_running"
   | "rework_intent_applied"
-  | "rework_delivery_failed";
+  | "rework_delivery_failed"
+  | "restarted";
 
 export interface BubbleWatchdogResult {
   bubbleId: string;

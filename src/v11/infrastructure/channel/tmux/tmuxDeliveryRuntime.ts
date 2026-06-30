@@ -110,8 +110,9 @@ export interface TmuxDeliveryTimingOptions {
 export async function ensureOpencodePaneReady(input: {
   runner: TmuxRunner;
   targetPane: string;
-  respawnExpectedPaneAgent?: () => Promise<void>;
-  sleepForDelayMs?: (delayMs: number) => Promise<void>;
+  respawnExpectedPaneAgent?: (() => Promise<void>) | undefined;
+  sleepForDelayMs?: ((delayMs: number) => Promise<void>) | undefined;
+  forceRespawn?: boolean | undefined;
 }): Promise<boolean> {
   const quickProbe = await waitForOpencodePaneReady({
     runner: input.runner,
@@ -122,9 +123,22 @@ export async function ensureOpencodePaneReady(input: {
       ? { sleepForDelayMs: input.sleepForDelayMs }
       : {})
   });
+
   if (quickProbe) {
+    if (input.forceRespawn) {
+      // Clear the conversation of the already running session
+      await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, "/clear", {
+        requireSuccess: false,
+        maxChunkLength: 1024,
+        ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
+      }).catch(() => undefined);
+      // Wait briefly for the clear command to be processed
+      const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
+      await sleepForDelayMs(500);
+    }
     return true;
   }
+
   if (input.respawnExpectedPaneAgent === undefined) {
     return false;
   }
@@ -133,10 +147,49 @@ export async function ensureOpencodePaneReady(input: {
   return await waitForOpencodePaneReady({
     runner: input.runner,
     targetPane: input.targetPane,
+    attempts: 90, // Give it up to 27 seconds for a fresh container launch
     ...(input.sleepForDelayMs !== undefined
       ? { sleepForDelayMs: input.sleepForDelayMs }
       : {})
   });
+}
+
+async function ensureLiveSessionOrRespawn(input: {
+  runner: TmuxRunner;
+  targetPane: string;
+  expectedPaneAgent: AgentName | undefined;
+  respawnExpectedPaneAgent?: (() => Promise<void>) | undefined;
+  sleepForDelayMs?: ((delayMs: number) => Promise<void>) | undefined;
+}): Promise<{ ok: boolean; isLiveSession: boolean }> {
+  if (input.expectedPaneAgent !== "opencode") {
+    return { ok: true, isLiveSession: false };
+  }
+
+  const isLive = await waitForOpencodePaneReady({
+    runner: input.runner,
+    targetPane: input.targetPane,
+    attempts: 3,
+    retryDelayMs: 300,
+    ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
+  });
+
+  if (isLive) {
+    return { ok: true, isLiveSession: true };
+  }
+
+  if (input.respawnExpectedPaneAgent === undefined) {
+    return { ok: false, isLiveSession: false };
+  }
+
+  await input.respawnExpectedPaneAgent();
+  const ready = await waitForOpencodePaneReady({
+    runner: input.runner,
+    targetPane: input.targetPane,
+    attempts: 90,
+    ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
+  });
+
+  return { ok: ready, isLiveSession: false };
 }
 
 export async function attemptTmuxDelivery(input: {
@@ -144,44 +197,56 @@ export async function attemptTmuxDelivery(input: {
   targetPane: string;
   envelopeId: string;
   message: string;
-  initialDelayMs?: number;
-  deliveryAttempts?: number;
+  initialDelayMs?: number | undefined;
+  deliveryAttempts?: number | undefined;
   sessionName: string;
   targetPaneIndex: number;
-  expectedPaneAgent?: AgentName;
-  respawnExpectedPaneAgent?: () => Promise<void>;
-  deliveryTargetReasonCode?: DeliveryTargetReasonCode;
-  timing?: TmuxDeliveryTimingOptions;
+  expectedPaneAgent?: AgentName | undefined;
+  convergencePolicy?: "respawn" | "assume_running" | undefined;
+  respawnExpectedPaneAgent?: (() => Promise<void>) | undefined;
+  deliveryTargetReasonCode?: DeliveryTargetReasonCode | undefined;
+  timing?: TmuxDeliveryTimingOptions | undefined;
 }): Promise<DeliveryAck> {
   try {
     if ((input.initialDelayMs ?? 0) > 0) {
       const sleepForDelayMs = input.timing?.sleepForDelayMs ?? sleep;
       await sleepForDelayMs(input.initialDelayMs as number);
     }
-    if (input.expectedPaneAgent === "opencode") {
-      const opencodePaneReady = await ensureOpencodePaneReady({
-        runner: input.runner,
-        targetPane: input.targetPane,
-        ...(input.respawnExpectedPaneAgent !== undefined
-          ? { respawnExpectedPaneAgent: input.respawnExpectedPaneAgent }
-          : {}),
-        ...(input.timing?.sleepForDelayMs !== undefined
-          ? { sleepForDelayMs: input.timing.sleepForDelayMs }
-          : {})
+
+    const { ok: paneReady, isLiveSession } = await ensureLiveSessionOrRespawn({
+      runner: input.runner,
+      targetPane: input.targetPane,
+      expectedPaneAgent: input.expectedPaneAgent,
+      respawnExpectedPaneAgent: input.respawnExpectedPaneAgent,
+      sleepForDelayMs: input.timing?.sleepForDelayMs
+    });
+
+    const ackOptions = buildAckOptions(input);
+
+    if (!paneReady) {
+      return createRejectedDeliveryAck({
+        reason: "command_failed",
+        message: input.message,
+        ...ackOptions
       });
-      if (!opencodePaneReady) {
-        return createRejectedDeliveryAck({
-          reason: "command_failed",
-          message: input.message,
-          sessionName: input.sessionName,
-          targetPaneIndex: input.targetPaneIndex,
-          ...(input.deliveryTargetReasonCode !== undefined
-            ? { deliveryTargetReasonCode: input.deliveryTargetReasonCode }
-            : {})
-        });
-      }
     }
+
+    // Accept trust prompt if any
     await maybeAcceptOpencodeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
+
+    // If the session was already live, clear the previous conversation history first.
+    if (isLiveSession && input.convergencePolicy === "respawn") {
+      await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, "/clear", {
+        requireSuccess: false,
+        maxChunkLength: 1024,
+        ...(input.timing?.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.timing.sleepForDelayMs } : {})
+      }).catch(() => undefined);
+
+      const sleepForDelayMs = input.timing?.sleepForDelayMs ?? sleep;
+      await sleepForDelayMs(500);
+    }
+
+    // Deliver the handoff message via send-keys
     await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
       requireSuccess: true,
       maxChunkLength: 1024,
@@ -192,6 +257,8 @@ export async function attemptTmuxDelivery(input: {
         ? { sleepForDelayMs: input.timing.sleepForDelayMs }
         : {})
     });
+
+    // Confirm that the command has been processed
     const confirmed = await confirmTmuxPaneMarkerSubmission({
       runner: input.runner,
       targetPane: input.targetPane,
@@ -207,34 +274,42 @@ export async function attemptTmuxDelivery(input: {
         ? { sleepForDelayMs: input.timing.sleepForDelayMs }
         : {})
     });
+
     if (confirmed) {
       return createAcceptedDeliveryAck({
         message: input.message,
-        sessionName: input.sessionName,
-        targetPaneIndex: input.targetPaneIndex,
-        ...(input.deliveryTargetReasonCode !== undefined
-          ? { deliveryTargetReasonCode: input.deliveryTargetReasonCode }
-          : {})
+        ...ackOptions
       });
     }
+
     return createRejectedDeliveryAck({
       reason: "delivery_unconfirmed",
       message: input.message,
-      sessionName: input.sessionName,
-      targetPaneIndex: input.targetPaneIndex,
-      ...(input.deliveryTargetReasonCode !== undefined
-        ? { deliveryTargetReasonCode: input.deliveryTargetReasonCode }
-      : {})
+      ...ackOptions
     });
   } catch {
     return createRejectedDeliveryAck({
       reason: "command_failed",
       message: input.message,
-      sessionName: input.sessionName,
-      targetPaneIndex: input.targetPaneIndex,
-      ...(input.deliveryTargetReasonCode !== undefined
-        ? { deliveryTargetReasonCode: input.deliveryTargetReasonCode }
-        : {})
+      ...buildAckOptions(input)
     });
   }
+}
+
+function buildAckOptions(input: {
+  sessionName: string;
+  targetPaneIndex: number;
+  deliveryTargetReasonCode?: DeliveryTargetReasonCode | undefined;
+}) {
+  if (input.deliveryTargetReasonCode !== undefined) {
+    return {
+      sessionName: input.sessionName,
+      targetPaneIndex: input.targetPaneIndex,
+      deliveryTargetReasonCode: input.deliveryTargetReasonCode
+    };
+  }
+  return {
+    sessionName: input.sessionName,
+    targetPaneIndex: input.targetPaneIndex
+  };
 }

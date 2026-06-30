@@ -28,6 +28,10 @@ export interface WatchdogTraceEntry {
     current_sampled_at?: string;
     current_last_changed_at?: string;
     current_last_sample_status?: "sampled" | "no_session" | "pane_unreadable";
+    current_last_nudge_count?: number;
+    current_last_nudge_round?: number;
+    current_last_nudge_role?: string;
+    current_last_nudge_execution_id?: string;
   };
   result: {
     escalated: boolean;

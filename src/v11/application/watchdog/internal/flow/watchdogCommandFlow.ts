@@ -1,3 +1,8 @@
+import type {
+  RestartBubbleDependencies,
+  RestartBubbleInput,
+  RestartBubbleResult
+} from "../../../restart/restartCommandContract.js";
 import type { BubbleStateSnapshot } from "../../../../domain/state/snapshot/bubbleStateSnapshot.js";
 import { toPersistedSnapshot } from "../../../../domain/state/snapshot/projection.js";
 import type { BubbleWatchdogResult } from "../../watchdogCommandContract.js";
@@ -37,6 +42,7 @@ export interface WatchdogRuntimeContext {
   now: Date;
   nowIso: string;
   resolved: ResolvedBubbleById;
+  cwd?: string | undefined;
   readState: ReadStateSnapshotPort;
   appendEnvelope: AppendProtocolEnvelopePort;
   writeState: WriteStateSnapshotPort;
@@ -46,6 +52,10 @@ export interface WatchdogRuntimeContext {
   emitNotification: EmitBubbleNotificationPort;
   resolveDeliveryMessageRef: ResolveDeliveryMessageRefPort;
   retryStuckAgentInput: RetryStuckAgentInputPort;
+  restartBubble?: (
+    input: RestartBubbleInput,
+    dependencies?: RestartBubbleDependencies
+  ) => Promise<RestartBubbleResult>;
 }
 
 export async function maybeRetryStuckAgentInput(
@@ -78,25 +88,7 @@ export async function maybeRetryStuckAgentInput(
   return false;
 }
 
-/**
- * Detects if a RUNNING state was recently resumed (just transitioned from WAITING_HUMAN).
- * Grace period: 2 minutes allows for pane initialization and initial delivery attempt.
- */
-function isRecentlyResumedRunningState(input: {
-  activeSince: string | null;
-  now: Date;
-}): boolean {
-  if (input.activeSince === null) {
-    return false;
-  }
-  const activeSinceMs = Date.parse(input.activeSince);
-  if (Number.isNaN(activeSinceMs)) {
-    return false;
-  }
-  const elapsedMs = input.now.getTime() - activeSinceMs;
-  // 2 minute grace period for agent to start after resumption
-  return elapsedMs < 2 * 60 * 1000;
-}
+
 
 export async function buildNotExpiredResult(
   context: WatchdogRuntimeContext

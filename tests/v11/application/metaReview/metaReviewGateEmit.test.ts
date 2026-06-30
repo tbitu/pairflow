@@ -504,10 +504,9 @@ describe("metaReviewGate V11 defaults", () => {
 
     expect(result.route).toBe("meta_review_running");
     expect(paneRunnerCalls).toHaveLength(1);
-    // Phase 4 consolidation: Startup prompts are not built locally. Agents reconstruct from metadata.
-    // The command is "opencode meta-review " (with empty startup prompt).
-    // Metadata (bubbleId, round, etc.) is passed through separate metadata fields, not the startup prompt.
-    expect(paneRunnerCalls[0]).toBe("opencode meta-review ");
+    // The command should include the integrated startup prompt starting with "# [pairflow]"
+    expect(paneRunnerCalls[0]).toContain("opencode meta-review # [pairflow]");
+    expect(paneRunnerCalls[0]).toContain("bubble=b_meta_review_apply_v11_builtin_delivery");
     expect(submittedMessages).toHaveLength(0);
     expect(
       result.state.meta_review?.runtime_delivery

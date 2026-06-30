@@ -23,6 +23,7 @@ interface EmitDeliveryNotificationInputBase {
   messageRef?: string;
   initialDelayMs?: number;
   deliveryAttempts?: number;
+  convergencePolicy?: "respawn" | "assume_running";
 }
 
 export type EmitDeliveryNotificationInput = EmitDeliveryNotificationInputBase;

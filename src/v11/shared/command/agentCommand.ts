@@ -42,11 +42,13 @@ function buildAgentLaunchCommand(
   const args: string[] = [agentName];
   const hasStartupPrompt = (startupPrompt?.trim().length ?? 0) > 0;
 
-  // AC1: Map opencode to PF-implementer or PF-reviewer agent identity.
+  // AC1: Map opencode to PF-implementer, PF-reviewer, or PF-meta-reviewer agent identity.
   if (roleName === "implementer") {
     args.push("--agent", "PF-implementer");
-  } else if (roleName === "reviewer" || roleName === "meta_reviewer") {
+  } else if (roleName === "reviewer") {
     args.push("--agent", "PF-reviewer");
+  } else if (roleName === "meta_reviewer") {
+    args.push("--agent", "PF-meta-reviewer");
   }
 
   if ((model?.trim().length ?? 0) > 0) {
@@ -105,8 +107,6 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
     input.externalPairflowCommand,
     input.remoteWorkspaceAuthority
   );
-  const agentExitedMessage =
-    `${agentName} exited (code $agent_exit_code). Dropping to interactive shell.`;
   const script = [
     "set +e",
     `if ! cd ${shellQuote(workspacePath)}; then`,
@@ -118,7 +118,7 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
     ...opencodePreparation,
     `  ${launchCommand}`,
     "  agent_exit_code=$?",
-    `  printf '%s\\n' ${shellQuote(agentExitedMessage)}`,
+    `  printf '${agentName} exited (code %s). Dropping to interactive shell.\\n' "$agent_exit_code"`,
     "  exec bash -i",
     "fi",
     `printf '%s\\n' ${shellQuote(missingBinaryMessage)}`,

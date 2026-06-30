@@ -109,47 +109,72 @@ function parseWatchdogPaneActivityRecord(value: unknown): WatchdogPaneActivityRe
   }
 
   const typed = value as Record<string, unknown>;
-  const lastSampleStatusRaw = typed.last_sample_status;
-  let lastSampleStatus: WatchdogPaneActivityRecord["last_sample_status"];
-  if (lastSampleStatusRaw !== undefined) {
-    if (
-      lastSampleStatusRaw !== "sampled"
-      && lastSampleStatusRaw !== "no_session"
-      && lastSampleStatusRaw !== "pane_unreadable"
-    ) {
-      throw createPaneActivityStoreError({
-        reasonCode: watchdogPaneActivityStatusInvalidReasonCode,
-        message: "last_sample_status must be sampled, no_session, or pane_unreadable.",
-        context: {
-          subsystem: "watchdog_pane_activity_store",
-          field_name: "last_sample_status",
-          received_value: describeUnknownValue(lastSampleStatusRaw)
-        }
-      });
-    }
-    lastSampleStatus = lastSampleStatusRaw;
-  }
-
-  const session_name = getOptionalTrimmedString(typed.session_name);
-  const target_pane = getOptionalTrimmedString(typed.target_pane);
-  const last_seen_esc_interrupt_at = getOptionalTrimmedString(typed.last_seen_esc_interrupt_at);
-  const last_nudge_at = getOptionalTrimmedString(typed.last_nudge_at);
-  const last_sample_error = typeof typed.last_sample_error === "string" && typed.last_sample_error.length > 0
-    ? typed.last_sample_error
-    : undefined;
-
-  return {
+  const record: WatchdogPaneActivityRecord = {
     bubble_id: requireNonEmptyString(typed.bubble_id, "bubble_id"),
     sampled_at: requireNonEmptyString(typed.sampled_at, "sampled_at"),
     pane_hash: requireNonEmptyString(typed.pane_hash, "pane_hash"),
-    last_changed_at: requireNonEmptyString(typed.last_changed_at, "last_changed_at"),
-    ...(session_name !== undefined ? { session_name } : {}),
-    ...(target_pane !== undefined ? { target_pane } : {}),
-    ...(lastSampleStatus !== undefined ? { last_sample_status: lastSampleStatus } : {}),
-    ...(last_sample_error !== undefined ? { last_sample_error } : {}),
-    ...(last_seen_esc_interrupt_at !== undefined ? { last_seen_esc_interrupt_at } : {}),
-    ...(last_nudge_at !== undefined ? { last_nudge_at } : {})
+    last_changed_at: requireNonEmptyString(typed.last_changed_at, "last_changed_at")
   };
+
+  const status = parseLastSampleStatus(typed.last_sample_status);
+  if (status !== undefined) {
+    record.last_sample_status = status;
+  }
+
+  setOptionalString(record, "session_name", typed.session_name);
+  setOptionalString(record, "target_pane", typed.target_pane);
+  setOptionalString(record, "last_seen_esc_interrupt_at", typed.last_seen_esc_interrupt_at);
+  setOptionalString(record, "last_nudge_at", typed.last_nudge_at);
+  setOptionalString(record, "last_nudge_role", typed.last_nudge_role);
+  setOptionalString(record, "last_nudge_execution_id", typed.last_nudge_execution_id);
+
+  if (typeof typed.last_nudge_count === "number") {
+    record.last_nudge_count = typed.last_nudge_count;
+  }
+  if (typeof typed.last_nudge_round === "number") {
+    record.last_nudge_round = typed.last_nudge_round;
+  }
+  if (typeof typed.last_sample_error === "string" && typed.last_sample_error.length > 0) {
+    record.last_sample_error = typed.last_sample_error;
+  }
+
+  return record;
+}
+
+function parseLastSampleStatus(
+  value: unknown
+): WatchdogPaneActivityRecord["last_sample_status"] | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (
+    value === "sampled" ||
+    value === "no_session" ||
+    value === "pane_unreadable"
+  ) {
+    return value;
+  }
+  throw createPaneActivityStoreError({
+    reasonCode: watchdogPaneActivityStatusInvalidReasonCode,
+    message: "last_sample_status must be sampled, no_session, or pane_unreadable.",
+    context: {
+      subsystem: "watchdog_pane_activity_store",
+      field_name: "last_sample_status",
+      received_value: describeUnknownValue(value)
+    }
+  });
+}
+
+function setOptionalString(
+  record: WatchdogPaneActivityRecord,
+  key: keyof WatchdogPaneActivityRecord,
+  value: unknown
+): void {
+  const str = getOptionalTrimmedString(value);
+  if (str !== undefined) {
+    const r = record as unknown as Record<string, unknown>;
+    r[key] = str;
+  }
 }
 
 function serializeWatchdogPaneActivityRecord(

@@ -311,16 +311,13 @@ export async function emitDeliveryNotificationAck(
     message: workspaceMessage,
     sessionName,
     targetPaneIndex,
-    ...(input.initialDelayMs !== undefined ? { initialDelayMs: input.initialDelayMs } : {}),
-    ...(input.deliveryAttempts !== undefined ? { deliveryAttempts: input.deliveryAttempts } : {}),
-    ...(expectedPaneAgent !== undefined ? { expectedPaneAgent } : {}),
-    ...(respawnExpectedPaneAgent !== undefined
-      ? { respawnExpectedPaneAgent }
-      : {}),
-    ...(deliveryTiming !== undefined ? { timing: deliveryTiming } : {}),
-    ...(targetResolution.deliveryTargetReasonCode !== undefined
-      ? { deliveryTargetReasonCode: targetResolution.deliveryTargetReasonCode }
-      : {})
+    initialDelayMs: input.initialDelayMs,
+    deliveryAttempts: input.deliveryAttempts,
+    expectedPaneAgent,
+    convergencePolicy: input.convergencePolicy,
+    respawnExpectedPaneAgent,
+    timing: deliveryTiming,
+    deliveryTargetReasonCode: targetResolution.deliveryTargetReasonCode
   });
   return deliveryAck;
 }

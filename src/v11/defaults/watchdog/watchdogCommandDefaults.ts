@@ -17,6 +17,9 @@ import {
   readWatchdogPaneActivity,
   writeWatchdogPaneActivity
 } from "./watchdogPaneActivityDefaults.js";
+import { restartBubble } from "../../application/restart/restartCommandApi.js";
+import { restartBubbleDependencyDefaults } from "../restart/restartCommandDefaults.js";
+import type { RestartBubbleInput } from "../../application/restart/restartCommandContract.js";
 
 export const watchdogCommandDefaults = {
   appendProtocolEnvelope,
@@ -31,5 +34,6 @@ export const watchdogCommandDefaults = {
   resolveBubbleById,
   runTmux,
   writeStateSnapshot,
-  writeWatchdogPaneActivity
+  writeWatchdogPaneActivity,
+  restartBubble: (input: RestartBubbleInput) => restartBubble(input, restartBubbleDependencyDefaults)
 } as const;

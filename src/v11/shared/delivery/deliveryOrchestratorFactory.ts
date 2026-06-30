@@ -166,6 +166,9 @@ export function createEmitDeliveryOrchestrator(
           : {}),
         ...(input.reviewerTestDirective !== undefined
           ? { reviewerTestDirective: input.reviewerTestDirective }
+          : {}),
+        ...(input.convergencePolicy !== undefined
+          ? { convergencePolicy: input.convergencePolicy }
           : {})
       }).then((deliveryAck) => mapDeliveryAckToDeliveryResult({
         deliveryAck,

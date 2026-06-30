@@ -12,6 +12,7 @@ import type {
   BubbleWatchdogDependencies,
   PaneActivitySampleResult
 } from "../../../../src/v11/application/watchdog/watchdogCommandContract.js";
+import type { RestartBubbleInput } from "../../../../src/v11/application/restart/restartCommandContract.js";
 import { watchdogCommandDefaults } from "../../../../src/v11/defaults/watchdog/watchdogCommandDefaults.js";
 import { watchdogPendingReworkDefaults } from "../../../../src/v11/defaults/watchdog/watchdogPendingReworkDefaults.js";
 import type { RuntimeSessionsRegistry } from "../../../../src/v11/ports/runtimeSessions.js";
@@ -1107,5 +1108,160 @@ describe("watchdogCommandApi", () => {
 
     const raw = await readFile(corruptPath, "utf8");
     expect(raw).toContain("\"pane_hash\": \"pane-hash-rebuilt\"");
+  });
+
+  it("increments nudge count on consecutive nudges in the same step and restarts on the 5th nudge", async () => {
+    const repoPath = await createTempRepo();
+    const startedAt = "2026-02-22T12:00:00.000Z";
+    const bubble = await setupWatchdogRunningBubbleFixture({
+      repoPath,
+      bubbleId: "b_watchdog_v11_nudge_restart_01",
+      task: "Watchdog v11 nudge restart loop",
+      startedAt
+    });
+
+    const stateLoaded = await readStateSnapshot(bubble.paths.statePath);
+    const execId = stateLoaded.state.execution_context?.execution_id;
+
+    await writeWatchdogPaneActivity({
+      runtimeDir: bubble.paths.runtimeDir,
+      bubbleId: bubble.bubbleId,
+      record: {
+        bubble_id: bubble.bubbleId,
+        sampled_at: "2026-02-22T12:01:00.000Z",
+        pane_hash: "pane-hash-stable",
+        last_changed_at: "2026-02-22T11:55:00.000Z",
+        session_name: "pf-watchdog-v11",
+        target_pane: "pf-watchdog-v11:0.1",
+        last_sample_status: "sampled",
+        last_seen_esc_interrupt_at: "2026-02-22T11:50:00.000Z",
+        last_nudge_at: "2026-02-22T12:01:00.000Z",
+        last_nudge_count: 4,
+        last_nudge_round: 1,
+        last_nudge_role: "implementer",
+        ...(execId !== undefined ? { last_nudge_execution_id: execId } : {})
+      }
+    });
+
+    let restartCalled = false;
+    let nudgeCalls = 0;
+
+    const result = await runBubbleWatchdog(
+      {
+        bubbleId: bubble.bubbleId,
+        cwd: repoPath,
+        now: new Date("2026-02-22T12:05:00.000Z")
+      },
+      baseDependencies({
+        sampleWatchdogPaneActivity: () =>
+          Promise.resolve(
+            sampledPaneActivity("2026-02-22T12:05:00.000Z", "pane-hash-stable", false)
+          ),
+        sendAndSubmitTmuxPaneMessage: async () => {
+          nudgeCalls += 1;
+        },
+        restartBubble: async (input: RestartBubbleInput) => {
+          restartCalled = true;
+          return {
+            bubbleId: input.bubbleId,
+            state: stateLoaded.state,
+            tmuxSessionName: "pf-watchdog-v11",
+            worktreePath: repoPath,
+            previousTmuxSessionExisted: true,
+            previousRuntimeSessionRemoved: true
+          };
+        }
+      })
+    );
+
+    expect(nudgeCalls).toBe(1);
+    expect(restartCalled).toBe(true);
+    expect(result.reason).toBe("restarted");
+
+    const stored = await readWatchdogPaneActivity({
+      runtimeDir: bubble.paths.runtimeDir,
+      bubbleId: bubble.bubbleId
+    });
+    expect(stored.status).toBe("ok");
+    if (stored.status === "ok") {
+      expect(stored.record.last_nudge_count).toBe(0);
+    }
+  });
+
+  it("resets nudge count if the step has changed", async () => {
+    const repoPath = await createTempRepo();
+    const startedAt = "2026-02-22T12:00:00.000Z";
+    const bubble = await setupWatchdogRunningBubbleFixture({
+      repoPath,
+      bubbleId: "b_watchdog_v11_nudge_reset_01",
+      task: "Watchdog v11 nudge step reset",
+      startedAt
+    });
+
+    const stateLoaded = await readStateSnapshot(bubble.paths.statePath);
+
+    await writeWatchdogPaneActivity({
+      runtimeDir: bubble.paths.runtimeDir,
+      bubbleId: bubble.bubbleId,
+      record: {
+        bubble_id: bubble.bubbleId,
+        sampled_at: "2026-02-22T12:01:00.000Z",
+        pane_hash: "pane-hash-stable",
+        last_changed_at: "2026-02-22T11:55:00.000Z",
+        session_name: "pf-watchdog-v11",
+        target_pane: "pf-watchdog-v11:0.1",
+        last_sample_status: "sampled",
+        last_seen_esc_interrupt_at: "2026-02-22T11:50:00.000Z",
+        last_nudge_at: "2026-02-22T12:01:00.000Z",
+        last_nudge_count: 4,
+        last_nudge_round: 1,
+        last_nudge_role: "implementer",
+        last_nudge_execution_id: "some-old-execution-id"
+      }
+    });
+
+    let restartCalled = false;
+    let nudgeCalls = 0;
+
+    const result = await runBubbleWatchdog(
+      {
+        bubbleId: bubble.bubbleId,
+        cwd: repoPath,
+        now: new Date("2026-02-22T12:05:00.000Z")
+      },
+      baseDependencies({
+        sampleWatchdogPaneActivity: () =>
+          Promise.resolve(
+            sampledPaneActivity("2026-02-22T12:05:00.000Z", "pane-hash-stable", false)
+          ),
+        sendAndSubmitTmuxPaneMessage: async () => {
+          nudgeCalls += 1;
+        },
+        restartBubble: async (input: RestartBubbleInput) => {
+          restartCalled = true;
+          return {
+            bubbleId: input.bubbleId,
+            state: stateLoaded.state,
+            tmuxSessionName: "pf-watchdog-v11",
+            worktreePath: repoPath,
+            previousTmuxSessionExisted: true,
+            previousRuntimeSessionRemoved: true
+          };
+        }
+      })
+    );
+
+    expect(nudgeCalls).toBe(1);
+    expect(restartCalled).toBe(false);
+    expect(result.reason).toBe("not_expired");
+
+    const stored = await readWatchdogPaneActivity({
+      runtimeDir: bubble.paths.runtimeDir,
+      bubbleId: bubble.bubbleId
+    });
+    expect(stored.status).toBe("ok");
+    if (stored.status === "ok") {
+      expect(stored.record.last_nudge_count).toBe(1);
+    }
   });
 });

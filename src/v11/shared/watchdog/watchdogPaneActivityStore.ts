@@ -11,6 +11,10 @@ export interface WatchdogPaneActivityRecord {
   last_sample_error?: string;
   last_seen_esc_interrupt_at?: string;
   last_nudge_at?: string;
+  last_nudge_count?: number;
+  last_nudge_round?: number;
+  last_nudge_role?: string;
+  last_nudge_execution_id?: string;
 }
 
 export type ReadWatchdogPaneActivityResult =

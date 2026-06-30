@@ -3,6 +3,7 @@ import type {
   PaneActivitySampleResult,
   SampleWatchdogPaneActivityFn
 } from "../../watchdogCommandContract.js";
+import type { RestartBubbleResult } from "../../../restart/restartCommandContract.js";
 import type { AgentRole } from "../../../../../contracts/kernel/agentIdentity.js";
 import { BubbleWatchdogError } from "../error/watchdogCommandRuntime.js";
 import { type WatchdogRuntimeContext } from "../flow/watchdogCommandFlow.js";
@@ -27,6 +28,8 @@ export interface WatchdogPaneActivityState {
   readStatus: "ok" | "missing" | "invalid";
   currentRecord: WatchdogPaneActivityRecord | null;
   sampleResult: PaneActivitySampleResult | null;
+  restarted?: boolean;
+  restartResult?: RestartBubbleResult;
 }
 
 interface NudgeInput {
@@ -209,7 +212,7 @@ function buildNextPaneActivityRecord(input: {
       : input.previous.last_changed_at;
 
   const previousLastSeenEsc = input.previous?.last_seen_esc_interrupt_at;
-  const nextLastSeenEsc = input.sampleResult.has_esc_interrupt === false
+  const nextLastSeenEsc = input.sampleResult.has_esc_interrupt !== true
     ? (previousLastSeenEsc ?? input.sampleResult.sampled_at)
     : input.sampleResult.sampled_at;
 
@@ -222,7 +225,11 @@ function buildNextPaneActivityRecord(input: {
     target_pane: input.sampleResult.target_pane,
     last_sample_status: "sampled",
     last_seen_esc_interrupt_at: nextLastSeenEsc,
-    ...(input.previous?.last_nudge_at !== undefined ? { last_nudge_at: input.previous.last_nudge_at } : {})
+    ...(input.previous?.last_nudge_at !== undefined ? { last_nudge_at: input.previous.last_nudge_at } : {}),
+    ...(input.previous?.last_nudge_count !== undefined ? { last_nudge_count: input.previous.last_nudge_count } : {}),
+    ...(input.previous?.last_nudge_round !== undefined ? { last_nudge_round: input.previous.last_nudge_round } : {}),
+    ...(input.previous?.last_nudge_role !== undefined ? { last_nudge_role: input.previous.last_nudge_role } : {}),
+    ...(input.previous?.last_nudge_execution_id !== undefined ? { last_nudge_execution_id: input.previous.last_nudge_execution_id } : {})
   };
 }
 
@@ -247,6 +254,119 @@ function buildFailedSampleRecord(input: {
     last_sample_status: input.sampleResult.status,
     last_sample_error: input.sampleResult.error
   };
+}
+
+interface NudgeAndMaybeRestartInput {
+  context: WatchdogRuntimeContext;
+  currentRecord: WatchdogPaneActivityRecord;
+  sampleResult: Extract<PaneActivitySampleResult, { status: "sampled" }>;
+  readResultStatus: ReadWatchdogPaneActivityResult["status"];
+  runTmux: BubbleWatchdogDependencies["runTmux"];
+  readRuntimeSessionsRegistry: BubbleWatchdogDependencies["readRuntimeSessionsRegistry"];
+  sendAndSubmitTmuxPaneMessage?: SendAndSubmitTmuxPaneMessagePort | undefined;
+  writePaneActivity: WriteWatchdogPaneActivityPort;
+}
+
+async function handleNudgeAndMaybeRestart(
+  input: NudgeAndMaybeRestartInput
+): Promise<WatchdogPaneActivityState | null> {
+  const nudgeEligibility = shouldAttemptNudge({
+    state: input.context.state,
+    currentRecord: input.currentRecord,
+    hasEscInterrupt: input.sampleResult.has_esc_interrupt ?? false,
+    now: input.context.now
+  });
+  if (!nudgeEligibility.eligible) {
+    return null;
+  }
+  if (
+    nudgeEligibility.elapsedSinceLastSeenMs < WATCHDOG_PANE_NUDGE_GRACE_PERIOD_MS ||
+    nudgeEligibility.elapsedSinceLastNudgeMs < WATCHDOG_PANE_NUDGE_GRACE_PERIOD_MS
+  ) {
+    return null;
+  }
+
+  const paneIndex = resolveWatchdogTargetPaneIndex(input.context.state.active_role!);
+  const targetPane = `${input.sampleResult.session_name}:0.${paneIndex}`;
+
+  if (!input.sendAndSubmitTmuxPaneMessage) {
+    return null;
+  }
+
+  try {
+    const nudgeResult = await trySendWatchdogNudge({
+      activeRole: input.context.state.active_role!,
+      bubbleConfig: input.context.resolved.bubbleConfig,
+      bubbleId: input.context.resolved.bubbleId,
+      worktreePath: input.context.resolved.bubblePaths.worktreePath,
+      sessionsPath: input.context.resolved.bubblePaths.sessionsPath,
+      runTmux: input.runTmux,
+      readRuntimeSessionsRegistry: input.readRuntimeSessionsRegistry,
+      sendAndSubmitTmuxPaneMessage: input.sendAndSubmitTmuxPaneMessage,
+      targetPane,
+      nudgeMessage: 'Continue exactly where you left off. Do not summarize or repeat the previous text. Remember your task only ends when you run "pairflow agent emit", never before.',
+      sessionName: input.sampleResult.session_name
+    });
+    if (nudgeResult === "pane_not_ready") {
+      return {
+        readStatus: input.readResultStatus,
+        currentRecord: input.currentRecord,
+        sampleResult: input.sampleResult
+      };
+    }
+    if (nudgeResult === "ok") {
+      const currentRound = input.context.state.round;
+      const currentRole = input.context.state.active_role!;
+      const currentExecutionId = input.context.state.execution_context?.execution_id ?? undefined;
+
+      const isSameStep =
+        input.currentRecord.last_nudge_round === currentRound &&
+        input.currentRecord.last_nudge_role === currentRole &&
+        input.currentRecord.last_nudge_execution_id === currentExecutionId;
+
+      const nextNudgeCount = isSameStep ? (input.currentRecord.last_nudge_count ?? 0) + 1 : 1;
+
+      input.currentRecord.last_nudge_at = input.context.nowIso;
+      input.currentRecord.last_nudge_count = nextNudgeCount;
+      input.currentRecord.last_nudge_round = currentRound;
+      input.currentRecord.last_nudge_role = currentRole;
+      if (currentExecutionId !== undefined) {
+        input.currentRecord.last_nudge_execution_id = currentExecutionId;
+      } else {
+        delete input.currentRecord.last_nudge_execution_id;
+      }
+
+      if (nextNudgeCount === 5) {
+        if (input.context.restartBubble) {
+          input.currentRecord.last_nudge_count = 0;
+          await input.writePaneActivity({
+            runtimeDir: input.context.resolved.bubblePaths.runtimeDir,
+            bubbleId: input.context.resolved.bubbleId,
+            record: input.currentRecord
+          });
+
+          const restartResult = await input.context.restartBubble({
+            bubbleId: input.context.resolved.bubbleId,
+            repoPath: input.context.resolved.repoPath,
+            cwd: input.context.cwd,
+            now: input.context.now
+          });
+
+          return {
+            readStatus: input.readResultStatus,
+            currentRecord: input.currentRecord,
+            sampleResult: input.sampleResult,
+            restarted: true,
+            restartResult
+          };
+        }
+      }
+    }
+  } catch {
+    /* best effort */
+  }
+
+  return null;
 }
 
 export async function maybeMonitorWatchdogPaneActivity(input: {
@@ -283,23 +403,19 @@ export async function maybeMonitorWatchdogPaneActivity(input: {
       bubbleId: input.context.resolved.bubbleId, previous: currentRecord, previousReadStatus: readResult.status, sampleResult
     });
 
-    const nudgeEligibility = shouldAttemptNudge({ state: input.context.state, currentRecord, hasEscInterrupt: sampleResult.has_esc_interrupt ?? false, now: input.context.now });
-    if (!nudgeEligibility.eligible) { /* not eligible */ }
-    else if (
-      nudgeEligibility.elapsedSinceLastSeenMs >= WATCHDOG_PANE_NUDGE_GRACE_PERIOD_MS
-      && nudgeEligibility.elapsedSinceLastNudgeMs >= WATCHDOG_PANE_NUDGE_GRACE_PERIOD_MS
-    ) {
-      const paneIndex = resolveWatchdogTargetPaneIndex(input.context.state.active_role);
-      const targetPane = `${sampleResult.session_name}:0.${paneIndex}`;
+    const nudgeAndRestartResult = await handleNudgeAndMaybeRestart({
+      context: input.context,
+      currentRecord,
+      sampleResult,
+      readResultStatus: readResult.status,
+      runTmux: input.runTmux,
+      readRuntimeSessionsRegistry: input.readRuntimeSessionsRegistry,
+      sendAndSubmitTmuxPaneMessage: input.sendAndSubmitTmuxPaneMessage,
+      writePaneActivity: input.writePaneActivity
+    });
 
-      if (input.sendAndSubmitTmuxPaneMessage) {
-        try {
-          const nudgeResult = await trySendWatchdogNudge({
-            activeRole: input.context.state.active_role, bubbleConfig: input.context.resolved.bubbleConfig, bubbleId: input.context.resolved.bubbleId, worktreePath: input.context.resolved.bubblePaths.worktreePath, sessionsPath: input.context.resolved.bubblePaths.sessionsPath, runTmux: input.runTmux, readRuntimeSessionsRegistry: input.readRuntimeSessionsRegistry, sendAndSubmitTmuxPaneMessage: input.sendAndSubmitTmuxPaneMessage, targetPane, nudgeMessage: 'Continue exactly where you left off. Do not summarize or repeat the previous text. Remember your task only ends when you run "pairflow agent emit", never before.', sessionName: sampleResult.session_name
-          });
-          if (nudgeResult === "pane_not_ready") { return { readStatus: readResult.status, currentRecord, sampleResult }; }
-        } catch { /* best effort */ }
-      }
+    if (nudgeAndRestartResult !== null) {
+      return nudgeAndRestartResult;
     }
 
     await input.writePaneActivity({ runtimeDir: input.context.resolved.bubblePaths.runtimeDir, bubbleId: input.context.resolved.bubbleId, record: currentRecord });
