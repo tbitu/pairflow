@@ -56,7 +56,11 @@ function buildAgentLaunchCommand(
   }
 
   if (hasStartupPrompt) {
-    args.push(startupPrompt as string);
+    if (agentName === "opencode") {
+      args.push("--prompt", startupPrompt as string);
+    } else {
+      args.push(startupPrompt as string);
+    }
   }
 
   return args.map(shellQuote).join(" ");

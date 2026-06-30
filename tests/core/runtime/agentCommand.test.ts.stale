@@ -413,7 +413,7 @@ describe("buildAgentCommand", () => {
     expect(script).toContain("\"chunkTimeout\":120000");
     expect(script).toContain("\"timeout\":900000");
     expect(script).toContain("'opencode'");
-    expect(script).not.toContain("'--prompt'");
+    expect(script).toContain("'--prompt'");
     expect(script).toContain("Let us test opencode prompt");
     expect(script).toContain("'--model'");
     expect(script).toContain("'lmstudio/qwen3.6-35b-a3b-mtp@q6_k_xl-reviewer'");

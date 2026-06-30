@@ -18,6 +18,8 @@ When preparing a commit message, read `docs/commit-message-guidance.md`.
 
 - Do not run destructive git/history commands (`reset --hard`, rebase, force push, etc.) without explicit user approval.
 - Do not change files outside this repo unless explicitly requested.
+- **Worktree Path Integrity**: Do not write, read, or edit files outside the current active worktree path (your CWD). If a plan, task, or prompt contains absolute file paths pointing to the host repository (e.g. `/home/tarjeib/repo/pairflow/...`), you must translate them to correspond to the current worktree directory (e.g., using relative paths or `<cwd>/path`) before calling any file-writing, editing, or viewing tools.
+
 
 ## Tech Conventions
 
