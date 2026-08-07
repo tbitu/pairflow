@@ -6,7 +6,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 DOCKER_BIN="${DOCKER:-docker}"
-IMAGE="${PAIRFLOW_GITHUB_LOCAL_IMAGE:-node:22-bookworm}"
+IMAGE="${PAIRFLOW_GITHUB_LOCAL_IMAGE:-node:24-bookworm}"
 PLATFORM="${PAIRFLOW_GITHUB_LOCAL_PLATFORM:-linux/amd64}"
 CONTAINER_WORKDIR="${PAIRFLOW_GITHUB_LOCAL_WORKDIR:-/repo}"
 VOLUME_PREFIX="${PAIRFLOW_GITHUB_LOCAL_VOLUME_PREFIX:-pairflow-github-local}"
@@ -43,6 +43,7 @@ echo
   -v "$ROOT_DIR:$CONTAINER_WORKDIR" \
   -v "$VOLUME_PREFIX-root-node-modules:$CONTAINER_WORKDIR/node_modules" \
   -v "$VOLUME_PREFIX-ui-node-modules:$CONTAINER_WORKDIR/ui/node_modules" \
+  -v "$VOLUME_PREFIX-v3-node-modules:$CONTAINER_WORKDIR/v3/node_modules" \
   -v "$VOLUME_PREFIX-pnpm-store:/pnpm-store" \
   -w "$CONTAINER_WORKDIR" \
   "$IMAGE" \
@@ -66,6 +67,10 @@ echo
 
     echo "ci:github-local step: install UI dependencies"
     pnpm --dir ui install --frozen-lockfile
+    echo
+
+    echo "ci:github-local step: install v3 dependencies"
+    pnpm --dir v3 install --frozen-lockfile
     echo
 
     echo "ci:github-local step: reject incomplete explicit commit range"
@@ -103,6 +108,15 @@ echo
 
     echo "ci:github-local step: test"
     pnpm test
+    echo
+
+    echo "ci:github-local step: v3 checks"
+    pnpm v3:lint
+    pnpm v3:typecheck
+    pnpm v3:test
+    pnpm v3:adr-check
+    pnpm v3:coverage
+    pnpm v3:packet-lint
     echo
 
     echo "ci:github-local step: build"
