@@ -10,3 +10,7 @@ coverage/
 .env
 .env.*
 !.env.example
+__pycache__/
+v3/.stryker-tmp/
+v3/reports/
+v3/stryker.log

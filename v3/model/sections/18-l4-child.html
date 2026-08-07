@@ -1,0 +1,175 @@
+<section id="l4-child">
+        <h2 class="level-h"><span class="level-badge">L4</span> Child workflow instances + internal lifecycle events</h2>
+        <p class="level-sub">A workflow instance can <b>spawn</b> and <b>link</b> another <em>full</em> workflow
+        instance, <b>wait</b> on it, and <b>route</b> on the child's lifecycle — delivered as an <b>internal kernel
+        event</b>, not a poll. The child is a complete first-class instance (its own record, runtime_context, and
+        LC1–LC4 lifecycle), <b>not</b> an embedded subflow. This is the WF-7 unlock (plan execution / pairflow
+        self-hosting). The kernel core is narrow: five primitives — everything else (plan review, task split,
+        approve/refine routing) is <b>parent-template authoring</b> on the primitives already built.</p>
+
+        <div class="note">
+          <b>The boundary.</b> <b>L4</b> = the parent↔child instance link + the internal-lifecycle-event resume.
+          <b>LC3</b> = process / LLM action routing <em>inside</em> the child (a failed merge can route to an agent
+          step that resolves the conflict, then back). <b>L3</b> = human / decision gates <em>inside</em> the child.
+          So a child template can run all the way to <code>done</code> on its own — close, commit, merge, and
+          recovery live in the child, not in the parent. v1's <code>ExecutePairflowPlan</code> + <code>plan
+          watch</code> is the grounding anchor, but it is <b>not</b> the v3 child boundary: v1 stopped the
+          programmed workflow at <code>READY_FOR_HUMAN_APPROVAL</code> and let an LLM orchestrate the rest; v3 pulls
+          that into the child template.</div>
+
+        <h3 class="view-h"><span class="view-tag" style="background:#e2e8f0;color:#334155">Shape</span> Spawn → wait → internal event → route</h3>
+        <pre class="pseudo" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:12.5px; line-height:1.5">
+  PARENT instance                                              CHILD instance (a FULL instance: own record / runtime_context / LC1–LC4)
+  ───────────────                                              ──────────────────────────────────────────────────────────────────
+  arrive(type: child_workflow step)
+    ├─ ChildWorkflowLink { child_key } ──────── idempotent ── (≤ 1 ACTIVE link; a crash-replay reuses it — a terminal link ⇒ a fresh retry attempt, never a double-spawn)
+    ├─ WAITING(child_event)   (parks on the DECLARED wait_for lifecycle keys)
+    └─ SpawnIntent  (produce-not-perform) ─────────────────►  CREATE_INSTANCE(child_template_ref, …, parent_ref)
+                                                                  START → implement / review / … / merge_action → done
+         (asleep — no polling)                                          │
+                                                                  child terminal commit
+  CHILD_LIFECYCLE { child_id, lifecycle } ◄────────────────── emit_child_lifecycle  (POST-COMMIT, correlated by parent_ref / child_id — the internal channel)
+    └─ RESUME → arrive(wait_for[lifecycle].target)
+         done → next_task   ·   failed / cancelled → recover
+
+  MVP: sequential — one child link per parent step, no fan-out.   Mechanism: subscription is transition-based; the anchor subscribes only terminal (done | failed | cancelled).
+        </pre>
+
+        <h3 class="view-h"><span class="view-tag runtime">Runtime</span> A concrete trace (WF-7 happy path + an orphan)</h3>
+        <div class="trace">
+          <div class="trace-row"><div class="trace-n">1</div><div class="trace-c">
+            <div class="ev">the parent (a plan executor) arrives at a <code>type: child_workflow</code> step for plan task <code>T3</code></div>
+            <div class="meta"><code>park_for_child</code>: <code>resolve_child_key → { task_id: T3, role: implementation }</code>; no existing link ⇒ append a fresh <code>ChildWorkflowLink { child_key, status: spawning }</code> to the parent record, set <code>WAITING(child_event)</code> with <code>resume_events = [done, failed, cancelled]</code>, <code>spawn_pending = true</code></div>
+          </div></div>
+          <div class="trace-row"><div class="trace-n">2</div><div class="trace-c">
+            <div class="ev"><b>SpawnIntent</b> (post-commit) → child <code>CREATE_INSTANCE(local-pair-v0, …, parent_ref)</code></div>
+            <div class="meta">the child is a FULL instance: its own L0f resolution, runtime_context (a fresh worktree), transcript, and LC1–LC4 lifecycle. Its <code>child_id</code> lands in the parent link via a <code>CHILD_SPAWNED</code> event (the <code>RUNTIME_CONTEXT_READY</code> analog — CAS'd, transcript-backed): <code>spawning ⇒ active</code>. The parent is asleep — <b>no polling</b></div>
+          </div></div>
+          <div class="trace-row"><div class="trace-n">3</div><div class="trace-c">
+            <div class="ev">the child runs its own loop: implement → review → converge → human_approval → commit → <code>merge_action</code> → <code>done</code></div>
+            <div class="meta">all inside the child template (L3 gates, LC3 actions). On a merge conflict the child routes <code>conflict → resolve_merge_conflict_agent</code> (an LLM step), then back to <code>merge_action</code> — the child reaches terminal on its own; the parent need not orchestrate it</div>
+          </div></div>
+          <div class="trace-row"><div class="trace-n">4</div><div class="trace-c">
+            <div class="ev">child terminal commit → <code>emit_child_lifecycle</code> → <b>CHILD_LIFECYCLE</b> <code>{ child_id, lifecycle: done }</code></div>
+            <div class="meta">the child has a <code>parent_ref</code>, so the kernel delivers an internal event to the parent (the <code>RUNTIME_CONTEXT_RELEASED</code> / <code>ACTION_RESULT</code> sibling). <code>CHILD_LIFECYCLE</code> handler: correlation ✓ (link_id + child_id) · parent is <code>WAITING(child_event)</code> on this link ✓ · <code>done</code> ∈ <code>wait_for</code> ✓ → <code>arrive(wait_for[done].target = next_task)</code></div>
+          </div></div>
+          <div class="trace-row"><div class="trace-n">4b</div><div class="trace-c">
+            <div class="ev">(orphan trap) the child is deleted out-of-band — an operator <code>DELETE_REQUESTED</code> (LC4)</div>
+            <div class="meta">delete drives <code>cancel → LC2 force_release → purge</code>; the cancel is a terminal commit ⇒ <code>emit_child_lifecycle{ cancelled }</code> fires BEFORE the record winds down → the parent receives <code>CHILD_LIFECYCLE{ cancelled }</code> → <code>arrive(recover)</code>. The parent <b>never waits forever</b>. (A child purged before the parent consumes the event — a lost-event race — is L9 reconciliation via the surviving link + <code>parent_ref</code>)</div>
+          </div></div>
+        </div>
+
+        <h3 class="view-h"><span class="view-tag pseudo">Pseudocode</span> The child-workflow handlers (diff vs LC3b)</h3>
+        <p>L4 adds two helpers, a spawn/park, a post-commit emission, and one kernel-event handler — reusing
+        <code>apply_target_entry_effects</code> (arrive), the produce-not-perform intent, the marker-first idempotent
+        claim, and the post-commit hook. Every other line is the LC3b kernel:</p>
+        <div class="code-diff" aria-label="L4 pseudocode" data-old-label="LC3b kernel" data-new-label="+ L4 child">
+          <script type="text/plain" class="diff-source" data-code-old-ref="auto-action-pseudocode"></script>
+          <script type="text/plain" class="diff-source" data-code-new data-code-id="l4-pseudocode">[[@fold l4-pseudocode]]</script>
+        </div>
+        <div class="note pseudo">
+          The spawn is <b>produce-not-perform</b>: <code>park_for_child</code> only records the (idempotent) link and
+          parks; the child <code>CREATE_INSTANCE</code> runs <b>post-commit</b> as a <code>SpawnIntent</code> (the
+          <code>ActionIntent</code> / <code>DispatchIntent</code> analog). <code>emit_child_lifecycle</code> runs
+          post-commit beside <code>initiate_release</code> — a child's terminal commit delivers a
+          <code>CHILD_LIFECYCLE</code> to its parent. The handler is the <code>ACTION_RESULT</code> sibling: correlate
+          by <code>parent_ref</code> / <code>child_id</code>, then the SAME <code>arrive()</code> routes per the
+          parent template. The kernel knows no lifecycle <em>meanings</em> — <code>done</code> / <code>failed</code> /
+          <code>cancelled</code> are just the parent's <code>wait_for</code> keys.
+        </div>
+
+        <h3 class="view-h"><span class="view-tag domain">Domain</span> The Child Workflow Contract</h3>
+        <div class="agg">
+          <div class="agg-label">Five primitives — the canonical contract (the kernel adds only these; the rest is parent-template authoring)</div>
+          <div style="overflow-x:auto">
+          <table class="contract">
+            <thead><tr><th>Primitive</th><th>What it is</th><th>Reuses (already built)</th><th>Idempotency / correlation</th></tr></thead>
+            <tbody>
+              <tr><td><code>type: child_workflow</code> step</td><td>the parent-side launch/link step: <code>{ template_ref, child_key, binding?, inputs?, wait_for }</code></td><td>the <code>type: action</code> / <code>human_gate</code> step family</td><td>validated at load (<code>validate_child_steps</code>)</td></tr>
+              <tr><td><code>ChildWorkflowLink</code></td><td>the <b>canonical</b> parent↔child link in the parent record (<code>{ link_id, request_id, step_id, child_key, child_id, status: spawning|active|&lt;terminal&gt; }</code>); the child carries a <code>parent_ref</code> back-link</td><td>LC1 T1 run record</td><td>≤ 1 <b>ACTIVE</b> link per <code>(instance, step, child_key)</code>; a terminal link ⇒ a fresh attempt</td></tr>
+              <tr><td><code>WAITING(child_event)</code></td><td>the parent parks on the child's <b>declared</b> lifecycle keys (<code>resume_events = keys(wait_for)</code>)</td><td>the L0d WAITING axis (kickoff / human_decision / action_running precedent)</td><td>resumes only a subscribed lifecycle on the matching link</td></tr>
+              <tr><td><code>CHILD_LIFECYCLE</code> event</td><td>an internal kernel event from a child's <b>subscribable lifecycle transition commit</b>, delivered to the parent — the smallest internal channel</td><td>the <code>RUNTIME_CONTEXT_RELEASED</code> / <code>ACTION_RESULT</code> kernel-event + post-commit-hook pattern</td><td>correlated by <code>parent_ref</code> / <code>child_id</code></td></tr>
+              <tr><td><code>child_key</code></td><td>the idempotent spawn key (e.g. <code>task_id + role</code>): a crash-replay reuses the ACTIVE link; a terminal link ⇒ a fresh attempt</td><td>the marker-first single-winner pattern (the op_id analog)</td><td><b>load-bearing</b> — identifies the live link</td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+        <div class="agg">
+          <div class="agg-label">New values + rejections</div>
+          <div class="ents">
+            <div class="ent"><div class="en">SpawnIntent <span style="font-size:10px;color:var(--muted)">(produce, not perform)</span></div><div class="fields"><code>{ request_id, parent_ref, child_template_ref, binding, task }</code> — the child <code>CREATE_INSTANCE</code> runs post-commit; <code>request_id</code> correlates the <code>CHILD_SPAWNED</code> reply. The DispatchIntent / ActionIntent analog</div></div>
+            <div class="ent"><div class="en">CHILD_SPAWNED <span style="font-size:10px;color:var(--muted)">(kernel event)</span></div><div class="fields"><code>{ parent_ref, request_id, child_id }</code> — the spawn write-back: the child's CREATE_INSTANCE finished ⇒ correlate <code>request_id</code> + CAS the id into the parent link (<code>spawning ⇒ active</code>). The <code>RUNTIME_CONTEXT_READY</code> analog</div></div>
+            <div class="ent"><div class="en">CHILD_SPAWN_FAILED <span style="font-size:10px;color:var(--muted)">(kernel event)</span></div><div class="fields"><code>{ parent_ref, request_id, reason }</code> — a child CREATE_INSTANCE rejected past load (a dynamic binding / input invalid) ⇒ the link goes <code>failed</code> and the parent routes its <code>failed</code> path. The LC2 initiation-failure analog</div></div>
+            <div class="ent"><div class="en">CHILD_LIFECYCLE <span style="font-size:10px;color:var(--muted)">(kernel event)</span></div><div class="fields"><code>{ parent_ref, child_id, lifecycle }</code> — <code>lifecycle ∈</code> the child's subscribable transitions; MVP anchor: terminal (<code>done | failed | cancelled</code>)</div></div>
+            <div class="ent"><div class="en">Rejected(child_link_unknown)</div><div class="fields">a <code>CHILD_SPAWNED</code> / <code>CHILD_SPAWN_FAILED</code> / <code>CHILD_LIFECYCLE</code> for a link the parent does not have</div></div>
+            <div class="ent"><div class="en">Rejected(child_link_mismatch)</div><div class="fields">a <code>CHILD_SPAWNED</code> with a stale / mis-routed <code>request_id</code> or a different <code>child_id</code> on a bound link, or a <code>CHILD_LIFECYCLE</code> whose <code>child_id</code> ≠ the link's already-bound child</div></div>
+            <div class="ent"><div class="en">Rejected(not_awaiting_this_child)</div><div class="fields">the parent is not parked on this child (already routed, or a duplicate delivery)</div></div>
+            <div class="ent"><div class="en">Rejected(child_lifecycle_not_subscribed)</div><div class="fields">a lifecycle the parent's <code>wait_for</code> does not declare</div></div>
+            <div class="ent"><div class="en">Definition issues (child_template_ref_unresolved / child_key_missing / child_wait_for_empty / child_wait_for_incomplete / child_wait_target_unresolved)</div><div class="fields">admission-time <code>validate_child_steps</code> failures on the definition channel (a static <code>template_ref</code> that does not resolve, and a <code>wait_for</code> missing a terminal disposition, are caught here)</div></div>
+            <div class="ent"><div class="en">Rejected(child_spawn_already_resolved)</div><div class="fields">a <code>CHILD_SPAWN_FAILED</code> on an already-bound (active / terminal) link — a contradictory completion for a spawn that <code>CHILD_SPAWNED</code> already won</div></div>
+          </div>
+        </div>
+
+        <h3 class="view-h"><span class="view-tag invariant">Invariant</span> New at L4</h3>
+        <div class="agg invariant">
+          <div class="agg-label">Added rules</div>
+          <div class="ents">
+[[@invariants l4-child 0]]
+          </div>
+        </div>
+
+        <h3 class="view-h"><span class="view-tag config">Config</span> A parent template — the plan executor (WF-7)</h3>
+        <p>A new template: a long-lived parent that iterates plan tasks (the task list is the plan <em>document</em>,
+        read by the agent steps — not kernel state), spawning one child per task and waiting on its lifecycle. The
+        child is the ordinary pair workflow (<code>local-pair-v0</code>):</p>
+        <div class="code-diff" aria-label="L4 parent template" data-old-label="— (new template)" data-new-label="plan-exec-v0">
+          <script type="text/plain" class="diff-source" data-code-old></script>
+          <script type="text/plain" class="diff-source" data-code-new data-code-id="l4-parent-template">[[@code code/l4-parent-template.new.txt]]</script>
+        </div>
+        <div class="note config">
+          Only <code>run_task</code> is new at L4 — a single <code>type: child_workflow</code> step in a loop. The
+          plan review / split / approve logic (v1's <code>ReviewSpec</code> <code>approve_task</code> /
+          <code>refine_task</code> / <code>split_task</code> / <code>route_back_to_plan</code>) is ordinary parent
+          authoring on the existing gate / decision / agent-step primitives, working off the plan <em>document</em>
+          as data — <b>not</b> a kernel route-taxonomy. <code>split_task</code> just edits the plan document to add
+          tasks; the loop processes them one at a time. A <code>failed</code> / <code>cancelled</code> child routes to <code>recover_task → spec_gate → run_task</code> with the <em>same</em> <code>child_key</code>: because the prior link is terminal, <code>find_active</code> returns none and a <b>fresh attempt</b> is spawned — no deadlock.
+        </div>
+
+        <h3 class="view-h"><span class="view-tag absent">Absent</span> Still not here</h3>
+        <div class="absent-grid">
+[[@absent l4-child]]
+        </div>
+
+        <h3 class="view-h"><span class="view-tag evidence">Evidence</span> Why this cut (v1 reality-checked)</h3>
+        <div class="note evidence">
+          <ul style="margin:0">
+            <li><b>v1 has no kernel-level parent↔child:</b> <code>plan watch</code> is an <em>external polling loop</em>
+              — it reads each linked bubble's <code>state.json</code> every ~60s (<code>planWatchLoop.ts</code>,
+              <code>planWatchLoopInternalTypes.ts:18</code>), correlating by ids in task frontmatter
+              (<code>doc_bubble_id</code> / <code>impl_bubble_id</code>,
+              <code>linkedBubbleTriggerIndex.ts:379-380</code>). No event, no join, no reverse link. L4 replaces the
+              polling hack with a first-class link + an internal lifecycle event.</li>
+            <li><b>v1 is strictly sequential</b> (<code>planWatchLoopExecution.ts</code> — one candidate per
+              interval, others deferred) — so the sequential, single-child MVP is v1-faithful; fan-out is the
+              greenfield extension.</li>
+            <li><b>v1's <code>READY_FOR_HUMAN_APPROVAL</code> trigger</b> (<code>bubbleStatusProjection.ts:16-19</code>)
+              is where the <em>programmed</em> v1 workflow stopped and an LLM took over — evidence for an intermediate
+              subscription, but not a v3 requirement: v3 pulls close / merge / recovery into the child template, so
+              the child runs to <code>done</code> and the parent waits on terminal.</li>
+            <li><b>v1 has no orphan recovery</b> (no reconciliation sweep; a failed child stalls the plan) — L4's
+              <code>cancelled</code> lifecycle + the canonical link make the orphan trap routable (recover, not wait
+              forever); the deeper lost-event race is the explicit L9 boundary.</li>
+            <li><b>The dogfooding payoff:</b> WF-7 moves orchestration out of the <code>ExecutePairflowPlan</code>
+              prompt and into the kernel — the observed LLM non-adherence to that skill is direct evidence for
+              "the workflow is the boss" (kernel enforcement, not advisory prompt-level).</li>
+            <li><b>Rebaseline (wave 3):</b> the child step is labeled as two <b>Errand</b> instances with
+              distinct forms — spawn is full (durable <code>spawning</code> link claim →
+              <code>SpawnIntent</code> directive → correlated <code>CHILD_SPAWNED</code>/<code>FAILED</code>),
+              child await is open-door (marker only; the completion is the child's lifecycle). See the
+              kernel-primitives memo (§6/§9); behavior unchanged.</li>
+            <li><b>Rebaseline (wave 4):</b> the <code>wait_for</code> route is labeled a <b>ChoicePoint</b>
+              (kernel-classified — the child's terminal commit) and <code>SpawnIntent</code> a
+              <b>Directive</b> member; behavior unchanged.</li>
+          </ul>
+        </div>
+      </section>

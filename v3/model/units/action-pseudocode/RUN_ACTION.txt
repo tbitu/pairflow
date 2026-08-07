@@ -1,0 +1,41 @@
+
+RUN_ACTION(trigger) → Outcome                                      # LC3 operator_intent — the AUTOMATED sibling of SUBMIT_DECISION (the RUNNER's result picks the outcome, not a human). trigger = { instance_id, op_id, expected_version, action_key, payload, by }
+# TWO CHAINED ERRANDS meet in this handler: the ask-errand COMPLETES here (its correlation guards below),
+# and — only after trigger-validation — its completion OPENS the run-errand at the PHASE 1 claim
+  # ADMISSION via admit_input (load-first) — F-W4-1 resolved (ingress touch): the load gains its
+  # unknown_instance guard, and the authority REQUIRE gains its name, both branches declared (the
+  # F-W4-3 house style)
+  admitted ← admit_input(trigger, expect: {
+    op_id:     trigger.op_id,                                        # idempotency FIRST — transcript-backed (op_id rides ACTION_RUNNING / ACTION_RESULT): a replay returns Duplicate even after the first claim already moved us to action_running, never not_awaiting_action
+    state:     kernel_status = WAITING AND wait.kind = action_pending → Rejected(not_awaiting_action),   # action_running ⇒ a (different) claim already won (single-winner); a parked action is the only runnable state
+    correlate: trigger.action_key ∈ wait.resume_events → Rejected(action_trigger_mismatch),
+    version:   trigger.expected_version,                             # the ActionRequest the operator holds is stale — a destructive action MUST NOT run from it (like SUBMIT_DECISION / RESUME_WAIT)
+    authority: { claim:   trigger.by,                                # operator authority on THIS path (like SUBMIT_DECISION; not the L1 actor gate)
+                 granted: instance.binding[template.step(instance.current_step).role],   # lazy rung-local read — the pinned-template load happens at this rung
+                 missing → Rejected(operator_not_authorized), mismatch → Rejected(operator_not_authorized) } })   # named now (was a bare REQUIRE) — the SUBMIT_DECISION family's name
+  IF admitted ≠ Accepted THEN RETURN admitted                        # Duplicate | Stale(v) | Rejected(…) pass through unchanged
+  instance ← admitted.instance
+  template ← definitionStore.load(instance.template_ref) ; step ← template.step(instance.current_step)
+  # TRIGGER-VALIDATION — PAYLOAD ONLY (NOT workspace state), BEFORE the claim so a bad payload starts nothing: the human_gate missing_required_field analog. A pre-open guard of the run-errand, not part of its claim
+  FOR field IN required_fields(step.action.payload):
+    IF trigger.payload[field] is absent OR empty THEN RETURN Rejected(missing_required_field)
+  # PHASE 1 — CAS CLAIM (marker-first, single-winner): take the action_pending EXCLUSIVELY before the runner side effect, so two concurrent RUN_ACTION never both reach the (git-mutating) runner. ERRAND run (inline form) opens — claim commit #1 of the bracket
+  request_id ← new_request_id()
+  COMMIT atomically at expected_version = instance.version:
+    REQUIRE instance.wait.kind = action_pending                  # the single-winner CAS guard (like LC2 release's REQUIRE ready(ref)): a different concurrent claim that already won loses here on reload ⇒ not_awaiting_action (same op_id ⇒ Duplicate, checked first)
+    instance.wait ← { kind: action_running, op_id: trigger.op_id, request_id, action_key: trigger.action_key, requested_by: step.id }   # in-flight marker; a concurrent RUN_ACTION with a different op_id sees action_running ⇒ not_awaiting_action (same op_id ⇒ Duplicate)
+    instance.transcript.append(ACTION_RUNNING { op_id: trigger.op_id, action_key: trigger.action_key, request_id })
+    instance.version ← instance.version + 1
+  # PHASE 2 — run the ACTION exclusively (the claim is committed; only this handler reaches the runner). A crash here leaves a durable action_running the L9 watchdog reconciles
+  result      ← actionRunner(step.action.uses).run(step.action.spec, { cwd: runtime_context_workspace(instance), payload: trigger.payload })
+  outcome_key ← classify_action_result(step, result)              # committed | merged | conflict | nothing_staged | infra_error … — the WORKSPACE reality (unlike the payload-only trigger-validation)
+  # PHASE 3 — CAS RESULT: record (with op_id) + route, or revert to action_pending for a retry; NEVER leave action_running on a handled result, NEVER Reject after the side effect ran. ERRAND run completes — commit #2 of the inline bracket; a re-park opens a fresh ask-errand
+  COMMIT atomically at expected_version = instance.version:
+    REQUIRE instance.wait.kind = action_running AND instance.wait.request_id = request_id   # still OUR run (defensive)
+    instance.transcript.append(ACTION_RESULT { op_id: trigger.op_id, action_key: trigger.action_key, outcome: outcome_key, outputs: result.outputs, evidence_refs: result.evidence_refs })   # evidence (LC1 INV-3): commit_sha / merge_sha / exit / hash inline (T1), logs T3 — op_id makes the Duplicate check transcript-backed
+    IF outcome_key ∈ keys_of(step.outcomes) THEN
+      apply_target_entry_effects(instance, template, step.id, step.outcomes[outcome_key].target)   # ROUTE by the outcome — same generic arrival; a self-target (conflict → merge_action, nothing_staged → commit_action) re-parks action_pending (operator re-triggers). CHOICEPOINT outcomes: kernel-classified (the runner's classified result)
+    ELSE
+      instance.wait ← { kind: action_pending, requested_by: step.id, resume_events: [step.action.key] }   # infra_error or an undeclared outcome ⇒ stay parked for a retry (auto-retry is L9); a recurring undeclared outcome is a config smell, visible in the ACTION_RESULT
+    instance.version ← instance.version + 1
+  RETURN Committed(instance.version, post_commit_output(instance, template), boundary_events: emits_of(step.outcomes[outcome_key]))   # an outcome may `emits:` a release boundary (merged ⇒ merge_completed) → LC2 initiate_release; emits_of(none) = [ ]

@@ -17,9 +17,71 @@ When preparing a commit message, read `docs/commit-message-guidance.md`.
 ## Safety
 
 - Do not run destructive git/history commands (`reset --hard`, rebase, force push, etc.) without explicit user approval.
+- Do not run `git push` at all — the user pushes to origin themselves.
 - Do not change files outside this repo unless explicitly requested.
 - **Worktree Path Integrity**: Do not write, read, or edit files outside the current active worktree path (your CWD). If a plan, task, or prompt contains absolute file paths pointing to the host repository (e.g. `/home/tarjeib/repo/pairflow/...`), you must translate them to correspond to the current worktree directory (e.g., using relative paths or `<cwd>/path`) before calling any file-writing, editing, or viewing tools.
 
+
+## V3 Implementation Plane (`v3/`)
+
+Work on the v3 kernel/implementation follows its OWN process, not the
+bubble workflow below. Everything an agent needs lives on repo surfaces
+— no session memory is required or assumed:
+
+- **Process authority:** `v3/implementation/README.md` (build loop
+  §4, execution model §5, chapter DoD §6, friction log §7). The plan
+  (`v3/implementation/plan.md`) is ratified chapter by chapter;
+  task packets live in `v3/implementation/packets/`.
+- **Packet authoring, review, and contract-drafts** run through the
+  repo-local `CreateTaskPacket` skill
+  (`.claude/skills/CreateTaskPacket/`); the canonical template /
+  projection checklist / `REV-*` registry stay in
+  `v3/implementation/task-packet-template.md`, and the
+  contract-draft form authority in
+  `v3/implementation/contract-draft-template.md` — if the skill
+  and the docs disagree, the docs win.
+- **Contract-drafts exist:** a chapter's memo-born surface is decided
+  as C-rows in `v3/implementation/contracts/` and RATIFIED by the
+  human before any packet anchors to it (`contract:chN-<surface>#Cn`).
+- **Human decision points (the README §5.5 verdict-action matrix):**
+  STOPs and flag-bearing approves are the USER's; flag-free approves
+  are AUTONOMOUS from ch8 on (the ch7 pilot packets stay
+  human-approved, first-of-a-kind); refine and in-chapter split are
+  the loop's. Standing checkpoints, never automated: chapter
+  ratification, the model↔code divergence stop, and contract-draft
+  ratification and re-ratification (never delegated, never inferred —
+  an explicit act on named bytes). The authoring loop stops at every
+  STOP and at every human-gated approve; an autonomous flag-free
+  approve proceeds to build (one packet = one commit) THROUGH the two
+  transitional external-arm gates (README §5.5, user-ratified
+  2026-07-11: the agent-invoked arm on the approve-ready bytes BEFORE
+  build, and its implementation review at build close — mandatory
+  while doc-refinement is not live; unavailable arm = STOP, where
+  "unavailable" is a VERIFIED preflight failure — `which codex` +
+  arm-pin match + an attempted invocation, per ReviewPacket §6 —
+  never an assumption, and the STOP cites the failed check) — never
+  build before an approve, and a new chapter starts only on the
+  user's explicit go.
+- **Entry mode (the trust dial, adopted at the ch12 boundary):** the
+  user's opening prompt encodes it. Bare "jöhet a chN-pM" =
+  PER-PACKET (flag-free ⇒ autonomous through build per the §5.5
+  letter; the loop announces the mode in one line and stops after the
+  packet). "review chN-pM" = stop at the approve. "delegáld a chN
+  fejezetet" = STANDING chapter mode — the loop self-advances between
+  packets; valid only with the conductor architecture (heavy steps in
+  fresh-context subagents, the main context orchestrates). A per-item
+  token overrides a standing mode; an undetermined mode on a
+  flag-free approve resolves to the letter (autonomous) WITH the
+  announcement — never a silent discretionary stop.
+- **Verification bridges (run from repo root):** `pnpm v3:typecheck`,
+  `v3:lint`, `v3:test`, `v3:coverage`, `v3:packet-lint`,
+  `v3:adr-check`; the chapter DoD additionally requires full
+  `pnpm ci:local`. The v1 "Local Change Verification" order below does
+  not apply to v3-only changes.
+- **Commit shape:** one packet = packet file + code + tests (+ any
+  "aligned at <packet-id> pre-approval" plan edits) in ONE commit;
+  commit types per `docs/commit-message-guidance.md` (process-plane
+  doc changes go as `docs(v3)`).
 
 ## Tech Conventions
 
