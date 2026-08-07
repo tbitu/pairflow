@@ -126,4 +126,32 @@ describe("resolveBubbleById", () => {
     expect(resolved.repoPath).toBe(repoPath);
     expect(resolved.bubblePaths.worktreePath).toBe(bubble.paths.worktreePath);
   });
+
+  it("resolves the main repository when repoPath is specified as a worktree path", async () => {
+    const repoPath = await createTempRepo();
+    const bubble = await createBubble({
+      id: "b_lookup_worktree_01",
+      repoPath,
+      baseBranch: "main",
+      reviewArtifactType: "code",
+      task: "Worktree path lookup test",
+      cwd: repoPath
+    });
+
+    await bootstrapWorktreeWorkspace({
+      repoPath,
+      baseBranch: "main",
+      bubbleBranch: bubble.config.bubble_branch,
+      worktreePath: bubble.paths.worktreePath,
+      workspaceKind: "worktree"
+    });
+
+    const resolved = await resolveBubbleById({
+      bubbleId: bubble.config.id,
+      repoPath: bubble.paths.worktreePath
+    });
+
+    expect(resolved.bubbleId).toBe("b_lookup_worktree_01");
+    expect(resolved.repoPath).toBe(await normalizePath(repoPath));
+  });
 });

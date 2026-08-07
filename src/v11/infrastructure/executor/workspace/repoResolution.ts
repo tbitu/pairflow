@@ -39,12 +39,12 @@ export async function normalizeRepoPath(path: string): Promise<string> {
 export const resolveRepoPath: ResolveRepoPathPort = async (
   input: ResolveRepoPathInput = {}
 ): Promise<string> => {
-  if (input.repoPath !== undefined) {
-    return normalizeRepoPath(resolve(input.repoPath));
-  }
+  const candidateCwds =
+    input.repoPath !== undefined
+      ? [resolve(input.repoPath)]
+      : listPairflowWorkspaceCandidateCwds(input.cwd);
 
-  const candidateCwds = listPairflowWorkspaceCandidateCwds(input.cwd);
-  const requestedCwd = resolve(input.cwd ?? process.cwd());
+  const requestedCwd = resolve(input.repoPath ?? input.cwd ?? process.cwd());
 
   for (const cwd of candidateCwds) {
     const result = await runGit(["rev-parse", "--git-common-dir"], {
@@ -61,6 +61,10 @@ export const resolveRepoPath: ResolveRepoPathPort = async (
     }
 
     return normalizeRepoPath(resolve(cwd, raw, ".."));
+  }
+
+  if (input.repoPath !== undefined) {
+    return normalizeRepoPath(resolve(input.repoPath));
   }
 
   throw new RepoResolutionError({

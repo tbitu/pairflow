@@ -154,7 +154,7 @@ export const resolveBubbleById: ResolveBubbleByIdPort = async (
 
   const resolvedRepoPath =
     input.repoPath !== undefined
-      ? resolve(input.repoPath)
+      ? await resolveRepoPath({ repoPath: input.repoPath })
       : await findRepoPathForBubbleFromCwd(input.cwd ?? process.cwd(), bubbleId);
 
   if (resolvedRepoPath === undefined) {

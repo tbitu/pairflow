@@ -1,3 +1,5 @@
+import { relative } from "node:path";
+
 import { buildAgentCommand } from "../../startCommandPromptRuntime.js";
 import { createStartBubbleError } from "./startCommandRuntime.js";
 import {
@@ -121,11 +123,15 @@ function buildActiveResumeStartupPrompts(input: {
   const activeRole = loadedState.active_role;
   const activeAgent = loadedState.active_agent;
   const bubbleConfig = input.context.resolved.bubbleConfig;
+  const relativeTaskArtifactPath = relative(
+    input.launchWorkspacePath,
+    input.context.resolved.bubblePaths.taskArtifactPath
+  );
   const common = {
     bubbleId: input.context.resolved.bubbleId,
     repoPath: input.context.resolved.repoPath,
     workspacePath: input.launchWorkspacePath,
-    taskArtifactPath: input.context.resolved.bubblePaths.taskArtifactPath,
+    taskArtifactPath: relativeTaskArtifactPath,
     pairflowCommandProfile: bubbleConfig.pairflow_command_profile,
     state: loadedState,
     transcriptSummary: input.transcriptSummary,
@@ -257,14 +263,20 @@ export async function launchFreshTmuxSession(input: {
       ? buildImplementerIdeationKickoffMessage({
           bubbleId: input.context.resolved.bubbleId,
           workspacePath: input.launchWorkspacePath,
-          taskArtifactPath: input.context.resolved.bubblePaths.taskArtifactPath,
+          taskArtifactPath: relative(
+            input.launchWorkspacePath,
+            input.context.resolved.bubblePaths.taskArtifactPath
+          ),
           pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
           agentName: input.context.resolved.bubbleConfig.agents.implementer
         })
       : buildImplementerKickoffMessage({
           bubbleId: input.context.resolved.bubbleId,
           workspacePath: input.launchWorkspacePath,
-          taskArtifactPath: input.context.resolved.bubblePaths.taskArtifactPath,
+          taskArtifactPath: relative(
+            input.launchWorkspacePath,
+            input.context.resolved.bubblePaths.taskArtifactPath
+          ),
           reviewArtifactType: input.context.resolved.bubbleConfig.review_artifact_type,
           pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
           validationCommands: input.context.resolved.bubbleConfig.commands,
