@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
 import type { Finding } from "../../../contracts/kernel/findings.js";
@@ -6,6 +7,11 @@ import {
   isPassIntent,
   type PassIntent
 } from "../../../contracts/kernel/protocol.js";
+import {
+  getBubbleEmitHistoryPath,
+  getRuntimeEmitHistoryPath,
+  recordAgentEmitAttemptBestEffort
+} from "../../../v11/infrastructure/artifact/actorProtocol/emitHistoryStore.js";
 import {
   actorOutputKinds,
   isActorOutputKind,
@@ -450,126 +456,223 @@ function parseAgentEmitArgs(args: string[]) {
   }
 }
 
+function extractEmitAttemptMetadata(args: string[]): {
+  bubbleId?: string | undefined;
+  repo?: string | undefined;
+  kind?: string | undefined;
+  role?: string | undefined;
+} {
+  const meta: {
+    bubbleId?: string | undefined;
+    repo?: string | undefined;
+    kind?: string | undefined;
+    role?: string | undefined;
+  } = {};
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (typeof arg !== "string") {
+      continue;
+    }
+    if (arg === "--bubble-id" && i + 1 < args.length) {
+      const next = args[i + 1];
+      if (typeof next === "string") {
+        meta.bubbleId = next;
+      }
+    } else if (arg.startsWith("--bubble-id=")) {
+      meta.bubbleId = arg.slice("--bubble-id=".length);
+    } else if (arg === "--repo" && i + 1 < args.length) {
+      const next = args[i + 1];
+      if (typeof next === "string") {
+        meta.repo = next;
+      }
+    } else if (arg.startsWith("--repo=")) {
+      meta.repo = arg.slice("--repo=".length);
+    } else if (arg === "--kind" && i + 1 < args.length) {
+      const next = args[i + 1];
+      if (typeof next === "string") {
+        meta.kind = next;
+      }
+    } else if (arg.startsWith("--kind=")) {
+      meta.kind = arg.slice("--kind=".length);
+    } else if (arg === "--expected-role" && i + 1 < args.length) {
+      const next = args[i + 1];
+      if (typeof next === "string") {
+        meta.role = next;
+      }
+    } else if (arg.startsWith("--expected-role=")) {
+      meta.role = arg.slice("--expected-role=".length);
+    }
+  }
+  return meta;
+}
+
+function resolveEmitHistoryTargetPath(repoPath?: string, bubbleId?: string): string {
+  const repo = resolve(repoPath ?? process.cwd());
+  if (bubbleId && bubbleId.trim().length > 0) {
+    return getBubbleEmitHistoryPath(join(repo, ".pairflow", "bubbles", bubbleId.trim()));
+  }
+  return getRuntimeEmitHistoryPath(join(repo, ".pairflow", "runtime"));
+}
+
 export async function runAgentEmitCommand(
   args: string[]
 ): Promise<ReturnType<typeof emitActorProtocolFromWorkspace> | null> {
-  const parsed = parseAgentEmitCommandOptions(args);
-  if (parsed.help) {
-    return null;
-  }
-  const authoritativeContext = await resolveActorEmitContextByBubbleId({
-    bubbleId: parsed.input.bubble_id,
-    repoPath: parsed.input.repo
-  });
-  const dependencies = {
-    askHuman: {
-      emitDeliveryNotificationAck,
-      emitBubbleNotification,
-      resolveDeliveryMessageRef,
-      emitBubbleLifecycleEventBestEffort
-    },
-    pass: {
-      emitDeliveryNotificationAck:
-        reviewerDeliveryDefaults.emitDeliveryNotificationAck,
-      refreshReviewerContext: reviewerDeliveryDefaults.refreshReviewerContext,
-      readReviewerBriefArtifact:
-        reviewerDeliveryDefaults.readReviewerBriefArtifact,
-      readReviewerFocusArtifact:
-        reviewerDeliveryDefaults.readReviewerFocusArtifact,
-      resolveDeliveryMessageRef:
-        reviewerDeliveryDefaults.resolveDeliveryMessageRef,
-      verifyImplementerTestEvidence:
-        reviewerDeliveryDefaults.verifyImplementerTestEvidence,
-      writeReviewerTestEvidenceArtifact:
-        reviewerDeliveryDefaults.writeReviewerTestEvidenceArtifact,
-      resolveReviewerTestExecutionDirectiveFromArtifact:
-        reviewerDeliveryDefaults.resolveReviewerTestExecutionDirectiveFromArtifact,
-      readDocContractGateArtifact:
-        passValidationDefaults.readDocContractGateArtifact,
-      resolveDocContractGateArtifactPath:
-        passValidationDefaults.resolveDocContractGateArtifactPath,
-      writeDocContractGateArtifact:
-        passValidationDefaults.writeDocContractGateArtifact,
-      writeReviewVerificationArtifactAtomic:
-        passValidationDefaults.writeReviewVerificationArtifactAtomic,
-      resolveReviewVerificationInputFromRefs:
-        passValidationDefaults.resolveReviewVerificationInputFromRefs,
-      resolvePassValidationPolicy:
-        passValidationDefaults.resolvePassValidationPolicy,
-      runPassValidationCommand:
-        passValidationDefaults.runPassValidationCommand,
-      buildPassValidationEvidenceArtifact:
-        passValidationDefaults.buildPassValidationEvidenceArtifact,
-      createPassValidationReviewerDirective:
-        passValidationDefaults.createPassValidationReviewerDirective,
-      resolvePassValidationArtifactPath:
-        passValidationDefaults.resolvePassValidationArtifactPath,
-      resolvePassValidationReviewerCompatibilityArtifactPath:
-        passValidationDefaults.resolvePassValidationReviewerCompatibilityArtifactPath,
-      isPassValidationRunnerExecutionError: (
-        error: unknown
-      ): error is PassValidationRunnerExecutionError =>
-        error instanceof PassValidationRunnerExecutionError,
-      writePassValidationEvidenceArtifact:
-        passValidationDefaults.writePassValidationEvidenceArtifact,
-      writePassValidationReviewerCompatibilityArtifact:
-        passValidationDefaults.writePassValidationReviewerCompatibilityArtifact
-    },
-    convergence: {
-      readTranscriptEnvelopes:
-        convergedDependencyDefaults.flow.readTranscriptEnvelopes,
-      resolveBubbleFromWorkspaceCwd:
-        convergedDependencyDefaults.routing.resolveBubbleFromWorkspaceCwd,
-      ensureBubbleInstanceIdForMutation:
-        convergedDependencyDefaults.routing.ensureBubbleInstanceIdForMutation,
-      readStateSnapshot:
-        convergedDependencyDefaults.routing.readStateSnapshot,
-      appendProtocolEnvelope:
-        convergedDependencyDefaults.execution.appendProtocolEnvelope,
-      emitDeliveryNotificationAck:
-        convergedDependencyDefaults.execution.emitDeliveryNotificationAck,
-      emitBubbleNotification:
-        convergedDependencyDefaults.execution.emitBubbleNotification,
-      resolveDeliveryMessageRef:
-        convergedDependencyDefaults.execution.resolveDeliveryMessageRef,
-      gateEmitDeliveryNotificationAck:
-        convergedDependencyDefaults.gateDelivery.emitDeliveryNotificationAck,
-      gateResolveDeliveryMessageRef:
-        convergedDependencyDefaults.gateDelivery.resolveDeliveryMessageRef,
-      readDocContractGateArtifact:
-        convergedDependencyDefaults.validation.readDocContractGateArtifact,
-      readReviewVerificationArtifactStatus:
-        convergedDependencyDefaults.validation.readReviewVerificationArtifactStatus,
-      resolveDocContractGateArtifactPath:
-        convergedDependencyDefaults.validation.resolveDocContractGateArtifactPath,
-      writeSummaryVerifierConsistencyGateArtifact:
-        convergedDependencyDefaults.validation.writeSummaryVerifierConsistencyGateArtifact,
-      assessPairflowCommandPath:
-        convergedDependencyDefaults.finalization.assessPairflowCommandPath,
-      resolveReviewerTestExecutionDirective
-    },
-    metaReview: {
-      readFile,
-      emitDeliveryNotification: metaReviewDefaults.emitDeliveryNotificationAck,
-      buildDeliveryMessageRef: metaReviewDefaults.resolveDeliveryMessageRef,
-      readRuntimeSessionsRegistry: metaReviewDefaults.readRuntimeSessionsRegistry,
-      readTranscriptEnvelopes:
-        metaReviewGateDependencyDefaults.readTranscriptEnvelopes,
-      setMetaReviewerPaneBinding:
-        metaReviewGateDependencyDefaults.setMetaReviewerPaneBinding,
-      notifyMetaReviewerSubmissionRequest:
-        notifyMetaReviewerSubmissionRequest,
-      resolveMetaReviewerPaneWarning,
-      runMetaReviewApproveValidationCommand:
-        metaReviewDefaults.runPassValidationCommand,
-      runtime: metaReviewGateDependencyDefaults.runtime
+  const startTime = Date.now();
+  const attemptMeta = extractEmitAttemptMetadata(args);
+  const targetLogPath = resolveEmitHistoryTargetPath(attemptMeta.repo, attemptMeta.bubbleId);
+
+  try {
+    const parsed = parseAgentEmitCommandOptions(args);
+    if (parsed.help) {
+      return null;
     }
-  } as const;
-  return emitActorProtocolFromWorkspace(
-    {
-      input: parsed.input,
-      authoritativeContext
-    },
-    dependencies
-  );
+    const authoritativeContext = await resolveActorEmitContextByBubbleId({
+      bubbleId: parsed.input.bubble_id,
+      repoPath: parsed.input.repo
+    });
+    const dependencies = {
+      askHuman: {
+        emitDeliveryNotificationAck,
+        emitBubbleNotification,
+        resolveDeliveryMessageRef,
+        emitBubbleLifecycleEventBestEffort
+      },
+      pass: {
+        emitDeliveryNotificationAck:
+          reviewerDeliveryDefaults.emitDeliveryNotificationAck,
+        refreshReviewerContext: reviewerDeliveryDefaults.refreshReviewerContext,
+        readReviewerBriefArtifact:
+          reviewerDeliveryDefaults.readReviewerBriefArtifact,
+        readReviewerFocusArtifact:
+          reviewerDeliveryDefaults.readReviewerFocusArtifact,
+        resolveDeliveryMessageRef:
+          reviewerDeliveryDefaults.resolveDeliveryMessageRef,
+        verifyImplementerTestEvidence:
+          reviewerDeliveryDefaults.verifyImplementerTestEvidence,
+        writeReviewerTestEvidenceArtifact:
+          reviewerDeliveryDefaults.writeReviewerTestEvidenceArtifact,
+        resolveReviewerTestExecutionDirectiveFromArtifact:
+          reviewerDeliveryDefaults.resolveReviewerTestExecutionDirectiveFromArtifact,
+        readDocContractGateArtifact:
+          passValidationDefaults.readDocContractGateArtifact,
+        resolveDocContractGateArtifactPath:
+          passValidationDefaults.resolveDocContractGateArtifactPath,
+        writeDocContractGateArtifact:
+          passValidationDefaults.writeDocContractGateArtifact,
+        writeReviewVerificationArtifactAtomic:
+          passValidationDefaults.writeReviewVerificationArtifactAtomic,
+        resolveReviewVerificationInputFromRefs:
+          passValidationDefaults.resolveReviewVerificationInputFromRefs,
+        resolvePassValidationPolicy:
+          passValidationDefaults.resolvePassValidationPolicy,
+        runPassValidationCommand:
+          passValidationDefaults.runPassValidationCommand,
+        buildPassValidationEvidenceArtifact:
+          passValidationDefaults.buildPassValidationEvidenceArtifact,
+        createPassValidationReviewerDirective:
+          passValidationDefaults.createPassValidationReviewerDirective,
+        resolvePassValidationArtifactPath:
+          passValidationDefaults.resolvePassValidationArtifactPath,
+        resolvePassValidationReviewerCompatibilityArtifactPath:
+          passValidationDefaults.resolvePassValidationReviewerCompatibilityArtifactPath,
+        isPassValidationRunnerExecutionError: (
+          error: unknown
+        ): error is PassValidationRunnerExecutionError =>
+          error instanceof PassValidationRunnerExecutionError,
+        writePassValidationEvidenceArtifact:
+          passValidationDefaults.writePassValidationEvidenceArtifact,
+        writePassValidationReviewerCompatibilityArtifact:
+          passValidationDefaults.writePassValidationReviewerCompatibilityArtifact
+      },
+      convergence: {
+        readTranscriptEnvelopes:
+          convergedDependencyDefaults.flow.readTranscriptEnvelopes,
+        resolveBubbleFromWorkspaceCwd:
+          convergedDependencyDefaults.routing.resolveBubbleFromWorkspaceCwd,
+        ensureBubbleInstanceIdForMutation:
+          convergedDependencyDefaults.routing.ensureBubbleInstanceIdForMutation,
+        readStateSnapshot:
+          convergedDependencyDefaults.routing.readStateSnapshot,
+        appendProtocolEnvelope:
+          convergedDependencyDefaults.execution.appendProtocolEnvelope,
+        emitDeliveryNotificationAck:
+          convergedDependencyDefaults.execution.emitDeliveryNotificationAck,
+        emitBubbleNotification:
+          convergedDependencyDefaults.execution.emitBubbleNotification,
+        resolveDeliveryMessageRef:
+          convergedDependencyDefaults.execution.resolveDeliveryMessageRef,
+        gateEmitDeliveryNotificationAck:
+          convergedDependencyDefaults.gateDelivery.emitDeliveryNotificationAck,
+        gateResolveDeliveryMessageRef:
+          convergedDependencyDefaults.gateDelivery.resolveDeliveryMessageRef,
+        readDocContractGateArtifact:
+          convergedDependencyDefaults.validation.readDocContractGateArtifact,
+        readReviewVerificationArtifactStatus:
+          convergedDependencyDefaults.validation.readReviewVerificationArtifactStatus,
+        resolveDocContractGateArtifactPath:
+          convergedDependencyDefaults.validation.resolveDocContractGateArtifactPath,
+        writeSummaryVerifierConsistencyGateArtifact:
+          convergedDependencyDefaults.validation.writeSummaryVerifierConsistencyGateArtifact,
+        assessPairflowCommandPath:
+          convergedDependencyDefaults.finalization.assessPairflowCommandPath,
+        resolveReviewerTestExecutionDirective
+      },
+      metaReview: {
+        readFile,
+        emitDeliveryNotification: metaReviewDefaults.emitDeliveryNotificationAck,
+        buildDeliveryMessageRef: metaReviewDefaults.resolveDeliveryMessageRef,
+        readRuntimeSessionsRegistry: metaReviewDefaults.readRuntimeSessionsRegistry,
+        readTranscriptEnvelopes:
+          metaReviewGateDependencyDefaults.readTranscriptEnvelopes,
+        setMetaReviewerPaneBinding:
+          metaReviewGateDependencyDefaults.setMetaReviewerPaneBinding,
+        notifyMetaReviewerSubmissionRequest:
+          notifyMetaReviewerSubmissionRequest,
+        resolveMetaReviewerPaneWarning,
+        runMetaReviewApproveValidationCommand:
+          metaReviewDefaults.runPassValidationCommand,
+        runtime: metaReviewGateDependencyDefaults.runtime
+      }
+    } as const;
+    const result = await emitActorProtocolFromWorkspace(
+      {
+        input: parsed.input,
+        authoritativeContext
+      },
+      dependencies
+    );
+
+    await recordAgentEmitAttemptBestEffort({
+      targetPath: targetLogPath,
+      entry: {
+        ts: new Date().toISOString(),
+        bubble_id: parsed.input.bubble_id,
+        repo: parsed.input.repo,
+        role: authoritativeContext.expected_role ?? attemptMeta.role ?? null,
+        kind: parsed.input.kind,
+        status: "success",
+        args,
+        duration_ms: Date.now() - startTime
+      }
+    });
+
+    return result;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await recordAgentEmitAttemptBestEffort({
+      targetPath: targetLogPath,
+      entry: {
+        ts: new Date().toISOString(),
+        bubble_id: attemptMeta.bubbleId ?? null,
+        repo: attemptMeta.repo ?? null,
+        role: attemptMeta.role ?? null,
+        kind: attemptMeta.kind ?? null,
+        status: "rejected",
+        error_reason: errorMessage,
+        args,
+        duration_ms: Date.now() - startTime
+      }
+    });
+    throw error;
+  }
 }
