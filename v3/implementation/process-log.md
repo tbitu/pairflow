@@ -4728,3 +4728,1155 @@ final CLEAN.
   obligations/carried items with the conscious-carrier requirement.
   The §1.3 carried-items block (402248a3) is the retroactive
   execution of the route's defined action.
+- 2026-07-25 · V1 PROMPT-PARITY AUDIT captured as a reference surface
+  (`v1-prompt-parity-audit.md`), at the owner's request during the
+  ch13 scoping round. Origin: the owner questioned whether L2b's
+  `context_blocks` really cover an actor's instruction needs, since
+  v1 mixes role-specific guidance with "how to behave inside
+  Pairflow" protocol prose. Measurement: v1's 37 `PromptConcernId`
+  entries split A/B/C = protocol 11 / role-judgment 9 /
+  run-instance-data 17, with only 11 of 37 carrying a body an L2b
+  static catalog can hold. Mapping: class C is already realized as
+  ContextPacket FIELDS; class A is mechanized by the adapter env
+  pair plus EC's `op_contracts` (EC unbuilt, 1/12 units); class B is
+  L2b's actual constituency. Named open gap: no v3 surface tells a
+  real actor the emit envelope shape — the ch9 dogfooding tier-2 leg
+  supplied it by hand in the `--actor-cmd` invocation. TWO CARRIERS
+  chosen per the R-PRESENT-TENSE reference-economy rule (a forward
+  obligation needs a derivation-visible carrier, never prose-only):
+  the audit doc for the MEASUREMENT, and plan §1.3 carried item (3)
+  for the OBLIGATION — the MVP-cut vs v1-parity re-read, due before
+  the plan sequences the post-L2b chapters. The model plane was NOT
+  edited: the cut is a ratified model-plane decision, and a finding
+  that the cut itself is mis-drawn routes to the model↔code
+  divergence stop.
+- 2026-07-25 · ch13 (context blocks) RATIFIED (user GO). The §1.3
+  third named candidate — the L2b context-block surface, excluded at
+  ch11 with the stated condition "naturally after ch 9 when a real
+  actor adapter consumes dispatched packets" — entered as chapter 13,
+  the THIRD live use of the map-extension mechanism; the condition
+  came true at the ch9 close (the shipped adapter materializes the
+  ContextPacket as canonical packet.json, so a rendered block reaches
+  a real actor with no prompt-assembly layer between). Four scoping
+  decisions, taken stepwise: (1) acceptance floor = capability AND
+  shipped wiring — the shipped template gains a REAL catalog entry
+  plus a journey smoke, over the capability-only option, on the
+  R-ACTIVATION-JOURNEY basis; (2) the ch9-carried EPIPE item rides as
+  the chapter's own first packet, not folded (one packet = one
+  logical change; a Light opener is a clean first Opus calibration
+  point); (3) ONE contract-draft for the L2b surface, the EPIPE
+  closed-pipe contract staying a packet-time decision per the
+  decision-home triage (single-packet decision, no cross-packet drift
+  to prevent); (4) no chapter-named Fable-mandatory slice.
+  TWO CARRIER ACTS came out of the owner's "what guarantees the
+  pickup?" questions, both applying the R-PRESENT-TENSE
+  reference-economy rule to this chapter's own residuals: (a) the EC
+  emit-contract surface entered as the FIFTH named §1.3
+  map-extension candidate, with the retirement of ch13's interim
+  emit-envelope catalog entry BOUND INTO the DoD of whichever chapter
+  takes it (the ch9-detached-audit inheritance shape) — the owner
+  rejected the proposed unit-map tripwire test, choosing the plan
+  surface alone; the first proposal (a test guessing a future field
+  name) was correctly refused as unreliable and replaced with a
+  unitMap-anchored form before the choice. (b) The gate-vs-prose
+  parity residual: the model plane already carries it as two named
+  Absents, so the chapter adds only AUTHORING-TIME aim where the risk
+  is CREATED — a required draft C-row on catalog authoring plus a
+  comment beside the catalog in the shipped template. Both recorded
+  as aim, not enforcement; the owner named the limit explicitly and
+  accepted it. Note the chapter ships NO gate-describing body (the
+  round>=2 gate stays out of the shipped template as a product
+  decision), so the drift risk is latent by construction here.
+- 2026-07-26 · ch13 CONTRACT-DRAFT RATIFIED (user GO after a stepwise
+  digest round — six decision points EZX-explained, two owner
+  additions landed mid-round: the §1.3 system-vs-workflow
+  sub-question and the §13.5(f) integer-key-ban boundary item; plus
+  FH-3, the parse-don't-validate reform record, born from the
+  owner's C17 design challenge). The act: four commits per the C16
+  choreography — content 16a668b0 (19 rows + 6 plan edits + FH-3) →
+  ch11 reopen 1 f507cda2 (C4/C30/C41 site edits, loud-red window
+  open: 157 anchor errors BY DESIGN) → ch11 reopen 2 e0bc30a1
+  (fourth reopen record, reopenings 3 → 4 as a new dated line, map
+  restored per the itemized duties, window closed: lint 0 errors,
+  realized-map 4/4 green) → this ratifying commit. Panel stats:
+  5 rounds (4 full + 1 targeted, all lenses Opus-class) + 1
+  reconciliation + top-level close CLEAN @ 20a3c3d2; yield curve
+  45 → 30 → 25 → 15 → 7; 6 P1-class findings, all folded and
+  verified landed; 3 substrate probes (CB1/CB2/CB3 — CB2's first
+  consequence claim was CORRECTED by the round-2 panel: the loader's
+  mapAsMap:true prevents the collapse, so the fix was a lane, not a
+  watch). External arm: consciously waived by the owner (optional at
+  drafts; the two mandatory arm gates are packet-side). Model
+  protocol note: the draft loop ran on the Fable main thread per the
+  experiment-2 category rule (the session was switched BEFORE any
+  draft work — the plan-section deviation was recorded separately).
+  NEXT: ch13-P0 (EPIPE hygiene packet, human-approved) on the
+  user's prompt, Opus-class main thread per the chapter arm.
+
+
+- 2026-07-31 (ch13-P0, arm gate-1 rounds 1–4) — ONE RULE RESTATED AT
+  EIGHT SURFACES COSTS THREE FOLD ROUNDS. The cleanup-throw precedence
+  on E3's branch 2 was minted at gate-1 round 1, stated canonically,
+  and then took three further arm rounds (each 7–14 min) to reach all
+  its restating surfaces: grid rows, E11, flags 3/4, families 2/3/6,
+  the sensitivity probe. Each round the author patched the sites the
+  arm named instead of enumerating them; the Mirrored Surface Map did
+  NOT prevent it, because the map listed the mirrors that existed when
+  the row was written, not the ones a LATER clause would acquire.
+  What worked: a prompt that demanded a COMPLETE propagation
+  enumeration (every asserting site, each marked qualified /
+  missing / not-applicable) instead of "find the problems" — round 4
+  returned all 27 sites and closed the class. Owner decision
+  (2026-07-31): keep the restatement form for THIS packet (it freezes
+  at build; self-containment is the packet form's own rule) and carry
+  the structural question to the boundary. BOUNDARY CANDIDATES: (a) a
+  fold that ADDS a clause to a canonical row must re-derive that row's
+  mirror list, not reuse it; (b) the propagation-enumeration prompt
+  shape as the standing form for a multi-mirror fold's verification.
+
+- 2026-07-31 (ch13-P0, arm gate-2 + re-check) — A RED-ON-BREAK RECEIPT
+  TAKEN AGAINST A RED BASELINE IS NOT EVIDENCE. All eleven mutation
+  probes of this packet ran `../node_modules/.bin/vitest` (the ROOT
+  Vitest 3.2.4) instead of `pnpm exec vitest` (the v3-local 4.1.10).
+  Measured: under the root runner the UNMUTATED seam suite is already
+  red (2 of 45), so every receipt's `suite_red: true` was consistent
+  with any mutation at all — including a no-op. `probe_runner.py`
+  cannot catch this: it byte-verifies the backup, the mutation and the
+  restore, but the TEST COMMAND is the caller's and it only checks a
+  nonzero exit. The builder inherited the wrong command and the
+  orchestrator repeated it; the external arm found it by running the
+  baseline itself. All eleven were regenerated canonically from a
+  green baseline, mutations reconstructed from the probe table rather
+  than reused. BOUNDARY CANDIDATES: (a) `probe_runner.py` should run
+  the test command ONCE unmutated first and fail loudly if that
+  baseline is not green — the one check that closes this class
+  mechanically; (b) the packet template's probe obligation should name
+  the canonical runner invocation, not just "the probe runner".
+  Second data point in the same session for the gate-2 class: the arm
+  earns its cost exactly where a claim is green-by-construction.
+
+- 2026-07-31 (ch13-P0, arm gate-2 passes 1–3) — PARTIAL FIXES TO A
+  CROSS-PRODUCT BUY EXACTLY ONE ROUND EACH. Three gate-2 passes, three
+  findings, all the same shape: E2's rule is "classify by error CODE
+  and by nothing else — not by delivery path, not by stream state",
+  and the test fixture kept FIXING one of the axes the rule declares
+  irrelevant. Pass 1: one non-EPIPE code and one carrier shape → a
+  `not-EACCES` and an `instanceof Error` classifier both survived.
+  Pass 2 (after crossing carrier × path): the carrier lanes ran on
+  stdout only → an `instanceof Error` classifier scoped to STDERR
+  survived. Each fix was verified by executed mutation and each was
+  still partial. The close came from rewriting the lanes as the FULL
+  cross-product — carrier × path × stream, code-domain × path × stream
+  — plus identity assertions on the propagated value; a self-hunted
+  corner mutant (EPERM as closure, sync path, stdout only) then died
+  too. BOUNDARY CANDIDATE: when a canonical row states that a
+  classification is independent of N named axes, the acceptance family
+  must cross ALL N — "N axes declared irrelevant" is a mechanical
+  membership rule, not a judgement call, and it is cheap in-process.
+  Product code was untouched by all three aftermaths: every finding
+  was in the evidence, never in the behavior.
+
+- 2026-07-31 (ch13-P0, arm gate-2 pass 4) — READ THE AXIS LIST OFF THE
+  RULE, NOT OFF THE FIXTURE. Aftermath 3 called its lanes a "full
+  cross-product" and was wrong by one axis, because the axes were
+  enumerated from what the fixture happened to vary (carrier, path,
+  stream) instead of from the canonical row's own sentence: "by error
+  CODE and by nothing else — not by delivery path, not by stream
+  STATE, not by verb". Stream state was never crossed, so two wrong
+  classifiers survived 1818 tests (a closed stream swallowing every
+  later report; a repeat EPIPE rethrown once closed). This is the
+  same class as the ch13-P0 mirror-propagation friction one level up:
+  a completeness claim derived from the artifact instead of from the
+  rule it implements. BOUNDARY CANDIDATE, sharpened: when a canonical
+  row says a decision is independent of N NAMED things, the acceptance
+  family's membership is the cross-product of those N names — quote
+  them, do not paraphrase them — and any cell unreachable by
+  construction is NAMED with its reason rather than silently dropped.
+
+- 2026-07-31 (ch13-p1, panel rounds 1–5 + three arm rounds,
+  mid-flight) — THE LOOP'S SERIOUS FINDINGS WERE ITS OWN FOLD
+  BYPRODUCTS. Yield measurement across five internal panel rounds and
+  three external-arm rounds on the authoring review: not one design
+  error surfaced beyond the original draft — the draft's design
+  content held throughout; every serious late-round finding traced to
+  an earlier fold, and the recurring shape was a "one rule, stated
+  once" violation (a fold restating a rule on a second surface, the
+  copies then drifting). NOT a convergence claim: the loop was still
+  mid-flight when the session ended on context budget (STOP
+  `4:flagged-approve` pending the §5.5 arm re-check on 6f6f039c and a
+  lens-4 reconciliation) — the realized value so far is governance
+  (F1/F2 minted as new-decision) and stability verification;
+  design-discovery yield was zero. BOUNDARY CANDIDATES: (a) FOLD
+  HYGIENE — a fold touching a rule stated on more than one surface
+  must edit the canonical row in the packet's mirrored surface map
+  and re-point the mirrors, never restate; the map exists for exactly
+  this, and folds bypassing it were the measured error source. (b) A
+  DELTA-AWARE TIER FOR THE MANDATORY FULL RE-RUN — ReviewPacket §5's
+  manifest-class escalation is right as governance, but the measured
+  FULL re-runs spent most of their budget re-deriving unchanged
+  mechanical surfaces (~40 findings/round, overwhelmingly
+  reproduction); a tier that hands each lens the delta list and
+  directs full effort at changed rows plus their entailment
+  neighborhood, spot-checking the rest, keeps the governance and cuts
+  the premium. (c) PER-ROUND YIELD CLASSIFICATION as a standing
+  report line — each round's findings counted as new-design-error /
+  fold-byproduct / reproduction — so convergence becomes readable
+  from data and a stop signal (e.g. two consecutive rounds with zero
+  non-byproduct findings) can be ratified from more than one packet's
+  evidence rather than this n=1.
+
+- 2026-08-01 (ch13-p1, panel round 7 + arm round 4 — the measurement
+  the 07-31 entry asked for) — THE ZERO-DESIGN-YIELD FINDING DID NOT
+  HOLD; THE UNDECIDED REGION WAS THE SOURCE. The 07-31 entry recorded
+  that across five panel rounds and three arm rounds "not one design
+  error surfaced beyond the original draft". Round 7 falsified that
+  with executed evidence: a type-conforming, CAST-FREE template
+  (`{ BAD_KEY: {body:"x"} }`, zero refs) ADMITTED while carrying two
+  members of the packet's own declared defect inventory, and the
+  rung's raising-site enumeration entailed two FILE-CHANNEL sites it
+  did not name. Both predate every fold. What made them findable was
+  not more rounds but a lens running its FULL duty set with probes —
+  the delta-scoped rounds that produced the 07-31 measurement could
+  not have found them, because neither defect sat near a delta. Read
+  together with 07-31: boundary candidate (c) — per-round yield
+  classification — is CONFIRMED useful and now has n=2 with opposite
+  results; candidate (b) — a delta-aware tier for the mandatory FULL
+  re-run — is NARROWED: cheap delta-scoping is right for
+  propagation-class churn and WRONG as the only mode, because it is
+  structurally blind to pre-existing holes. A FULL duty-set pass with
+  executed probes must remain reachable, and the escalation rule that
+  reaches it (a skipped lens that cannot be PROVEN unaffected) is what
+  produced this round.
+
+- 2026-08-01 (ch13 contract, two reopens in one day) — A DRAFT MAY NOT
+  DELEGATE A CHANNEL'S DISCIPLINE TO "THE TESTKIT AUTHOR" WITHOUT
+  STATING WHAT THE RUNG DOES THERE. The ch13 memo surface proved
+  under-specified TWICE on the same channel semantics: first C1's
+  shape-identity grain, then the whole direct-construction region
+  (C7/C8(c)/C2/C19). The second was not a wording defect — the rows
+  had genuinely declined to decide, C19 handing catalog shape to "the
+  testkit author's discipline" on a type-foreclosure premise that
+  measurement falsified, and C8(c) conditioning its exclusion on a
+  finding that never exists on that channel. Every packet projecting
+  those rows therefore had to INVENT policy, and each invention grew
+  edges the next round found: three consecutive rounds, three P1s, one
+  region. THE RULE FOR FUTURE DRAFT ROUNDS: when a draft names a
+  channel, an actor, or a caller class as owning some discipline, that
+  is a delegation of AUTHORING care, never of RUNTIME behavior — the
+  row must still state what the kernel does when the delegated care is
+  absent, or the delegation is an undecided region wearing a decision's
+  clothes. Litmus at draft time: "what does the code do when this
+  actor gets it wrong?" — if the rows do not answer, the region is
+  undecided and the packet loop will pay for it, round after round.
+
+- 2026-08-01 (ch13-p1, the watchdog reset — a RATIFIED act, recorded
+  so it is auditable rather than self-granted) — WATCHDOG COUNT RESET
+  ON A RE-RATIFIED ANCHOR BASIS, UNDER A NARROWED FRAME. State at the
+  request: 7 of the 8 panel rounds spent. The user reset the count and
+  the loop did NOT grant it to itself — the standing rule stays "the
+  cap is not a tuning lever". RATIFIED REASONING: the watchdog's
+  pathology is churn on a STABLE target; here the anchors themselves
+  moved twice under the packet by human-ratified reopen (C1's grain;
+  then the direct-construction region C7/C8(c)/C2/C19), and the round-7
+  yield reversal logged above shows convergence, not churn — a STOP
+  landing at round 8 would have carried a FALSE diagnosis, which is
+  worse than no STOP. TWO BINDING LIMITS, both the user's: (1) this
+  entry itself — a reset without its recorded reasoning is not a reset;
+  (2) the new frame is FOUR rounds, not eight, sized to the remaining
+  road (re-projection + one verification round + ratification + one
+  spare). If those four are spent on the now-unchanged re-ratified
+  basis, `3:watchdog` stands and its diagnosis is TRUE. No further
+  reset without a reopen, and a reopen does not grant one either — the
+  question returns to the human every time. GENERAL RULE this
+  establishes: a watchdog count is scoped to a target's ANCHOR BASIS;
+  when ratified anchors move under a target, the count may be re-based
+  by the human WITH a recorded reason and a frame sized to the
+  remaining work — never silently, never by the loop.
+
+- 2026-08-01 (ch13 contract, companion to the delegation rule above —
+  same day, same region, different failure class) — A MEASURABLE CLAIM
+  IN A DRAFT RATIFIES ONLY WITH AN EXECUTED PROBE. Adjacent to the
+  delegation rule, not the same: that rule catches misplaced
+  discipline ("the testkit author will care"); this one catches an
+  unmeasured statement of measurable fact ("the entry shape is
+  foreclosed by type"). The ch13 draft ratified C19 on a
+  type-foreclosure premise nobody had ever executed; lens 1's
+  tsc --strict probes falsified it mid-packet, and the whole
+  direct-construction reopen (C7/C8(c)/C2/C19) followed from that one
+  unmeasured sentence. The counter-example proving the duty is cheap:
+  at the re-ratification gate the reviewer ran the bytes' coded claims
+  (the Object.keys/hasOwn family) in seconds and caught "a primitive
+  enumerates to nothing" as measured-false BEFORE it ratified — the
+  same duty applied at draft time would have cost one tsc probe and
+  spared two reopens plus every human gate they pulled in. LITMUS AT
+  DRAFT TIME: any sentence of the class "by construction / the type
+  forecloses / cannot happen / reachable only by cast / enumerates to
+  nothing" names a measurement; it ratifies only alongside its
+  executed probe (the command and the observed result, dated in the
+  row the way C19's replacement now carries MEASURED 2026-08-01), else
+  the sentence is downgraded to an open question and the row must
+  decide behavior without leaning on it. ROUTE: boundary-review —
+  candidate duty for the draft-panel duty set, to be consolidated
+  beside the delegation rule at the chapter boundary.
+
+- 2026-08-02 (ch13-p1, the four-round frame's watchdog diagnosis —
+  recorded NOW, independent of the arm gate's outcome, at the user's
+  instruction) — CHURN COMPOSITION: AUTHOR-FOLD PROPAGATION ON A
+  CONTRACT-DENSE TARGET. Across the re-based frame every round found
+  real defects, but the composition barely moved: overwhelmingly
+  fold-byproducts of the AUTHOR's own edits, a handful of
+  contract-side corrections, and — the class that matters — two
+  pre-existing design defects that only EXECUTION surfaced. The
+  target states its rules on six to eight surfaces each; every fold
+  must walk all of them, and the measured byproduct rate of a single
+  batch reached ~10 new propagation defects per 12 edits. TWO
+  CANDIDATES the boundary review should weigh: (a) SPLIT — the
+  packet is 114 KB and its mirror count is the actual cost driver;
+  (b) MIRROR-COUNT REDUCTION — drive mirrors to pointer-only form so
+  a rule change edits one canonical row and re-points, instead of
+  re-stating. Candidate (b) is the cheaper experiment and is testable
+  on the next contract-dense packet.
+
+- 2026-08-02 (ch13-p1) — EXECUTION-VS-TEXT REACHES n=3, AND THE
+  EXECUTED-PROBE RULE IS CONFIRMED FROM THE PACKET SIDE. The third
+  instance: the packet's suppression matrix asserted that a gate
+  binding's ref lanes still fire under a DEAD-CONFIG event. Eight
+  text-based rounds carried it; one run of the live rung killed it —
+  the dead-config guard `continue`s at the EVENT grain
+  (`admit.ts:186-192`) before the binding loop (`:203`) and the
+  allowlist (`:214-221`), so those lanes cannot run, and the matrix
+  had been declaring a driven obligation no correct implementation
+  could satisfy. Contract check first: no ch13 C-row entailed the
+  matrix's direction, so the fix was a fold, not a reopen.
+  THE PACKET-SIDE COROLLARY, learned the same day: a WRITE-TIME
+  breach of the same rule produced its own P1 — a fold sentence
+  carried the word "measured" on an inference nobody had run
+  ("the Map-arrival residual is direct-channel only"), and one
+  execution refuted it. The rule therefore binds at authoring, not
+  only at review: a sentence may carry "measured" only with a run
+  behind it, dated, and where the thing itself cannot be run — a
+  lane that does not exist yet — the sentence must say DERIVED.
+
+- 2026-08-02 (ch13 contract, the third reopen — the executed-probe
+  rule reaches n+1 and gains a second half) — THE RULE BINDS THE
+  RATIFYING SIDE TOO, AND "DERIVED" NEEDS A NAMED MEASURER. Two
+  extensions, both bought with a live defect.
+  FIRST — PROVENANCE. The false sentence the arm's P1 killed
+  ("a nullish catalog admits, observably identical to the legal
+  absent-catalog state") did not come from the authoring loop's
+  drafting: it entered from the RATIFYING side's own proposal during
+  the second reopen, and was ratified without a probe behind it.
+  Measured afterwards: `admitTemplate` admits `contextBlocks: null`
+  and carries the `null` onto the admitted value, which the same
+  contract's C17 typed surface forbids. The executed-probe rule is
+  therefore not an author-side discipline — it binds every sentence
+  entering ratified bytes, whoever proposes it, and the ratification
+  gate is where that binds hardest because nothing downstream
+  re-measures a row's own prose.
+  SECOND — THE DERIVED FORM. Some true claims cannot be measured when
+  they are written: this one asserts what the admitted value will look
+  like AFTER a rebuild that does not exist yet. The pattern adopted
+  here, and reusable: a claim measurable TODAY carries a probe with
+  its result and date; a claim about future built behavior is marked
+  DERIVED and must NAME the carrier that will measure it (here: the
+  normalization family's empty-direction full-value equality member,
+  audited by the build-close sensitivity pass). A DERIVED claim with
+  no named verifier is a deferred assertion wearing a contract row's
+  clothes — the failure mode this entry exists to foreclose.
+
+- 2026-08-02 (ch13-p1 aftermath, user-raised at the 3:watchdog STOP) —
+  BOUNDARY CANDIDATE: A DECLARED-SCHEMA SUBSTRATE FOR THE TEMPLATE
+  SURFACE, replacing per-position hand-legislated lanes. The driving
+  observation is the user's: every new format surface (ch8, ch11,
+  ch12, ch13) re-legislates the same failure space in ratified prose —
+  container preconditions, key/value lanes, unknown keys,
+  null/scalar/array forgeries, suppression edges, path grammar,
+  channel symmetry — and the measured churn (mirror density,
+  one-rule-many-surfaces, the ch13 two-channel asymmetry class) is
+  largely THIS class. Candidate shape: one declarative schema per
+  surface ("this key: map of entries; this key: list of grammar-G
+  strings; defaults and normalization declared in place") plus ONE
+  validation engine owning containers, scalars, nullish, unknown keys,
+  finding paths, suppression, and normalization — running identically
+  on the file-walk and direct-construction channels, so channel
+  asymmetry becomes structurally impossible; contract rows then
+  RE-EXPRESS as schema declarations plus the genuinely semantic lanes
+  (reference resolution, unreferenced hygiene, dead-config
+  event-grain, per-occurrence duplicates), which stay bespoke but sit
+  on the shared substrate. Recorded for honesty — what it would NOT
+  have saved in ch13: the entry-belt and exclusion-deletion decisions
+  were real design choices; the schema shrinks their implementation
+  and prose surface, never the deciding. Cost side: a retrofit must
+  reproduce the ratified finding paths/messages or re-ratify them —
+  a cross-chapter, ADR-scale act, NOT a packet-scale fix; hence
+  boundary-routed, on the back burner until ch13 closes. Relation to
+  the committed diagnosis (ceb64427): this is the structural form of
+  "mirror-count reduction" at the system level.
+
+- 2026-08-02 (ch13-p1) — `3:watchdog` STOP REACHED AND HONOURED; the
+  brake worked. The four-round frame was spent, the arm gate ran
+  twice on approve-ready bytes and returned `refine` both times, so
+  the STOP landed with the TRUE diagnosis the 08-02 entry above had
+  pre-recorded. What the second arm run also established, and worth
+  keeping beside the STOP: the packet's substrate, inventory and
+  code-fidelity HELD — all seven premises reproduced, all four F1
+  widening members refused identically on both channels, all three
+  event guards stopped at the event grain, every ripple sweep count
+  matched with no omitted site, and `v3:test` ran 1830 tests green.
+  The STOP is about two statements, not about the packet's spine.
+  TWO DATA POINTS the human ratified alongside it.
+  (a) SCOPE SHAPE MUST MATCH DEFECT SHAPE. The third reopen was
+  scoped to the NULLISH catalog — an INSTANCE — while the defect was
+  the CLASS "an admitted catalog may be a non-record". The
+  instance-width fix closed one member and left the rest (a scalar,
+  an empty string, an empty array — measured: all five admit and are
+  carried unchanged), so the same seam tore again one round later.
+  The scope was set by the RATIFYING side, which is where this rule
+  bites: a class-shaped defect earns a class-width scope verdict, and
+  narrowing it is a decision with a cost, not a saving.
+  (b) THE SECOND P1 WAS A FOLD BYPRODUCT OF THE DERIVED-MEASURER
+  OBLIGATION ITSELF. Naming a measuring carrier for the derived
+  identity (the right rule, adopted the same day) added an acceptance
+  member requiring present-null ⇒ `{}`, while the family's older
+  mutant sentence still called `template.contextBlocks ?? {}` a
+  violation — so a correct implementation both satisfied and failed
+  the family. A new obligation must sweep the surface it lands on;
+  the obligation being CORRECT does not exempt its fold from the
+  mirror discipline.
+  (The declared-schema substrate candidate recorded at 4c1d481f is
+  the adjacent structural question, already routed past the chapter
+  close; not restated here.)
+
+- 2026-08-02 (ch13 contract, the fourth reopen — the executed-probe
+  rule's third form) — AN UNVERIFIED CITATION IS THE CITATION-SHAPED
+  FORM OF AN UNRUN "MEASURED". The rule already bound claims about
+  behaviour (run it, date it) and claims about future built behaviour
+  (mark DERIVED, name the measurer). The fourth reopen supplied the
+  missing third: the draft justified its new record predicate by
+  attributing it to C8(c) — "the predicate C8(c) already defines" —
+  and C8(c) defines no such thing (grep: zero occurrences; the
+  contract's only nearby text is C7's ratified "NO catalog-container
+  predicate is owed", which the attribution would have contradicted).
+  Caught at the ratification gate by the human, before GO. The
+  generalization: a sentence resting on ANOTHER row's authority is
+  making a checkable claim about that row, and checking it costs one
+  grep. Attribute nothing you have not read at the point of writing;
+  a borrowed authority that turns out absent is worse than a stated
+  decision, because it hides a decision inside a citation.
+  Corollary the same act produced: a MEASURED label travels with its
+  receipt INTO THE RECORD, not merely into the conversation where the
+  probe ran — the empty-array carry receipt was demanded into the
+  reopen record for exactly that reason.
+
+- 2026-08-02 (ch13-p1, the final arm verification and the structural
+  decision it forced — human-ratified) — MIRROR DRIFT IS A STRUCTURAL
+  DEFECT CLASS, NOT A DISCIPLINE FAILURE; THE ANSWER IS POINTER-ONLY
+  FORM PLUS A LINT DIMENSION. The last verification returned four
+  approval blockers, none deep, all real: a compile probe that cannot
+  catch the mutant it names; a mirror still saying "carried as
+  authored" after a class-width fold swept its siblings; an
+  acceptance family listing members the file channel cannot produce;
+  and — the fourth form of the same rule — FLAG F1 CALLING A
+  PROJECTED STATE "MEASURED" (a class-instance binding carrying
+  `contextBlockRefs`, which the live rung refuses today because this
+  very packet is what adds that key). Add it to the family: an unrun
+  "measured"; a DERIVED claim with no named measurer; an unverified
+  citation; and now a PROJECTED state wearing a measured label.
+  THE MEASUREMENT THAT DECIDED IT: across four consecutive
+  verifications every fold batch left 2–4 missed propagations — WITH
+  the mirrored-surface-map discipline observed each time. A discipline
+  followed and still failing at that rate is measurably insufficient;
+  the remedy has to be structural. SPLIT WAS REJECTED on the same
+  evidence: it would spread the mirrors across file boundaries rather
+  than remove them, so it is retained only as a NAMED FALLBACK if the
+  restructuring's own verification fails.
+  DECIDED (human, this date): (b) POINTER-ONLY MIRROR REDUCTION —
+  every rule stated ONCE at a canonical site carrying an identifier,
+  every former mirror site reduced to a fixed-form pointer token with
+  no restatement; plus (c) THE FLAG RULE — a flag's text states its
+  DECISION and cites the probe record, and carries no inline
+  measurement claim, so a flag's ratifiability can never hinge on a
+  stale "measured" left inside it. Guarded by a new `check_packet`
+  dimension (form: only pointer tokens at registered mirror sites,
+  every target resolvable, every canonical id unique; signature
+  tokens: a canonical rule's marker literals confined to its canonical
+  block and registered pointers, with an allowlist), scoped by
+  DECLARATION — the packet declares pointer-only form in its header
+  and only declaring packets are measured, the pre-v2 grandfathering
+  pattern; ch13-p1 is the first declarer. The semantic remainder that
+  tokens cannot catch — a rule REPHRASED rather than repeated — is
+  named as the arm's explicit obligation rather than left unsaid.
+  This is the same arc the executed-probe rule travelled: discipline
+  first, then structure plus a machine to hold it.
+
+- 2026-08-02 (the P11 pointer-lint build, scoped arm on the BUILDING
+  session's own work) — THE TOOLING-BUILDER SESSION IS ARM-OBLIGED
+  EXACTLY LIKE A CONTENT-BUILDER, and the 07-08 RULE CANDIDATE
+  ("contract-enforcing tooling is itself contract-dense invention and
+  gets packet-grade treatment — 'it is a script, not a packet'
+  exempts nothing") gains its strongest datum yet: the P11 dimension
+  was built in the main session with deterministic checks only
+  (selftest red dims, live-tree lint, an executed tsc probe), and a
+  USER-DIRECTED scoped arm run on that same session's output returned
+  REFINE with TEN blockers — five P1 false-green paths in the
+  dimension itself (signature-at-canonical never required; anchor
+  slug unvalidated; table-paragraph legality leak; reserved lane
+  family accepted as canonical; allow-substring overmatch), a
+  selftest that stayed green when the arm DELETED two of the
+  dimension's own claim branches (claims without their red fixtures —
+  the round-6 selftest-derives-from-claims lesson reproduced on fresh
+  code), and a packet-side proof that the semantic tail is real (a
+  meaning-INVERTED Claim 1 linted green). All ten carry executed
+  mutant evidence. The general form, user-named: a session that
+  builds GUARD MACHINERY needs the fresh-context adversarial pass
+  BEFORE anything builds on the guard — the builder's own
+  deterministic evidence proves the happy path, never the guard's
+  blind spots, and a guard's blind spots are precisely its product
+  surface. Applied: the ten findings become the fix worklist with
+  per-claim red fixtures, and the scoped arm re-runs before the
+  remaining 22-rule conversion proceeds.
+
+- 2026-08-02 (ch13-p1, the pointer-only form's first full arm gate) —
+  THE 6/9 SPLIT: THE FIRST INVENTORY OF A DESIGNED DIVISION OF LABOUR,
+  NOT A STRUCTURAL FAILURE. Converting all 28 rules to pointer-only
+  form and then running the arm with an explicit
+  semantic-restatement charter produced the first measurement of who
+  catches what: the P11 lint caught SIX verbatim restatements during
+  conversion; the arm then found NINE implementable PARAPHRASES that
+  P11 is by construction blind to (it confines literals). Read
+  correctly, that is the design working — literal drift is now
+  mechanically impossible, and the semantic remainder was NAMED as
+  the arm's obligation before the run rather than discovered after.
+  The human ratified continuing inside the pointer form on this
+  evidence, rejecting split a SECOND time and with numbers: fixing
+  nine paraphrases is a pointer-form operation, and split would not
+  touch the semantic class at all — it would only distribute it.
+  A SIDE YIELD worth recording: the conversion AUDITED the map it
+  replaced. Four of the first nine rows named mirrors that were wrong
+  or absent (a dimension filed under the wrong rule; an
+  additivity dimension listed as a skip mirror; an unnamed fifth
+  mirror in the sizing section), and one row turned out to be TWO
+  rules — the G8 own-property discipline has a write half at F1 and a
+  read half at A3, which a single `canonical` field cannot hold. The
+  old prose map was itself unverified prose.
+
+- 2026-08-02 (ch13-p1) — FIFTH MEASURED INSTANCE OF THE SAME RULE: A
+  CONSOLIDATING EDIT ASSERTS MORE THAN THE CODE DOES. Collapsing the
+  three event-grain guards (dead config, non-list pipeline, empty
+  pipeline) into one matrix row fixed a real defect and introduced a
+  new one: the row claimed a non-map BINDING can occur "under any of"
+  the three, but a non-list pipeline has no list and an empty one has
+  no members, so two of the three cases have no binding position at
+  all and cannot be driven. Executed by the arm on both channels —
+  `non-list-pipeline` and `empty-pipeline` both report at
+  `steps.s.gates.PASS`, never at a binding path. The family joins the
+  four already recorded (an unrun "measured"; a DERIVED claim with no
+  named measurer; an unverified citation; a PROJECTED state labelled
+  measured). ITS OWN FIX OBLIGATION, ratified with it: a consolidated
+  claim — one sentence covering several cases — earns its scope only
+  with a PER-CASE executed probe. Generalising over cases is exactly
+  where a sentence stops tracking the code, and the generalisation
+  reads as economy right up until someone runs it.
+
+- 2026-08-03 (ch13-p1 final arm, the escalation condition fires — and
+  the RE-DERIVATION decision) — THE SEMANTIC DRIFT FLOOR IS MEASURED,
+  AND ITS CAUSE IS THE WORKLIST: 28 registered rules · 6 literal
+  catches by the P11 lint · 9 semantic paraphrases in the first full
+  arm sweep · 8 FRESH ones in the second sweep after the nine were
+  folded — the number did not shrink, it came from NEW places. Cause,
+  measured not conjectured: the conversion's worklist was the old
+  mirror table's rows, and the paraphrases live exactly where that
+  table never looked (five rules had ZERO pointers; four of the
+  table's first nine rows were wrong or incomplete — the table was
+  unverified prose about prose, containing what someone once
+  noticed). The general form: a lint confines LITERALS (complete,
+  mechanical); a mirror list names MEANINGS (human attention,
+  incomplete); an arm finds what the list missed (one pass, while
+  every fold mints new prose). Prose is not indexable by meaning.
+  USER-RATIFIED consequence (2026-08-03): the schema-substrate
+  direction (4c1d481f) is ratified NOW, not at the boundary — and
+  ch13 is RE-DERIVED on it rather than patched: the prose line is
+  preserved on the `ch13-prose-line` oracle branch (tip bb313036,
+  carrying the pointer-form packet and the full arm verdict series),
+  main stays linear with NO history surgery, the old contract will be
+  flipped to a machine-locked `superseded` status, decisions inherit
+  through a DATA ledger (never wording), and the re-derivation runs
+  as a controlled experiment on the improved process with falsifiable
+  success criteria. The full strategy, phases, roles, and binding
+  rules: v3/implementation/ch13-rederivation-plan.md (f7da2bbf).
+
+- 2026-08-04 (ch13 re-derivation P1, the overbuild reset — a
+  USER-ORDERED history correction, recorded with its reasoning) — THE
+  IMPROVED PROCESS'S FIRST MEASURED NATIVE FAILURE MODE IS THE
+  UNBOUNDED-CRITERION GUARD LOOP. The P1 supersede-mechanics build ran
+  SEVEN external-arm rounds (one killed by the provider's content
+  filter, retried; finding counts 11 → 6 → 5 → 2 → 2 → 2 → 3), every
+  round closing its predecessors with executed evidence and finding
+  new, real defects — and the loop could not terminate, because the
+  verification charter never declared a THREAT MODEL. The guard
+  defends against ACCIDENT and SLOPPINESS; the arm was allowed to hunt
+  constructs only a DELIBERATE author would write (comment-hidden
+  rows, blockquote-disguised tables, raw-HTML tables, bold-wrapped row
+  ids), and a malicious committer owns the linter too, so every such
+  fix was real-but-out-of-scope. Cost: 4–5 calendar days on a phase
+  whose product is a one-line status flip; the lint grew 2846 → 5230
+  lines, ~700 of them a four-level selftest register tower. THE
+  CORRECTION, all user-ratified 2026-08-04: main was RESET to the core
+  build (274df3a6, its own selftest 131/0 green) plus the re-applied
+  chapter-close carve-out (c8636170); the six fold commits live ONLY
+  on snapshot branch `ch13-p1-overbuilt-line` (tip a2fb4910, the full
+  seven-round verdict record — never merges); the full postmortem is
+  OUTSIDE the repo at pairflow-notes/2026-08-04-ch13-p1-overbuild-
+  postmortem.md; the arm-round counter is RE-BASED to zero on the new
+  anchor per the cb7ba9fe watchdog rule (anchor = the reset, reason =
+  this entry). What the deleted rounds still bought, kept as lessons:
+  two new generations of the unmeasured-claim defect family (a
+  NON-DISCRIMINATING FIXTURE — passes with and without the guard it
+  claims to test, found only by running the mutant; and a SAMPLED
+  "EQUIVALENCE PROOF" — retracted when a discriminating object was
+  found; an equivalence claim must NAME what would discriminate, else
+  it is "survived, unproven"); fixture-fidelity (a fixture that could
+  not pass the form it tests is testing a different product); delete
+  by SYMBOL, never by byte range; and the TERMINUS pattern (name the
+  human-owned remainder instead of building a lock for it) — which
+  should have been applied at the OBJECT level from round 1, not
+  discovered at the meta level in round 3. FOUR STANDING RULES ratified
+  as the corrective (now in the re-derivation plan §6): threat-model-
+  first; bounded tooling loops (3 rounds, the 4th only via the user
+  and its question is "is the criterion right?"); the proportionality
+  tripwire; and the trajectory line (derived from repo surfaces,
+  never recalled — memory accelerates, never carries — and never
+  tooled: hand-assembled, 10-second ceiling per number).
+
+- 2026-08-05 (ch13 re-derivation P1, the phase CLOSES — and the four
+  corrective rules get their first measurement) — THE PRODUCT: the
+  ch13 context-block contract is `superseded` (4aee2dac), archived IN
+  PLACE by ONE commit that flipped the meta block and appended the
+  {date, oracle_branch, oracle_tip, plan} record; the 19 C-rows were
+  verifiably untouched (zero changed C-row lines), so the D5 equality
+  check keeps binding forever and IS the archival lock. The lock was
+  proven live rather than asserted: restoring the oracle's own p1
+  packet from bb313036 turned the lint red at exit 1 with FOURTEEN
+  errors, all fourteen carrying the dedicated superseded message;
+  deleting it returned exit 0. THE EXPERIMENT LINE (§5), against the
+  seven-round line this phase replaced: ONE arm round (plus one infra
+  timeout, retried under ReviewPacket §6 item 8 and counted as no
+  round), 10 findings split 5 FOLDED / 5 CARRIED, 0 reopens, 1 human
+  gate, 1 STOP resolved by ratification, guard size 3220 → 3319
+  (+99, against the deleted line's 2846 → 5230). THE HONEST QUALIFIER,
+  recorded so the comparison is not read as more than it is: this line
+  did not rebuild the machinery — the core build precedes it and was
+  hardened by the deleted line's early rounds, so what is measured is
+  the cost of CLOSING under the new rules, not a from-scratch
+  re-derivation. WHAT THE RULES DID, individually measured: the THREAT
+  MODEL did the whole of the work — it converted four real,
+  executed-evidence findings from fold material into a named
+  carried-scope list with owners, and without it they were
+  indistinguishable from the five that were folded; the BOUNDED LOOP
+  and the PROPORTIONALITY TRIPWIRE never bound and stay untested; the
+  TRAJECTORY LINE paid off in an unplanned place — opening every gate
+  presentation with a DERIVED date is what caught a midnight rollover
+  before the wrong date entered the supersede record, the same
+  projected-date defect this phase had just corrected in the template
+  (a rule catching its own class one level up). THE SCOPE DECISION
+  (user-ratified, option A): D8.7's claim was only as wide as the
+  surface it checks, and the arm measured that surface — the lock
+  binds on the MANIFEST channel. The finding that mattered was not
+  that the other citation surfaces miss `superseded`, but that NONE of
+  them resolves draft status for ANY status, `reopened` included: they
+  were never the claim's territory, so the correction was to declare
+  where the lock binds and record the rest with owners (closure
+  machinery, the grandfathering policy, the packet FORM) — the
+  terminus pattern applied at the OBJECT level from round 1, which the
+  overbuild postmortem named as the lesson it learned too late. A
+  header union is a reader-convenience MIRROR that no template
+  mandates; it is now a named retirement candidate for the P4/P5
+  schema-first packet form, with no live packet touched. CARRIED OUT
+  UNRESOLVED, deliberately: a relayed count of "17 live packets"
+  reproduced under no measurement (8/12/14/21 depending on the form
+  counted) and is recorded as UNRECONCILED rather than restated — the
+  citation rule (e7b94ed5) applied to an instruction this phase itself
+  received.
+
+- 2026-08-05 (ch13 re-derivation, P2 struck before it began — a
+  USER-RATIFIED plan amendment) — THE LEDGER WOULD HAVE BEEN A
+  RESTATEMENT MIRROR OF AN ARTIFACT THAT ALREADY EXISTS. The planned
+  decision ledger re-worded the superseded contract's ratified
+  decisions into a second data file — the paraphrase pattern this
+  re-derivation exists to kill, with its own completeness
+  verification, maintenance, and permanent carrying weight. The user
+  caught it BEFORE the phase ran (contrast P1's overbuild, caught at
+  arm round 7): the superseded contract already IS the decision
+  record — byte-frozen rows under the equality lock, permanently
+  anchorable row ids, receipted ratification blocks. P2's substance
+  folds into P4 as an authoring rule (cite source row ids, never
+  copy sentences) plus a panel completeness pass (19 rows + 4
+  reopens: carried where / dropped why / schema-covered how). NOTED
+  for the experiment record: the trajectory-visibility rules born
+  from the P1 reset arguably did their job — the wall was seen from
+  the map this time, not hit at speed. Phase order is now P1 → P3 →
+  P4 → P5.
+
+- 2026-08-05 (P3 build STOP 1, Flag 1's aftermath — the design sketch
+  recorded as a BOUNDARY CANDIDATE so the idea outlives the moment) —
+  GATE-CONFIG DECLARATIONS SHOULD TRAVEL AS DATA THROUGH THE PORT,
+  NEVER IMPORT THE ENGINE. Flag 1 measured why the three delegated
+  gate-config schemas could not join the ADR-019 substrate: the
+  ch11-P2a G1 boundary (lint-enforced, ADR-013) confines gates/ to
+  domain/ + ports/, and that isolation is the boundary's PURPOSE
+  (plugin units testable against ports alone, the catalog injected,
+  the kernel gate-free in tests), not an accident. The
+  purpose-preserving path exists and is the candidate: the
+  GateRegistration port shape gains a DECLARATION field — pure
+  domain-typed data, the ADR-019 vocabulary's subset — so a gate
+  EXPORTS its config schema as data through the injected catalog, and
+  the HOST runs it on the one engine; hand-written validation remains
+  only for each gate's semantic residual. The gates then stop
+  re-legislating the structural failure space by hand (the exact
+  "barkácsolás" the substrate ended for the template surface), while
+  G1 stays byte-identical. Prerequisites, all deliberate: a ratified
+  port-shape change (its own act — the same change D7's ≥2 test
+  refused for ONE row at Flag 3, now with three schemas and ~34 emit
+  sites as the second-through-fourth users); the audit's [d-gc-*]
+  paper declarations as the source; a per-surface parity gate per
+  ADR-019 D5/D6. Route: boundary review — never a while-we-are-here.
+
+- 2026-08-06 (after the P3 close and the user-elected design round —
+  a BOUNDARY CANDIDATE, design material) — THE REVIEW PROGRAM AS A
+  BETTING SYSTEM: six dials on one learning loop. The full sketch is
+  v3/implementation/review-program-design-sketch.md — distilled from
+  a user/general design conversation; NOTHING enacted. The organizing
+  idea, user-named: every review spend is a WAGER that prevention
+  costs less than cure; a skipped lens is a bet against a defect
+  class, an unfixed finding a bet it will not bite, and the learning
+  loop is calibration from settled bets. The evidence that forced it:
+  the unbounded fixed-criterion loop paperclips (P1, measured), the
+  bounded fixed-criterion loop is blind (P3 build shipped a whole
+  class the user-elected new-criterion round then caught, 14
+  findings), and criterion CHANGES reset the yield curve while extra
+  same-criterion rounds do not. Route: boundary review — enact a
+  minimal record-and-reconcile ritual, or consciously defer.
+
+- 2026-08-06 (ch13 re-derivation, P3 CLOSES — the schema substrate is
+  live on the template surface, and its aftermath fold is in) — THE
+  PARITY GATE'S TWO PRE-NAMED DELTA CLASSES CAME BACK EMPTY; THE ARM'S
+  FIRST ROUND CAUGHT THE BUILD COMMITTING THE EXACT DEFECT THE DIRECTION
+  EXISTS TO END; AND A USER-ELECTED FOURTH ROUND ON A CHANGED CRITERION
+  FOUND A WHOLE CLASS THE CLOSED FRAME WAS SHAPED NOT TO SEE. THE
+  PRODUCT: structural definition rules on the authored-template surface
+  are DATA (`v3/src/definition/schema/templateFormat.ts`, ADR-019 D4's
+  canonical home) consumed by ONE engine on BOTH channels;
+  `definition/validate.ts` (898 lines) is deleted and
+  `definition/admit.ts` fell from 468 lines of rules to 68 lines of two
+  entry points and the A6 brand mint. THE MEASURED RESULT (D5, full
+  record in `v3/implementation/p3-parity-gate.md`): 105 divergence
+  records over 1830 executed cases, and for EVERY finding path both
+  implementations emit, `{path, message, code}` is identical — zero path
+  deltas, zero message deltas. The audit's F3 had named path grain "the
+  parity gate's highest-yield target"; the `at:`/`keyLaneAt:`/
+  `laneOrder:` attributes it recommended are why it yielded nothing. The
+  deltas that DID exist were ratified before the switch: channel
+  symmetry (structural rules now run on the direct-construction channel
+  — D1's own text, and the mechanism the audit's F2 predicted would
+  dissolve ch13-C7's belt) and lane order. A third class I reported was
+  WITHDRAWN at the switch: I claimed the `(b′)` disposition could not
+  survive the split's dissolution and the ruling authorized amending it;
+  re-reading ch11-P4's F7 showed the premise was mine — ch8-C21
+  suppresses on MISSING or WRONG-KIND containers only, and an empty map
+  is a valid map of its kind — so deleting one wrongly-declared `gating`
+  attribute restored it exactly and no amendment was made. D5 IS AMENDED
+  (2026-08-06): the parity corpus is derived from the CALLERS of the
+  swapped entry point, never from a file list. The named seven files
+  reproduced exactly at 362 cases and were the wrong set — `admitTemplate`
+  is called from the testkit, kernel, lifecycle and trace suites too, and
+  TWO THIRDS of the cases the switch actually affected lived outside
+  them. A file list is a snapshot of who called the entry point the day
+  it was written. THE ARM (its own three-round frame; the audit arc's
+  rounds did not carry): 6 · 6 · 0, all in scope, all folded, zero
+  carried. Round 1's verdict was that the central claim does NOT survive,
+  and it was right: the declaration carried a whole SUBSTRATE block of
+  which the runtime read exactly ONE field — decoration wearing an
+  authority's costume, committed by the build that exists to end that.
+  Round 2 (6 again, two of them my own defects in prose) did NOT shrink
+  the count, recorded rather than smoothed; round 3 closed 0/0/0 having
+  tested the claim rather than re-read it. THEN THE USER ELECTED A FOURTH
+  ROUND UNDER PLAN §6's CHANGED-CRITERION CLAUSE, and the criterion was
+  the one nothing had used: the three closed rounds examined the CODE for
+  accident and sloppiness; none had examined the DIRECTION. Verdict
+  (`ch13-rederivation-arm/p3-design/`, sha256 a8865fae…): 14 findings —
+  4 design-error · 2 over-promise · 4 future-trap · 4 CONFIRMED-SOUND —
+  and an explicit answer to the question that motivated it: the approach
+  IS sound, conditionally. THE CLASS THE CLOSED FRAME COULD NOT SEE:
+  rounds 1–3 hunted "declared but not consumed" and found plenty; five of
+  the 14 were its MIRROR IMAGE — declared, consumed, and UNRESOLVABLE. A
+  mistyped value-class name returned the value unvalidated; the
+  parent-relative selector syntax the vocabulary DOCUMENTED was one the
+  engine never accepted, so a declaration written to the documentation
+  compiled and validated nothing; `channel` sat on every node and was
+  read at two sites; one type name carried three interpreters; the
+  substrate carried no citable tag. One root cause: the declaration is a
+  LANGUAGE whose shapes the type system checked and whose NAMES AND PATHS
+  nothing checked. THE AFTERMATH FOLD (user-ratified, five buckets):
+  `schema/defineSurface.ts` now CLOSES the declaration at load — thirteen
+  reference classes resolved once, an unresolved one THROWS before any
+  document is validated — and then DEEP FREEZES it, making D4's "frozen
+  declaration object" literally true where `Object.freeze` had frozen
+  only the outermost object. F3 IS RECLASSIFIED, and it is the one that
+  cost something: the build had filed a boundary-kept rule under R7,
+  whose definition is "uses a construct the ADR has NOT admitted" — but
+  the construct IS admitted and the obstacle is a composition boundary.
+  The audit gains an EIGHTH residual family, R8 BOUNDARY-KEPT (a rule the
+  vocabulary CAN express, kept in code by a module or port limit; its
+  members stay `S`), R7 returns to resolved-empty, and the audit's
+  standing hash moves to a1a7adc5… — the THIRD pin, recorded because the
+  ADR set that precedent when its own ratification moved its basis. D9.3
+  IS AMENDED with the reason: filing a NEW KIND of remainder under an OLD
+  id left the tripwire reading green while the thing it watches for had
+  happened, so it now fires on a new KIND, not only a new id. F9 (no byte
+  lock on the schema file today) is ACCEPTED with its settlement point
+  named: the lock arrives with contract v2's ratification act at P4, and
+  no interim machinery is built for a gap that closes by design. THE
+  EXPERIMENT LINE (§5), ALL ARCS: 6 external rounds (audit 2, build 3,
+  design 1), 41 findings (10 · 5 · 6 · 6 · 0 · 14), all folded or ruled,
+  ZERO carried, ZERO contract reopens, ZERO semantic paraphrases — the
+  prose line's comparison numbers were 4 reopens, 4+ panel rounds plus a
+  watchdog reset, and 28·6·9·8. The honest qualifier stands: this phase
+  produced CODE and a declaration, not ratified prose, so the paraphrase
+  count is zero by FORM rather than by discipline — which is the claim
+  the direction makes, and it is P4's contract that will test it on
+  prose. WHAT THE STANDING RULES DID: the THREAT MODEL held three rounds
+  to accident and sloppiness and produced zero carried-scope; the BOUNDED
+  LOOP bound for the first time — the frame closed at its third round
+  rather than running on — AND ITS ESCAPE HATCH EARNED ITS KEEP, because
+  the fourth round opened only on a CHANGED criterion and returned the
+  highest-yield findings of the phase, which is the rule working as
+  designed rather than being bypassed; the PROPORTIONALITY TRIPWIRE
+  FIRED, at 1.85x when first measured and 1.75x/1.81x after two folds
+  deleted data that was doing nothing, with the user's ruling standing
+  that it is re-measured at the P4/P5 boundary; the TRAJECTORY LINE
+  caught a stale size number twice, once by me and once by the arm. THE
+  STOP-2 CRITERION QUESTION IS SETTLED: the candidate rule carried out of
+  build round 2 — that a declared field counts as unconsumed only if a
+  DIFFERENT legal value would change something observable — is CONFIRMED
+  within its stated boundary (design review F12: while the declaration is
+  a typechecked TS literal, a one-member literal has no other legal
+  runtime branch), and is no longer "untested". SCOPE REDUCED AGAINST THE
+  KICKOFF, ruled and independently re-verified: the three delegated
+  gate-config schemas stay as built, because ch11-P2a G1 is lint-enforced
+  and permits `gates/` to value-import `domain/` and `ports/` only — a
+  repo guard decided it, not taste (design review F8 confirmed the reason
+  accurate). CARRIED TO P4/P5: four future-trap findings by name — the
+  substrate's citability at contract-authoring time, the schema byte lock
+  at contract v2, a packet author's inability to read the default finding
+  grain from the declaration alone, and the `carry` list of the
+  effective-config hook silently dropping any binding field a future
+  chapter adds.
+- 2026-08-07 · ch13-P3 AFTERMATH — the J-RESPAWN flake DIAGNOSED, not
+  fixed: THIRD occurrence of the real-tmux pacing class, and the first
+  one whose mechanism is measured rather than inferred. It is not
+  pacing. The real-substrate suites bind to the DEVELOPER'S DEFAULT tmux
+  socket (`createTmuxSpawnChannel` takes `tmuxBin` and no socket
+  argument, so every client is a bare `tmux`), and when a run is
+  INTERRUPTED mid-suite the TX5 TERM-ignoring lane's `tmux new-session`
+  client is orphaned to init in uninterruptible sleep holding that
+  socket while its server dies. From that moment every tmux client on
+  the machine blocks indefinitely — the test suite's and the
+  developer's alike. Receipts: after a killed run, `tmux ls` hung 3m57s,
+  34 clients queued, load average 2.96 (nothing CPU-bound, everything
+  socket-blocked), ONE orphan at ppid 1 state `Us` for 31m30s, and NO
+  server process at all; killing that single orphan restored tmux, after
+  which THREE consecutive full runs were 2003/2003 with tmux left clean
+  each time. The signature fits the original report too: the three
+  journey tests that touch tmux time out at exactly 60 000 ms while
+  `J-ATTACH-LANE`, which stages no `runner run`, passes — and partial
+  degradation reaches the LAST heavy test first, which is why the
+  original sighting named J-RESPAWN alone. NOT FIXED, deliberately: the
+  correction is a dedicated socket per run (`tmux -L`), which is not a
+  test-side edit — it threads a socket through the channel's seam, so it
+  is product surface and larger than its diagnosis. Routed to the
+  boundary candidate the ch9-P4b note already opened (2026-07-25: "load
+  robustness of real-substrate tests is a SUITE-level property — price
+  it at the packet that grows the load"), now with a measured mechanism
+  and a named remedy. The 2026-07-25 stabilization — `{ retry: 2 }` on
+  four `tmuxChannel.test.ts` describes — does not reach
+  `runnerJourney.test.ts` and would not have helped: a retry against a
+  wedged socket blocks three times instead of once.
+  MEASUREMENT HONESTY, recorded because it cost a round: the run in
+  which I first "reproduced" the flake was poisoned by my own killed
+  loop, and I reported the reproduction before checking the machine —
+  the assume-then-measure trap in its measuring form. The load average
+  was the tell and I had not looked at it.
+- 2026-08-07 · ch13-P3 FINISHING ACT — two corrections to the entry above
+  and one against my instrument.
+  J-RESPAWN HAS TWO MODES, and yesterday's entry claimed more than it had
+  measured when it said the socket signature "fits the original report
+  too". The socket wedge is real and explains the TIMEOUT mode (three
+  journey tests, exactly 60 000 ms each, tmux client blocked). It does
+  not explain the mode observed today: the respawn with an emitting stub
+  lands `unconfirmed` at ~20-30 s with tmux healthy and no orphan
+  anywhere. That is the ORIGINAL ch9-P4b class — a CPU-starved wrapper
+  losing the race to its own result write — and today it reproduced in
+  roughly one full-suite run in two. Settled by experiment rather than
+  argument: the suite was run twice on the PRE-BLOCK commit dbd3eba7,
+  where the semantic failure appeared on the first run, so it predates
+  this act entirely. The remedy remains the recorded boundary candidate;
+  what changes is that the candidate now covers two mechanisms, and only
+  one of them is cured by a per-run socket.
+  THE BYTE GUARD HAS NEVER GUARDED WHAT I THOUGHT. `arm_run.sh` hashes
+  every untracked file, and the verdict it writes lands inside the repo —
+  so it is untracked, so the after-guard differs from the before-guard,
+  so EVERY arm run whose output goes to a repo path reports BYTE GUARD
+  TRIP and exits before it validates the model pin. Deterministic, not
+  intermittent. I did not see it until round 7 because I piped the script
+  through `tail` and read the pipeline's exit code rather than the
+  script's — round 6 tripped identically and reported "exit code 0" to
+  me. Neither verdict is substantively void: for both I re-established
+  the guarantee by hand (`git status` showing the verdict file and
+  nothing else) and checked the pin header manually, and both matched.
+  The fix for the next act is to write the verdict OUTSIDE the tree and
+  move it in after the guard, and to stop piping the runner.
+
+- 2026-08-08 (ch13 re-derivation, P4 CLOSES — the first schema-first
+  contract RATIFIES, and the experiment's falsifiable claim holds at
+  this act) — THE PRODUCT: `contracts/ch13-context-block-v2-contract.md`
+  is `ratified` (aca7c2b8), the first contract whose ratifying block
+  binds TWO byte-sets — its own C-rows (equality lock, content commit
+  3cb4498c) and the declaration's bytes (the schema lock's first live
+  use: templateFormat.ts sha256 in the block, lint-checked by the new
+  D5b). Structural rules live as declaration nodes (13 ch13v2-rowed
+  nodes incl. the D10 `validKeysOf` belt and D11's typed subset —
+  BOTH vocabulary acts born from THIS authoring's executed probes);
+  the semantic residual is prose rows with named P5 owners. THE
+  MEASUREMENT (plan §5), against the prose line's 4 reopens ·
+  4+ panel frames + watchdog reset · 28·6·9·8: ZERO reopens, ZERO
+  unmeasured claims on the ratified rows (every MEASURED clause
+  carries a live-declaration receipt, every DERIVED a named measurer),
+  ZERO non-skeleton runs in the word-normalized never-copy sweep, no
+  watchdog exhaustion (3 panel rounds of 8; the 3rd opened through
+  the user at the STATED BET's boundary — the bet frame worked as
+  designed). The honest qualifiers, recorded so the comparison is not
+  read as more than it is: ~105 findings were found and dispositioned
+  BEFORE the act (3 panel rounds + close + arm×2) — the gain is where
+  defects die, not their count; and P5 still owes the claim's packet
+  half. THE ROAD'S OWN LESSONS, for the priors: a first-of-form
+  authoring pass prices a loss-hunting round, not zero reserve (bet 1
+  HALF); filesystem/path semantics are a runtime-semantics-grade
+  surprise home (bet 4 HALF — the schema-lock arm's `..`-substring
+  and symlink-escape catches); a guard's tokenizer is part of the
+  guard (the never-copy sweep's first-generation
+  whitespace-split masked 12 copied runs the word-normalized form
+  caught); an unnamed count invites the wrong grep (the arm's
+  needle error on C2's id count); and restoring a lost decision
+  precisely tends to re-import its wording — the never-copy rule and
+  the completeness pass pull in opposite directions and BOTH ran, so
+  the tension resolved into fresh wording carrying old decisions.
+  Aftermath incident, third confirmation of the measured class: a
+  tool-timeout kill mid-real-tmux-test orphaned a TERM-ignoring
+  client on the default socket (the 2026-08-07 mechanism exactly);
+  one orphan killed per that entry's remedy, re-run 2063/2063 —
+  the per-run-socket boundary candidate gains another receipt.
+
+- 2026-08-13 (ch13-p1b build close, arm gate 2 — BOUNDARY CANDIDATE, two
+  executed receipts) · **THE LANE DRIVES ITS NAME, NOT ITS CLAIM.** A
+  packet declares a discipline whose claim is over a WHOLE surface; the
+  built lane asserts a NAMED PROJECTION of that surface instead, so a
+  violation landing outside the projection passes green. Both instances
+  below were authored by the builder, passed the builder's own review,
+  and were invisible to EVERY instrument the packet names — the suite
+  and the typecheck were green throughout. Only the build-close arm's
+  mandatory sensitivity pass found them, each by an EXECUTED
+  counterexample rather than by reading. RECEIPT 1 (byte-scope, packet
+  D10 / family 8): the claim is that deleting a catalog entry leaves the
+  differing bytes CONFINED to the packet artifact plus one permitted
+  committed column; the lane watched the TWO columns the row names by
+  id. The arm made the committed `payloadDigest` depend on catalog
+  content — plainly outside the permitted scope — and all three lanes
+  stayed green. Folded by comparing the whole committed row with the one
+  permitted column PROJECTED OUT (not asserted wholesale, which would
+  red by construction and invite the weakening the re-pin discipline
+  forbids); the same counterexample then reds 2 of the 3 lanes.
+  RECEIPT 2 (code exclusivity, packet D11 / family 11): the claim is
+  that the gate schemas' named lanes still carry their codes; the
+  discriminating positive was
+  `JSON.stringify(findings).toContain("gate_evaluator_unavailable")`.
+  The arm removed the `code` ATTRIBUTE from the declaration and left the
+  token in the human-readable message — both lanes stayed green. Folded
+  by asserting the findings' `code` FIELD list; the same counterexample
+  then reds. WHY THIS IS A CLASS AND NOT TWO SLIPS: both are the strong
+  form narrowed to a projection AT AUTHORING TIME, which no ratified
+  rule reaches — →[value-repin]-style disciplines forbid narrowing an
+  assertion at REPAIR time and say nothing about a lane born narrow. And
+  this is the same family as the log's oldest recurring entry, "a gate
+  proves less than its claim" (ch2 check.sh, ch3 kernel lint +
+  canonicalization), now recurring in packet-DECLARED ACCEPTANCE LANES
+  rather than in tooling — which is the argument that the class needs a
+  home the packet template can reach, not another one-off fix. TWO
+  CANDIDATE SHAPES for the boundary to weigh, stated so they are not
+  re-derived: a CONFINEMENT or EXCLUSIVITY claim is asserted over the
+  whole surface MINUS the named permitted delta, never as an enumeration
+  of watched sub-parts; and a claim about a MACHINE-READABLE field is
+  asserted on the field, never by finding its token in a serialization.
+  Not decided here — the disposition, and whether either shape earns a
+  template line or a lint, is the boundary's. `Route: boundary-review`
+
+- 2026-08-13 (ch13 CLOSE, the dogfooding checkpoint — RUN, the acceptance
+  floor's live half) · **THE BLOCK REACHES THE ACTOR, END TO END.** The
+  DoD's live half asks for a hand-driven run whose actor's `packet.json`
+  carries the catalog block. Executed on the shipped surfaces with a
+  deterministic stub actor: `create` → `start` (the canonical template,
+  a real `pairflow.worktree` provisioned at
+  `/Users/felho/dev/.pairflow-worktrees/…`) → `runner run --once` (the
+  real adapter over the tmux channel). The captured packet carried
+  `contextBlocks: [{ id: "emit-envelope", body: <the shipped body,
+  verbatim>, provenance: { sources: [{ source: "role_config" }] } }]`
+  beside `availableOps: ["PASS"]`; the actor read `availableOps` out of
+  the packet the block describes, emitted `PASS`, ingress committed it
+  and the errand reached `confirmed`. NO finding: the surface behaved as
+  the chapter's rows say. Worktree and branch removed after the run; the
+  captured packet is the receipt.
+
+- 2026-08-13 (ch13 CLOSE, the mutation-pilot's last data point — NOT
+  OBTAINED, and the failure is itself the measurement) · **THE PILOT
+  COULD NOT RUN ITS OWN SUITE.** ch13-p1b's Build record names its
+  dual-run "the last input to the keep-or-stop decision" and the build
+  never executed it, so the close attempted it: scope
+  `src/kernel/contextBlocks.ts,src/kernel/dispatchIntent.ts,
+  src/domain/dispatch.ts,src/domain/index.ts` through `pnpm v3:mutation`,
+  the committed config untouched. It ABORTED in the dry run, twice
+  (second attempt after `rm -rf .stryker-tmp`), before a single mutant
+  ran: the drift suite resolves the ledger by a repo-root-relative URL
+  (`../../../v3/model/ledger.md` from `src/drift/`), which does not exist
+  inside Stryker's sandbox — `ENOENT: .stryker-tmp/v3/model/ledger.md`.
+  NOT worked around: excluding the drift lanes would remove exactly the
+  suites that kill `domain/index.ts` mutants and yield a
+  non-comparable number. Note the asymmetry with ch13-p1a's successful
+  3 238-mutant run over `src/definition/**` on the same profile — the
+  abort is reproducible today and its cause is in the harness, not in
+  this packet. The receipt stands as friction data for the keep/stop
+  verdict. `Route: boundary-review`
+
+- 2026-08-13 (ch13 CLOSE, the ratification act — caught by the OWNER at
+  the gate) · **A SUBAGENT MODEL OVERRIDE WENT SILENTLY UNAPPLIED, AND
+  ONLY THE HUMAN SAW IT.** The owner asked for a Fable pass over the
+  ratification block's text; the invocation requested Fable; the pass ran
+  on OPUS. Nothing in the invocation, the agent's own report, or any gate
+  surfaced the discrepancy — the reviewer does not state its tier and no
+  check compares requested-vs-actual, so the loop's own record would have
+  claimed a Fable review that never happened. The owner caught it at the
+  ratification and ordered the correction, which is now IN the ratified
+  `arms` text rather than smoothed. THE CLASS is the ch13-p1a arm gate-2
+  pin nonconformance one level up (that run was INVALIDATED by a pin
+  mismatch the runner DID validate) — the same failure, on the transport
+  that has no pin check: `arm_run.sh` validates its header pin, the Agent
+  transport validates nothing. Two candidate closures for the boundary to
+  weigh: a requested-vs-actual tier assertion on any agent invocation
+  whose record names a tier, or the narrower rule that a record may name
+  a tier only when the tier is machine-confirmed. Not decided here.
+  `Route: boundary-review`
+
+- 2026-08-14 · **ch13 BOUNDARY REVIEW HELD** (stepwise with the owner,
+  2026-08-13→14; every verdict below owner-ratified one decision per
+  message; the execution commits are in git history around this
+  entry). THE CHAPTER CLOSED FIRST: realized_map (19 rows, fresh-
+  context-built, machine-checked), the CITATION-CLOSURE act (the four
+  ADR-019 D4 forward-scoped exemptions ended at their named closing
+  act; template §4 gained the narrow rule, riding the act), the
+  ratification block with the Fable→Opus tier deviation named IN the
+  record, full ci:local + the whole chapter-close gate column green,
+  and the dogfooding checkpoint RUN (the entry above). **The DoD's
+  eight named verdicts:** (a) model-tier: the experiment CONTINUES —
+  Medium-band-only data (n=1 Fable vs 3 Opus), ZERO Opus Heavy
+  points, no S1/S3; §7 entry + two late-captured §8 rows + the p1b
+  metrics block late-written from repo records. (b) mutation pilot:
+  **STOP** — nine recorded runs, ZERO defects the arm did not find,
+  cost to 12m48s + a maintenance surface + structural subprocess
+  blindness; the wiring stays; usage lessons recorded (whole-file
+  scope not delta; detector role not trend role; the sandbox-path
+  abort is a config-fixable harness bug); a revival is
+  incremental+delta+boundary-trend, never a per-packet gate. (c) the
+  ch9 detached map audit: 11 map folds landed + ONE under-realization
+  (ch9-C26's process-gate diagnostics half) → plan carried item (4)
+  with the executed receipt in the map note. (d) the MVP-cut walk:
+  the cut STANDS; the hole is INSIDE it (L3+L4 chapterless — the
+  critical-path note); EC = first post-cut chapter with TWO bound
+  ratification duties (transport carrier + the capability-profile
+  interval); the stake measurement lives in audit §7. (e)
+  reopen-vs-aggregate-note: PROMOTED to template §4. (f) integer-key
+  ban: WATCH with the named carrier (next format-touching chapter
+  bundles ban + ch8-C10 reopen + re-lock + the ch13v2-C10 narrowing;
+  immediate reopen if such a key appears). (g) ch11 pointers:
+  LEAVE-WITH-RECORD executed (Context annotation + two map notes; the
+  defense hole → the tooling batch's 4th member). (h)
+  capability-profile: KEEP-WITH-RECORD as a bound interval closing at
+  the EC ratification (GUARD alone insufficient — finding (i); RETIRE
+  is model-plane against the two ledger items' intent), two bindings
+  riding. **Registry sweep:** 7 rules retired (R-MATRIX-LANES,
+  R-FIRST-STOP = README duplicates; R-STRUCTURE-SEMANTICS zero-catch
+  on home turf; R-WIDE-CLAIM superseded by the lane-level class;
+  R-FLAGS-IN-PACKET structurally absorbed; R-NUMERIC-LADDER →
+  R-DIMENSIONS and R-FIELD-LISTS → R-DELEGATION-CLOSURE by merge);
+  the five REV-* rows kept (zero-catch because unexercised surfaces,
+  explicitly declared — the registry working). **Catch tally
+  (reconstructive — no instrumentation existed; the new attribution
+  convention fixes that forward):** top catcher R-LANE-SENSITIVITY ≥9
+  (every one via the build-close sensitivity pass, none visible to
+  suite or typecheck); R-ALIGNED-UP ≥5; R-CLAIM-GRAMMAR ≥4;
+  R-DERIVED-PROBES ≥3; R-EXECUTION 2; R-PRESENT-TENSE 2;
+  R-UNTRUNCATED-SWEEP 1+1; R-CLAIM-FORM-PROBES 1 major (P11's 10
+  arm blockers); R-ACTIVATION-JOURNEY 1+2; drift-lock 1 (unit-map
+  disposition); R-INSTRUMENT-PROBE 0 catches / 3 violations — the
+  mechanize signal the batch answers. **Extensions:** 8 landed (two
+  blind classes; quoted-names cross-product; the ratification-side
+  claim grammar; the draft-delegation layer; the tokenizer clause;
+  per-round yield classification; lens-4 propagation enumeration;
+  watchdog re-base + the four arm-round rules homed — P4/P5
+  re-measure: neither guard bound, kept on severity). **Tooling batch
+  ADOPTED (4 members, one shared arm review, built this session):**
+  exactly-one-metrics-block at post-build + main_thread_model
+  required ch13+; the probe-runner green-baseline gate; the
+  arm_run.sh byte-guard fix (the guard that never guarded); the
+  superseded-target token scan (report-only). **Remainder:** fallback
+  arm timeout 20→45 min; the transport column landed; the TIER-RECORD
+  rule (a record names a tier only machine-confirmed — the
+  Fable/Opus incident's closure); the gate-config-through-port plan
+  candidate row (§7's same-act rule); the Aftermath rule-attribution
+  convention. **Records (WATCH / acknowledged, no rule):** the
+  schema-substrate's three open future-traps (citability at
+  authoring; default finding grain unreadable from the declaration;
+  the carry-list silent-drop — now live, the list grew this chapter);
+  p1a's two non-rerunnable receipt scripts + the one-commit-stale
+  expressiveness-audit pin (no check reads it); the header-union
+  retirement candidate for the schema-first packet form; the live-
+  packet count canonicalized as the lint's machine numbers (28 v2 +
+  16 grandfathered; the relayed "17" stays irreproducible); the
+  derived-value by-parts assertion sweep (unrun, wider than p1b's two
+  sites); the model genre-sentence proposal (model-plane candidate,
+  the 15-of-25 arity census as evidence — next model wave decides);
+  J-RESPAWN recorded SPLIT (socket wedge FIXED in tree; the
+  CPU-starved wrapper race UNCURED, ~1-in-2, the ch9-inherited
+  candidate carries it); the single-occurrence scope-shape
+  observation (WATCH). The REV-registry gap (p1b's id-less review
+  binding) stays acknowledged — a REV row is minted on second need,
+  per the admission bias.
+
+- 2026-08-14 (the boundary tooling batch's arm leg — the
+  verification-surface rule's own receipt) · **SIX EXECUTED
+  COUNTEREXAMPLES, TWO OF THEM THE GATES' OWN BLIND SPOTS.** The
+  four-member batch went through one full adversarial round + two
+  scoped re-checks (yield 4 → 1 → 1, transport gptsol, byte guards
+  clean every round). Round 1: a non-object packet_metrics value
+  satisfied the exactly-one count; a side-effecting BASELINE command
+  left the target mutated (the green-baseline gate's own blind spot —
+  the guard guarded the mutation path, not its own instrument run);
+  an unchecked mv leaked the tmp verdict and substituted exit lanes;
+  a lookalike token prefix-matched. Re-check 1: the fold's restore
+  path crashed on a dir-replacement (unguarded digest). Re-check 2:
+  a same-byte SYMLINK passed the intact-guard (is_file() follows
+  symlinks). Every fold shipped with negative selftest lanes
+  (check_packet 140 → 143 red dims; probe_runner 12 → 32 cases, the
+  count now computed, not hardcoded). The pattern the batch's own
+  review keeps proving: the author's premise IS the blind spot — a
+  gate's builder cannot see the vacuous way to satisfy their own
+  count, and only the executed-counterexample discipline finds it.
+  Rule attribution: [R-CLAIM-FORM-PROBES] ×4, [R-LANE-SENSITIVITY]
+  ×2 — the first tally under the new convention.

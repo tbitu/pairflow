@@ -374,16 +374,24 @@
     "status": "realized"
   },
   "l2b-pseudocode/CREATE_INSTANCE": {
-    "status": "pending"
+    "codeRef": "v3/src/kernel/lifecycle.ts#createInstance",
+    "disposition": "review-only",
+    "status": "realized"
   },
   "l2b-pseudocode/assemble_context_blocks": {
-    "status": "pending"
+    "codeRef": "v3/src/kernel/contextBlocks.ts#assembleContextBlocks",
+    "disposition": "implement",
+    "status": "realized"
   },
   "l2b-pseudocode/dispatch_intent": {
-    "status": "pending"
+    "codeRef": "v3/src/kernel/dispatchIntent.ts#deriveDispatchIntent",
+    "disposition": "alias/inherited",
+    "status": "realized"
   },
   "l2b-pseudocode/validate_context_refs": {
-    "status": "pending"
+    "codeRef": "v3/src/definition/schema/templateFormat.ts#templateFormat",
+    "disposition": "generated/mapped",
+    "status": "realized"
   },
   "l3-pseudocode/COMPLETE": {
     "status": "pending"

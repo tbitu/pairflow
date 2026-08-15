@@ -355,7 +355,12 @@ records them):**
 3. **Loop economics** — `3:watchdog`: 8 rounds without approve →
    STOP with a diagnosis (churn composition → split vs draft
    proposal); auto-split-remedy is delegable LATER — a deferred,
-   evidence-based step, not a live delegation. · `3:plateau`
+   evidence-based step, not a live delegation. **Re-base rule
+   (homed at the ch13 boundary; twice-used, previously log-only):**
+   a watchdog count is scoped to its target's ANCHOR BASIS — when
+   ratified anchors move under the loop (a reopen, a re-derivation),
+   the HUMAN may re-base the count with a recorded reason and a
+   frame sized to the remaining work; the loop itself never re-bases. · `3:plateau`
    (adopted 2026-07-17 — the ch11-P3a process reset): two
    consecutive review rounds — panel, external-arm, and user rounds
    all count — each with ≤2 accepted CONTENT findings
@@ -783,7 +788,13 @@ invariants-vs-tooling).
   reopened drafts (`check_packet.py --forbid-reopened`; unconditional
   — naturally vacuous when no draft exists); EVERY chapter-referenced
   contract-draft flipped `realized` (map filled + status flipped in
-  ONE act, per `contract-draft-template.md` §4); and the draft-metrics
+  ONE act, per `contract-draft-template.md` §4) OR `superseded`
+  (the carve-out, user-ratified 2026-08-03 with the ch13
+  re-derivation): a superseded draft's realization obligation
+  TRANSFERS to its successor surface, which must itself stand
+  `realized` at the close — the supersede act's mechanics live in
+  `contract-draft-template.md` §4's supersede bullet; and the
+  draft-metrics
   close line recorded — both scoped to the chapter's drafts IF ANY.
   A chapter without these is not done regardless of code state.
 - **Human-gate presentation discipline (adopted 2026-07-18 at the

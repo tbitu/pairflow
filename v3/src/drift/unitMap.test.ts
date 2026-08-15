@@ -183,3 +183,51 @@ describe("the unit→code manifest (v3/model/units ↔ drift/unitMap.json)", () 
     }
   });
 });
+
+describe("the ch13-p1a unit-map flips (packet row D10)", () => {
+  const unitMap = loadUnitMap();
+
+  it("pins the TWO packet-owned mappings VERBATIM (the generic resolution lane stays green on a wrong-but-existing target)", () => {
+    // `validate_context_refs` is generated/mapped because its rule is no
+    // longer code: the resolution lane is DECLARED at `[vc-blockidlist]`
+    // and executed by the one engine on both channels, so the declaration
+    // module's own exported surface is what realizes it.
+    expect(unitMap["l2b-pseudocode/validate_context_refs"]).toEqual({
+      codeRef: "v3/src/definition/schema/templateFormat.ts#templateFormat",
+      disposition: "generated/mapped",
+      status: "realized",
+    });
+    // `CREATE_INSTANCE` is review-only at this level — its whole l2b
+    // delta is the comment line placing definition-static validation at
+    // ADMISSION — and its codeRef follows the live `l2-`/`l2a-` reprint
+    // precedent, which points at the kernel's create function.
+    expect(unitMap["l2b-pseudocode/CREATE_INSTANCE"]).toEqual({
+      codeRef: "v3/src/kernel/lifecycle.ts#createInstance",
+      disposition: "review-only",
+      status: "realized",
+    });
+  });
+});
+
+describe("the ch13-p1b unit-map flips (packet row D12)", () => {
+  const unitMap = loadUnitMap();
+
+  it("pins the TWO packet-owned mappings VERBATIM (the generic lane stays green on a wrong-but-existing target)", () => {
+    // The render is the one l2b unit this packet IMPLEMENTS, and it lives
+    // in its own module beside the run-profile resolver.
+    expect(unitMap["l2b-pseudocode/assemble_context_blocks"]).toEqual({
+      codeRef: "v3/src/kernel/contextBlocks.ts#assembleContextBlocks",
+      disposition: "implement",
+      status: "realized",
+    });
+    // The l2b `dispatch_intent` is a REPRINT whose realization already
+    // exists: it rides the live `alias/inherited` precedent and targets
+    // the same dispatch function the sibling l0d/l0e rows do. Its delta —
+    // the packet field — lands in that same function.
+    expect(unitMap["l2b-pseudocode/dispatch_intent"]).toEqual({
+      codeRef: "v3/src/kernel/dispatchIntent.ts#deriveDispatchIntent",
+      disposition: "alias/inherited",
+      status: "realized",
+    });
+  });
+});

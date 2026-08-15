@@ -2,9 +2,10 @@ import { isAlias, isMap, isPair, isScalar, isSeq, LineCounter, parseDocument } f
 import type { Document, ParsedNode, YAMLError } from "yaml";
 
 import type { GateCatalog } from "../ports/index.js";
-import { admitTemplate } from "./admit.js";
+import { admitFromSource } from "./admit.js";
 import type { PipelineFinding, TemplateLoadResult, ValidationFinding } from "./errors.js";
-import { validateTemplate } from "./validate.js";
+import { renderMessage } from "./schema/engine.js";
+import { templateFormat } from "./schema/templateFormat.js";
 
 /**
  * Packet ch8-P1 (G1/draft C36): the staged load pipeline over raw
@@ -35,6 +36,12 @@ export interface LoadTemplateOptions {
 /** The empty catalog: every `uses` is unknown. Vacuous over zero
  * bindings (every gate-free template) — A8's byte-identical default. */
 const EMPTY_CATALOG: GateCatalog = { resolve: () => null };
+
+/** ADR-019 D4: the substrate stage's wording and its one version knob are
+ * DECLARED, so editing the declaration edits this pipeline's behaviour.
+ * What stays here is the yaml library's own behaviour, which no
+ * declaration can move (audit residual R6). */
+const SUBSTRATE = templateFormat.substrate;
 
 function fail(stage: "read" | "parse" | "resolve", findings: readonly PipelineFinding[]): TemplateLoadResult;
 function fail(stage: "validate", findings: readonly ValidationFinding[]): TemplateLoadResult;
@@ -140,7 +147,7 @@ function resolvedDuplicateFindings(doc: Document, lineCounter: LineCounter): rea
           finding: {
             stage: "parse",
             ...(pos && pos.line > 0 ? { line: pos.line, col: pos.col } : {}),
-            message: "Map keys must be unique",
+            message: SUBSTRATE.parse.duplicateKeys.message,
           },
         });
       }
@@ -177,7 +184,7 @@ export function loadTemplate(bytes: Uint8Array, opts: LoadTemplateOptions = {}):
       {
         stage: "read",
         ...(opts.path !== undefined ? { path: opts.path } : {}),
-        message: "invalid UTF-8 byte sequence (templates are strict UTF-8)",
+        message: SUBSTRATE.read.message,
       },
     ]);
   }
@@ -199,13 +206,13 @@ export function loadTemplate(bytes: Uint8Array, opts: LoadTemplateOptions = {}):
   }
   const parseFindings: PipelineFinding[] = [];
   const yamlDirective = doc.directives?.yaml;
-  if (yamlDirective?.explicit === true && yamlDirective.version !== "1.2") {
+  if (yamlDirective?.explicit === true && yamlDirective.version !== SUBSTRATE.parse.directive.only) {
     // The silently-ADOPTED case (probe P17: %YAML 1.1 — zero errors,
     // zero warnings, the full 1.1 trap restored). Synthesized: the
     // parser emitted nothing, so no position fields exist.
     parseFindings.push({
       stage: "parse",
-      message: `%YAML ${yamlDirective.version} directive: only YAML 1.2 is supported`,
+      message: renderMessage(SUBSTRATE.parse.directive.message, { key: yamlDirective.version }),
     });
   }
   const positionedErrors: PositionedFinding[] = [
@@ -234,39 +241,28 @@ export function loadTemplate(bytes: Uint8Array, opts: LoadTemplateOptions = {}):
     return fail("resolve", [{ stage: "resolve", message: errorMessage(error) }]);
   }
 
-  // VALIDATE stage (E2 + the V lanes; cycle-safe per V15), then the
-  // ADMISSION rung (ch11-P2a, A1): the SECOND rung behind structure,
-  // on the SAME channel/stage — gate semantics validate + normalize
-  // here, all-or-nothing. Vacuous over a gate-free template (A8).
-  //
-  // F7 (ch11-P4): CROSS-RUNG ACCUMULATION. The walk hands a best-effort
-  // template EVEN with structural findings (undefined only for a non-map
-  // root — disposition a); the admission rung then runs and its findings
-  // ACCUMULATE with the walk's in ONE `validate` result (disposition
-  // b/b′/c/d/e — the walk's own SKIPs realize the local suppression).
-  // The result stays XOR: an admitted template escapes ONLY when BOTH
-  // the walk and admission are findings-free (ch8-C22 preserved).
+  // VALIDATE stage: ONE run of the template surface's declared schema
+  // (ADR-019 D1) over the resolved value graph, on the FILE channel so
+  // the source-bearing lanes have an operand. The two rungs this stage
+  // used to have — the source-form walk and the admission rung — are one
+  // computation over one declaration; their findings were already
+  // required to accumulate in ONE `validate` result (ch11-P4 F7), and
+  // now they cannot fail to. The result stays XOR (ch8-C22): an admitted
+  // template escapes only when the run is findings-free.
   try {
-    const outcome = validateTemplate(value, doc, text);
-    if (outcome.template === undefined) {
-      // Disposition (a): non-map root — walk finding only, no operand
-      // for the admission rung.
-      return fail("validate", outcome.findings);
-    }
-    const admitted = admitTemplate(outcome.template, opts.catalog ?? EMPTY_CATALOG);
+    const admitted = admitFromSource(value, doc, text, opts.catalog ?? EMPTY_CATALOG);
     if (!admitted.ok) {
-      return fail("validate", [...outcome.findings, ...admitted.findings]);
-    }
-    if (outcome.findings.length > 0) {
-      // The walk found structural defects but admission was clean (or
-      // vacuous) — the walk findings are the whole result; nothing
-      // partial escapes.
-      return fail("validate", outcome.findings);
+      return fail("validate", admitted.findings);
     }
     return { ok: true, template: admitted.template };
   } catch (error) {
     // The C22 every-stage belt: no known input reaches this (V15's
     // cycle rule is a FINDING, not a throw), but the stage still maps.
-    return fail("validate", [{ path: "$", message: `internal validator failure: ${errorMessage(error)}` }]);
+    return fail("validate", [
+      {
+        path: SUBSTRATE.internalFailure.path,
+        message: renderMessage(SUBSTRATE.internalFailure.message, { value: errorMessage(error) }),
+      },
+    ]);
   }
 }

@@ -139,6 +139,35 @@ design and this divergence is informative, not a defect. Spread:
 
 <!-- analysis entries append below this line -->
 
+- 2026-08-13 — **ch13 boundary: the FIRST Opus-arm chapter, read
+  against ch9's Fable arm.** Same-band pairs exist in the MEDIUM band
+  only — ch9-P1 (Σ5) against ch13-P0 (Σ4) / ch13-p1a (Σ5) / ch13-p1b
+  (Σ4), i.e. n = 1 Fable vs 3 Opus; the Light band has no Opus member,
+  and the HEAVY band has ZERO Opus data points — ch13 ran all-Medium
+  while ch9's five Heavies are exactly where its product-grade gate-2
+  findings concentrated, so this chapter says NOTHING about the Opus
+  arm on the hard class. Yields on the live pair: gate-2 findings 9
+  (Fable P1) vs 5 / 5+2 / 3 (Opus); product-code findings at gate 2:
+  0 vs 0 across the band; detector_misses 5 vs 0 / 0 / 0; review
+  rounds 8 vs 7 / 7 / 7 (p1b's seven internal rounds per its review
+  record). NO S1 fired (zero escaped P0/P1 on any Opus packet); NO S3
+  (the Opus yields sit BELOW the Fable comparator, nowhere near the 2×
+  flag). Owner decision-point LOAD (§7's fourth measure): stop counts
+  ran 2 / 6 / 1 on the Opus packets vs 0 on ch9-P1 — recorded, but
+  stop count is not load and no comparable unit exists yet; noted,
+  unmeasured. CONFOUNDS this window ADDS to §8's list: (i) the arm
+  TRANSPORT changed mid-chapter (arm_run.sh → the gptsol agent, user
+  ruling 2026-08-10) — the gate-2 yields above are measured on two
+  different instruments; (ii) ch13-p1b's build ran MAIN-CONTEXT in a
+  standalone fresh session with the §4 delegated default declined (a
+  recorded, reasoned choice — but a different build shape than ch9's
+  delegated builds); (iii) the mid-ch9 tooling batch predates the
+  Fable comparator packet, so it does not bite the Medium pair.
+  VERDICT: the experiment CONTINUES per §2 — this closes chapter 2 of
+  the 4-chapter minimum window; the NEXT implementation chapter opens
+  the FABLE arm per the alternation. No tiering conclusion is drawn
+  from an n = 1-vs-3, one-band, two-instrument read.
+
 ## 8. Log
 
 - 2026-07-22 — pre-registered and owner-ratified at the ch12 boundary
@@ -216,3 +245,78 @@ design and this divergence is informative, not a defect. Spread:
   P4b alone). CONDITION carried: the mid-chapter tooling batch (the
   ch9-P0→P1 speedup landing) makes intra-ch9 pacing comparisons
   noisy; the boundary weighs yields, not wall-clock.
+- 2026-07-25 — ch13 (context blocks) RATIFIED with main-thread arm =
+  **Opus-class** — the FIRST Opus chapter, per the §2 pre-registration
+  ("the next implementation chapter opens the Opus arm"), recorded at
+  chapter ratification per §5. The §2 K3 prerequisite is DISCHARGED:
+  the ch12 boundary's entry-mode rule and the arm-invocation
+  verified-preflight rule both landed (AGENTS.md V3 section), removing
+  the predecessor's "prompts authored under Fable, never tuned for
+  Opus" confound. **No chapter-named Fable-mandatory slice** (owner
+  decision at the scoping round): no ch13 packet is first-of-a-kind or
+  idiom-minting — the render extends the existing dispatch assembly
+  and reuses ch11's authority logic, the definition side extends the
+  ch8/ch11 format and admission machinery. The standing
+  Fable-mandatory categories are unchanged (the plan chapter itself,
+  the contract-draft + ratification support, process revisions, the
+  boundary review) — so this chapter's draft round runs Fable while
+  its packets run Opus, as designed. Chapter shape for the paired
+  read: 3 packets (P0 hygiene/EPIPE, human-approved as an
+  invention-predicted row; P1 definition side; P2 dispatch side),
+  expected to band Light/Medium — the ch9 Fable pool's Light and
+  Medium entries are the natural comparison partners. Per-packet
+  difficulty scores append here at each approve. Mutation pilot: this
+  is its SECOND and final data chapter; the two-chapter window closes
+  at the ch13 boundary with a keep/stop verdict.
+- 2026-07-26 — PROTOCOL DEVIATION recorded (self-reported at the ch13
+  draft-round opening): the ch13 PLAN-CHAPTER section (a §2
+  Fable-mandatory surface) was authored on the session's Opus-class
+  main thread on 2026-07-25, before the mismatch was noticed. Owner
+  disposition: NOT rewritten — the section went through seven
+  stepwise owner-review rounds (four scoping decisions, two carrier
+  acts) and a deliberate ratification, so a rewrite would carry less
+  information than the deviation record. Remedy going forward: the
+  session switched to Fable-class BEFORE any draft work; the ch13
+  contract-draft and ratification support run Fable per the standing
+  category rule. Data handling: the ch13 plan-section authoring joins
+  the Fable-mandatory-surface pool FLAGGED as an Opus-authored
+  exception (non-random, owner-reviewed); packet-level Opus data is
+  unaffected (no packet work had started).
+
+- 2026-07-31 — ch13-P0 difficulty index, computed and FROZEN at the
+  packet's approve point (§3's rule: pre-build, so outcomes cannot
+  leak back into it). Vector from the packet's own machine blocks:
+  **A 0** (`packet_rows` = 12 ≤ 15) · **B 2** (derived 3 +
+  new_decision 9 = 12 > 10) · **C 0** (`mutation_boundary` = 8 files
+  ≤ 15) · **D 2** (async `error`-event seam AND external substrate —
+  the subprocess journey lanes; either alone scores 2) · **E 0**
+  (extends an existing module's patterns; the header records
+  "not first-of-a-kind" with named precedents). **Σ = 4 → MEDIUM.**
+  The D/E checklist calls were resolved at the approve per §3 and
+  owner-ratified there (2026-07-31); robustness note recorded at the
+  same act: E = 1 would give Σ 5, still Medium, so the band does not
+  turn on that call. The chapter ratification's prose predicted "a
+  Light-band opener" (plan §13 opening disposition 2) — that was a
+  ratification-time PREDICTION and stays at its dated wording; §13.5
+  DoD item (a)'s same-band pairing consumes this measured Medium.
+  Main-thread model for the packet: Opus-class (the chapter arm).
+
+- 2026-08-13 — ch13-p1a difficulty index, LATE-CAPTURED at the
+  boundary (the ch9-boundary capture miss RECURRING, n=2: the vector
+  was measured and FROZEN at the packet's approve and recorded IN the
+  packet; only the §5-required append here was missed): **A 0** (14
+  rows) · **B 1** (derived 3 + new-decision 4 = 7) · **C 1** (boundary
+  21 files) · **D 1** (stateful-persistent: the definition schema and
+  its admission state machine) · **E 2** (declared idiom-minting,
+  flag 8) — **Σ 5, MEDIUM**. Main-thread model: `claude-opus-5[1m]`
+  (the packet's metrics block).
+- 2026-08-13 — ch13-p1b difficulty index, LATE-CAPTURED at the
+  boundary (same miss, same sweep): **A 1** (16 rows) · **B 1**
+  (derived 4 + new-decision 1 = 5) · **C 1** (boundary 25 files) ·
+  **D 0** (pure sync render/format — the competing D 2 reading is
+  band-invariant, resolved on the ch12-P4 reading at the approve) ·
+  **E 1** (new module from existing idioms) — **Σ 4, MEDIUM**.
+  Main-thread model: `claude-opus-5[1m]` — the packet's OWN metrics
+  block was missing at build close and was late-written at this
+  boundary from repo-carried records (process-log 2026-08-13 names
+  the breach; the block's `baseline_note` names its sources).

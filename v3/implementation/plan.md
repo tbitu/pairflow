@@ -1,7 +1,7 @@
 # V3 Implementation Plan
 
 Written chapter by chapter, each chapter proposed → ratified → committed
-(process: [`README.md`](README.md) §3). Chapters present: 1–9, 11–12.
+(process: [`README.md`](README.md) §3). Chapters present: 1–9, 11–13.
 
 **Genre note.** This is the implementation **master plan** — it is NOT a
 directly `ExecutePairflowPlan`-executable task list, and it carries no
@@ -104,6 +104,7 @@ convention is itself a chapter-1 rule.
 | 11 | **Gate core** (appended chapter, build order: BEFORE ch 9 — §11): the L1 authority slice, the L2 gate pipeline + inline evaluators (the ch-4 provisional `round` aligned to its L2 contract), the L2a process-gate contract (kernel side — the spawn is ch 9's), a minimal runtime-context representation, the format's gate-declaration surface (§8.2 stance) | — (map-extension, §8.1) | realized |
 | 12 | **Runtime core** (appended chapter, build order: BEFORE ch 9 — §12): the L0c run profile (AgentConfig cascade + issued provenance), the L0d lifecycle/activation axis (kernel_status, source-routed entry, the CREATE/START split, typed waits, terminal dispositions, KICKOFF/CANCEL), the L0e runtime-context provider contract (requirement + registry + packet projection; testkit provider — the real worktree provider stays ch 9's), the gate-field watchpoint realization (model fix `6dd8bd15`), the format's runtime keys (§8.2 stance) + lifecycle operator verbs + floor extension | — (map-extension, §1.3) | realized |
 | 9 | Runner MVP (chapter §9): local worktree provider (`pairflow.worktree` — the ch-12 L0e contract's first real provider), one real actor adapter, process-gate runner spawn side, attach channel (tmux observe/takeover); **MVP scope RESOLVED (user, 2026-07-18): local-worktree only** — headless/cloud is a later provider behind the same contract (its async ready-event + opaque-ref shape keeps that additive; the deferred teardown / provider-health / retry-on-FAILED Absents are the named rework surface — the one-shot provisioning-failure→FAIL channel itself realizes IN ch9, §9 opening disposition 2; aligned at the ch9 draft rounds, 2026-07-23); **watchpoint RESOLVED (user, 2026-07-18):** the gate-block observability fix landed as a model-plane change (ratified @ `6dd8bd15` — `Rejected(gate_blocked)` carries the blocking binding's `uses` as `gate`), code realization owned by ch12-P0; prerequisites: ch 11 (gate call site) + ch 12 (runtime core) + **the production-provider gate (the ch12 ratifier's D5 condition, 2026-07-19 — the ch12 draft's C15):** no production provider registers until the provisioning-failure → correlated kernel `FAIL` channel is ratified and realized; **ch12-boundary work item (2026-07-22):** wire the MUTATION-TESTING PILOT — StrykerJS+vitest scoped to the packet `mutation_boundary` (`pnpm v3:mutation` bridge; first step = feasibility proof), DUAL-RUN beside arm gate-2 for two chapters, catches labeled code-mutation vs input-domain (the ch12 boundary's test-reliability verdict; ch9 ratification disposes it) | PI-8 | realized |
+| 13 | **Context blocks** (appended chapter, build order: AFTER ch 9 — §13): the L2b render (`assemble_context_blocks` at dispatch, ordered/deduped, provenance-carrying), the definition-load ref check (`validate_context_refs` under `admit_definition`, the `unresolved_context_block_ref` issue lane), the format's three context keys (catalog + role/step + gate refs) per the §8.2 stance, the shipped template's first real catalog entry, and the ch9-carried EPIPE fix as the chapter's hygiene packet | — (map-extension, §11.1) | realized |
 | 10 | Operator recourse card: one page (query via the floor, cancel, deleteRequested; no watchdog/retry until L9) | PI-9 | planned(ch 10) |
 
 **Predicted-class convention (process-v2, added at the Phase-1 flip;
@@ -156,7 +157,64 @@ surface** — deliberately excluded from ch 11 (§11.1); its render
 semantics and its format keys (`context_blocks` catalog,
 `context_block_refs`, interpreted `prompt_concern_refs`) land
 together in their own appended chapter, naturally after ch 9 when a
-real actor adapter consumes dispatched packets. Fourth named
+real actor adapter consumes dispatched packets. **ENTERED as chapter
+13 (ratified 2026-07-25, §13)**, build order after ch 9 — the third
+live use of the mechanism, numbering per the ch-11-minted
+convention; the "naturally after ch 9" condition came TRUE at the ch9
+close (the real adapter materializes the packet the blocks ride in).
+Fifth named candidate (added at ch-13 ratification, 2026-07-25): the
+**EC emit-contract surface** — the per-op `EmitContract` machine
+(payload schemas on transition edges, the versioned vocabularies
+catalog, the gate `policy | verify` family split with a mandatory
+verify currency binding, `payload_digest` + the idempotency rung's
+digest branch, `offerable_ops`), whose packet-projection leg
+(`op_contracts`, per offerable op: required fields, domains,
+assertions, evidence obligations, from the SAME lookup the validator
+uses) is the MECHANIZED successor to what ch 13 ships as authored
+prose. The model plane calls it "the last v1-parity gap" and orders
+it AFTER the MVP cut — the tension §1.3's carried item (3) re-read at
+the ch13 boundary (2026-08-13; the walk record is
+`v1-prompt-parity-audit.md` §7): the cut stands, and EC is the FIRST
+post-cut chapter with audit-evidenced actor-facing need. RATIFICATION
+DUTY bound here by that walk: the chapter's ratification DECIDES the
+transport carrier of the interim envelope block's retirement —
+adapter-side shaping (implementation-plane Absent-narrowing) or a
+kernel-injected default block (a MODEL-PLANE act, not modeled today) —
+because EC's `op_contracts` projection carries per-op SHAPE, not the
+file-transport mechanics; the STAKE MEASUREMENT lives in the audit §7
+addendum and is not re-derived at that ratification. SECOND
+RATIFICATION DUTY bound here (the §13.5(h) capability-profile
+disposition, owner-ratified KEEP-WITH-RECORD at the ch13 boundary,
+2026-08-14): the L1 `CapabilityProfile` construct STAYS, with its four
+findings recorded at §13.5(h), and the GUARD-or-RETIRE decision is an
+INTERVAL bound to THIS chapter's ratification as its NAMED CLOSING ACT
+— the ratified forward-scoped-exemption pattern (ADR-019 D4's form:
+an interval with a named end, never an open state). The record's
+explicit grounds: GUARD ALONE WOULD BE INSUFFICIENT — finding (i)
+stands guarded or not (every live call passes `step.role`, so the
+construct cannot reach its two cross-role motivating cases); and
+RETIRE IS A MODEL-PLANE ACT which the two model-ledger `→ later`
+items' intent-preservation argues against
+(`l1 · authored-capability-restrictions-in-the-baseline`,
+`l1 · capability-filtered-packet-ops`) — the boundary smuggles no
+model decision. Two bindings ride the interval: (a) the never-built
+guard invariant (explicit entries may only NARROW, never invent —
+`HELP_REQUEST` and op-family ops included) is a PRECONDITION of the
+file format ever accepting the key; (b) the model's L1 illustration
+(a single-role-step narrowing that instantiates neither motivating
+case) is replaced or removed WITH the winning disposition, as a
+model-plane act.
+**Retirement obligation bound here (the carrier choice, user-ratified
+2026-07-25): the chapter that enters this candidate carries in its
+DoD the retirement of ch 13's interim emit-envelope catalog entry**
+(§13.1 item 4 / opening disposition 1) — the same inheritance shape
+the ch9 detached map-audit uses, and the reason this line exists at
+all: a "temporary" marker living only in chapter prose has no
+carrier, and the R-PRESENT-TENSE reference-economy rule requires one.
+Unit-side tripwire for a re-reader: the 11 still-`pending`
+`emit-contract-pseudocode/*` entries in `v3/src/drift/unitMap.json`
+(only `payload_digest` is realized, by ch5-P4) — the surface cannot
+be realized without flipping them. Fourth named
 candidate (raised at the ch11 close as ch-9's own map-extension
 question — §11.1's honest boundary; decided by the user at the
 ch9 scoping round, 2026-07-18): the **runtime core** — the L0c/L0d/
@@ -181,7 +239,75 @@ or hygiene content for the NEXT chapter); (2) the **detached
 realized-map arm audit for ch9** (plan §9.5's DoD clause: the arm's
 per-row map audit of `ch9-runner-contract.md` runs DETACHED,
 deadline = the NEXT chapter's close — the next chapter's DoD
-inherits it as a close obligation).
+inherits it as a close obligation) — **DISCHARGED at the ch13 close
+(2026-08-13):** the audit ran (byte guard clean, hash identical
+before and after), 11 map-block folds landed in the audit's minimal
+form, `pnpm v3:realized-map` green after; its one substantive find
+became carried item (4) below. (3) the **MVP-cut vs
+v1-parity re-read** (raised by the owner, 2026-07-25, off the
+`v1-prompt-parity-audit.md` measurement): the model plane's MVP cut
+is defined as "build until local WF-7 runs" — a DIFFERENT target
+from "v3 can replace the v1 pair-workflow", which the cut never
+claimed to answer. The audit produced one concrete instance: the EC
+layer, which the model's own text calls "the last v1-parity gap",
+sits AFTER the cut, and no v3 surface tells a real actor the emit
+envelope shape until it lands (§5 of the audit). OBLIGATION: before
+this plan sequences the chapters that follow the L2b chapter, walk
+the post-cut and late-Block-A layers against the audit and record,
+per layer, whether v1-workflow replication needs it EARLIER than the
+cut implies — **DISCHARGED at the ch13 boundary (2026-08-13):** the
+walk ran and its per-layer record is `v1-prompt-parity-audit.md` §7;
+no re-cut warranted; the EC candidate row above carries the bound
+ratification duty; the CRITICAL-PATH note below carries the
+sequencing read. The walk's explicit sub-question (raised by the owner at
+the ch13 draft ratification round, 2026-07-26): which actor-facing
+instructions are SYSTEM-level rather than workflow-level, and does
+each have a template-INDEPENDENT carrier — the candidate carriers
+being the EC packet projection (mechanized, from the validator's own
+lookup), a kernel-injected default-block surface (NOT modeled today —
+adopting one is a model-plane act), or adapter-side shaping (a named
+L2b Absent)? The ch13 interim state is honest but seed-dependent: the
+emit-envelope block lives in the SHIPPED template, so a from-scratch
+template author does not inherit it. This is an implementation-plane read; a finding that
+the CUT itself is mis-drawn is a model-plane matter and routes to
+the standing model↔code divergence stop (README §6), never a silent
+re-cut here. (4) the **process-gate spawn-outcome
+diagnostics gap** (found by the ch9 detached realized-map arm audit,
+recorded at the ch13 close, 2026-08-13; SOURCE OF THE OBLIGATION:
+`ch9-runner-contract.md` C26, which promises a structured diagnostic
+event for EVERY spawn outcome on the best-effort ch7 channel): the
+actor-attempt half emits (`runner/actorAdapter.ts` `spawn_outcome`);
+the process-gate runner half does NOT — `runner/processGateRunner.ts`
+performs spawns and carries zero diagnostic calls (the executed
+receipt lives in the ch9-C26 map entry's open note). WORK ITEM: the
+gate runner's spawn outcomes join the existing best-effort diag
+channel, with tests, owned by the next runner-touching chapter; the
+ch9-C26 map entry's UNDER-REALIZATION note retires with it.
+
+**Sixth named candidate (added at the ch13 boundary, 2026-08-14 —
+the user-routed 2026-08-05 finding's §7-mandated plan-map row):**
+**gate-config declarations as data through the port** — the three
+delegated gate schemas (threshold / previous-reviewer-verdict /
+process config) cannot join the ADR-019 declared-schema substrate
+because the ch11-P2a lint boundary confines `gates/`; the
+purpose-preserving path is a DECLARATION field on `GateRegistration`
+travelling through the port. Scope: the next gate-surface-touching
+chapter's ordinary work, prerequisites carried with it — a ratified
+port-shape change, the `[d-gc-*]` paper declarations, a per-surface
+parity gate. Never a while-we-are-here act (the routing entry's own
+rule).
+
+**Critical-path note (recorded at the ch13 boundary walk, 2026-08-13
+— sequencing input for the next-chapter derivation; chapter entry
+stays the owner's explicit act):** the MVP cut's own remaining
+critical path is **L3 (human decision-request, 18 pending units) and
+L4 (child workflows, 14 pending units) — NEITHER has a chapter**; they
+are what "local WF-7 runs" still needs, ahead of any post-cut layer.
+LC3a (workflow actions) sequences adjacent to L3 (the `commit_pending`
+action), else approve→commit→merge stays half-manual. EC is the first
+post-cut chapter (its row above); the L2b computed-bodies/phase-axis
+Absents route to the MODEL PLANE for leveling FIRST if v1-replacement
+ever becomes a target (audit §7's conditional route).
 
 **Ordering note (walking-skeleton-first, README §3.4).** Chapter 3 before
 chapter 4 does not contradict the principle: ch 3 is the constraint-sink /
@@ -2596,3 +2722,443 @@ lands → a process gate runs — the first live end-to-end journey);
 process-log review held at the boundary, including the
 model-tier-experiment-2 §7 arm-comparison entry and the
 mutation-pilot yield read.
+
+## Chapter 13 — Context blocks: the L2b render + definition-load ref check + the format's context keys (ratified 2026-07-25)
+
+(autonomy stage: **measurement** — flag-free panel approves proceed
+to build autonomously THROUGH the two transitional external-arm gates
+(README §5.5, arm-pin.md); flags, STOPs, and the draft ratification
+route to the human. Main-thread arm: **Opus-class** — the FIRST Opus
+chapter of `model-tier-experiment-2.md`, per its §2 pre-registration
+("the next implementation chapter opens the Opus arm"), the K3
+prerequisite hardenings having landed at the ch12 boundary; recorded
+in its §8 log at this ratification. **No chapter-named
+Fable-mandatory slice** (user, 2026-07-25): no packet here is
+first-of-a-kind or idiom-minting — the render extends the existing
+dispatch assembly and reuses ch11's authority logic, the definition
+side extends the ch8/ch11 format and admission machinery. The
+standing Fable-mandatory categories are unchanged (this section, the
+contract-draft + its ratification support, process revisions, the
+boundary review). Panel lenses and the external arm stay as ratified.
+**The GROUND of that decision moved at ch13-p1a's approve (aligned
+2026-08-09), the decision did not.** The re-derivation made the
+definition side idiom-minting after all: ch13-p1a admits a new
+normalizer-hook CONSTRUCT into the ADR-019 vocabulary and scores E = 2
+on the difficulty index's idiom-minting pole, so the sentence above no
+longer describes p1a. The no-Fable-slice disposition nevertheless
+stands, on the reason it was always for: a SLICE is build work, and
+the chapter's build work remains Opus-class — which is the data the
+model-tier experiment opened this chapter to collect. What the
+re-derivation produces instead are two Fable-mandatory `docs(v3)`
+ACTS, both inside the standing categories above (the contract-draft's
+ratification support; process revisions), both prerequisites of
+ch13-p1a's build and neither a slice of it.
+The mutation-testing pilot DUAL-RUNS beside arm gate-2 on every
+packet — this is the pilot's SECOND and final data chapter, see the
+flow note in §13.4.)
+
+The **third live use of the §1.3 map-extension mechanism** (ch 11
+closed VALIDATED, ch 12 followed), realizing the §1.3 third named
+candidate — the **L2b context-block surface**, deliberately excluded
+from ch 11 (§11.1) with a stated condition: it lands "naturally after
+ch 9 when a real actor adapter consumes dispatched packets." That
+condition came TRUE at the ch9 close — the shipped adapter
+materializes the ContextPacket as canonical `packet.json` and hands
+the actor its path, so a block rendered into the packet reaches a
+real actor with no prompt-assembly layer in between. Numbered 13
+(arrival order), ordered after ch 9 (build order). No PI item:
+model-ladder surface.
+
+**What the layer is for.** L2 enforces a rule; L2b COMMUNICATES it.
+The kernel renders deterministic, actor-facing blocks into the
+dispatched packet so an actor is told the rule before it acts instead
+of burning a round on an emit the gate would block. One render
+mechanism, two ref sources: a template-level catalog is the single
+body source, and both the L0c-declared role/step prompt-concern refs
+and the gate/policy block refs are id lists into it. Nothing here
+changes a verdict — deleting a block cannot change what L2 enforces.
+
+**Opening dispositions (user, 2026-07-25 — the scoping round):**
+
+1. **Acceptance floor = capability AND shipped wiring.** Not the
+   capability alone: the shipped canonical template gains a REAL
+   catalog entry and a journey smoke proves the block reaches a real
+   actor's `packet.json` through the shipped entrypoint
+   (R-ACTIVATION-JOURNEY). The first catalog entry is the
+   **emit-envelope block** — the interim carrier for the gap named in
+   [`v1-prompt-parity-audit.md`](v1-prompt-parity-audit.md) §5 (no v3
+   surface tells a real actor the emit envelope shape; the ch9
+   dogfooding tier-2 leg supplied it by hand in the `--actor-cmd`
+   invocation). It retires when EC's `op_contracts` lands — and that
+   retirement has a CARRIER, not a promise: the EC surface is entered
+   as a named §1.3 map-extension candidate at this ratification, with
+   the retirement of this catalog entry bound into the DoD of
+   whichever chapter takes it (user-ratified 2026-07-25, after the
+   owner asked what would guarantee the pickup; a chapter-prose
+   "temporary" marker is exactly the carrier-less form the
+   R-PRESENT-TENSE reference-economy rule forbids).
+2. **The ch9-carried EPIPE item rides as this chapter's own first
+   packet** (§1.3 carried item 1), not folded into a content packet:
+   one packet = one logical change, and a Light-band opener is a
+   clean first calibration point for the Opus arm.
+3. **One contract-draft, for the L2b surface only.** The EPIPE
+   closed-pipe behavior contract stays a PACKET-time decision (the
+   decision-home triage: a single-packet decision has no cross-packet
+   drift to prevent).
+4. **Arm slicing: none** — see the autonomy-stage note above.
+
+### 13.1 Scope and boundaries
+
+**In scope:**
+
+1. **The dispatch-time render.** `assemble_context_blocks`:
+   deterministic, bodies ONLY from the catalog, source order = render
+   order (role → step → gate, declaration order within each), a
+   repeated id renders once while `provenance.sources[]` accumulates
+   every emitter. The gate ref's predicate — it renders iff its
+   transition is in `available_ops ∩ L1 capability` — REUSES the
+   transition-existence + L1 authority logic ch 11 already defines;
+   no fresh authority logic is written here. The packet gains one
+   ordered field of `{ id, body, provenance }`. `HANDLE`'s verdict
+   path is untouched.
+2. **The definition-load ref check.** `validate_context_refs` runs
+   under ADMISSION (`admit_definition`), beside the rest of the
+   definition-static family; an unresolved ref is the
+   `unresolved_context_block_ref` DEFINITION ISSUE — an admission
+   failure, never a render-time drop. The code is an EXISTING name
+   (the ch11 model fix's 31-name definition-issue family, see
+   `ch11-model-sync-delta.md`); it joins the named-lane carrier the
+   ch11 gate work established (`code` on the validate-stage finding).
+3. **The format's three context keys.** Per the §8.2 stance (a
+   capability and its format surface land in the same chapter): the
+   template-level catalog (single body source — bodies never live
+   inline at a ref site), the role/step prompt-concern refs (the L0c
+   slot that has had no resolver until now), and the gate/policy
+   block refs. camelCase realization of the model's snake_case names
+   per the established rename culture (ch11-C13/C16/C37, ch12) —
+   stated so neither side silently forks; unknown keys are ADMISSION
+   issues per the ch8-C13 fail-closed culture.
+4. **The shipped template's first catalog entry + the journey
+   smoke.** Per opening disposition 1. The catalog additionally
+   carries an AUTHORING COMMENT beside it (user-ratified
+   2026-07-25): a block body stating a gate's configured value can go
+   stale against that gate with nothing detecting it. It sits in the
+   shipped file because the reader who needs it is whoever opens that
+   file to add the NEXT entry — the person who turns the latent risk
+   live. This chapter ships no such body (the only entry describes
+   the emit envelope, not a gate), so the risk is latent here by
+   construction; the comment and its draft sibling (§13.3) are aim,
+   not enforcement.
+5. **The EPIPE fix (the chapter's hygiene packet).** The SHIPPED CLI
+   entrypoints' output sinks — the operator CLI's and the dev CLI's,
+   whose entrypoints carry the byte-identical bare sink and share the
+   `dispatch` shell that recognizes the quiet-termination path (scope
+   aligned at ch13-p0 pre-approval, 2026-07-26) — handle a closed pipe
+   quietly instead of crashing with a raw stack (repro: `pnpm v3:cli
+   detail … | head -1`; also reached via a `| jq` that parse-fails
+   mid-stream). Today those sinks are bare `process.stdout.write` /
+   `process.stderr.write` calls with no EPIPE handling — note the
+   contrast with the gate lane, which already treats an EPIPE against
+   a fast-exiting child as best-effort (`runner/spawn.ts` GR2). The
+   closed-pipe behavior contract is decided in the packet,
+   against the ch6-P4a canonical exit-code matrix.
+
+**Out of scope (deliberate):**
+
+- **Computed / templated bodies** — a body is authored static text;
+  interpolation like `{{ gate.config.value }}` is a declared Absent.
+  The consequence is stated, not hidden: bump a gate's threshold and
+  the prose that describes it silently lies until someone edits it.
+- **Semantic parity check** — the ref check proves a ref RESOLVES,
+  never that its prose matches the gate config it describes. Drift is
+  not detected (declared Absent).
+- **Conditional block bodies** — selection is by the authority
+  predicate only; round- or state-dependent body variants are
+  computed-body work (declared Absent).
+- **Rich context assembly** — semantic retrieval, memory, skill-doc
+  expansion, model-specific prompt shaping (declared Absent).
+- **Actor-adapter prompt shaping** — the shipped adapter materializes
+  the packet verbatim; how a model-specific adapter folds blocks into
+  a prompt is adapter work (declared Absent).
+- **A phase axis** (separate ref lists for a fresh start vs a
+  continuation) — a v1 mechanism with NO L2b counterpart
+  (`v1-prompt-parity-audit.md` §1). No speculative key: it enters
+  with its semantics or not at all.
+- **EC's `op_contracts`** — the MECHANIZED emit contract (per
+  offerable op: required fields, domains, assertions, evidence
+  obligations) stays EC's, after the MVP cut. This chapter's
+  emit-envelope catalog entry is an INTERIM prose carrier and says so.
+- **The `round ≥ 2` converge gate in the shipped template** — the
+  model's config instance pairs the block with a real gate; adding
+  that gate would change how OUR pair-workflow runs (the reviewer
+  could no longer converge in round 1). That is a product decision,
+  deliberately not made as an L2b side effect (user, 2026-07-25).
+
+### 13.2 Coverage and intake impact
+
+Unit ownership: **4 ids** (all `l2b-pseudocode`) — two new-name units
+(`assemble_context_blocks`, `validate_context_refs`) and two reprints
+(`CREATE_INSTANCE`, `dispatch_intent`) whose dispositions the owning
+packets declare (the authoring-time discovery is the authority).
+Rejections: **ZERO new behavioral** — the 54-name registry is
+byte-untouched, because `unresolved_context_block_ref` is a
+definition ISSUE code, not a registry rejection name; the drift lanes
+must be green before AND after. Invariants: **6**, dispositions
+already fixed by the ch-5 map (4 `test` / 1 `type/schema` /
+1 `review`) — no checker, so `storeCheckers` is untouched. Chapter
+traces: **1 golden trace** (`l2b-pseudocode`) — the rule renders for
+the actor who could emit the gated transition, is ABSENT for one who
+could not, and a multi-source id renders once with both sources
+retained. No IC/PI intake rows flip: map-extension surface.
+
+Carried IN from ch 9 (§1.3 carried items): the EPIPE product item
+(realized at P0) and the DETACHED realized-map arm audit of
+`ch9-runner-contract.md`, whose deadline is THIS chapter's close —
+inherited as a close obligation (§13.5). The §1.3 carried item (3),
+the MVP-cut vs v1-parity re-read, is due at this chapter's BOUNDARY,
+before the plan sequences what follows — a boundary-review duty, not
+a build blocker.
+
+### 13.3 The draft phase
+
+Before ANY packet (README §4):
+`contracts/ch13-context-block-contract.md` (surface: `context-block`).
+Indicative C-row set — the draft decides, this list only scopes it:
+the three YAML keys' camelCase spelling, their attachment points, and
+their keyset rules; the catalog entry's fixed keyset and its
+unknown-key disposition; the packet field's TS shape and how the
+three provenance source kinds are spelled (including the
+gate-binding pair of step + event); the admission finding's lane
+(path form, the `code` carrier, accumulate-vs-short-circuit against
+ch8-C21/C36); the empty/absent matrix (no catalog and no refs; a
+catalog present but unreferenced; an empty ref list; the same id
+reached from a role AND its step); the render's behavior when a gate
+ref's binding is not offerable; and the shipped catalog entry's
+PRESENCE rule (its id and that it exists — its prose is packet-time
+authoring, not a contract row). REQUIRED row (user-ratified
+2026-07-25): a catalog-authoring CAVEAT — a block body that states a
+gate's configured VALUE can go stale against that gate, and nothing
+detects it (the two declared L2b Absents, `computed-templated-bodies`
+and `semantic-parity-check`, are the missing capability; the ref
+check proves resolution, never parity). The caveat is placed where
+the risk is CREATED, not where it is suffered: this row plus the
+§13.1 item 4 template comment. Neither enforces — they aim, and the
+enforcing form is deliberately out of chapter (§13.1). Ratification
+is permanently human;
+packets anchor as `contract:ch13-context-block#Cn`.
+
+**Superseded, and its successor (aligned at the ch13 contract-v2
+ratification, 2026-08-08):** the `context-block` draft named above was
+superseded 2026-08-05 (record in its own file; oracle branch
+`ch13-prose-line`, authorizing plan `ch13-rederivation-plan.md`). The
+live surface is `contracts/ch13-context-block-v2-contract.md`
+(surface: `context-block-v2`), authored on the ADR-019 declared-schema
+substrate; the indicative C-row list above described the prose line
+and is history. Packets anchor as `contract:ch13-context-block-v2#Cn`
+— an anchor into the superseded draft is lint-red. Ratification is
+permanently human, unchanged.
+
+### 13.4 Packets and flow mode
+
+Draft reference (§1.3 convention):
+`contracts/ch13-context-block-v2-contract.md` — the successor of
+`contracts/ch13-context-block-contract.md`, which was NOT YET RATIFIED
+at this chapter ratification, was ratified 2026-07-26 and superseded
+2026-08-05 (aligned at the ch13 contract-v2 ratification, 2026-08-08);
+the draft round runs FIRST, before any packet, so the prediction bases
+below are visibly CONDITIONAL per the §1.3 convention.
+
+| Packet | Content | Mode |
+|---|---|---|
+| ch13-P0 | the EPIPE hygiene fix: the shipped CLI entrypoints' output sinks survive a closed pipe (quiet termination instead of a raw stack; scope aligned at ch13-p0 pre-approval, 2026-07-26 — both entrypoints and the shared dispatch shell), its behavior contract decided against the ch6-P4a canonical exit-code matrix, with the claim-derived negative lane; empty ledger slice (a DECLARATION, not an omission — the ch9-P1 precedent) | human approve (the row carries its own new decision — the closed-pipe behavior contract — and §1.3's consistency rule bars an invention-predicted row from flag-free autonomous mode); predicted: invention (memo-born — basis: the ch9 boundary verdict; the enum's closest fit, the basis being a boundary verdict rather than a design memo) |
+| ch13-P1 | the definition side: the three context format keys + the catalog on the parsed template, `validate_context_refs` under `admit_definition`, the `unresolved_context_block_ref` issue lane on the established named-lane carrier, the CLI validate extension | flag-free approve → autonomous build (measurement; the §5.5 fallbacks stand); predicted: projection (basis: the chapter draft — pending ratification) |
+| ch13-P2 | the dispatch side: `assemble_context_blocks` (order, dedup, retained provenance), the packet's context-blocks field, the gate-ref predicate over ch11's authority logic, the `l2b-pseudocode` golden trace, the shipped template's first catalog entry (the emit-envelope block) + the catalog-authoring caveat comment beside it (§13.1 item 4), the l0c golden-trace re-pin (the C4 fixture disposition), and the journey smoke through the shipped entrypoint | flag-free approve → autonomous build (measurement); predicted: projection (basis: the chapter draft — pending ratification) |
+
+Order: draft ratification (carrying the ch11 reopen act — C4 + C30
++ the C41 comparative clause; the draft's C16 carrier row; aligned
+at the ch13 draft round, 2026-07-26) → P0 → P1 → P2 (the README §4 draft-first
+rule binds without exception — P0 anchors no draft row but still
+follows the ratification, the ch12-P0 precedent). P1 before P2 is the
+definition → dispatch dependency: the render reads the parsed
+catalog. The §8.2 no-speculative-keys stance binds at CHAPTER grain —
+a key never ships without its semantics in the same chapter — so P1's
+keys being consumed only at P2 is inside the stance, not an exception
+to it. One packet = packet file + code + tests in ONE commit.
+
+**Re-derivation alignment (aligned at the ch13 contract-v2
+ratification, 2026-08-08):** the order above is the PROSE line's and
+stands as history — its draft ratification and the ch11 reopen act it
+carried (C4 + C30 + the C41 comparative clause, the SUPERSEDED draft's
+C16 carrier row) both EXECUTED on 2026-07-26, and P0 landed. The live
+order from that point is: contract v2 ratification → the ch13-p1 v2
+packet (`ch13-rederivation-plan.md` phase P5 — definition side and
+dispatch side; the P1/P2 split of the table above is the prose line's
+and does not bind the re-derivation). The v2 draft carries NO
+cross-contract reopen act: the ch11 binding keyset is already
+ch11-C4's realized text. The live packet's row values, recorded HERE
+at the v2 ratification (the §1.3 convention's recorded-at-ratification
+rule): **ch13-p1 v2** — content: the definition side and the dispatch
+side in one packet (declaration growth + the C13 normalizer hook and
+carry-list growth, the C9 lane, the render and the packet field, the
+registry flips, the C16/C18 fixture duties); mode: flag-free approve →
+autonomous build (measurement — the §5.5 fallbacks stand, the two
+transitional external-arm gates unchanged); predicted: projection
+(basis: `contracts/ch13-context-block-v2-contract.md` — the surface
+this act ratifies). A
+split into ch13-p1a/p1b inherits this row's values unchanged.
+
+**The split, EXECUTED (aligned at ch13-p1a pre-approval, 2026-08-08):**
+the row above's pre-authorization was taken — the combined scope trips
+two risk-gate hard stops (authority movement together with new runtime
+behavior turned on; one concept across 3+ surfaces) and the
+implementation-closure proof fails, the assessment being materialized in
+`packets/ch13-p1a-context-definition.md`'s `## Sizing/risk`. Shape:
+`foundation → activation`, depth 1, coverage union preserved.
+
+**This is ch13's LIVE Packets-and-flow-mode table**, and the mechanical
+next-packet derivation reads it: the prose-line table earlier in this
+section is history, and its `ch13-P1` / `ch13-P2` rows never acquire
+packet files.
+
+| Packet | Content | Mode |
+|---|---|---|
+| ch13-p1a | the definition side: the declared ch13v2 lanes DRIVEN at the admission entries on both channels, the C13 declaration growth (the two admission-produced ref positions) with its normalizer hooks, engine growth and carry-list growth, the C9 hygiene lane, the C13 type grain, the C18 code-travel lanes, the catalog + ContextBlockRef registry flips, and the schema re-lock act its own build triggers | predicted class inherited from the ch13-p1 v2 row (projection); the MODE resolves to **human approve** (STOP `4:flagged-approve`) — the packet carries new-decision rows and `approve-ratified` routes, so the parent row's flag-free⇒autonomous letter does not reach it (the ch13-P0 row is the precedent for recording this in place) |
+| ch13-p1b | the dispatch side — its content is enumerated ONCE, in `packets/ch13-p1a-context-definition.md`'s out-of-scope row, and deliberately not repeated here, so the two cannot drift | inherited from the ch13-p1 v2 row; predicted: projection. The inherited flag-free-⇒-autonomous letter REACHES this packet and its §5.5 condition then fails at authoring: the packet carries five `approve-ratified` routes (the shipped catalog entry's authored body, this mode record, the build-choice names, the de-discriminated compile-negative, and the render's signature deviation from the unit's spelling) and one new-decision row, so the MODE resolves to **human approve** (STOP `4:flagged-approve`) — recorded in place at ch13-p1b pre-approval, on the ch13-P0 / ch13-p1a precedent |
+
+Order: ch13-p1a → ch13-p1b (the render reads the admission-produced ref
+positions, so the producer precedes its consumer). Human acts sit
+INSIDE that order and are not packet boundaries; which acts, and their
+commit choreography, are recorded in ch13-p1a's own D4 and D6 and
+ride its approve rather than being settled here (disambiguated at
+ch13-p1b pre-approval — p1b carries unrelated rows of those ids). The §8.2
+no-speculative-keys stance binds at CHAPTER grain, so p1a's produced
+positions being consumed only at p1b is inside the stance — the same
+reading the prose line's P1/P2 order already carried.
+
+Mutation-pilot flow note: the pilot DUAL-RUNS beside arm gate-2 on
+every packet of this chapter, catches labeled code-mutation vs
+input-domain. This is the pilot's SECOND data chapter — its
+pre-declared two-chapter window CLOSES at this boundary, which
+decides keep or stop.
+
+### 13.5 Deliverables and DoD
+
+Shipped: this section; the ratified-then-realized
+`ch13-context-block-v2` contract-draft (its superseded predecessor
+stays in the tree, frozen, as the decision record — aligned at the
+ch13 contract-v2 ratification, 2026-08-08); the EPIPE fix; the
+definition-load ref check + its issue lane; the three context format
+keys; the dispatch-time render + the packet field; the shipped
+template's first catalog entry; the journey smoke.
+
+DoD: the packets' contract tests green with claim-derived negatives
+EXECUTED; the `l2b` golden trace green; the drift suite green (the
+unit-map lock extends with the 4 ids; the 54-name registry
+byte-untouched — zero new behavioral rejections, asserted before AND
+after; the three l2b entity rows of the domain registry flipped
+realized by their owning packets — the registry test pins key sets,
+not dispositions, so the flip is a named duty, never gate-caught);
+invariant dispositions realized per the ch-5 map (no checker
+added); coverage validation green; all v3 bridges + the FULL
+`pnpm ci:local` gate green; the draft flipped `realized`-in-place
+with its `realized_map` and `pnpm v3:realized-map` GREEN inside the
+close act; the ch-13 map row flipped; `pnpm v3:deferred --closed ch13`
+clean; the dogfooding checkpoint run-or-waived (a hand-driven run
+whose actor's `packet.json` carries the catalog block — the
+acceptance floor's live half); process-log review held at the
+boundary, including (a) the `model-tier-experiment-2.md` §7
+arm-comparison entry — the FIRST Opus-arm chapter, read against ch9's
+Fable data on same-band packet pairs; (b) the mutation-pilot
+second-chapter yield read and its keep/stop verdict; (c) the
+INHERITED detached realized-map arm audit of `ch9-runner-contract.md`
+(§1.3 carried item 2 — its deadline is this close); (d) the §1.3
+carried item (3) MVP-cut vs v1-parity re-read, due before the plan
+sequences the chapters that follow; and (e) the
+reopen-vs-aggregate-note criterion (first applied at the ch13 draft —
+its Context carries the applied form): decide its promotion to a
+standing README rule or its retirement — until then the SUPERSEDED
+`ch13-context-block` draft's Context is its only home (the v2 draft
+does not carry the criterion — aligned at the ch13 contract-v2
+ratification, 2026-08-08; that file is frozen and never-copy, so a
+promotion decision must lift the criterion OUT of it rather than
+leave it sitting there), and this line is the carrier that keeps
+that decision from silently lapsing; a DEFERRED decision enters §1.3
+as a carried item (the standing cross-chapter carry form), never a
+silent lapse; and (f) the integer-like key-ban candidate on the
+ch8-C10 namespace (owner-raised at the ch13 draft ratification round,
+2026-07-26): canonical integer-form string keys (`"2"`, `"10"`) are
+legal event-type/step-id spellings today and are the exact class JS
+record enumeration re-orders (the ch13 PROBE-CB3 measurement,
+recorded in the superseded `ch13-context-block` draft's frozen
+Context; the v2 draft's C10 handles the corner honestly, so ch13 does
+not need the ban — aligned at the ch13 contract-v2 ratification,
+2026-08-08) — that class name REFINED at ch13-p1b pre-approval, whose
+own probe measures the re-ordering class as the canonical decimal
+spellings of 0 … 2³²−2 only, so `"4294967295"` is such a key and does
+NOT re-order (re-confirmed at that packet's build; a disagreeing
+re-execution corrects this line in the same commit) — the boundary decides ADOPT (a ch8-C10 reopen in its own act,
+with migration text; an untruncated draft-time sweep found ZERO
+affected files, so the ban is free now and only gets more expensive
+with time) or WATCH; a deferred adoption likewise enters §1.3 as a
+carried item; and (g) the ch11 POINTER MAINTENANCE (routed here by
+the ch13 contract-v2 draft's named carried scope, 2026-08-08):
+`ch11-gate-format-contract.md` names `contract:ch13-context-block#C6`
+in C4, C30, C41, the fourth reopen record and two `realized_map`
+entries (a third map entry mentions the reopen act without carrying
+the pointer) — the pointed-at SEMANTICS are carried unchanged by
+ch13v2-C6, so this is pointer maintenance, not meaning drift, and no
+lint catches it (the realized-map scanner matches same-contract refs
+only; the packet-anchor rule is manifest-scoped). The boundary
+decides REPOINT (a ch11 annotation act, tense/pointer conversions
+only) or LEAVE-WITH-RECORD; either way the decision is recorded,
+never a silent lapse.
+
+And (h) THE CAPABILITY-PROFILE DISPOSITION (routed here 2026-08-11
+from the ch13-p1b approve, where the shipped `availableOps` wording
+put the question in front of the user). The L1 `CapabilityProfile`
+is TYPE-LEVEL ONLY — the authoring format rejects the key
+(`domain/template.ts`) — and its `not_authorized` branch has been
+dormant since L1 by declaration. Four findings, each checkable
+against tree bytes, say the dormancy is not merely "not yet used":
+(i) EVERY live call passes `step.role` — `capability(template,
+step.role, …)` at l1/l2/l2a/l2b/l3/l5/emit-contract and at
+`kernel/kernel.ts`'s single call site — and the role-authority
+rejection precedes it, so a profile entry for any OTHER role is
+unreachable; (ii) the natural wake-up ARRIVED and went around: L3's
+operator path is a separate input class with its own
+`operator_not_authorized`, stated in `l3-pseudocode/SUBMIT_DECISION`
+as "NOT the L1 actor-envelope gate"; (iii) at L5 the derived set
+outgrew the step graph — `event_types_of(step.transitions) ∪
+({HELP_REQUEST} IF step.help is declared)` — while an authored
+profile REPLACES that set wholesale, so a profile written to narrow
+one op silently disables the ask unless it re-lists `HELP_REQUEST`,
+and NOTHING guards that (a template-validation invariant of exactly
+this shape — explicit entries may only narrow, never invent — was
+asked for in the L1 design round and never built); (iv) the offer
+side is already repaired in the model but not in the tree:
+`emit-contract-pseudocode/offerable_ops` calls capability AS THE
+FUNCTION so an authored filter reaches the offered ops, whereas the
+shipped `deriveDispatchIntent` still sets `availableOps` from
+`Object.keys(step.transitions)` alone. The boundary decides GUARD
+(build the never-built invariant, extended to op-family ops, and
+land the offer-side intersection), RETIRE (narrowing lives in the
+step graph; an ADR/model act removes the construct), or
+KEEP-WITH-RECORD (carry the hazard with the reason stated). Two
+model-ledger `→ later` items are the same question and move with it:
+`l1 · authored-capability-restrictions-in-the-baseline` and `l1 ·
+capability-filtered-packet-ops` — authored restrictions are only
+safe once the offer side filters, which is what (iv) is about. The
+model's own L1 illustration (`capability_profile: - { role:
+reviewer, step: review, allow: [converged] }`, unchanged since
+2026-06-14) narrows a SINGLE-ROLE step and so instantiates neither
+motivating case the design round argued from (an operator-only
+button; `human_question` from either role) — both of which are
+cross-role, hence unreachable per (i); it is replaced or removed
+with whichever disposition wins. PROVENANCE, recorded because the
+history is not in this repo: the L1 design round ran on 2026-06-14
+across two sessions relaying through the user by copy-paste — Claude
+`e5616c72-61ee-4b7b-8894-b50eba6d1e98` and Codex rollout
+`019ec0f4-ec0f-7b02-bef5-456797d3d0ca` — and a rendered
+reconstruction of that hour exists outside the tree; the user brings
+it into the boundary session if the history is wanted. No finding
+above depends on it.
