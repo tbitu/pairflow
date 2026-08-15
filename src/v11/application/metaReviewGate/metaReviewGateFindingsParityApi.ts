@@ -189,7 +189,7 @@ export async function validateFindingsArtifactParity(input: {
   if (computedDigest !== input.digest) {
     return {
       ok: false,
-      reason: `${metaReviewFindingsParityGuardReasonCode}: findings artifact digest mismatch.`,
+      reason: `${metaReviewFindingsParityGuardReasonCode}: findings artifact digest mismatch (computed sha256 of file on disk: ${computedDigest}, passed in --report-json: ${input.digest}). Do not put a digest field inside the findings JSON artifact; compute the sha256 of the static file on disk and pass it in --report-json.`,
       metadata: buildMetadata({
         parityStatus: "guard_failed",
         artifactOpenTotal,
