@@ -12,6 +12,8 @@ import {
   getRuntimeEmitHistoryPath,
   recordAgentEmitAttemptBestEffort
 } from "../../../v11/infrastructure/artifact/actorProtocol/emitHistoryStore.js";
+import { resolveBubbleById } from "../../../v11/infrastructure/executor/workspace/bubbleLookup.js";
+import { resolveRepoPath } from "../../../v11/infrastructure/executor/workspace/repoResolution.js";
 import {
   actorOutputKinds,
   isActorOutputKind,
@@ -506,12 +508,64 @@ function extractEmitAttemptMetadata(args: string[]): {
   return meta;
 }
 
-function resolveEmitHistoryTargetPath(repoPath?: string, bubbleId?: string): string {
-  const repo = resolve(repoPath ?? process.cwd());
-  if (bubbleId && bubbleId.trim().length > 0) {
-    return getBubbleEmitHistoryPath(join(repo, ".pairflow", "bubbles", bubbleId.trim()));
+export async function resolveEmitHistoryTargetPath(
+  repoPath?: string,
+  bubbleId?: string,
+  cwd: string = process.cwd()
+): Promise<string | undefined> {
+  const trimmedBubbleId = bubbleId?.trim();
+
+  if (trimmedBubbleId && trimmedBubbleId.length > 0) {
+    try {
+      const resolvedBubble = await resolveBubbleById({
+        bubbleId: trimmedBubbleId,
+        ...(repoPath !== undefined ? { repoPath } : {}),
+        cwd
+      });
+      return getBubbleEmitHistoryPath(resolvedBubble.bubblePaths.bubbleDir);
+    } catch {
+      if (repoPath !== undefined) {
+        try {
+          const resolvedBubble = await resolveBubbleById({
+            bubbleId: trimmedBubbleId,
+            cwd
+          });
+          return getBubbleEmitHistoryPath(resolvedBubble.bubblePaths.bubbleDir);
+        } catch {
+          // ignore
+        }
+      }
+    }
   }
-  return getRuntimeEmitHistoryPath(join(repo, ".pairflow", "runtime"));
+
+  try {
+    const resolvedRepo = await resolveRepoPath({
+      ...(repoPath !== undefined ? { repoPath } : {}),
+      cwd
+    });
+    if (trimmedBubbleId && trimmedBubbleId.length > 0) {
+      return getBubbleEmitHistoryPath(
+        join(resolvedRepo, ".pairflow", "bubbles", trimmedBubbleId)
+      );
+    }
+    return getRuntimeEmitHistoryPath(join(resolvedRepo, ".pairflow", "runtime"));
+  } catch {
+    if (repoPath !== undefined) {
+      try {
+        const resolvedRepo = await resolveRepoPath({ cwd });
+        if (trimmedBubbleId && trimmedBubbleId.length > 0) {
+          return getBubbleEmitHistoryPath(
+            join(resolvedRepo, ".pairflow", "bubbles", trimmedBubbleId)
+          );
+        }
+        return getRuntimeEmitHistoryPath(join(resolvedRepo, ".pairflow", "runtime"));
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  return undefined;
 }
 
 export async function runAgentEmitCommand(
@@ -519,7 +573,6 @@ export async function runAgentEmitCommand(
 ): Promise<ReturnType<typeof emitActorProtocolFromWorkspace> | null> {
   const startTime = Date.now();
   const attemptMeta = extractEmitAttemptMetadata(args);
-  const targetLogPath = resolveEmitHistoryTargetPath(attemptMeta.repo, attemptMeta.bubbleId);
 
   try {
     const parsed = parseAgentEmitCommandOptions(args);
@@ -642,6 +695,10 @@ export async function runAgentEmitCommand(
       dependencies
     );
 
+    const targetLogPath = getBubbleEmitHistoryPath(
+      authoritativeContext.resolved.bubblePaths.bubbleDir
+    );
+
     await recordAgentEmitAttemptBestEffort({
       targetPath: targetLogPath,
       entry: {
@@ -659,6 +716,10 @@ export async function runAgentEmitCommand(
     return result;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const targetLogPath = await resolveEmitHistoryTargetPath(
+      attemptMeta.repo,
+      attemptMeta.bubbleId
+    );
     await recordAgentEmitAttemptBestEffort({
       targetPath: targetLogPath,
       entry: {
