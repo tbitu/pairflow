@@ -170,14 +170,19 @@ export async function seedBubbleTmuxPaneMessages(
     shouldSubmit: input.metaReviewerSubmitStartupPrompt,
     startupPrompt: input.metaReviewerStartupPrompt
   });
-  // When a startup prompt was submitted for an agent, the
-  // agent already received its full context via the CLI argument that launched
-  // it (opencode) or via the startup prompt paste (reasonix).
-  // Sending a separate bootstrap+kickoff message through tmux paste would
-  // deliver semi-duplicate content as a second input, causing "double input"
-  // steering confusion. Skip the pasted message for agents whose startup
-  // prompt was already submitted.
-  if (input.implementerSubmitStartupPrompt !== true) {
+  // When a startup prompt was submitted for an agent, the agent already
+  // received its full context via the CLI argument that launched it
+  // (opencode) or via the startup prompt paste (reasonix). Sending a separate
+  // bootstrap+kickoff message through tmux paste would deliver semi-duplicate
+  // content as a second input for opencode ("double input" steering confusion).
+  //
+  // reasonix uses a two-paste model: the role-identity startup prompt is the
+  // FIRST paste, and pairflow's per-task guidance is the SECOND paste
+  // (kickoff). These are intentionally distinct — role instructions are
+  // constant, per-task guidance varies. So for tmux_paste agents the kickoff
+  // is always delivered even when a startup prompt was submitted.
+
+  if (!shouldSkipKickoffAfterStartup(input.implementerAgentName, input.implementerSubmitStartupPrompt === true)) {
     await sendPaneMessage(
       input.runner,
       input.implementerPaneId,
@@ -185,7 +190,7 @@ export async function seedBubbleTmuxPaneMessages(
       mergeAndDeduplicateMessages(input.implementerBootstrapMessage, input.implementerKickoffMessage)
     );
   }
-  if (input.reviewerSubmitStartupPrompt !== true) {
+  if (!shouldSkipKickoffAfterStartup(input.reviewerAgentName, input.reviewerSubmitStartupPrompt === true)) {
     await sendPaneMessage(
       input.runner,
       input.reviewerPaneId,
@@ -193,7 +198,7 @@ export async function seedBubbleTmuxPaneMessages(
       mergeAndDeduplicateMessages(input.reviewerBootstrapMessage, input.reviewerKickoffMessage)
     );
   }
-  if (input.metaReviewerSubmitStartupPrompt !== true) {
+  if (!shouldSkipKickoffAfterStartup(input.metaReviewerAgentName, input.metaReviewerSubmitStartupPrompt === true)) {
     await sendPaneMessage(
       input.runner,
       input.metaReviewerPaneId,
@@ -201,4 +206,28 @@ export async function seedBubbleTmuxPaneMessages(
       mergeAndDeduplicateMessages(input.metaReviewerBootstrapMessage, input.metaReviewerKickoffMessage)
     );
   }
+}
+
+/**
+ * Decide whether the per-task kickoff paste should be skipped after a role
+ * startup prompt was already submitted for an agent.
+ *
+ * Returns false (deliver the kickoff) whenever no startup prompt was submitted,
+ * and for tmux_paste agents (reasonix) even when a startup prompt was
+ * submitted — reasonix uses a two-paste model (role startup, then per-task
+ * kickoff). Only non-tmux_paste agents (opencode) and unknown agents retain the
+ * historical "double input" skip after a startup prompt.
+ */
+export function shouldSkipKickoffAfterStartup(
+  agentName: AgentName | undefined,
+  submitted: boolean
+): boolean {
+  if (!submitted) {
+    return false;
+  }
+  if (agentName !== undefined && isAgentNameRegistered(agentName)) {
+    return getAgentRuntimeProfile(agentName).startupPromptDelivery !== "tmux_paste";
+  }
+  // Unknown/undefined agents keep the historical opencode-default skip.
+  return true;
 }

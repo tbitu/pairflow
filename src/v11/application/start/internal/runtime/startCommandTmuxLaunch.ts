@@ -17,6 +17,7 @@ import {
 } from "./startCommandStartupPromptRouting.js";
 import { shouldSubmitStartupPrompt } from "../../../../shared/command/startupPromptGate.js";
 import { getAgentRuntimeProfile } from "../../../../shared/agent/agentRuntimeProfiles.js";
+import { composeRolePrompt } from "../../../../shared/role/prompts/roleStartupPromptComposer.js";
 import type { resolveResumeKickoffMessages } from "../prompts/startCommandResumePrompts.js";
 import type { ResolvedStartBubbleDependencies } from "../../startCommandOrchestration.js";
 import type { StartExecutionContext } from "./startCommandContext.js";
@@ -26,6 +27,11 @@ import { DEFAULT_REVIEW_POLICY_REVIEWER_BLOCKING_MIN_SEVERITY } from "../../../.
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
 import type { PairflowRemoteWorkspaceAuthority } from "../../../../shared/command/pairflowCommandBootstrap.js";
 import type { RoleMcpPolicy } from "../../../../shared/config/bubbleConfigVocabulary.js";
+import type { PairflowCommandProfile, ReviewArtifactType } from "../../../../shared/config/bubbleConfigVocabulary.js";
+import type { BubbleCommandsConfig } from "../../../../shared/command/commandConfigTypes.js";
+import type { BubbleReviewAutoReworkSeverity } from "../../../../shared/reviewPolicy/reviewPolicyTypes.js";
+import type { ReviewerFocusExtractionResult } from "../../../../shared/reviewer/reviewerBrief.js";
+import type { RolePromptStateSnapshot } from "../../../../shared/role/prompts/rolePromptConcernTypes.js";
 
 function buildStatusPaneLabel(bubbleId: string): string {
   return `[orchestrator/status]-[${bubbleId}]`;
@@ -108,6 +114,110 @@ interface ActiveResumeStartupPrompts {
   implementerStartupPrompt?: string | undefined;
   reviewerStartupPrompt?: string | undefined;
   metaReviewerStartupPrompt?: string | undefined;
+  launchImplementerAgent?: boolean | undefined;
+  launchReviewerAgent?: boolean | undefined;
+  launchMetaReviewerAgent?: boolean | undefined;
+}
+
+interface RoleStartupCommon {
+  bubbleId: string;
+  repoPath: string;
+  workspacePath: string;
+  taskArtifactPath: string;
+  pairflowCommandProfile: PairflowCommandProfile;
+  state: RolePromptStateSnapshot;
+  transcriptSummary: string;
+  agentName: AgentName;
+  kickoffDiagnostic?: string;
+}
+
+function resolveResumeImplementerStartupPrompt(input: {
+  common: RoleStartupCommon;
+  reviewArtifactType: ReviewArtifactType;
+  validationCommands: BubbleCommandsConfig;
+}): string | undefined {
+  const base = buildResumeImplementerStartupPrompt({
+    ...input.common,
+    reviewArtifactType: input.reviewArtifactType,
+    validationCommands: input.validationCommands
+  });
+  if (base.trim().length > 0) {
+    return base;
+  }
+  return composeRolePrompt({
+    agentName: input.common.agentName,
+    role: "implementer",
+    phase: "resume",
+    context: {
+      ...input.common,
+      reviewArtifactType: input.reviewArtifactType,
+      validationCommands: input.validationCommands
+    }
+  });
+}
+
+function resolveResumeReviewerStartupPrompt(input: {
+  common: RoleStartupCommon;
+  policySnapshotPathAbs: string;
+  reviewArtifactType: ReviewArtifactType;
+  reviewerBlockingMinSeverity: BubbleReviewAutoReworkSeverity;
+  reviewerTestDirectiveLine?: string;
+  reviewerFocus?: ReviewerFocusExtractionResult;
+  reviewerBriefText?: string;
+}): string | undefined {
+  const base = buildResumeReviewerStartupPrompt({
+    ...input.common,
+    policySnapshotPathAbs: input.policySnapshotPathAbs,
+    reviewArtifactType: input.reviewArtifactType,
+    reviewerBlockingMinSeverity: input.reviewerBlockingMinSeverity,
+    ...(input.reviewerTestDirectiveLine !== undefined
+      ? { reviewerTestDirectiveLine: input.reviewerTestDirectiveLine }
+      : {}),
+    ...(input.reviewerFocus !== undefined
+      ? { reviewerFocus: input.reviewerFocus }
+      : {}),
+    ...(input.reviewerBriefText !== undefined
+      ? { reviewerBriefText: input.reviewerBriefText }
+      : {})
+  });
+  if (base.trim().length > 0) {
+    return base;
+  }
+  return composeRolePrompt({
+    agentName: input.common.agentName,
+    role: "reviewer",
+    phase: "resume",
+    context: {
+      ...input.common,
+      policySnapshotPathAbs: input.policySnapshotPathAbs,
+      reviewArtifactType: input.reviewArtifactType,
+      reviewerBlockingMinSeverity: input.reviewerBlockingMinSeverity,
+      ...(input.reviewerTestDirectiveLine !== undefined
+        ? { reviewerTestDirectiveLine: input.reviewerTestDirectiveLine }
+        : {}),
+      ...(input.reviewerFocus !== undefined
+        ? { reviewerFocus: input.reviewerFocus }
+        : {}),
+      ...(input.reviewerBriefText !== undefined
+        ? { reviewerBriefText: input.reviewerBriefText }
+        : {})
+    }
+  });
+}
+
+function resolveResumeMetaReviewerStartupPrompt(input: {
+  common: RoleStartupCommon;
+}): string | undefined {
+  const base = buildResumeMetaReviewerStartupPrompt(input.common);
+  if (base.trim().length > 0) {
+    return base;
+  }
+  return composeRolePrompt({
+    agentName: input.common.agentName,
+    role: "meta_reviewer",
+    phase: "resume",
+    context: input.common
+  });
 }
 
 function buildActiveResumeStartupPrompts(input: {
@@ -129,7 +239,7 @@ function buildActiveResumeStartupPrompts(input: {
     input.launchWorkspacePath,
     input.context.resolved.bubblePaths.taskArtifactPath
   );
-  const common = {
+  const common: RoleStartupCommon = {
     bubbleId: input.context.resolved.bubbleId,
     repoPath: input.context.resolved.repoPath,
     workspacePath: input.launchWorkspacePath,
@@ -145,18 +255,21 @@ function buildActiveResumeStartupPrompts(input: {
 
   if (activeRole === "implementer" && activeAgent === bubbleConfig.agents.implementer) {
     return {
-      implementerStartupPrompt: buildResumeImplementerStartupPrompt({
-        ...common,
+      implementerStartupPrompt: resolveResumeImplementerStartupPrompt({
+        common,
         reviewArtifactType: bubbleConfig.review_artifact_type,
         validationCommands: bubbleConfig.commands
-      })
+      }),
+      launchImplementerAgent: true,
+      launchReviewerAgent: false,
+      launchMetaReviewerAgent: false
     };
   }
 
   if (activeRole === "reviewer" && activeAgent === bubbleConfig.agents.reviewer) {
     return {
-      reviewerStartupPrompt: buildResumeReviewerStartupPrompt({
-        ...common,
+      reviewerStartupPrompt: resolveResumeReviewerStartupPrompt({
+        common,
         policySnapshotPathAbs: input.context.policySnapshotPathAbs,
         reviewArtifactType: bubbleConfig.review_artifact_type,
         reviewerBlockingMinSeverity:
@@ -171,17 +284,54 @@ function buildActiveResumeStartupPrompts(input: {
         ...(input.context.reviewerBriefText !== undefined
           ? { reviewerBriefText: input.context.reviewerBriefText }
           : {})
-      })
+      }),
+      launchImplementerAgent: false,
+      launchReviewerAgent: true,
+      launchMetaReviewerAgent: false
     };
   }
 
   if (activeRole === "meta_reviewer" && activeAgent === bubbleConfig.agents.meta_reviewer) {
     return {
-      metaReviewerStartupPrompt: buildResumeMetaReviewerStartupPrompt(common)
+      metaReviewerStartupPrompt: resolveResumeMetaReviewerStartupPrompt({
+        common
+      }),
+      launchImplementerAgent: false,
+      launchReviewerAgent: false,
+      launchMetaReviewerAgent: true
     };
   }
 
   return {};
+}
+
+function resolveFreshImplementerStartupPrompt(input: {
+  context: StartExecutionContext;
+  launchWorkspacePath: string;
+  implementerAgent: AgentName;
+}): string | undefined {
+  const bubbleConfig = input.context.resolved.bubbleConfig;
+  // Phase 4: Do not pre-build prompts. Pass metadata for agents to reconstruct context.
+  // reasonix (tmux_paste) receives its role-identity instructions as the pasted
+  // startup prompt instead of via an `--agent` CLI flag; opencode gets them via
+  // `--agent PF-*`. roleStartupPromptDelivery handles this distinction.
+  return composeRolePrompt({
+    agentName: input.implementerAgent,
+    role: "implementer",
+    phase: "startup",
+    context: {
+      bubbleId: input.context.resolved.bubbleId,
+      repoPath: input.context.resolved.repoPath,
+      workspacePath: input.launchWorkspacePath,
+      taskArtifactPath: relative(
+        input.launchWorkspacePath,
+        input.context.resolved.bubblePaths.taskArtifactPath
+      ),
+      pairflowCommandProfile: bubbleConfig.pairflow_command_profile,
+      reviewArtifactType: bubbleConfig.review_artifact_type,
+      validationCommands: bubbleConfig.commands
+    }
+  });
 }
 
 export async function launchFreshTmuxSession(input: {
@@ -196,8 +346,12 @@ export async function launchFreshTmuxSession(input: {
   const metaReviewerAgent = input.context.resolved.bubbleConfig.agents.meta_reviewer;
   const implementerAgent = input.context.resolved.bubbleConfig.agents.implementer;
   const reviewerAgent = input.context.resolved.bubbleConfig.agents.reviewer;
-  // Phase 4: Do not pre-build prompts. Pass metadata for agents to reconstruct context.
-  const implementerStartupPrompt: string | undefined = undefined;
+  const implementerStartupPrompt: string | undefined =
+    resolveFreshImplementerStartupPrompt({
+      context: input.context,
+      launchWorkspacePath: input.launchWorkspacePath,
+      implementerAgent
+    });
   // Agents that cannot run concurrent panes (reasonix enforces a machine-wide
   // single active interactive session) launch only the initially active
   // implementer pane; reviewer/meta-reviewer panes are respawned lazily by
@@ -328,11 +482,11 @@ export async function launchResumeTmuxSession(input: {
   const {
     implementerStartupPrompt,
     reviewerStartupPrompt,
-    metaReviewerStartupPrompt
+    metaReviewerStartupPrompt,
+    launchImplementerAgent = implementerStartupPrompt !== undefined,
+    launchReviewerAgent = reviewerStartupPrompt !== undefined,
+    launchMetaReviewerAgent = metaReviewerStartupPrompt !== undefined
   } = buildActiveResumeStartupPrompts(input);
-  const launchImplementerAgent = implementerStartupPrompt !== undefined;
-  const launchReviewerAgent = reviewerStartupPrompt !== undefined;
-  const launchMetaReviewerAgent = metaReviewerStartupPrompt !== undefined;
   const ack = await input.deps.launchSessionAck({
     bubbleId: input.context.resolved.bubbleId,
     workspacePath: input.launchWorkspacePath,
