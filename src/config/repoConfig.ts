@@ -11,7 +11,7 @@ import {
   type ValidationError,
   type ValidationResult
 } from "../v11/shared/validation/primitives.js";
-import { isAgentName } from "../contracts/kernel/agentIdentity.js";
+import { isAgentName, describeAgentNames } from "../contracts/kernel/agentIdentity.js";
 import type { AgentName } from "../contracts/kernel/agentIdentity.js";
 import type {
   BubbleReviewAutoReworkSeverity,
@@ -351,7 +351,7 @@ function validateRepoDefaultsConfig(
           path: `defaults.agents.${key}`,
           errors,
           isValid: isAgentName,
-          message: "Must be one of: opencode, opencode, opencode"
+          message: `Must be one of: ${describeAgentNames()}`
         });
         if (value !== undefined) {
           validatedAgents[key] = value;

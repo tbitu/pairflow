@@ -11,25 +11,25 @@ import type {
   UiMergeBubbleResult
 } from "../../../contracts/ui/uiActions.js";
 import { bubbleLifecycleStates } from "../../../contracts/kernel/lifecycle.js";
+import { agentNames } from "../../../contracts/kernel/agentIdentity.js";
+import {
+  protocolParticipants as kernelProtocolParticipants
+} from "../../../contracts/kernel/protocol.js";
 import { internalError, throwApiError } from "./routerHttp.js";
 
 type UiActionResponseName = "commit" | "delete" | "merge";
 
 const lifecycleStates = new Set<string>(bubbleLifecycleStates);
 
-const actionAgentNames = new Set<AgentName>(["opencode", "opencode", "opencode"]);
+const actionAgentNames = new Set<AgentName>(agentNames);
 const actionAgentRoles = new Set<AgentRole>([
   "implementer",
   "reviewer",
   "meta_reviewer"
 ]);
-const protocolParticipants = new Set<ProtocolParticipant>([
-  "opencode",
-  "opencode",
-  "opencode",
-  "orchestrator",
-  "human"
-]);
+const protocolParticipants = new Set<ProtocolParticipant>(
+  kernelProtocolParticipants
+);
 const protocolMessageTypes = new Set<ProtocolMessageType>([
   "TASK",
   "PASS",

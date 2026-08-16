@@ -1,17 +1,21 @@
 import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
+import { getAgentRuntimeProfile } from "../agent/agentRuntimeProfiles.js";
 
 /**
  * Determine whether a startup prompt should be submitted via tmux paste.
  *
- * Opencode receives its startup prompt through CLI arguments and does not need
- * tmux-based submission.
+ * opencode receives its startup prompt through CLI arguments and does not need
+ * tmux-based submission. reasonix has no `--prompt` flag, so its startup
+ * prompt must be pasted into the TUI (profile.startupPromptDelivery).
  */
 export function shouldSubmitStartupPrompt(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   agentName: AgentName,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   startupPrompt: string | undefined
 ): boolean {
-  // Opencode receives its startup prompt via CLI arguments.
-  return false;
+  if (
+    getAgentRuntimeProfile(agentName).startupPromptDelivery !== "tmux_paste"
+  ) {
+    return false;
+  }
+  return (startupPrompt?.trim().length ?? 0) > 0;
 }

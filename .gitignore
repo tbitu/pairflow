@@ -14,3 +14,6 @@ __pycache__/
 v3/.stryker-tmp/
 v3/reports/
 v3/stryker.log
+
+# Local coding-agent session state (opencode/.reasonix equivalents live outside the repo or are ignored per-agent)
+.reasonix/

@@ -4,6 +4,8 @@ import {
   getSharedTopologySlotPaneIndexForRole,
 } from "../../../shared/topology/topologySlotPaneProjection.js";
 import type { AgentRole } from "../../../../contracts/kernel/agentIdentity.js";
+import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
+import { getAgentRuntimeProfile } from "../../../shared/agent/agentRuntimeProfiles.js";
 import { runTmux } from "./tmuxRunner.js";
 import type { TmuxRunOptions } from "../../../ports/tmuxSessions.js";
 
@@ -147,6 +149,25 @@ export async function postEmitInterruptOpencodePane(
   // Brief settle delay (250 ms) to let the key sequence reach the target pane
   // before this process exits.
   await new Promise((resolve) => setTimeout(resolve, 250));
+}
+
+/**
+ * Post-emit interruption, dispatched per agent runtime profile.
+ *
+ * opencode uses the double-Escape-with-delay sequence. reasonix does NOT:
+ * a single Escape cancels a running turn, and a double Escape on the idle
+ * composer opens the rewind picker — the opencode sequence is not part of its
+ * hand-over contract, so the interruption is skipped entirely (no-op).
+ */
+export async function postEmitInterruptAgentPane(
+  input: PostEmitInterruptionInput & { agentName?: AgentName }
+): Promise<void> {
+  const agentName = input.agentName ?? "opencode";
+  const profile = getAgentRuntimeProfile(agentName);
+  if (profile.postEmitInterruption === "none") {
+    return;
+  }
+  await postEmitInterruptOpencodePane(input);
 }
 
 /**

@@ -12,6 +12,9 @@ import { runExecutePairflowPlanContinuation } from "../../application/planWatch/
 import {
   opencodePlanWatchRunnerBackendAdapter
 } from "../../infrastructure/executor/planWatch/opencode/opencodeAgentRunnerBridge.js";
+import {
+  reasonixPlanWatchRunnerBackendAdapter
+} from "../../infrastructure/executor/planWatch/reasonix/reasonixAgentRunnerBridge.js";
 import { nodeProcessSpawn } from "../../infrastructure/executor/process/nodeProcessSpawn.js";
 import type {
   ProcessSpawnPipeChild,
@@ -344,7 +347,10 @@ function abortedBeforeSpawnResult(): AgentRunnerProcessResult {
 export const agentRunnerBridgeDefaults: AgentRunnerBridgeDependencies = {
   pathExists,
   runCommand: runAgentRunnerCommand,
-  builtInBackends: [opencodePlanWatchRunnerBackendAdapter]
+  builtInBackends: [
+    opencodePlanWatchRunnerBackendAdapter,
+    reasonixPlanWatchRunnerBackendAdapter
+  ]
 };
 
 export function runExecutePairflowPlanContinuationWithDefaults(

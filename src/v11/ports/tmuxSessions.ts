@@ -38,6 +38,9 @@ export interface LaunchBubbleSessionInput {
   implementerSubmitStartupPrompt?: boolean;
   reviewerSubmitStartupPrompt?: boolean;
   metaReviewerSubmitStartupPrompt?: boolean;
+  implementerStartupPrompt?: string | undefined;
+  reviewerStartupPrompt?: string | undefined;
+  metaReviewerStartupPrompt?: string | undefined;
   implementerKickoffMessage?: string;
   reviewerKickoffMessage?: string;
   metaReviewerKickoffMessage?: string;

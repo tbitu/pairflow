@@ -24,7 +24,7 @@ interface ManagedPathPreflight {
   unsafe: boolean;
 }
 
-const OTHER_AGENT_DIRS = [".claude", ".codex", ".copilot", ".gemini"] as const;
+const OTHER_AGENT_DIRS = [".claude", ".codex", ".copilot", ".gemini", ".reasonix"] as const;
 
 function isDirectory(status: SkillsInstallPathStatus): boolean {
   return status.exists && status.type === "directory";
@@ -355,7 +355,9 @@ export async function installPairflowSkills(
   const targetRoot = join(runtime.homeDir, options.targetDir, "skills");
   const targetAgentRoot = join(runtime.homeDir, options.targetDir);
   const otherRoots = options.linkOther
-    ? OTHER_AGENT_DIRS.map((dir) => join(runtime.homeDir, dir, "skills"))
+    ? OTHER_AGENT_DIRS
+        .filter((dir) => dir !== options.targetDir)
+        .map((dir) => join(runtime.homeDir, dir, "skills"))
     : [];
   const otherRoot = options.linkOther
     ? otherRoots.join(", ")

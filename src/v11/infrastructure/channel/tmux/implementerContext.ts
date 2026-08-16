@@ -86,7 +86,8 @@ export async function refreshImplementerContext(
     role: "implementer",
     command: implementerCommand,
     cwd: workspacePath,
-    runner
+    runner,
+    expectedPaneAgent: input.bubbleConfig.agents.implementer
   });
 
   if (!activateResult.ok) {

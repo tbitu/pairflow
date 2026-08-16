@@ -1,5 +1,9 @@
-// Only opencode is supported; no multi-agent choice.
-export const agentNames = ["opencode"] as const;
+// Supported pairflow coding agents. opencode remains the default; reasonix is
+// supported alongside it (launch via `npx reasonix code`). Agent-specific
+// runtime behavior lives in the per-agent profiles under
+// src/v11/shared/agent/agentRuntimeProfiles.ts — do not add agent-specific
+// conditionals outside that registry.
+export const agentNames = ["opencode", "reasonix"] as const;
 
 export type AgentName = (typeof agentNames)[number];
 
@@ -30,4 +34,12 @@ export function isAgentRole(value: unknown): value is AgentRole {
   return (
     typeof value === "string" && (agentRoles as readonly string[]).includes(value)
   );
+}
+
+/**
+ * Render the supported agent names as a human-readable enumeration for
+ * validation error messages (e.g. "Must be one of: opencode, reasonix").
+ */
+export function describeAgentNames(): string {
+  return agentNames.join(", ");
 }

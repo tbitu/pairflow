@@ -136,6 +136,7 @@ Optional but recommended:
 
 - `cursor` (default editor for `bubble open`)
 - `codex` and `claude` binaries in PATH (for tmux agent panes)
+- `opencode` and/or `reasonix` binaries in PATH (Pairflow bubble agents; reasonix can also run through `npx reasonix`)
 - One of these macOS terminals for `bubble attach`: [iTerm2](https://iterm2.com/), [Ghostty](https://ghostty.org/), [Warp](https://www.warp.dev/), or Terminal.app (`auto` mode falls back to `copy` when no GUI launcher is available)
 
 ## Containerized Development (No Local Node/pnpm)
@@ -187,7 +188,7 @@ After installation, you can configure both:
 
 ### 2) (Optional) Install Pairflow skills for your coding agent
 
-Recommended if you operate Pairflow via Claude Code or Codex:
+Recommended if you operate Pairflow via Claude Code, Codex, opencode, or reasonix:
 
 ```bash
 pairflow skills install --skills all --target-dir .claude
@@ -196,12 +197,12 @@ pairflow skills install --skills all --target-dir .claude
 Useful options:
 
 - `--skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan`
-- `--target-dir .claude|.codex`
+- `--target-dir .claude|.codex|.opencode|.reasonix`
 - `--link-other` for optional cross-agent per-skill symlinks
 - `--dry-run --json` to preview without writes
 - `--force` to replace unsafe existing selected managed paths
 
-This installs or refreshes selected skills under `~/.claude/skills/` or `~/.codex/skills/`. Source files come from the Pairflow checkout or installed package `.claude/skills/**`; global skill directories are derived targets, not source.
+This installs or refreshes selected skills under `~/.claude/skills/`, `~/.codex/skills/`, `~/.opencode/skills/`, or `~/.reasonix/skills/` (reasonix's skill root). Source files come from the Pairflow checkout or installed package `.claude/skills/**`; global skill directories are derived targets, not source.
 
 The policy reference and fallback manual workflow live at `.claude/skills/INSTALL.md`.
 

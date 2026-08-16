@@ -213,5 +213,6 @@ export interface AgentRunnerBridgeResult {
   routeLedgerSummary?: string | undefined;
   artifactDir?: string | undefined;
   opencodeSessionId?: string | undefined;
+  reasonixSessionId?: string | undefined;
   payload?: AgentRunnerContinuationPayload | undefined;
 }

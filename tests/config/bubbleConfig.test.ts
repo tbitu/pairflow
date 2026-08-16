@@ -52,6 +52,7 @@ describe("bubble config schema", () => {
     expect(config.local_overlay?.mode).toBe("symlink");
     expect(config.local_overlay?.entries).toEqual([
       ".opencode",
+      ".reasonix",
       ".mcp.json",
       ".env.local",
       ".env.production"
@@ -233,7 +234,7 @@ observer = "enabled"
 
     expect(result.errors).toContainEqual({
       path: "agents.meta_reviewer",
-      message: "Must be one of: opencode, opencode, opencode"
+      message: "Must be one of: opencode, reasonix"
     });
   });
 

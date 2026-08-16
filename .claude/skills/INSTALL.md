@@ -1,6 +1,6 @@
 ---
 description: Install or update Pairflow skills into global ~/.opencode/skills
-argument-hint: [--skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan[,<name>...]] [--target-dir .opencode] [--force] [--dry-run] [--json]
+argument-hint: [--skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan[,<name>...]] [--target-dir .opencode|.reasonix] [--force] [--dry-run] [--json]
 allowed-tools: Bash
 ---
 
@@ -32,9 +32,11 @@ SUPPORTED_SKILLS:
 
 - Resolve `SOURCE_ROOT` as the package-local or repo-local `.claude/skills/` directory containing the supported skill source directories.
 - Allowed target directory values:
-   1. `.opencode`
+   1. `.opencode` (install destination `$HOME/.opencode/skills`)
+   2. `.reasonix` (install destination `$HOME/.reasonix/skills`, reasonix's skill root)
 - Install destination format:
   - `TARGET_ROOT="$HOME/<TARGET_DIR_NAME>/skills"`
+- `--link-other` also links into `$HOME/.reasonix/skills` when the primary target is not `.reasonix` (and excludes the primary target directory itself).
 - Never modify source files in the repo; copy one-way from `SOURCE_ROOT` to global target.
 - Use deletion-preserving sync semantics so deleted source files are removed from destination too.
 - Existing selected target skill directories may be refreshed.

@@ -168,7 +168,7 @@ import {
 } from "./commands/plan/watch.js";
 import { isMainCliEntrypoint } from "./isMainCliEntrypoint.js";
 import type { ActorEmitResult } from "../v11/application/actorProtocol/emitActorProtocol.js";
-import { postEmitInterruptOpencodePane, resolveSessionsPath } from "../v11/infrastructure/channel/tmux/postEmitInterruption.js";
+import { postEmitInterruptAgentPane, resolveSessionsPath } from "../v11/infrastructure/channel/tmux/postEmitInterruption.js";
 
 async function handlePassCommand(args: string[]): Promise<number> {
   const result = await runPassCommand(args);
@@ -294,10 +294,11 @@ async function handleAgentEmitCommand(args: string[]): Promise<number> {
       // _meta fields are always populated together by emitActorProtocolFromWorkspace.
       // Use nullish coalescing to default to "implementer" if originatingRole is missing
       // (e.g., pre-existing emit results without this field).
-      await postEmitInterruptOpencodePane({
+      await postEmitInterruptAgentPane({
         sessionsPath,
         bubbleId: bubbleContext.bubbleId,
         originatingRole: bubbleContext.originatingRole ?? "implementer",
+        agentName: bubbleContext.agentName,
       });
     } catch (error) {
       console.error(`[postEmitInterrupt] failed for bubble ${bubbleContext.bubbleId}:`, error);

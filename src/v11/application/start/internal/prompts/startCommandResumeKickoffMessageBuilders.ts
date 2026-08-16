@@ -4,7 +4,6 @@ import {
   type ReviewerCommandGateProjectionVariant
 } from "../../../../shared/reviewer/reviewerCommandGateGuidance.js";
 import { buildPairflowCommandGuidance } from "../../startCommandPromptRuntime.js";
-import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
 import type {
   BubbleReviewAutoReworkSeverity
 } from "../../../../shared/reviewPolicy/reviewPolicyTypes.js";
@@ -55,17 +54,7 @@ export function buildResumeImplementerKickoffMessage(input: {
   round: number;
   reviewArtifactType: ReviewArtifactType;
   pairflowCommandProfile: PairflowCommandProfile;
-  agentName?: AgentName;
 }): string {
-  // AC3 (resume): For opencode agents, strip all generic guidance — only bubble ID + state + task path.
-  if (input.agentName === "opencode") {
-    return [
-      `# [pairflow] bubble=${input.bubbleId} resume kickoff (implementer).`,
-      `State is RUNNING at round ${input.round}.`,
-      `Re-open task context: ${input.taskArtifactPath}.`,
-    ].join(" ");
-  }
-
   if (input.round === 0) {
     return [
       `# [pairflow] bubble=${input.bubbleId} resume kickoff (implementer, ideation pending).`,
@@ -127,20 +116,7 @@ export function buildResumeReviewerKickoffMessage(input: {
   reviewerTestDirectiveLine?: string;
   projectionVariant?: ReviewerCommandGateProjectionVariant;
   reviewerBlockingMinSeverity?: BubbleReviewAutoReworkSeverity;
-  agentName?: AgentName;
 }): string {
-  // AC4 (resume): For opencode agents, strip all generic guidance — only bubble ID + round + optional test directive.
-  if (input.agentName === "opencode") {
-    const lines: string[] = [
-      `# [pairflow] bubble=${input.bubbleId} resume kickoff (reviewer).`,
-      `State is RUNNING at round ${input.round}.`,
-    ];
-    if (input.reviewerTestDirectiveLine !== undefined) {
-      lines.push(`Test directive: ${input.reviewerTestDirectiveLine}`);
-    }
-    return lines.join(" ");
-  }
-
   const thresholdInput =
     input.reviewerBlockingMinSeverity !== undefined
       ? {

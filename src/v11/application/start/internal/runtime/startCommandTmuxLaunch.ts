@@ -15,6 +15,8 @@ import {
 import {
   resolveCommandStartupPrompt
 } from "./startCommandStartupPromptRouting.js";
+import { shouldSubmitStartupPrompt } from "../../../../shared/command/startupPromptGate.js";
+import { getAgentRuntimeProfile } from "../../../../shared/agent/agentRuntimeProfiles.js";
 import type { resolveResumeKickoffMessages } from "../prompts/startCommandResumePrompts.js";
 import type { ResolvedStartBubbleDependencies } from "../../startCommandOrchestration.js";
 import type { StartExecutionContext } from "./startCommandContext.js";
@@ -192,8 +194,19 @@ export async function launchFreshTmuxSession(input: {
     input.context.remoteStartContext?.externalPairflowCommand;
   const remoteWorkspaceAuthority = resolveRemoteWorkspaceAuthority(input.context);
   const metaReviewerAgent = input.context.resolved.bubbleConfig.agents.meta_reviewer;
+  const implementerAgent = input.context.resolved.bubbleConfig.agents.implementer;
+  const reviewerAgent = input.context.resolved.bubbleConfig.agents.reviewer;
   // Phase 4: Do not pre-build prompts. Pass metadata for agents to reconstruct context.
   const implementerStartupPrompt: string | undefined = undefined;
+  // Agents that cannot run concurrent panes (reasonix enforces a machine-wide
+  // single active interactive session) launch only the initially active
+  // implementer pane; reviewer/meta-reviewer panes are respawned lazily by
+  // their first delivery.
+  const allRolesSupportConcurrentPanes = [
+    implementerAgent,
+    reviewerAgent,
+    metaReviewerAgent
+  ].every((agent) => getAgentRuntimeProfile(agent).supportsConcurrentPanes);
   const ack = await input.deps.launchSessionAck({
     bubbleId: input.context.resolved.bubbleId,
     workspacePath: input.launchWorkspacePath,
@@ -205,12 +218,18 @@ export async function launchFreshTmuxSession(input: {
       externalPairflowCommand
     ),
     statusPaneLabel: buildStatusPaneLabel(input.context.resolved.bubbleId),
-    implementerPaneLabel: `[${input.context.resolved.bubbleConfig.agents.implementer}/implementer]`,
-    reviewerPaneLabel: `[${input.context.resolved.bubbleConfig.agents.reviewer}/reviewer]`,
+    implementerPaneLabel: `[${implementerAgent}/implementer]`,
+    reviewerPaneLabel: `[${reviewerAgent}/reviewer]`,
     metaReviewerPaneLabel: `[${metaReviewerAgent}/meta-reviewer]`,
-    implementerSubmitStartupPrompt: false,
-    reviewerSubmitStartupPrompt: false,
-    metaReviewerSubmitStartupPrompt: false,
+    implementerSubmitStartupPrompt: shouldSubmitStartupPrompt(
+      implementerAgent,
+      implementerStartupPrompt
+    ),
+    reviewerSubmitStartupPrompt: shouldSubmitStartupPrompt(reviewerAgent, undefined),
+    metaReviewerSubmitStartupPrompt: shouldSubmitStartupPrompt(metaReviewerAgent, undefined),
+    ...(allRolesSupportConcurrentPanes
+      ? {}
+      : { launchReviewerAgent: false, launchMetaReviewerAgent: false }),
     implementerCommand: buildAgentLaunchCommand({
       agentName: input.context.resolved.bubbleConfig.agents.implementer,
       roleName: "implementer",
@@ -328,9 +347,21 @@ export async function launchResumeTmuxSession(input: {
     implementerPaneLabel: `[${input.context.resolved.bubbleConfig.agents.implementer}/implementer]`,
     reviewerPaneLabel: `[${input.context.resolved.bubbleConfig.agents.reviewer}/reviewer]`,
     metaReviewerPaneLabel: `[${metaReviewerAgent}/meta-reviewer]`,
-    implementerSubmitStartupPrompt: false,
-    reviewerSubmitStartupPrompt: false,
-    metaReviewerSubmitStartupPrompt: false,
+    implementerSubmitStartupPrompt: shouldSubmitStartupPrompt(
+      input.context.resolved.bubbleConfig.agents.implementer,
+      implementerStartupPrompt
+    ),
+    reviewerSubmitStartupPrompt: shouldSubmitStartupPrompt(
+      input.context.resolved.bubbleConfig.agents.reviewer,
+      reviewerStartupPrompt
+    ),
+    metaReviewerSubmitStartupPrompt: shouldSubmitStartupPrompt(
+      metaReviewerAgent,
+      metaReviewerStartupPrompt
+    ),
+    implementerStartupPrompt,
+    reviewerStartupPrompt,
+    metaReviewerStartupPrompt,
     launchImplementerAgent,
     launchReviewerAgent,
     launchMetaReviewerAgent,

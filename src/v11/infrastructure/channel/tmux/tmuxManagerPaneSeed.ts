@@ -1,5 +1,9 @@
 import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import {
+  getAgentRuntimeProfile,
+  isAgentNameRegistered
+} from "../../../shared/agent/agentRuntimeProfiles.js";
+import {
   confirmTmuxPaneMarkerSubmission,
   maybeAcceptOpencodeTrustPrompt,
   sendAndSubmitTmuxPaneMessage,
@@ -53,6 +57,9 @@ export interface SeedBubbleTmuxPaneMessagesInput {
   implementerSubmitStartupPrompt?: boolean | undefined;
   reviewerSubmitStartupPrompt?: boolean | undefined;
   metaReviewerSubmitStartupPrompt?: boolean | undefined;
+  implementerStartupPrompt?: string | undefined;
+  reviewerStartupPrompt?: string | undefined;
+  metaReviewerStartupPrompt?: string | undefined;
   implementerBootstrapMessage?: string | undefined;
   reviewerBootstrapMessage?: string | undefined;
   metaReviewerBootstrapMessage?: string | undefined;
@@ -69,31 +76,58 @@ function resolvePairflowPaneMessageMarker(message: string): string | undefined {
   return match?.[0];
 }
 
-async function submitStartupPrompt(
-  runner: TmuxRunner,
-  targetPane: string,
-  shouldSubmit: boolean | undefined
-): Promise<void> {
-  if (!shouldSubmit) {
+async function submitStartupPrompt(input: {
+  runner: TmuxRunner;
+  targetPane: string;
+  shouldSubmit: boolean | undefined;
+  startupPrompt: string | undefined;
+}): Promise<void> {
+  if (!input.shouldSubmit) {
     return;
   }
 
+  const promptText = input.startupPrompt?.trim();
+  if (promptText !== undefined && promptText.length > 0) {
+    // tmux_paste agents (reasonix) receive their startup prompt through the
+    // pane instead of CLI args; give the TUI time to initialize first.
+    await waitForTuiReady(input.runner, input.targetPane);
+    await sendAndSubmitTmuxPaneMessage(
+      input.runner,
+      input.targetPane,
+      promptText,
+      { maxChunkLength: 1024 }
+    );
+    return;
+  }
+
+  // Legacy opencode reviewer path: the startup prompt was delivered via CLI
+  // args; a bare Enter submits the resulting prompt/trust state.
   await new Promise<void>((resolvePromise) => {
     setTimeout(resolvePromise, 1500);
   });
-  await submitTmuxPaneInput(runner, targetPane);
+  await submitTmuxPaneInput(input.runner, input.targetPane);
 }
 
 async function sendPaneMessage(
   runner: TmuxRunner,
   targetPane: string,
+  agentName: AgentName | undefined,
   message: string | undefined
 ): Promise<void> {
   if ((message?.trim().length ?? 0) === 0) {
     return;
   }
 
-  await maybeAcceptOpencodeTrustPrompt(runner, targetPane).catch(() => undefined);
+  // Only opencode shows folder-trust / bypass-permissions prompts that need
+  // accepting during pane bootstrap (see agent runtime profiles). Undefined or
+  // unknown agents keep the historical opencode-default behavior.
+  const trustPromptHandling =
+    agentName !== undefined && isAgentNameRegistered(agentName)
+      ? getAgentRuntimeProfile(agentName).trustPromptHandling
+      : "opencode";
+  if (trustPromptHandling === "opencode") {
+    await maybeAcceptOpencodeTrustPrompt(runner, targetPane).catch(() => undefined);
+  }
   const concreteMessage = message as string;
   const marker = resolvePairflowPaneMessageMarker(concreteMessage);
   const isStructuredPairflowEnvelope = marker !== undefined;
@@ -118,24 +152,27 @@ async function sendPaneMessage(
 export async function seedBubbleTmuxPaneMessages(
   input: SeedBubbleTmuxPaneMessagesInput
 ): Promise<void> {
-  await submitStartupPrompt(
-    input.runner,
-    input.implementerPaneId,
-    input.implementerSubmitStartupPrompt
-  );
-  await submitStartupPrompt(
-    input.runner,
-    input.reviewerPaneId,
-    input.reviewerSubmitStartupPrompt
-  );
-  await submitStartupPrompt(
-    input.runner,
-    input.metaReviewerPaneId,
-    input.metaReviewerSubmitStartupPrompt
-  );
+  await submitStartupPrompt({
+    runner: input.runner,
+    targetPane: input.implementerPaneId,
+    shouldSubmit: input.implementerSubmitStartupPrompt,
+    startupPrompt: input.implementerStartupPrompt
+  });
+  await submitStartupPrompt({
+    runner: input.runner,
+    targetPane: input.reviewerPaneId,
+    shouldSubmit: input.reviewerSubmitStartupPrompt,
+    startupPrompt: input.reviewerStartupPrompt
+  });
+  await submitStartupPrompt({
+    runner: input.runner,
+    targetPane: input.metaReviewerPaneId,
+    shouldSubmit: input.metaReviewerSubmitStartupPrompt,
+    startupPrompt: input.metaReviewerStartupPrompt
+  });
   // When a startup prompt was submitted for an agent, the
   // agent already received its full context via the CLI argument that launched
-  // it.
+  // it (opencode) or via the startup prompt paste (reasonix).
   // Sending a separate bootstrap+kickoff message through tmux paste would
   // deliver semi-duplicate content as a second input, causing "double input"
   // steering confusion. Skip the pasted message for agents whose startup
@@ -144,6 +181,7 @@ export async function seedBubbleTmuxPaneMessages(
     await sendPaneMessage(
       input.runner,
       input.implementerPaneId,
+      input.implementerAgentName,
       mergeAndDeduplicateMessages(input.implementerBootstrapMessage, input.implementerKickoffMessage)
     );
   }
@@ -151,6 +189,7 @@ export async function seedBubbleTmuxPaneMessages(
     await sendPaneMessage(
       input.runner,
       input.reviewerPaneId,
+      input.reviewerAgentName,
       mergeAndDeduplicateMessages(input.reviewerBootstrapMessage, input.reviewerKickoffMessage)
     );
   }
@@ -158,6 +197,7 @@ export async function seedBubbleTmuxPaneMessages(
     await sendPaneMessage(
       input.runner,
       input.metaReviewerPaneId,
+      input.metaReviewerAgentName,
       mergeAndDeduplicateMessages(input.metaReviewerBootstrapMessage, input.metaReviewerKickoffMessage)
     );
   }

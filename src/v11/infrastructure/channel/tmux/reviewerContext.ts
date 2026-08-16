@@ -122,7 +122,8 @@ export async function refreshReviewerContext(
     role: "reviewer",
     command: reviewerCommand,
     cwd: workspacePath,
-    runner
+    runner,
+    expectedPaneAgent: input.bubbleConfig.agents.reviewer
   });
 
   if (!activateResult.ok) {

@@ -1,4 +1,5 @@
 import {
+  describeAgentNames,
   isAgentName,
   type AgentName
 } from "../../../../../contracts/kernel/agentIdentity.js";
@@ -57,7 +58,7 @@ function validateArtifactMeta(
     errors.push({
       code: "meta_reviewer_invalid",
       path: "meta.reviewer",
-      message: "meta.reviewer must be one of: opencode, opencode, opencode."
+      message: `meta.reviewer must be one of: ${describeAgentNames()}.`
     });
   }
 

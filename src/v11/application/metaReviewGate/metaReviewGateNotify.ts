@@ -9,6 +9,10 @@ import type {
 import {
   resolveMetaReviewGateNotifyTmuxCapabilities
 } from "./metaReviewGateRuntimeCapabilityResolution.js";
+import {
+  getAgentRuntimeProfile,
+  isAgentNameRegistered
+} from "../../shared/agent/agentRuntimeProfiles.js";
 
 const metaReviewerPaneExitedReasonCode = "META_REVIEWER_PANE_EXITED";
 const metaReviewRequestDeliveryUnconfirmedReasonCode =
@@ -174,7 +178,11 @@ export async function notifyMetaReviewerSubmissionRequest(
     taskArtifactPath: "artifacts/task.md"
   });
 
-  if (maybeAcceptTrustPrompt !== undefined) {
+  if (
+    maybeAcceptTrustPrompt !== undefined
+    && isAgentNameRegistered(input.metaReviewerAgent)
+    && getAgentRuntimeProfile(input.metaReviewerAgent).trustPromptHandling === "opencode"
+  ) {
     await maybeAcceptTrustPrompt(runner, input.targetPane).catch(
       () => undefined
     );

@@ -13,7 +13,7 @@ export const supportedPairflowSkillNames = [
 
 export type PairflowSkillName = (typeof supportedPairflowSkillNames)[number];
 
-export type SkillInstallTargetDir = ".opencode";
+export type SkillInstallTargetDir = ".opencode" | ".reasonix";
 
 export type SkillsInstallStatus =
   | "planned"

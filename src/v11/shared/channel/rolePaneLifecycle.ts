@@ -15,8 +15,16 @@
  * 4. On cleanup: Pane is killed with session termination
  */
 
-import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
+import type { AgentName, AgentRole } from "../../../contracts/kernel/agentIdentity.js";
 import type { TmuxRunner } from "../../ports/tmuxSessions.js";
+import { getAgentRuntimeProfile, isAgentNameRegistered } from "../agent/agentRuntimeProfiles.js";
+
+/** Roles that share a bubble's pane topology (implementer, reviewer, meta_reviewer). */
+const ALL_ROLE_PANES: readonly AgentRole[] = [
+  "implementer",
+  "reviewer",
+  "meta_reviewer"
+];
 
 /**
  * Configuration for pane readiness polling and warmup.
@@ -80,6 +88,8 @@ export interface RolePaneLifecycle {
     command: string;
     cwd: string;
     runner: TmuxRunner;
+    /** Configured agent for the role; selects readiness module and concurrency rules. */
+    expectedPaneAgent?: AgentName;
   }): Promise<PaneLifecycleResult>;
 
   /**
@@ -122,6 +132,8 @@ export function createRolePaneLifecycle(input: {
     targetPane: string;
     attempts?: number;
     retryDelayMs?: number;
+    /** Configured agent for the pane; selects the readiness module. */
+    agentName?: AgentName;
   }) => Promise<boolean>;
   readinessConfig?: PaneReadinessConfig;
 }): RolePaneLifecycle {
@@ -133,6 +145,16 @@ export function createRolePaneLifecycle(input: {
       const targetPane = `${activateInput.sessionName}:0.${paneIndex}`;
 
       try {
+        // Step 0: For agents that cannot run concurrent panes (reasonix enforces
+        // a machine-wide single active interactive session), deactivate the other
+        // role panes first so their agent processes release the session lock
+        // before this role's agent starts.
+        await deactivateOtherRolePanes({
+          activateInput,
+          topologyPaneIndexForRole: input.topologyPaneIndexForRole,
+          respawnPane: input.respawnPane
+        });
+
         // Step 1: Respawn pane with new command (kills previous process, resets context)
         await input.respawnPane({
           sessionName: activateInput.sessionName,
@@ -142,12 +164,15 @@ export function createRolePaneLifecycle(input: {
           runner: activateInput.runner
         });
 
-        // Step 2: Wait for pane readiness (opencode startup complete)
+        // Step 2: Wait for pane readiness (agent startup complete)
         const isReady = await input.waitForPaneReady({
           runner: activateInput.runner,
           targetPane,
           attempts: config.maxRetryAttempts,
-          retryDelayMs: config.retryDelayMs
+          retryDelayMs: config.retryDelayMs,
+          ...(activateInput.expectedPaneAgent !== undefined
+            ? { agentName: activateInput.expectedPaneAgent }
+            : {})
         });
 
         if (!isReady) {
@@ -196,4 +221,53 @@ export function createRolePaneLifecycle(input: {
       return config;
     }
   };
+}
+
+/** Placeholder that keeps a pane alive without running an agent. */
+const PANE_DEACTIVATION_PLACEHOLDER = "sh -lc 'while :; do sleep 3600; done'";
+
+export async function deactivateOtherRolePanes(input: {
+  activateInput: {
+    sessionName: string;
+    role: AgentRole;
+    cwd: string;
+    runner: TmuxRunner;
+    expectedPaneAgent?: AgentName;
+  };
+  topologyPaneIndexForRole: (role: AgentRole) => number;
+  respawnPane: (input: {
+    sessionName: string;
+    paneIndex: number;
+    command: string;
+    cwd: string;
+    runner: TmuxRunner;
+  }) => Promise<void>;
+}): Promise<void> {
+  const agentName = input.activateInput.expectedPaneAgent;
+  if (agentName === undefined || !isAgentNameRegistered(agentName)) {
+    return;
+  }
+  if (getAgentRuntimeProfile(agentName).supportsConcurrentPanes) {
+    return;
+  }
+  for (const role of ALL_ROLE_PANES) {
+    if (role === input.activateInput.role) {
+      continue;
+    }
+    const otherPaneIndex = input.topologyPaneIndexForRole(role);
+    try {
+      // Replaces the other pane's agent process with a placeholder, releasing
+      // the reasonix single-active-session lock. The pane is respawned with
+      // its agent command on its next delivery.
+      await input.respawnPane({
+        sessionName: input.activateInput.sessionName,
+        paneIndex: otherPaneIndex,
+        command: PANE_DEACTIVATION_PLACEHOLDER,
+        cwd: input.activateInput.cwd,
+        runner: input.activateInput.runner
+      });
+    } catch {
+      // Deactivation is best-effort; a failure must not block activation.
+    }
+  }
 }

@@ -1,5 +1,10 @@
 import { resolve } from "node:path";
 
+import {
+  getAgentRuntimeProfile,
+  isAgentNameRegistered
+} from "../../../shared/agent/agentRuntimeProfiles.js";
+
 import { buildReviewerAgentSelectionGuidance } from "../../../shared/reviewer/reviewerGuidance.js";
 import { buildReviewerSeverityOntologyReminder } from "../../../shared/reviewer/reviewerSeverityOntology.js";
 import {
@@ -146,7 +151,9 @@ function buildReviewerDeliveryAction(input: {
   reviewerFocus?: ReviewerFocusExtractionResult;
 }): string {
   if (input.envelope.type === "PASS") {
-    const isOpencodeReviewer = input.bubbleConfig.agents.reviewer === "opencode";
+    const isOpencodeReviewer = isAgentNameRegistered(input.bubbleConfig.agents.reviewer)
+    ? getAgentRuntimeProfile(input.bubbleConfig.agents.reviewer).minimalPastedGuidance
+    : false;
 
     // OVERFLOW_1: For opencode reviewers, return minimal handoff text only.
     if (isOpencodeReviewer) {
@@ -267,7 +274,9 @@ export function buildTmuxDeliveryMessage(input: {
 
   let action = "Continue protocol from this event.";
   if (input.recipientRole === "implementer") {
-    const isOpencodeRecipient = input.bubbleConfig.agents.implementer === "opencode";
+    const isOpencodeRecipient = isAgentNameRegistered(input.bubbleConfig.agents.implementer)
+    ? getAgentRuntimeProfile(input.bubbleConfig.agents.implementer).minimalPastedGuidance
+    : false;
     action = buildImplementerDeliveryAction({
       envelope: input.envelope,
       bubbleConfig: input.bubbleConfig,
@@ -290,7 +299,9 @@ export function buildTmuxDeliveryMessage(input: {
         : {})
     });
   } else if (input.recipientRole === "meta-reviewer") {
-    const isOpencodeRecipient = input.bubbleConfig.agents.meta_reviewer === "opencode";
+    const isOpencodeRecipient = isAgentNameRegistered(input.bubbleConfig.agents.meta_reviewer)
+    ? getAgentRuntimeProfile(input.bubbleConfig.agents.meta_reviewer).minimalPastedGuidance
+    : false;
     action = isOpencodeRecipient
       ? "Meta-review task received. Produce autonomous meta-review output."
       : `Meta-review task received. Produce autonomous meta-review output and return only through structured submit with required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitApproveParityNote()}`;
@@ -314,14 +325,20 @@ function isOpencodeRecipient(input: {
   bubbleConfig: BubbleConfig;
   recipientRole: DeliveryMessageRecipientRole;
 }): boolean {
-  if (input.recipientRole === "implementer") {
-    return input.bubbleConfig.agents.implementer === "opencode";
-  }
-  if (input.recipientRole === "reviewer") {
-    return input.bubbleConfig.agents.reviewer === "opencode";
-  }
-  if (input.recipientRole === "meta-reviewer") {
-    return input.bubbleConfig.agents.meta_reviewer === "opencode";
-  }
-  return false;
+  // OVERFLOW_1/OVERFLOW_2: minimal pasted guidance applies only to agents that
+  // receive their context via CLI args (opencode). tmux-paste agents
+  // (reasonix) need the full guidance text.
+  const agent =
+    input.recipientRole === "implementer"
+      ? input.bubbleConfig.agents.implementer
+      : input.recipientRole === "reviewer"
+        ? input.bubbleConfig.agents.reviewer
+        : input.recipientRole === "meta-reviewer"
+          ? input.bubbleConfig.agents.meta_reviewer
+          : undefined;
+  return (
+    agent !== undefined
+    && isAgentNameRegistered(agent)
+    && getAgentRuntimeProfile(agent).minimalPastedGuidance
+  );
 }

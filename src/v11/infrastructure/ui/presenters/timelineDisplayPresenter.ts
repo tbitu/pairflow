@@ -107,7 +107,14 @@ function resolveDisplayRole(
   if (sender === "orchestrator") {
     return "system";
   }
-  if (sender.includes("review") || sender.includes("opencode")) {
+  // Sender-name fallback for entries without actor/delivery metadata: known
+  // agent senders (opencode, reasonix) and reviewer-labeled senders classify as
+  // the reviewer role; everything else defaults to implementer.
+  if (
+    sender.includes("review")
+    || sender.includes("opencode")
+    || sender.includes("reasonix")
+  ) {
     return "reviewer";
   }
   if (entry.sender.trim().length === 0) {

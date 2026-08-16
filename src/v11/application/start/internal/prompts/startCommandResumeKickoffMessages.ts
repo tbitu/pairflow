@@ -1,4 +1,5 @@
 import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
+import { getAgentRuntimeProfile } from "../../../../shared/agent/agentRuntimeProfiles.js";
 import type {
   BubbleReviewAutoReworkSeverity
 } from "../../../../shared/reviewPolicy/reviewPolicyTypes.js";
@@ -76,9 +77,9 @@ export function resolveResumeKickoffMessages(input: {
     input.state.active_role === "meta_reviewer"
   ) {
     if (input.state.active_agent === input.metaReviewerAgent) {
-      const isOpencode = input.metaReviewerAgent === "opencode";
+      const minimalGuidance = getAgentRuntimeProfile(input.metaReviewerAgent).minimalPastedGuidance;
       return {
-        metaReviewerKickoffMessage: isOpencode
+        metaReviewerKickoffMessage: minimalGuidance
           ? buildOpencodeMetaReviewerKickoff({ bubbleId: input.bubbleId })
           : buildResumeMetaReviewerKickoffMessage({
               bubbleId: input.bubbleId,
@@ -108,8 +109,10 @@ export function resolveResumeKickoffMessages(input: {
     input.state.active_agent === input.implementerAgent;
 
   if (activeImplementer) {
-    // Opencode agents receive minimal kickoff messages (no redundant guidance).
-    if (input.implementerAgent === "opencode") {
+    // Agents that receive context via CLI args (opencode) get minimal
+    // kickoff messages (no redundant guidance); tmux-paste agents (reasonix)
+    // receive full guidance.
+    if (getAgentRuntimeProfile(input.implementerAgent).minimalPastedGuidance) {
       return {
         implementerKickoffMessage: buildOpencodeImplementerKickoff({
           bubbleId: input.bubbleId,
@@ -138,8 +141,7 @@ export function resolveResumeKickoffMessages(input: {
       round: input.state.round,
       transcriptSummary: input.transcriptSummary
     });
-    // Opencode reviewers receive minimal kickoff messages.
-    if (input.reviewerAgent === "opencode") {
+    if (getAgentRuntimeProfile(input.reviewerAgent).minimalPastedGuidance) {
       return {
         reviewerKickoffMessage: buildOpencodeReviewerKickoff({
           bubbleId: input.bubbleId,

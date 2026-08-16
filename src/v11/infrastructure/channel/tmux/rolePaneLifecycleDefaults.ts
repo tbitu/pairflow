@@ -10,7 +10,8 @@
 import { createRolePaneLifecycle, type RolePaneLifecycle, DEFAULT_PANE_READINESS_CONFIG } from "../../../shared/channel/rolePaneLifecycle.js";
 import { getSharedTopologySlotPaneIndexForRole } from "../../../shared/topology/topologySlotPaneProjection.js";
 import { respawnTmuxPaneCommand } from "./tmuxManagerRuntime.js";
-import { waitForOpencodePaneReady } from "./tmuxOpencodeReadiness.js";
+import { waitForAgentPaneReady } from "./tmuxPaneReadiness.js";
+import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 
 /**
  * Create the default RolePaneLifecycle implementation for a tmux-based bubble session.
@@ -31,8 +32,14 @@ export function createDefaultRolePaneLifecycle(input?: {
         runner: respawnInput.runner ?? (await import("./tmuxRunner.js").then(m => m.runTmux))
       });
     },
-    waitForPaneReady: async (readyInput: Parameters<typeof waitForOpencodePaneReady>[0]) => {
-      return waitForOpencodePaneReady({
+    waitForPaneReady: async (readyInput: {
+      runner: Parameters<typeof waitForAgentPaneReady>[1]["runner"];
+      targetPane: string;
+      attempts?: number;
+      retryDelayMs?: number;
+      agentName?: AgentName;
+    }) => {
+      return waitForAgentPaneReady(readyInput.agentName, {
         runner: readyInput.runner,
         targetPane: readyInput.targetPane,
         attempts: readyInput.attempts ?? 20,

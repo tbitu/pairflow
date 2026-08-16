@@ -12,7 +12,11 @@ import {
   maybeAcceptOpencodeTrustPrompt,
   sendAndSubmitTmuxPaneMessage
 } from "./tmuxInput.js";
-import { waitForOpencodePaneReady } from "./tmuxOpencodeReadiness.js";
+import { waitForAgentPaneReady } from "./tmuxPaneReadiness.js";
+import {
+  getAgentRuntimeProfile,
+  isAgentNameRegistered
+} from "../../../shared/agent/agentRuntimeProfiles.js";
 import type { TmuxRunner } from "./tmuxManager.js";
 
 export interface DeliverySessionContext {
@@ -107,14 +111,15 @@ export interface TmuxDeliveryTimingOptions {
   markerRetryDelayMs?: number;
 }
 
-export async function ensureOpencodePaneReady(input: {
+export async function ensureAgentPaneReady(input: {
   runner: TmuxRunner;
   targetPane: string;
+  expectedPaneAgent?: AgentName | undefined;
   respawnExpectedPaneAgent?: (() => Promise<void>) | undefined;
   sleepForDelayMs?: ((delayMs: number) => Promise<void>) | undefined;
   forceRespawn?: boolean | undefined;
 }): Promise<boolean> {
-  const quickProbe = await waitForOpencodePaneReady({
+  const quickProbe = await waitForAgentPaneReady(input.expectedPaneAgent, {
     runner: input.runner,
     targetPane: input.targetPane,
     attempts: 3,
@@ -144,13 +149,33 @@ export async function ensureOpencodePaneReady(input: {
   }
 
   await input.respawnExpectedPaneAgent();
-  return await waitForOpencodePaneReady({
+  return await waitForAgentPaneReady(input.expectedPaneAgent, {
     runner: input.runner,
     targetPane: input.targetPane,
     attempts: 90, // Give it up to 27 seconds for a fresh container launch
     ...(input.sleepForDelayMs !== undefined
       ? { sleepForDelayMs: input.sleepForDelayMs }
       : {})
+  });
+}
+
+/**
+ * Backwards-compatible alias for callers that only ever manage opencode panes.
+ */
+export function ensureOpencodePaneReady(input: {
+  runner: TmuxRunner;
+  targetPane: string;
+  respawnExpectedPaneAgent?: (() => Promise<void>) | undefined;
+  sleepForDelayMs?: ((delayMs: number) => Promise<void>) | undefined;
+  forceRespawn?: boolean | undefined;
+}): Promise<boolean> {
+  return ensureAgentPaneReady({
+    runner: input.runner,
+    targetPane: input.targetPane,
+    expectedPaneAgent: "opencode",
+    respawnExpectedPaneAgent: input.respawnExpectedPaneAgent,
+    sleepForDelayMs: input.sleepForDelayMs,
+    forceRespawn: input.forceRespawn
   });
 }
 
@@ -161,11 +186,16 @@ async function ensureLiveSessionOrRespawn(input: {
   respawnExpectedPaneAgent?: (() => Promise<void>) | undefined;
   sleepForDelayMs?: ((delayMs: number) => Promise<void>) | undefined;
 }): Promise<{ ok: boolean; isLiveSession: boolean }> {
-  if (input.expectedPaneAgent !== "opencode") {
+  // Unregistered/legacy agents are treated as always-running (no readiness
+  // probe, no respawn), preserving pre-reasonix delivery behavior.
+  if (
+    input.expectedPaneAgent === undefined
+    || !isAgentNameRegistered(input.expectedPaneAgent)
+  ) {
     return { ok: true, isLiveSession: false };
   }
 
-  const isLive = await waitForOpencodePaneReady({
+  const isLive = await waitForAgentPaneReady(input.expectedPaneAgent, {
     runner: input.runner,
     targetPane: input.targetPane,
     attempts: 3,
@@ -182,7 +212,7 @@ async function ensureLiveSessionOrRespawn(input: {
   }
 
   await input.respawnExpectedPaneAgent();
-  const ready = await waitForOpencodePaneReady({
+  const ready = await waitForAgentPaneReady(input.expectedPaneAgent, {
     runner: input.runner,
     targetPane: input.targetPane,
     attempts: 90,
@@ -231,8 +261,15 @@ export async function attemptTmuxDelivery(input: {
       });
     }
 
-    // Accept trust prompt if any
-    await maybeAcceptOpencodeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
+    // Accept trust prompt if any (opencode-only; reasonix has no folder-trust prompt)
+    const trustPromptHandling =
+      input.expectedPaneAgent !== undefined
+      && isAgentNameRegistered(input.expectedPaneAgent)
+        ? getAgentRuntimeProfile(input.expectedPaneAgent).trustPromptHandling
+        : "opencode";
+    if (trustPromptHandling === "opencode") {
+      await maybeAcceptOpencodeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
+    }
 
     // If the session was already live, clear the previous conversation history first.
     if (isLiveSession && input.convergencePolicy === "respawn") {

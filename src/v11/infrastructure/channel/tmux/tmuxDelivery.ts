@@ -2,6 +2,11 @@ import { readRuntimeSessionsRegistry } from "../../executor/sessionRuntime/runti
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../config/defaults.js";
 import { buildAgentCommand } from "../../../shared/command/agentCommand.js";
 import type { AgentRole } from "../../../../contracts/kernel/agentIdentity.js";
+import {
+  isAgentNameRegistered
+} from "../../../shared/agent/agentRuntimeProfiles.js";
+import { getSharedTopologySlotPaneIndexForRole } from "../../../shared/topology/topologySlotPaneProjection.js";
+import { deactivateOtherRolePanes } from "../../../shared/channel/rolePaneLifecycle.js";
 import { runTmux, type TmuxRunner } from "./tmuxManager.js";
 import { respawnTmuxPaneCommand } from "./tmuxManager.js";
 import {
@@ -269,8 +274,9 @@ export async function emitDeliveryNotificationAck(
   const expectedAgentRole = resolveRecipientRoleToAgentRole(
     targetResolution.recipientRole
   );
-  const respawnExpectedPaneAgent = expectedPaneAgent === "opencode"
+  const respawnExpectedPaneAgent = expectedPaneAgent !== undefined
     && expectedAgentRole !== undefined
+    && isAgentNameRegistered(expectedPaneAgent)
     ? async (): Promise<void> => {
         const roleModel = resolveRoleModel({
           role: expectedAgentRole,
@@ -304,6 +310,11 @@ export async function emitDeliveryNotificationAck(
         });
       }
     : undefined;
+  // Deactivate other role panes for single-session agents (reasonix).
+  await deactivateNonConcurrentAgentPanes({
+    sessionName, expectedAgentRole, workspacePath, runner, expectedPaneAgent
+  });
+
   const deliveryAck = await attemptTmuxDelivery({
     runner,
     targetPane,
@@ -322,10 +333,32 @@ export async function emitDeliveryNotificationAck(
   return deliveryAck;
 }
 
+async function deactivateNonConcurrentAgentPanes(input: {
+  sessionName: string;
+  expectedAgentRole: AgentRole | undefined;
+  workspacePath: string;
+  runner: TmuxRunner;
+  expectedPaneAgent: AgentName | undefined;
+}): Promise<void> {
+  if (input.expectedPaneAgent === undefined || input.expectedAgentRole === undefined) {
+    return;
+  }
+  await deactivateOtherRolePanes({
+    activateInput: {
+      sessionName: input.sessionName,
+      role: input.expectedAgentRole,
+      cwd: input.workspacePath,
+      runner: input.runner,
+      expectedPaneAgent: input.expectedPaneAgent
+    },
+    topologyPaneIndexForRole: getSharedTopologySlotPaneIndexForRole,
+    respawnPane: (respawnInput) => respawnTmuxPaneCommand(respawnInput)
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Stuck-input retry — called periodically by the watchdog loop
 // ---------------------------------------------------------------------------
-
 /**
  * Check whether the active role's tmux pane has a pairflow message stuck
  * in its input buffer (text visible after the prompt but not submitted).

@@ -18,9 +18,12 @@ import type {
   WatchdogPaneActivityRecord,
   WriteWatchdogPaneActivityPort
 } from "../../../../ports/watchdogPaneActivity.js";
-import { ensureOpencodePaneReady } from "../../../../infrastructure/channel/tmux/tmuxDeliveryRuntime.js";
+import { ensureAgentPaneReady } from "../../../../infrastructure/channel/tmux/tmuxDeliveryRuntime.js";
 import { buildAgentCommand } from "../../../../shared/command/agentCommand.js";
 import { respawnTmuxPaneCommand } from "../../../../infrastructure/channel/tmux/tmuxManager.js";
+import { deactivateOtherRolePanes } from "../../../../shared/channel/rolePaneLifecycle.js";
+import { getSharedTopologySlotPaneIndexForRole } from "../../../../shared/topology/topologySlotPaneProjection.js";
+import { isAgentNameRegistered } from "../../../../shared/agent/agentRuntimeProfiles.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../../shared/runtimeSessionWorkspaceAuthority.js";
 
@@ -92,7 +95,7 @@ async function trySendWatchdogNudge(input: NudgeInput): Promise<"ok" | "pane_not
     ? input.bubbleConfig.agents.meta_reviewer
     : undefined;
 
-  if (expectedPaneAgent !== "opencode") {
+  if (expectedPaneAgent === undefined || !isAgentNameRegistered(expectedPaneAgent)) {
     return "ok";
   }
 
@@ -121,12 +124,27 @@ async function trySendWatchdogNudge(input: NudgeInput): Promise<"ok" | "pane_not
     ? workspaceAuthority.authority.workspacePath
     : input.worktreePath;
 
-  const opencodePaneReady = await ensureOpencodePaneReady({
+  const agentPaneReady = await ensureAgentPaneReady({
     runner: input.runTmux,
     targetPane: input.targetPane,
+    expectedPaneAgent,
     respawnExpectedPaneAgent: async (): Promise<void> => {
+      // Non-concurrent agents (reasonix) hold a machine-wide single active
+      // session lock: deactivate the other role panes so this respawn can
+      // acquire the lock.
+      await deactivateOtherRolePanes({
+        activateInput: {
+          sessionName: input.sessionName,
+          role: expectedAgentRole,
+          cwd: workspacePath,
+          runner: input.runTmux,
+          expectedPaneAgent
+        },
+        topologyPaneIndexForRole: getSharedTopologySlotPaneIndexForRole,
+        respawnPane: (respawnInput) => respawnTmuxPaneCommand(respawnInput)
+      });
       const respawnCommand = buildAgentCommand({
-        agentName: "opencode",
+        agentName: expectedPaneAgent,
         roleName: expectedAgentRole,
         roleMcpPolicy,
         ...(roleModel !== undefined ? { model: roleModel } : {}),
@@ -145,7 +163,7 @@ async function trySendWatchdogNudge(input: NudgeInput): Promise<"ok" | "pane_not
     }
   });
 
-  if (!opencodePaneReady) {
+  if (!agentPaneReady) {
     return "pane_not_ready";
   }
 

@@ -1160,6 +1160,7 @@ describe("emitActorProtocol _meta enrichment", () => {
       bubbleId: bubble.bubbleId,
       originatingRole: "implementer",
       repo: repoPath,
+      agentName: "opencode",
     });
   });
 });

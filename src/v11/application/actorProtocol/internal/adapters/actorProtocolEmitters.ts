@@ -47,22 +47,22 @@ export type ActorEmitResult =
   | {
       kind: "pass";
       pass: EmitPassResult;
-      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole };
+      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole; agentName: AgentName };
     }
   | {
       kind: "human_question";
       human_question: EmitAskHumanResult;
-      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole };
+      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole; agentName: AgentName };
     }
   | {
       kind: "convergence";
       convergence: EmitConvergedResult;
-      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole };
+      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole; agentName: AgentName };
     }
   | {
       kind: "meta_review_result";
       meta_review_result: MetaReviewSubmitResult;
-      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole };
+      readonly _meta?: { bubbleId: string; repo: string; originatingRole: AgentRole; agentName: AgentName };
     };
 
 export function assertActorEmitInputMatchesContext(input: {

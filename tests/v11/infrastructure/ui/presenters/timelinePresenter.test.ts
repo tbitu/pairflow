@@ -75,6 +75,31 @@ describe("timelinePresenter display DTO", () => {
     expect(entries[1]?.display.summaryText).toBe("decision=approve");
   });
 
+  it("classifies known agent senders (opencode, reasonix) as reviewer in the metadata-less fallback", () => {
+    const entries = presentTimelineEntries([
+      envelope({
+        id: "env-opencode-sender",
+        type: "TASK",
+        sender: "opencode",
+        recipient: "orchestrator"
+      }),
+      envelope({
+        id: "env-reasonix-sender",
+        type: "TASK",
+        sender: "reasonix",
+        recipient: "orchestrator"
+      })
+    ]);
+
+    // Both bubble agents get the same reviewer classification that the legacy
+    // opencode sender heuristic produced; unknown senders still default to
+    // implementer (covered by the summary-fallback test above).
+    expect(entries[0]?.display.role).toBe("reviewer");
+    expect(entries[1]?.display.role).toBe("reviewer");
+    expect(entries[0]?.display.senderLabel).toBe("opencode");
+    expect(entries[1]?.display.senderLabel).toBe("reasonix");
+  });
+
   it("maps malformed explicit role metadata to unknown without affecting sender fallback cases", () => {
     const [entry] = presentTimelineEntries([
       envelope({

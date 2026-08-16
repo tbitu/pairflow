@@ -227,7 +227,7 @@ function resolveLegacyRecipientRoleForTest(input: {
   if (input.envelope.recipient === "meta-reviewer") {
     return "meta_reviewer";
   }
-  if (input.envelope.recipient === "opencode" || input.envelope.recipient === "codex") {
+  if (input.envelope.recipient === "opencode" || input.envelope.recipient === "reasonix") {
     return resolveUniquelyConfiguredRoleForAgent({
       agents: input.bubbleConfig.agents,
       agent: input.envelope.recipient,

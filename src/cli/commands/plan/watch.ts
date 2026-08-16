@@ -363,6 +363,9 @@ export function renderPlanWatchEventText(event: PlanWatchEvent): string {
       `reason=${event.runnerResult.reasonCode}`,
       ...(event.runnerResult.opencodeSessionId !== undefined
         ? [`opencode_session=${event.runnerResult.opencodeSessionId}`]
+        : []),
+      ...(event.runnerResult.reasonixSessionId !== undefined
+        ? [`reasonix_session=${event.runnerResult.reasonixSessionId}`]
         : [])
     ].join(" ");
   }

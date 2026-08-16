@@ -118,6 +118,24 @@ describe("skills install command parsing", () => {
     expect(() =>
       parseSkillsInstallCommandOptions(["--target-dir", ".ssh"])
     ).toThrow("Unsupported target dir");
+    expect(() =>
+      parseSkillsInstallCommandOptions(["--target-dir", ".ssh"])
+    ).toThrow(".opencode, .reasonix");
+  });
+
+  it("parses the reasonix target dir", () => {
+    const parsed = parseSkillsInstallCommandOptions([
+      "--skills",
+      "UsePairflow",
+      "--target-dir",
+      ".reasonix"
+    ]);
+
+    expect(parsed.help).toBe(false);
+    if (parsed.help) {
+      throw new Error("Expected non-help parsed options.");
+    }
+    expect(parsed.targetDir).toBe(".reasonix");
   });
 });
 
@@ -148,6 +166,36 @@ describe("skills install command execution", () => {
       status: "planned"
     });
     await expect(lstat(join(homeDir, ".opencode"))).rejects.toMatchObject({
+      code: "ENOENT"
+    });
+  });
+
+  it("returns a reasonix-target dry-run plan under $HOME/.reasonix/skills", async () => {
+    const { sourceRoot, homeDir } = await setupSourceAndHome();
+
+    const result = await runSkillsInstallCommand(
+      ["--dry-run", "--json", "--skills", "all", "--target-dir", ".reasonix"],
+      {
+        homeDir,
+        sourceRootCandidates: [sourceRoot]
+      }
+    );
+
+    expect(result).not.toBeNull();
+    expect(JSON.parse(JSON.stringify(result))).toMatchObject({
+      sourceRoot,
+      targetRoot: join(homeDir, ".reasonix", "skills"),
+      targetDir: ".reasonix",
+      selectedSkills: [
+        "UsePairflow",
+        "CreatePairflowSpec",
+        "ExecutePairflowPlan"
+      ],
+      dryRun: true,
+      linkOther: false,
+      status: "planned"
+    });
+    await expect(lstat(join(homeDir, ".reasonix"))).rejects.toMatchObject({
       code: "ENOENT"
     });
   });
@@ -256,7 +304,7 @@ describe("skills install command execution", () => {
     await expect(readFile(join(homeDir, ".opencode", "skills", "UsePairflow", "SKILL.md"), "utf8")).resolves.toContain("UsePairflow");
 
     // Check other links
-    for (const dir of [".claude", ".codex", ".copilot", ".gemini"]) {
+    for (const dir of [".claude", ".codex", ".copilot", ".gemini", ".reasonix"]) {
       const linkPath = join(homeDir, dir, "skills", "UsePairflow");
       const statResult = await lstat(linkPath);
       expect(statResult.isSymbolicLink()).toBe(true);

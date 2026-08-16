@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { parseArgs } from "node:util";
 import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
 import type { Finding } from "../../../contracts/kernel/findings.js";

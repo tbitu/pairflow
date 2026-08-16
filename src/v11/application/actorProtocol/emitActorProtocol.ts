@@ -48,6 +48,9 @@ export async function emitActorProtocolFromWorkspace(
         bubbleId: resolvedInput.authoritativeContext.bubble_id,
         repo: resolvedInput.authoritativeContext.repo,
         originatingRole: resolvedInput.authoritativeContext.expected_role,
+        agentName: resolvedInput.authoritativeContext.resolved.bubbleConfig.agents[
+          resolvedInput.authoritativeContext.expected_role
+        ],
       },
     };
 }

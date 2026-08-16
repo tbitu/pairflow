@@ -4,6 +4,7 @@ import type { TmuxRunOptions, TmuxRunResult } from "../../../../../src/v11/ports
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { topologySlotPaneIndexCatalog} from "../../../../../src/v11/shared/topology/topologySlotPaneProjection.js";
 import {
+  postEmitInterruptAgentPane,
   postEmitInterruptOpencodePane,
   resolveSessionsPath
 } from "../../../../../src/v11/infrastructure/channel/tmux/postEmitInterruption.js";
@@ -419,6 +420,49 @@ describe("postEmitInterruptOpencodePane", () => {
       // Only the first Escape should be sent
       expect(sendKeysCalls).toHaveLength(1);
       expect(sendKeysCalls[0]).toEqual(["send-keys", "-t", `${sessionName}:0.1`, "Escape"]);
+    } finally {
+      await rm(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it("should be a no-op for reasonix (no double-Escape interruption) even with a live session", async () => {
+    const tmpDir = `/tmp/pf-test-sessions-${randomUUID().slice(0, 8)}`;
+    const sessionsPath = `${tmpDir}/sessions.json`;
+    const bubbleId = "test-bubble-reasonix";
+    const sessionName = "pf-test-session";
+    const nowIso = new Date().toISOString();
+
+    await mkdir(tmpDir, { recursive: true });
+    await writeFile(
+      sessionsPath,
+      JSON.stringify({
+        [bubbleId]: {
+          bubbleId,
+          repoPath: "/home/user/repo",
+          worktreePath: `/tmp/worktrees/${bubbleId}`,
+          tmuxSessionName: sessionName,
+          updatedAt: nowIso
+        }
+      })
+    );
+
+    try {
+      const tmuxCalls: string[][] = [];
+      function mockRunner(args: string[]): Promise<TmuxRunResult> {
+        tmuxCalls.push(args);
+        return Promise.resolve({ stdout: "esc again to interrupt", stderr: "", exitCode: 0 });
+      }
+
+      await postEmitInterruptAgentPane({
+        sessionsPath,
+        bubbleId,
+        agentName: "reasonix",
+        tmuxRunner: mockRunner,
+      });
+
+      // reasonix's post-emit interruption mode is "none": no tmux interaction
+      // of any kind (not even a session registry read).
+      expect(tmuxCalls).toHaveLength(0);
     } finally {
       await rm(tmpDir, { recursive: true, force: true });
     }

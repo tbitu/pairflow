@@ -48,6 +48,7 @@ export const DEFAULT_REVIEW_POLICY_AUTO_REWORK_MIN_SEVERITY:
 export const DEFAULT_REVIEW_POLICY_CONSECUTIVE_CLEAN_RUNS_REQUIRED = 2;
 export const DEFAULT_LOCAL_OVERLAY_ENTRIES = [
   ".opencode",
+  ".reasonix",
   ".mcp.json",
   ".env.local",
   ".env.production"

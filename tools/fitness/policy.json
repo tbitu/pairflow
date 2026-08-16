@@ -78,17 +78,17 @@
       "owner": "architecture",
       "exceptions": [
         {
-          "id": "agent-command-codex-mcp-discovery",
+          "id": "agent-command-shared-command-policy",
           "kind": "allow-ownership-signal",
           "owner": "architecture/runtime",
-          "reason": "agentCommand is shared command-construction policy used by start, meta-review, defaults, and tmux reviewer context. Its only child-process ownership signal is bounded Codex MCP discovery for command-line argument synthesis; moving it into infrastructure would force application/defaults callers through an infrastructure-owned command builder.",
+          "reason": "agentCommand is shared command-construction policy used by start, meta-review, watchdog respawn, defaults, and tmux reviewer/implementer contexts. It builds the per-agent runtime profile launch argv (opencode CLI-arg delivery, reasonix code-mode TUI with npx fallback), opencode-only env preparation, and missing-binary messaging; moving it into infrastructure would force application/defaults callers through an infrastructure-owned command builder.",
           "from": "src/v11/shared/command/agentCommand.ts"
         },
         {
           "id": "watchdog-pane-activity-tmux-delivery-runtime",
           "kind": "allow-edge",
           "owner": "architecture/runtime",
-          "reason": "The watchdog pane activity monitor is an application-layer feature whose core responsibility is to detect agent inactivity and nudge the agent via tmux operations. It must import ensureOpencodePaneReady from infrastructure/channel/tmux; moving this into shared would couple shared code with tmux specifics.",
+          "reason": "The watchdog pane activity monitor is an application-layer feature whose core responsibility is to detect agent inactivity and nudge the agent via tmux operations. It must import ensureAgentPaneReady from infrastructure/channel/tmux; moving this into shared would couple shared code with tmux specifics.",
           "from": "src/v11/application/watchdog/internal/paneActivity/watchdogPaneActivityMonitoring.ts",
           "to": "src/v11/infrastructure/channel/tmux/tmuxDeliveryRuntime.ts"
         },
