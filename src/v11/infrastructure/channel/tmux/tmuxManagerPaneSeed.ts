@@ -1,15 +1,16 @@
 import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import {
   getAgentRuntimeProfile,
-  isAgentNameRegistered
+  isAgentNameRegistered,
+  resolveTmuxPasteOptions
 } from "../../../shared/agent/agentRuntimeProfiles.js";
 import {
   confirmTmuxPaneMarkerSubmission,
   maybeAcceptOpencodeTrustPrompt,
   sendAndSubmitTmuxPaneMessage,
-  submitTmuxPaneInput,
-  waitForTuiReady
+  submitTmuxPaneInput
 } from "./tmuxInput.js";
+import { waitForReasonixPaneReady } from "./tmuxReasonixReadiness.js";
 import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
 
 /**
@@ -81,6 +82,7 @@ async function submitStartupPrompt(input: {
   targetPane: string;
   shouldSubmit: boolean | undefined;
   startupPrompt: string | undefined;
+  agentName: AgentName | undefined;
 }): Promise<void> {
   if (!input.shouldSubmit) {
     return;
@@ -90,13 +92,26 @@ async function submitStartupPrompt(input: {
   if (promptText !== undefined && promptText.length > 0) {
     // tmux_paste agents (reasonix) receive their startup prompt through the
     // pane instead of CLI args; give the TUI time to initialize first.
-    await waitForTuiReady(input.runner, input.targetPane);
+    console.error(
+      `[tmux seed][${input.agentName ?? "unknown"}] startup prompt present (chars=${promptText.length}) for pane=${input.targetPane}.`
+    );
     await sendAndSubmitTmuxPaneMessage(
       input.runner,
       input.targetPane,
       promptText,
-      { maxChunkLength: 1024 }
-    );
+      {
+        maxChunkLength: 1024,
+        // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
+        ...resolveTmuxPasteOptions(input.agentName)
+      }
+    ).catch((error: unknown) => {
+      // Catching here (best-effort paste) is intentional: a paste hiccup must
+      // not abort the whole bubble start. If the startup prompt fails to land,
+      // the watchdog nudge will still steer the agent.
+      console.error(
+        `[tmux seed] startup prompt paste failed for target_pane=${input.targetPane}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    });
     return;
   }
 
@@ -117,6 +132,9 @@ async function sendPaneMessage(
   if ((message?.trim().length ?? 0) === 0) {
     return;
   }
+  console.error(
+    `[tmux seed][${agentName ?? "unknown"}] delivering kickoff to pane=${targetPane} (chars=${(message ?? "").length}).`
+  );
 
   // Only opencode shows folder-trust / bypass-permissions prompts that need
   // accepting during pane bootstrap (see agent runtime profiles). Undefined or
@@ -133,18 +151,60 @@ async function sendPaneMessage(
   const isStructuredPairflowEnvelope = marker !== undefined;
   // Give the TUI time to initialize during very early pane bootstrap
   // before submitting the whole prompt as one tmux input.
-  // Fail closed on write/submit failures so launch does not report success
-  // with a silently missing startup handoff.
-  await waitForTuiReady(runner, targetPane);
-  await sendAndSubmitTmuxPaneMessage(runner, targetPane, concreteMessage, {
-    requireSuccess: !isStructuredPairflowEnvelope,
-    maxChunkLength: 1024
-  });
+  try {
+    // Match the watchdog's working delivery path: no waitForTuiReady (reasonix
+    // may not report a detectable prompt early, and the 30s wait + 25s settle
+    // pushed the kickoff past the watchdog nudge). Paste immediately so the
+    // kickoff lands before the nudge.
+    await sendAndSubmitTmuxPaneMessage(runner, targetPane, concreteMessage, {
+      requireSuccess: !isStructuredPairflowEnvelope,
+      maxChunkLength: 1024,
+      // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
+      ...resolveTmuxPasteOptions(agentName)
+    });
+  } catch (error) {
+    // Best-effort paste: a failure to deliver the kickoff must not abort the
+    // entire bubble start. The watchdog nudge will steer the agent if the
+    // initial kickoff did not land.
+    console.error(
+      `[tmux seed] kickoff paste failed for target_pane=${targetPane}: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return;
+  }
   if (marker !== undefined) {
     await confirmTmuxPaneMarkerSubmission({
       runner,
       targetPane,
       marker
+    }).catch(() => undefined);
+  }
+
+  // reasonix absorbs long pasted instructions into its project-memory system
+  // (<memory-update> / AGENTS.md), and it drops keystrokes while still
+  // initializing. The watchdog nudge provably lands (it is the message that
+  // starts the model in every run) because it is gated on the pane being live
+  // AND ready, and it uses a short conversational prompt that reasonix does
+  // not classify as memory. Replicate that EXACTLY: same readiness gate, same
+  // nudge text, same send + paste options. No retry spam.
+  if (
+    agentName !== undefined
+    && getAgentRuntimeProfile(agentName).startupPromptDelivery === "tmux_paste"
+  ) {
+    await waitForReasonixPaneReady({
+      runner,
+      targetPane
+    });
+    // Exact watchdog nudge message — proven to land and trigger a turn.
+    const nudgeMessage =
+      'Continue exactly where you left off. Do not summarize or repeat the previous text. '
+      + 'Remember your task only ends when you run "pairflow agent emit", never before.';
+    await sendAndSubmitTmuxPaneMessage(runner, targetPane, nudgeMessage, {
+      maxChunkLength: 1024,
+      ...resolveTmuxPasteOptions(agentName)
+    }).catch((error: unknown) => {
+      console.error(
+        `[tmux seed] follow-up user prompt failed for target_pane=${targetPane}: ${error instanceof Error ? error.message : String(error)}`
+      );
     });
   }
 }
@@ -156,19 +216,22 @@ export async function seedBubbleTmuxPaneMessages(
     runner: input.runner,
     targetPane: input.implementerPaneId,
     shouldSubmit: input.implementerSubmitStartupPrompt,
-    startupPrompt: input.implementerStartupPrompt
+    startupPrompt: input.implementerStartupPrompt,
+    agentName: input.implementerAgentName
   });
   await submitStartupPrompt({
     runner: input.runner,
     targetPane: input.reviewerPaneId,
     shouldSubmit: input.reviewerSubmitStartupPrompt,
-    startupPrompt: input.reviewerStartupPrompt
+    startupPrompt: input.reviewerStartupPrompt,
+    agentName: input.reviewerAgentName
   });
   await submitStartupPrompt({
     runner: input.runner,
     targetPane: input.metaReviewerPaneId,
     shouldSubmit: input.metaReviewerSubmitStartupPrompt,
-    startupPrompt: input.metaReviewerStartupPrompt
+    startupPrompt: input.metaReviewerStartupPrompt,
+    agentName: input.metaReviewerAgentName
   });
   // When a startup prompt was submitted for an agent, the agent already
   // received its full context via the CLI argument that launched it

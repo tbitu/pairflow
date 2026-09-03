@@ -57,7 +57,7 @@ export function buildResumeImplementerKickoffMessage(input: {
 }): string {
   if (input.round === 0) {
     return [
-      `# [pairflow] bubble=${input.bubbleId} resume kickoff (implementer, ideation pending).`,
+      `[pairflow] bubble=${input.bubbleId} resume kickoff (implementer, ideation pending).`,
       "State is RUNNING at round 0.",
       "No implementer action is required right now.",
       "Stay idle and wait for explicit human instruction.",
@@ -66,7 +66,7 @@ export function buildResumeImplementerKickoffMessage(input: {
   }
 
   return [
-    `# [pairflow] bubble=${input.bubbleId} resume kickoff (implementer).`,
+    `[pairflow] bubble=${input.bubbleId} resume kickoff (implementer).`,
     `State is RUNNING at round ${input.round}.`,
     `Re-open task context: ${input.taskArtifactPath}.`,
     buildResumeImplementerScopeInstruction(input.reviewArtifactType),
@@ -138,7 +138,7 @@ export function buildResumeReviewerKickoffMessage(input: {
           thresholdInput
         );
   return [
-    `# [pairflow] bubble=${input.bubbleId} resume kickoff (reviewer).`,
+    `[pairflow] bubble=${input.bubbleId} resume kickoff (reviewer).`,
     `State is RUNNING at round ${input.round}.`,
     buildPairflowCommandGuidance(
       input.workspacePath,
@@ -164,7 +164,7 @@ export function buildResumeMetaReviewerKickoffMessage(input: {
   pairflowCommandProfile: PairflowCommandProfile;
 }): string {
   return [
-    `# [pairflow] bubble=${input.bubbleId} resume kickoff (meta-reviewer).`,
+    `[pairflow] bubble=${input.bubbleId} resume kickoff (meta-reviewer).`,
     `State is RUNNING with active meta-review authority at round ${input.round}.`,
     buildPairflowCommandGuidance(
       input.workspacePath,

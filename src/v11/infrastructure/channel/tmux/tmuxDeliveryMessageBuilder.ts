@@ -314,7 +314,7 @@ export function buildTmuxDeliveryMessage(input: {
   }
 
   const messageParts = [
-    `# [pairflow] r${input.envelope.round} ${input.envelope.type} ${input.envelope.sender}->${input.envelope.recipient} msg=${input.envelope.id} ref=${input.messageRef}. Action: ${action}`,
+    `[pairflow] r${input.envelope.round} ${input.envelope.type} ${input.envelope.sender}->${input.envelope.recipient} msg=${input.envelope.id} ref=${input.messageRef}. Action: ${action}`,
     workspaceHint
   ].filter(part => part.length > 0);
 

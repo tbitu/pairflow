@@ -242,6 +242,15 @@ export async function deactivateOtherRolePanes(input: {
     cwd: string;
     runner: TmuxRunner;
   }) => Promise<void>;
+  /**
+   * Resolve whether a given role pane runs a non-concurrent agent. When
+   * provided, only panes running another non-concurrent (reasonix) agent are
+   * deactivated — so activating a non-concurrent implementer does NOT turn the
+   * opencode reviewer/meta-reviewer panes into dead shells. Optional for
+   * backwards compatibility: when omitted, "deactivate all other panes" is
+   * retained.
+   */
+  configureRoleAgent?: (role: AgentRole) => AgentName | undefined;
 }): Promise<void> {
   const agentName = input.activateInput.expectedPaneAgent;
   if (agentName === undefined || !isAgentNameRegistered(agentName)) {
@@ -253,6 +262,21 @@ export async function deactivateOtherRolePanes(input: {
   for (const role of ALL_ROLE_PANES) {
     if (role === input.activateInput.role) {
       continue;
+    }
+    // Only deactivate other panes that actually run a conflicting
+    // (non-concurrent, single-session) agent. An opencode reviewer/meta pane
+    // shares none of reasonix's machine-wide session lock, so it must NOT be
+    // turned into a placeholder when the reasonix implementer becomes active —
+    // otherwise the review message gets dropped and the reviewer never starts.
+    if (input.configureRoleAgent !== undefined) {
+      const otherAgent = input.configureRoleAgent(role);
+      if (
+        otherAgent === undefined
+        || !isAgentNameRegistered(otherAgent)
+        || getAgentRuntimeProfile(otherAgent).supportsConcurrentPanes
+      ) {
+        continue;
+      }
     }
     const otherPaneIndex = input.topologyPaneIndexForRole(role);
     try {

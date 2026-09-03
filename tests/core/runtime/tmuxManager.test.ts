@@ -274,7 +274,7 @@ describe("launchBubbleSessionAck", () => {
     });
   });
 
-  it("returns canonical failed_to_start ack when pane seeding throws after layout succeeds", async () => {
+  it("still returns a running ack when pane seeding fails after layout succeeds (best-effort seed)", async () => {
     const bubbleId = "b_start_seed_fail_ack";
     const ack = await launchBubbleSessionAck({
       bubbleId,
@@ -312,11 +312,11 @@ describe("launchBubbleSessionAck", () => {
       }
     });
 
+    // Seeding is best-effort: a paste failure must not abort the bubble start
+    // (that used to strand reasonix in PREPARING with RUNNING never written).
+    // The launch succeeds and the watchdog nudge steers the agent instead.
     expect(ack).toEqual({
-      status: "failed_to_start",
-      reason_code: "LAUNCH_ACK_COMMAND_FAILED",
-      failure_kind: "command_failed",
-      error_message: "tmux pane seed failed",
+      status: "running",
       sessionName: buildBubbleTmuxSessionName(bubbleId)
     });
   });
@@ -688,29 +688,29 @@ describe("launchBubbleSessionAck orchestration", () => {
       "run-shell",
       "respawn-pane"
     ]);
-    // Trust prompt check before kickoff.
+    // Trust prompt check before kickoff (implementer pane at :0.1).
     expect(calls).toContainEqual([
       "capture-pane",
       "-pt",
-      "%11"
+      "pf-b_start_kickoff:0.1"
     ]);
     // Text and Enter are separate send-keys calls (ink TUI requirement).
     expect(calls).toContainEqual([
       "send-keys",
       "-t",
-      "%11",
+      "pf-b_start_kickoff:0.1",
       "-l",
       "implementer kickoff message"
     ]);
     expect(calls).toContainEqual([
       "send-keys",
       "-t",
-      "%11",
+      "pf-b_start_kickoff:0.1",
       "Enter"
     ]);
     // No bootstrap messages sent to reviewer pane.
     const reviewerSendKeysByPaneId = calls.filter(
-      (call) => call[0] === "send-keys" && call[2] === "%12"
+      (call) => call[0] === "send-keys" && call[2] === "pf-b_start_kickoff:0.2"
     );
     expect(reviewerSendKeysByPaneId).toHaveLength(0);
   });
@@ -720,7 +720,7 @@ describe("launchBubbleSessionAck orchestration", () => {
     const calls: string[][] = [];
     let captureCount = 0;
     const kickoffMessage =
-      "# [pairflow] bubble=b_start_kickoff_retry kickoff. Start implementation now.";
+      "[pairflow] bubble=b_start_kickoff_retry kickoff. Start implementation now.";
     const runner: TmuxRunner = (args: string[]) => {
       calls.push(args);
       if (args[0] === "capture-pane") {
@@ -777,10 +777,13 @@ describe("launchBubbleSessionAck orchestration", () => {
     const implementerEnterCalls = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
-        call[2] === "%11" &&
+        call[2] === "pf-b_start_kickoff_retry:0.1" &&
         call[3] === "Enter"
     );
-    expect(implementerEnterCalls.length).toBe(1);
+    // The direct seed delivery submits with one Enter; the confirm-retry loop
+    // resends Enter for a stuck marker. Without waitForTuiReady the seed pastes
+    // immediately, so confirm-retry Enter(s) occur in addition to the submit.
+    expect(implementerEnterCalls.length).toBeGreaterThanOrEqual(1);
   });
 
   it("sends kickoff message to reviewer pane when provided", async () => {
@@ -818,26 +821,26 @@ describe("launchBubbleSessionAck orchestration", () => {
     expect(calls).toContainEqual([
       "capture-pane",
       "-pt",
-      "%12"
+      "pf-b_start_kickoff_reviewer:0.2"
     ]);
     expect(calls).toContainEqual([
       "send-keys",
       "-t",
-      "%12",
+      "pf-b_start_kickoff_reviewer:0.2",
       "-l",
       "reviewer kickoff message"
     ]);
     expect(calls).toContainEqual([
       "send-keys",
       "-t",
-      "%12",
+      "pf-b_start_kickoff_reviewer:0.2",
       "Enter"
     ]);
 
     const implementerSendKeys = calls.filter(
       (call) =>
         call[0] === "send-keys" &&
-        call[2] === "%11"
+        call[2] === "pf-b_start_kickoff_reviewer:0.1"
     );
     expect(implementerSendKeys).toHaveLength(0);
   });
@@ -865,7 +868,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       }
       if (
         args[0] === "send-keys" &&
-        args[2] === "%11"
+        args[2] === "pf-b_start_kickoff_fail:0.1"
       ) {
         return Promise.resolve({
           stdout: "",
@@ -886,7 +889,7 @@ describe("launchBubbleSessionAck orchestration", () => {
       statusCommand: "status",
       implementerCommand: "opencode",
       reviewerCommand: "opencode",
-      implementerKickoffMessage: "# [pairflow] bubble=b_start_kickoff_fail kickoff message",
+      implementerKickoffMessage: "[pairflow] bubble=b_start_kickoff_fail kickoff message",
       runner
     });
 
@@ -898,7 +901,7 @@ describe("launchBubbleSessionAck orchestration", () => {
     const failedSends = calls.filter(
       (call) =>
         call.args[0] === "send-keys" &&
-        call.args[2] === "%11"
+        call.args[2] === "pf-b_start_kickoff_fail:0.1"
     );
     expect(failedSends.length).toBeGreaterThan(0);
     for (const send of failedSends) {
@@ -945,13 +948,13 @@ describe("launchBubbleSessionAck orchestration", () => {
     vi.useRealTimers();
 
     const implementerSendKeys = calls.filter(
-      (call) => call[0] === "send-keys" && call[2] === "%11"
+      (call) => call[0] === "send-keys" && call[2] === "pf-b_start_submit_prompt:0.1"
     );
     // Startup prompt Enter is still sent to submit the CLI-arg context.
     expect(implementerSendKeys[0]).toEqual([
       "send-keys",
       "-t",
-      "%11",
+      "pf-b_start_submit_prompt:0.1",
       "Enter"
     ]);
     // No kickoff message should be pasted: Opencode already received its full
@@ -959,7 +962,7 @@ describe("launchBubbleSessionAck orchestration", () => {
     // separate kickoff via tmux paste would deliver semi-duplicate content,
     // causing "double input" steering confusion.
     const kickoffSends = calls.filter(
-      (call) => call[0] === "send-keys" && call[2] === "%11" && call.includes("-l")
+      (call) => call[0] === "send-keys" && call[2] === "pf-b_start_submit_prompt:0.1" && call.includes("-l")
     );
     expect(kickoffSends).toHaveLength(0);
   });

@@ -312,7 +312,8 @@ export async function emitDeliveryNotificationAck(
     : undefined;
   // Deactivate other role panes for single-session agents (reasonix).
   await deactivateNonConcurrentAgentPanes({
-    sessionName, expectedAgentRole, workspacePath, runner, expectedPaneAgent
+    sessionName, expectedAgentRole, workspacePath, runner, expectedPaneAgent,
+    bubbleConfig: input.bubbleConfig
   });
 
   const deliveryAck = await attemptTmuxDelivery({
@@ -339,6 +340,7 @@ async function deactivateNonConcurrentAgentPanes(input: {
   workspacePath: string;
   runner: TmuxRunner;
   expectedPaneAgent: AgentName | undefined;
+  bubbleConfig: EmitDeliveryNotificationRuntimeInput["bubbleConfig"];
 }): Promise<void> {
   if (input.expectedPaneAgent === undefined || input.expectedAgentRole === undefined) {
     return;
@@ -352,7 +354,14 @@ async function deactivateNonConcurrentAgentPanes(input: {
       expectedPaneAgent: input.expectedPaneAgent
     },
     topologyPaneIndexForRole: getSharedTopologySlotPaneIndexForRole,
-    respawnPane: (respawnInput) => respawnTmuxPaneCommand(respawnInput)
+    respawnPane: (respawnInput) => respawnTmuxPaneCommand(respawnInput),
+    // Only ever deactivate panes that run another non-concurrent (reasonix)
+    // agent. opencode reviewer/meta-reviewer panes must not be turned into
+    // placeholders just because the reasonix implementer is active.
+    configureRoleAgent: (role) => resolveConfiguredAgentForRole({
+      agents: input.bubbleConfig.agents,
+      role
+    })
   });
 }
 

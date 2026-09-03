@@ -268,7 +268,7 @@ async function launchAndSeedBubbleSession(
     config.workspacePath,
     input.statusCommand
   ]);
-  const layout = await launchBubbleSessionLayout({
+  await launchBubbleSessionLayout({
     runner: config.runner,
     sessionName: config.sessionName,
     workspacePath: config.workspacePath,
@@ -309,9 +309,14 @@ async function launchAndSeedBubbleSession(
   }
   await seedBubbleTmuxPaneMessages({
     runner: config.runner,
-    implementerPaneId: layout.implementerPaneId,
-    reviewerPaneId: layout.reviewerPaneId,
-    metaReviewerPaneId: layout.metaReviewerPaneId,
+    // Target panes by `<session>:0.<index>` — the same selector the watchdog
+    // uses and that provably delivers keystrokes to reasonix. The layout's
+    // `%<id>` pane references from split-window do NOT reliably receive
+    // send-keys from the bubble-start process (the seed's kickoff never
+    // landed, while the watchdog nudge to `:0.1` always did).
+    implementerPaneId: `${config.sessionName}:0.${runtimePaneIndices.implementer}`,
+    reviewerPaneId: `${config.sessionName}:0.${runtimePaneIndices.reviewer}`,
+    metaReviewerPaneId: `${config.sessionName}:0.${runtimePaneIndices.metaReviewer}`,
     implementerSubmitStartupPrompt: input.implementerSubmitStartupPrompt,
     reviewerSubmitStartupPrompt: input.reviewerSubmitStartupPrompt,
     metaReviewerSubmitStartupPrompt: input.metaReviewerSubmitStartupPrompt,

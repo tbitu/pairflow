@@ -24,7 +24,7 @@ function buildOpencodeImplementerKickoff(input: {
   taskArtifactPath: string;
 }): string {
   return [
-    `# [pairflow] bubble=${input.bubbleId} resume kickoff (implementer).`,
+    `[pairflow] bubble=${input.bubbleId} resume kickoff (implementer).`,
     `Read task file now: ${input.taskArtifactPath}.`
   ].join(" ");
 }
@@ -36,7 +36,7 @@ function buildOpencodeReviewerKickoff(input: {
   reviewerTestDirectiveLine?: string;
 }): string {
   const lines = [
-    `# [pairflow] bubble=${input.bubbleId} resume kickoff (reviewer).`,
+    `[pairflow] bubble=${input.bubbleId} resume kickoff (reviewer).`,
     `State is RUNNING at round ${input.round}.`
   ];
   if (input.reviewerTestDirectiveLine !== undefined) {
@@ -49,7 +49,7 @@ function buildOpencodeReviewerKickoff(input: {
 function buildOpencodeMetaReviewerKickoff(input: {
   bubbleId: string;
 }): string {
-  return `# [pairflow] bubble=${input.bubbleId} resume kickoff (meta-reviewer).`;
+  return `[pairflow] bubble=${input.bubbleId} resume kickoff (meta-reviewer).`;
 }
 
 export function resolveResumeKickoffMessages(input: {

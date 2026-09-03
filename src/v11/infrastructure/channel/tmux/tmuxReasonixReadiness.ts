@@ -94,6 +94,7 @@ const READY_TEXT_PATTERNS = [
   /^\s*>\s*$/m,
   /^\s*>\s+\S/m,
   /^\s*❯/m,
+  /^\s*›/m, // reasonix composer prompt (U+203A)
   /\[pairflow\]/ui,
   /allow once/i,
   /ask question/i,

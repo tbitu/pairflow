@@ -36,5 +36,13 @@ export type RetryStuckAgentInputPort = (
 export type SendAndSubmitTmuxPaneMessagePort = (
   runner: TmuxRunner,
   targetPane: string,
-  message: string
+  message: string,
+  options?: {
+    requireSuccess?: boolean;
+    submitDelayMs?: number;
+    maxChunkLength?: number;
+    interChunkDelayMs?: number;
+    submitPerChunk?: boolean;
+    collapseNewlines?: boolean;
+  }
 ) => Promise<void>;

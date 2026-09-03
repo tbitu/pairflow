@@ -504,8 +504,8 @@ describe("metaReviewGate V11 defaults", () => {
 
     expect(result.route).toBe("meta_review_running");
     expect(paneRunnerCalls).toHaveLength(1);
-    // The command should include the integrated startup prompt starting with "# [pairflow]"
-    expect(paneRunnerCalls[0]).toContain("opencode meta-review # [pairflow]");
+    // The command should include the integrated startup prompt starting with "[pairflow]"
+    expect(paneRunnerCalls[0]).toContain("opencode meta-review [pairflow]");
     expect(paneRunnerCalls[0]).toContain("bubble=b_meta_review_apply_v11_builtin_delivery");
     expect(submittedMessages).toHaveLength(0);
     expect(

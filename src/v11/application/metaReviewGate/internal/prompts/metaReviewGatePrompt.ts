@@ -23,7 +23,7 @@ export function buildMetaReviewGateRunPrompt(input: {
   taskArtifactPath: string;
 }): string {
   return [
-    `# [pairflow] bubble=${input.bubbleId} meta-review request round=${input.round}.`,
+    `[pairflow] bubble=${input.bubbleId} meta-review request round=${input.round}.`,
     META_REVIEWER_SUBMIT_DIRECTIVE,
     "Perform autonomous meta-review now, then submit through structured Pairflow CLI (no pane markers).",
     `Repository: ${input.repoPath}.`,

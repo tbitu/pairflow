@@ -444,7 +444,7 @@ describe("tmux delivery explicit recipient-role routing", () => {
       if (args[0] === "capture-pane") {
         return {
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         };
@@ -497,7 +497,7 @@ describe("tmux delivery explicit recipient-role routing", () => {
       if (args[0] === "capture-pane") {
         return {
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_102 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_102 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         };
@@ -545,7 +545,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -579,7 +579,7 @@ describe("emitDeliveryNotificationAck", () => {
       })
     );
     expect(canonicalAck.message).toContain(
-      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
+      "[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
     );
   });
 
@@ -755,7 +755,7 @@ describe("emitDeliveryNotificationAck", () => {
       reason_code: "DELIVERY_ACK_REJECTED"
     });
     expect(result.message).toContain(
-      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
+      "[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
     );
   });
 
@@ -795,7 +795,7 @@ describe("emitDeliveryNotificationAck", () => {
         }
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -852,7 +852,7 @@ describe("emitDeliveryNotificationAck", () => {
               "Ask anything...",
               "Build · Qwen3.6 35B a3b-mtp Q6 XL (Reviewer) LM Studio (local)",
               "tab agents  ctrl+p commands",
-              submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.")
+              submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.")
             ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -928,7 +928,7 @@ describe("emitDeliveryNotificationAck", () => {
         }
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -966,6 +966,11 @@ describe("emitDeliveryNotificationAck", () => {
         (call) => call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.2"
       )
     ).toBe(true);
+    // opencode delivery must not /clear (watchdog-matching): a /clear would
+    // open an opencode confirmation modal that swallows the handover message.
+    expect(
+      calls.some((call) => call[0] === "send-keys" && call[2] === "/clear")
+    ).toBe(false);
   });
 });
 
@@ -977,7 +982,7 @@ describe("tmux delivery T6 runtime observability baseline", () => {
     const calls: string[][] = [];
     const targetPane = "pf-b_delivery_01:0.2";
     const message =
-      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.";
+      "[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.";
     const expectedCapturePaneCall = [
       "capture-pane",
       "-p",
@@ -1057,7 +1062,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r2 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_102 ref=artifact://approval.md. Action: Bubble is READY_FOR_HUMAN_APPROVAL after meta-reviewer gate."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r2 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_102 ref=artifact://approval.md. Action: Bubble is READY_FOR_HUMAN_APPROVAL after meta-reviewer gate."),
           stderr: "",
           exitCode: 0
         });
@@ -1100,7 +1105,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.1" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r2 APPROVAL_REQUEST orchestrator->opencode")
+        call[4]?.includes("[pairflow] r2 APPROVAL_REQUEST orchestrator->opencode")
     );
     expect(messageCall?.[4]).toContain(
       "Meta-reviewer requested human gate decision"
@@ -1114,7 +1119,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 TASK orchestrator->codex msg=msg_20260222_201 ref=artifact://meta-review-task.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 TASK orchestrator->codex msg=msg_20260222_201 ref=artifact://meta-review-task.md."),
           stderr: "",
           exitCode: 0
         });
@@ -1183,7 +1188,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_202 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_202 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -1265,7 +1270,7 @@ describe("emitDeliveryNotificationAck", () => {
         if (args[0] === "capture-pane") {
           return Promise.resolve({
             stdout:
-              submittedOpencodeReadyPaneOutput("# [pairflow] r1 TASK orchestrator->opencode msg=msg_20260222_203 ref=artifact://meta-review-task.md."),
+              submittedOpencodeReadyPaneOutput("[pairflow] r1 TASK orchestrator->opencode msg=msg_20260222_203 ref=artifact://meta-review-task.md."),
             stderr: "",
             exitCode: 0
           });
@@ -1349,7 +1354,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_204 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_204 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -1394,7 +1399,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r2 HUMAN_REPLY human->opencode msg=msg_20260222_205 ref=artifact://reply.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r2 HUMAN_REPLY human->opencode msg=msg_20260222_205 ref=artifact://reply.md."),
           stderr: "",
           exitCode: 0
         });
@@ -1442,7 +1447,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1497,7 +1502,7 @@ describe("emitDeliveryNotificationAck", () => {
       "pf-b_delivery_01:0.2",
       "-l",
       expect.stringContaining(
-        "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
+        "[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
       )
     ]);
     const sendKeysCalls = calls.filter(
@@ -1564,7 +1569,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1601,7 +1606,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
+        call[4]?.includes("[pairflow] r1 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain(
       "Action: Implementer handoff received. Run a fresh review now"
@@ -1617,7 +1622,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received.\naccepted=true running=true handoff_id=handoff_advanced_02 actor acknowledged work"),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received.\naccepted=true running=true handoff_id=handoff_advanced_02 actor acknowledged work"),
           stderr: "",
           exitCode: 0
         });
@@ -1712,7 +1717,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1779,7 +1784,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1834,7 +1839,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r2 PASS opencode->opencode msg=msg_20260222_102 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r2 PASS opencode->opencode msg=msg_20260222_102 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1898,7 +1903,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r2 PASS opencode->opencode msg=msg_20260222_103 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r2 PASS opencode->opencode msg=msg_20260222_103 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -1966,7 +1971,7 @@ describe("emitDeliveryNotificationAck", () => {
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
       if (args[0] === "send-keys" && args[3] === "-l") {
-        if (args[4]?.includes("# [pairflow]")) {
+        if (args[4]?.includes("[pairflow]")) {
           lastDeliveryMessage = args[4];
         } else {
           lastDeliveryMessage += args[4] ?? "";
@@ -2038,7 +2043,7 @@ describe("emitDeliveryNotificationAck", () => {
     let currentMessage = "";
     for (const call of calls) {
       if (call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.2" && call[3] === "-l") {
-        if (call[4]?.includes("# [pairflow]")) {
+        if (call[4]?.includes("[pairflow]")) {
           if (currentMessage) reviewerMessages.push(currentMessage);
           currentMessage = call[4];
         } else {
@@ -2075,7 +2080,7 @@ describe("emitDeliveryNotificationAck", () => {
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
       if (args[0] === "send-keys" && args[3] === "-l") {
-        if (args[4]?.includes("# [pairflow]")) {
+        if (args[4]?.includes("[pairflow]")) {
           lastDeliveryMessage = args[4];
         } else {
           lastDeliveryMessage += args[4] ?? "";
@@ -2159,7 +2164,7 @@ describe("emitDeliveryNotificationAck", () => {
     let currentMessage = "";
     for (const call of calls) {
       if (call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.2" && call[3] === "-l") {
-        if (call[4]?.includes("# [pairflow]")) {
+        if (call[4]?.includes("[pairflow]")) {
           if (currentMessage) reviewerMessages.push(currentMessage);
           currentMessage = call[4];
         } else {
@@ -2200,7 +2205,7 @@ describe("emitDeliveryNotificationAck", () => {
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
       if (args[0] === "send-keys" && args[3] === "-l") {
-        if (args[4]?.includes("# [pairflow]")) {
+        if (args[4]?.includes("[pairflow]")) {
           lastDeliveryMessage = args[4];
         } else {
           lastDeliveryMessage += args[4] ?? "";
@@ -2266,7 +2271,7 @@ describe("emitDeliveryNotificationAck", () => {
     let currentMessage = "";
     for (const call of calls) {
       if (call[0] === "send-keys" && call[2] === "pf-b_delivery_01:0.2" && call[3] === "-l") {
-        if (call[4]?.includes("# [pairflow]")) {
+        if (call[4]?.includes("[pairflow]")) {
           if (currentMessage) reviewerMessages.push(currentMessage);
           currentMessage = call[4];
         } else {
@@ -2299,7 +2304,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md. Action: Implementer handoff received."),
           stderr: "",
           exitCode: 0
         });
@@ -2359,7 +2364,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2408,7 +2413,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 HUMAN_QUESTION opencode->human msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 HUMAN_QUESTION opencode->human msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2455,7 +2460,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r2 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_206 ref=artifact://approval.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r2 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_206 ref=artifact://approval.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2503,7 +2508,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2565,7 +2570,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout: submittedPaneOutput(
-            `# [pairflow] r2 APPROVAL_DECISION human->opencode msg=msg_20260222_101 ref=${reworkRef}.`
+            `[pairflow] r2 APPROVAL_DECISION human->opencode msg=msg_20260222_101 ref=${reworkRef}.`
           ),
           stderr: "",
           exitCode: 0
@@ -2626,7 +2631,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r2 APPROVAL_DECISION orchestrator->opencode msg=msg_20260222_103 ref=artifact://auto-rework.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r2 APPROVAL_DECISION orchestrator->opencode msg=msg_20260222_103 ref=artifact://auto-rework.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2682,7 +2687,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r2 APPROVAL_DECISION orchestrator->opencode msg=msg_20260222_104 ref=artifact://gate-auto-rework.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r2 APPROVAL_DECISION orchestrator->opencode msg=msg_20260222_104 ref=artifact://gate-auto-rework.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2738,7 +2743,7 @@ describe("emitDeliveryNotificationAck", () => {
         calls.push(args);
         if (args[0] === "capture-pane") {
           return Promise.resolve({
-            stdout: `# [pairflow] r${envelope.round} ${envelope.type} ${envelope.sender}->${envelope.recipient} msg=${envelope.id} ref=artifact://handoff.md.`,
+            stdout: `[pairflow] r${envelope.round} ${envelope.type} ${envelope.sender}->${envelope.recipient} msg=${envelope.id} ref=artifact://handoff.md.`,
             stderr: "",
             exitCode: 0
           });
@@ -2800,7 +2805,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2862,7 +2867,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -2928,7 +2933,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout: submittedPaneOutput(
-            `# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=${fallbackRef}.`
+            `[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=${fallbackRef}.`
           ),
           stderr: "",
           exitCode: 0
@@ -2959,7 +2964,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
+        call[4]?.includes("[pairflow] r1 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain(`ref=${fallbackRef}.`);
     expect(messageCall?.[4]).not.toContain("ref=transcript.ndjson#");
@@ -2972,7 +2977,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://priority-source.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://priority-source.md."),
           stderr: "",
           exitCode: 0
         });
@@ -3002,7 +3007,7 @@ describe("emitDeliveryNotificationAck", () => {
         call[0] === "send-keys" &&
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "-l" &&
-        call[4]?.includes("# [pairflow] r1 PASS opencode->opencode")
+        call[4]?.includes("[pairflow] r1 PASS opencode->opencode")
     );
     expect(messageCall?.[4]).toContain("ref=artifact://priority-source.md.");
     expect(messageCall?.[4]).not.toContain("/.pairflow/bubbles/b_delivery_01/transcript.ndjson#");
@@ -3015,7 +3020,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 APPROVAL_REQUEST orchestrator->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -3072,7 +3077,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -3117,7 +3122,7 @@ describe("emitDeliveryNotificationAck", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout:
-            submittedOpencodeReadyPaneOutput("# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."),
           stderr: "",
           exitCode: 0
         });
@@ -3180,7 +3185,7 @@ describe("emitDeliveryNotificationAck", () => {
       reason_code: "DELIVERY_ACK_RUNTIME_SESSION_UNAVAILABLE"
     });
     expect(result.message).toContain(
-      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
+      "[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
     );
     expect(result.message).toContain(
       "Run pairflow commands from the active workspace root."
@@ -3313,7 +3318,7 @@ describe("emitDeliveryNotificationAck", () => {
       deliveryTargetReasonCode: "DELIVERY_TARGET_REGISTRY_READ_FAILED"
     });
     expect(result.message).toContain(
-      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
+      "[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
     );
     expect(result.message).toContain(
       "Run pairflow commands from the active workspace root."
@@ -3342,7 +3347,7 @@ describe("emitDeliveryNotificationAck", () => {
       reason_code: "DELIVERY_ACK_REJECTED"
     });
     expect(result.message).toContain(
-      "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
+      "[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
     );
     // Phase 4: opencode reviewer receives minimal messages without workspace guidance
     expect(result.message).not.toContain(
@@ -3415,7 +3420,7 @@ describe("emitDeliveryNotificationAck", () => {
             captureCount >= 7
               ? [
                   "Ask anything...",
-                  "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
+                  "[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
                   "",
                   ">"
                 ].join("\n")
@@ -3468,7 +3473,7 @@ describe("emitDeliveryNotificationAck", () => {
             stdout: [
               "Claude Code is ready.",
               "",
-              "> # [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
+              "> [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
             ].join("\n"),
             stderr: "",
             exitCode: 0
@@ -3477,7 +3482,7 @@ describe("emitDeliveryNotificationAck", () => {
         // After retry Enter, marker moves to output area (before prompt).
         return Promise.resolve({
           stdout: [
-            "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
+            "[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
             "",
             ">"
           ].join("\n"),
@@ -3528,7 +3533,7 @@ describe("emitDeliveryNotificationAck", () => {
             stdout: [
               "Claude Code is ready.",
               "",
-              "│ ❯ # [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
+              "│ ❯ [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md."
             ].join("\n"),
             stderr: "",
             exitCode: 0
@@ -3536,7 +3541,7 @@ describe("emitDeliveryNotificationAck", () => {
         }
         return Promise.resolve({
           stdout: [
-            "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
+            "[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
             "",
             "│ ❯"
           ].join("\n"),
@@ -3617,7 +3622,7 @@ describe("emitDeliveryNotificationAck", () => {
         return Promise.resolve({
           stdout: [
             "Earlier output above the current viewport:",
-            "# [pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
+            "[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.",
             "",
             "Claude Code is ready.",
             "",
@@ -3742,7 +3747,7 @@ describe("retryStuckAgentInput", () => {
           stdout: [
             "Claude Code is ready.",
             "",
-            "❯ # [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md."
+            "❯ [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -3778,7 +3783,7 @@ describe("retryStuckAgentInput", () => {
           stdout: [
             "Claude Code is ready.",
             "",
-            "│ ❯ # [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md."
+            "│ ❯ [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -3812,7 +3817,7 @@ describe("retryStuckAgentInput", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout: [
-            "# [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md.",
+            "[pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md.",
             "Processing...",
             "❯"
           ].join("\n"),
@@ -3844,9 +3849,9 @@ describe("retryStuckAgentInput", () => {
       if (args[0] === "capture-pane") {
         return Promise.resolve({
           stdout: [
-            "# [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md.",
+            "[pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md.",
             "Claude Code welcome screen",
-            "❯ # [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md."
+            "❯ [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -3917,7 +3922,7 @@ describe("retryStuckAgentInput", () => {
         return Promise.resolve({
           stdout: [
             "",
-            "❯ # [pairflow] r1 TASK orchestrator->opencode msg=msg_123 ref=task.md."
+            "❯ [pairflow] r1 TASK orchestrator->opencode msg=msg_123 ref=task.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -3957,7 +3962,7 @@ describe("retryStuckAgentInput", () => {
         return Promise.resolve({
           stdout: [
             "",
-            "❯ # [pairflow] r2 HUMAN_REPLY human->opencode msg=msg_456 ref=reply.md."
+            "❯ [pairflow] r2 HUMAN_REPLY human->opencode msg=msg_456 ref=reply.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0
@@ -3997,7 +4002,7 @@ describe("retryStuckAgentInput", () => {
         return Promise.resolve({
           stdout: [
             "",
-            "❯ # [pairflow] r2 PASS opencode->opencode msg=msg_789 ref=meta-review.md."
+            "❯ [pairflow] r2 PASS opencode->opencode msg=msg_789 ref=meta-review.md."
           ].join("\n"),
           stderr: "",
           exitCode: 0

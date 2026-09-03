@@ -6,6 +6,8 @@ import {
   sendAndSubmitTmuxPaneMessage, submitTmuxPaneInput
 } from "./tmuxInput.js";
 import { buildAgentCommand } from "../../../shared/command/agentCommand.js";
+import { resolveTmuxPasteOptions } from "../../../shared/agent/agentRuntimeProfiles.js";
+import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../shared/runtimeSessionWorkspaceAuthority.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../config/defaults.js";
@@ -40,6 +42,7 @@ async function submitReviewerStartupPrompt(input: {
   sessionName: string;
   paneIndex: number;
   startupSubmitDelayMs?: number;
+  reviewerAgentName: AgentName;
 }): Promise<void> {
   if (!input.startupPrompt?.trim()) {
     return;
@@ -54,7 +57,11 @@ async function submitReviewerStartupPrompt(input: {
     input.runner,
     targetPane,
     input.startupPrompt,
-    { maxChunkLength: 1024 }
+    {
+      maxChunkLength: 1024,
+      // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
+      ...resolveTmuxPasteOptions(input.reviewerAgentName)
+    }
   );
 }
 
@@ -143,6 +150,7 @@ export async function refreshReviewerContext(
       runner,
       sessionName,
       paneIndex: activateResult.paneIndex,
+      reviewerAgentName: input.bubbleConfig.agents.reviewer,
       ...(input.startupSubmitDelayMs !== undefined
         ? { startupSubmitDelayMs: input.startupSubmitDelayMs }
         : {})

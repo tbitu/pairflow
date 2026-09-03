@@ -32,7 +32,13 @@ export interface MetaReviewGateNotifyTmuxCapabilities {
   sendSubmissionRequestMessage?: (
     runner: MetaReviewGateTmuxRunner,
     targetPane: string,
-    message: string
+    message: string,
+    options?: {
+      requireSuccess?: boolean;
+      submitDelayMs?: number;
+      maxChunkLength?: number;
+      interChunkDelayMs?: number;
+    }
   ) => Promise<void>;
   submitPaneInput?: (
     runner: MetaReviewGateTmuxRunner,

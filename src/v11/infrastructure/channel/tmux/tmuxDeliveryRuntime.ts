@@ -15,7 +15,8 @@ import {
 import { waitForAgentPaneReady } from "./tmuxPaneReadiness.js";
 import {
   getAgentRuntimeProfile,
-  isAgentNameRegistered
+  isAgentNameRegistered,
+  resolveTmuxPasteOptions
 } from "../../../shared/agent/agentRuntimeProfiles.js";
 import type { TmuxRunner } from "./tmuxManager.js";
 
@@ -102,6 +103,34 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolvePromise) => {
     setTimeout(resolvePromise, ms);
   });
+}
+
+/**
+ * Clear a live pane's conversation history before a fresh delivery, matching
+ * the historical reset behavior. NOTE: skipped for opencode panes — opencode's
+ * `/clear` opens a confirmation gate in the TUI that swallows the following
+ * send-keys, so the handover message never types. The working watchdog path
+ * sends WITHOUT `/clear` and reliably lands; we match that for opencode.
+ */
+async function clearLiveSessionForDelivery(input: {
+  runner: TmuxRunner;
+  targetPane: string;
+  convergencePolicy: "respawn" | "assume_running" | undefined;
+  sleepForDelayMs?: (ms: number) => Promise<void>;
+}, isLiveSession: boolean, trustPromptHandling: "opencode" | "none"): Promise<void> {
+  if (!isLiveSession || input.convergencePolicy !== "respawn") {
+    return;
+  }
+  if (trustPromptHandling === "opencode") {
+    return;
+  }
+  await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, "/clear", {
+    requireSuccess: false,
+    maxChunkLength: 1024,
+    ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
+  }).catch(() => undefined);
+  const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
+  await sleepForDelayMs(500);
 }
 
 export interface TmuxDeliveryTimingOptions {
@@ -271,22 +300,21 @@ export async function attemptTmuxDelivery(input: {
       await maybeAcceptOpencodeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
     }
 
-    // If the session was already live, clear the previous conversation history first.
-    if (isLiveSession && input.convergencePolicy === "respawn") {
-      await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, "/clear", {
-        requireSuccess: false,
-        maxChunkLength: 1024,
-        ...(input.timing?.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.timing.sleepForDelayMs } : {})
-      }).catch(() => undefined);
-
-      const sleepForDelayMs = input.timing?.sleepForDelayMs ?? sleep;
-      await sleepForDelayMs(500);
-    }
+    await clearLiveSessionForDelivery({
+      runner: input.runner,
+      targetPane: input.targetPane,
+      convergencePolicy: input.convergencePolicy,
+      ...(input.timing?.sleepForDelayMs !== undefined
+        ? { sleepForDelayMs: input.timing.sleepForDelayMs }
+        : {})
+    }, isLiveSession, trustPromptHandling);
 
     // Deliver the handoff message via send-keys
     await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
       requireSuccess: true,
       maxChunkLength: 1024,
+      // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
+      ...resolveTmuxPasteOptions(input.expectedPaneAgent),
       ...(input.timing?.submitDelayMs !== undefined
         ? { submitDelayMs: input.timing.submitDelayMs }
         : {}),

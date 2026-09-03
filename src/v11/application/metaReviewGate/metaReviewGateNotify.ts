@@ -11,7 +11,8 @@ import {
 } from "./metaReviewGateRuntimeCapabilityResolution.js";
 import {
   getAgentRuntimeProfile,
-  isAgentNameRegistered
+  isAgentNameRegistered,
+  resolveTmuxPasteOptions
 } from "../../shared/agent/agentRuntimeProfiles.js";
 
 const metaReviewerPaneExitedReasonCode = "META_REVIEWER_PANE_EXITED";
@@ -25,7 +26,8 @@ function sleep(ms: number): Promise<void> {
 }
 
 function isAgentPromptLine(line: string): boolean {
-  return /^\s*(?:[|│┃]\s*)*[>❯]/u.test(line);
+  // `›` (U+203A) is reasonix's composer prompt glyph.
+  return /^\s*(?:[|│┃]\s*)*[>❯›]/u.test(line);
 }
 
 function findLastIndex(arr: string[], predicate: (item: string) => boolean): number {
@@ -188,7 +190,11 @@ export async function notifyMetaReviewerSubmissionRequest(
     );
   }
   try {
-    await sendSubmissionRequestMessage(runner, input.targetPane, message);
+    await sendSubmissionRequestMessage(runner, input.targetPane, message, {
+      maxChunkLength: 1024,
+      // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
+      ...resolveTmuxPasteOptions(input.metaReviewerAgent)
+    });
   } catch (error) {
     return {
       status: "failed",

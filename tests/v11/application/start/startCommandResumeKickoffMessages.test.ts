@@ -66,22 +66,22 @@ describe("startCommandResumeKickoffMessages", () => {
     );
   });
 
-  it("routes a reasonix meta-reviewer resume through the full guidance builder (no minimal stripping)", () => {
+  it("routes a reasonix meta-reviewer resume through the minimal kickoff (no long guidance)", () => {
     const resolved = resolveResumeKickoffMessages({
       ...createBaseInput(createRunningMetaReviewerState("reasonix")),
       metaReviewerAgent: "reasonix" as const
     });
 
     expect(resolved.metaReviewerKickoffMessage).toBeDefined();
-    // The full guidance form includes pairflow-command guidance, which the
-    // minimal opencode kickoff strips.
+    // reasonix gets the short form (like opencode) to avoid overflow; it reads
+    // the task file / transcript for details.
     expect(resolved.metaReviewerKickoffMessage).toContain(
-      "Default command profile is `external`"
+      "resume kickoff (meta-reviewer)"
     );
     expect(resolved.kickoffDiagnostic).toBeUndefined();
   });
 
-  it("routes a reasonix implementer resume through the full guidance builder", () => {
+  it("routes a reasonix implementer resume through the minimal kickoff", () => {
     const resolved = resolveResumeKickoffMessages({
       ...createBaseInput(createRunningMetaReviewerState("reasonix", "implementer")),
       implementerAgent: "reasonix" as const
@@ -89,10 +89,10 @@ describe("startCommandResumeKickoffMessages", () => {
 
     expect(resolved.implementerKickoffMessage).toBeDefined();
     expect(resolved.implementerKickoffMessage).toContain(
-      "Default command profile is `external`"
+      "resume kickoff (implementer)"
     );
     expect(resolved.implementerKickoffMessage).toContain(
-      "resume kickoff (implementer)"
+      "Read task file now:"
     );
     expect(resolved.kickoffDiagnostic).toBeUndefined();
   });

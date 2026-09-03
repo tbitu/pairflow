@@ -4,6 +4,7 @@ import {
 } from "../../../../shared/role/prompts/rolePromptConcerns.js";
 import { buildDocumentBubbleSourceEditGuard } from "../../../../shared/document/documentBubbleSourceEditGuard.js";
 import { buildPairflowCommandGuidance } from "../../startCommandPromptRuntime.js";
+import { getAgentRuntimeProfile } from "../../../../shared/agent/agentRuntimeProfiles.js";
 import type {
   PairflowCommandProfile,
   ReviewArtifactType
@@ -39,8 +40,21 @@ export function buildImplementerKickoffMessage(input: {
   agentName?: AgentName;
   validationCommands?: BubbleCommandsConfig;
 }): string {
+  // Minimal-guidance agents (reasonix) get a short kickoff so the pasted
+  // message stays tiny; they read the task file for the details.
+  if (
+    input.agentName !== undefined
+    && getAgentRuntimeProfile(input.agentName).minimalPastedGuidance
+  ) {
+    return [
+      `[pairflow] bubble=${input.bubbleId} kickoff.`,
+      `Read task file now: ${input.taskArtifactPath}.`,
+      "Implement it in this workspace.",
+      "When done, hand off with `pairflow agent emit --kind pass --repo <repo> --bubble-id <id> --handoff-id <handoff-id> --execution-id <execution-id> --summary '<what changed + validation>'`."
+    ].join(" ");
+  }
   return [
-    `# [pairflow] bubble=${input.bubbleId} kickoff.`,
+    `[pairflow] bubble=${input.bubbleId} kickoff.`,
     `Read task file now: ${input.taskArtifactPath}.`,
     buildImplementerKickoffScopeInstruction(input.reviewArtifactType),
     buildPairflowCommandGuidance(
@@ -82,7 +96,7 @@ export function buildImplementerIdeationKickoffMessage(input: {
   agentName?: AgentName;
 }): string {
   return [
-    `# [pairflow] bubble=${input.bubbleId} kickoff (ideation pending).`,
+    `[pairflow] bubble=${input.bubbleId} kickoff (ideation pending).`,
     "This bubble is in ideation mode; no implementer action is required.",
     "Stay idle and wait for explicit human instruction.",
     "Do not run `pairflow bubble kickoff` yourself and do not emit implementer/reviewer handoff yet."

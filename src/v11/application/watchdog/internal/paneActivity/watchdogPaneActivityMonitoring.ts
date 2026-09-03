@@ -23,7 +23,7 @@ import { buildAgentCommand } from "../../../../shared/command/agentCommand.js";
 import { respawnTmuxPaneCommand } from "../../../../infrastructure/channel/tmux/tmuxManager.js";
 import { deactivateOtherRolePanes } from "../../../../shared/channel/rolePaneLifecycle.js";
 import { getSharedTopologySlotPaneIndexForRole } from "../../../../shared/topology/topologySlotPaneProjection.js";
-import { isAgentNameRegistered } from "../../../../shared/agent/agentRuntimeProfiles.js";
+import { isAgentNameRegistered, resolveTmuxPasteOptions } from "../../../../shared/agent/agentRuntimeProfiles.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../../shared/runtimeSessionWorkspaceAuthority.js";
 
@@ -141,7 +141,18 @@ async function trySendWatchdogNudge(input: NudgeInput): Promise<"ok" | "pane_not
           expectedPaneAgent
         },
         topologyPaneIndexForRole: getSharedTopologySlotPaneIndexForRole,
-        respawnPane: (respawnInput) => respawnTmuxPaneCommand(respawnInput)
+        respawnPane: (respawnInput) => respawnTmuxPaneCommand(respawnInput),
+        // Only deactivate other reasonix (non-concurrent) panes; never turn the
+        // opencode reviewer/meta panes into placeholders because the reasonix
+        // implementer is active.
+        configureRoleAgent: (role) =>
+          role === "implementer"
+            ? input.bubbleConfig.agents.implementer
+            : role === "reviewer"
+              ? input.bubbleConfig.agents.reviewer
+              : role === "meta_reviewer"
+                ? input.bubbleConfig.agents.meta_reviewer
+                : undefined
       });
       const respawnCommand = buildAgentCommand({
         agentName: expectedPaneAgent,
@@ -167,7 +178,11 @@ async function trySendWatchdogNudge(input: NudgeInput): Promise<"ok" | "pane_not
     return "pane_not_ready";
   }
 
-  await input.sendAndSubmitTmuxPaneMessage(input.runTmux, input.targetPane, input.nudgeMessage);
+  await input.sendAndSubmitTmuxPaneMessage(input.runTmux, input.targetPane, input.nudgeMessage, {
+    maxChunkLength: 1024,
+    // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
+    ...resolveTmuxPasteOptions(expectedPaneAgent)
+  });
   return "ok";
 }
 

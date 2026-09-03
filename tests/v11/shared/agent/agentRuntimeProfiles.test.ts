@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   getAgentRuntimeProfile,
-  isAgentNameRegistered
+  isAgentNameRegistered,
+  resolveTmuxPasteOptions
 } from "../../../../src/v11/shared/agent/agentRuntimeProfiles.js";
 
 describe("agentRuntimeProfiles", () => {
@@ -20,7 +21,12 @@ describe("agentRuntimeProfiles", () => {
   it("declares the reasonix profile for tmux-paste, non-concurrent operation", () => {
     const profile = getAgentRuntimeProfile("reasonix");
     expect(profile.startupPromptDelivery).toBe("tmux_paste");
-    expect(profile.minimalPastedGuidance).toBe(false);
+    // Short kickoff (minimal guidance) so the pasted message stays tiny and
+    // reasonix reads the task artifact itself; keystroke delivery (not buffer).
+    expect(profile.minimalPastedGuidance).toBe(true);
+    expect(profile.tmuxPasteViaBuffer).toBe(false);
+    // Collapse newlines so pasted messages stay single-line and Enter sends.
+    expect(profile.collapsePastedNewlines).toBe(true);
     // reasonix does not use the opencode double-Escape-with-delay sequence.
     expect(profile.postEmitInterruption).toBe("none");
     // reasonix has no folder-trust / bypass-permissions prompt.
@@ -42,5 +48,19 @@ describe("agentRuntimeProfiles", () => {
     expect(isAgentNameRegistered("reasonix")).toBe(true);
     expect(isAgentNameRegistered("codex")).toBe(false);
     expect(isAgentNameRegistered("claude")).toBe(false);
+  });
+
+  it("batches reasonix long pastes into small chunks with inter-chunk and submit delays", () => {
+    const options = resolveTmuxPasteOptions("reasonix");
+    expect(options.maxChunkLength).toBe(200);
+    expect(options.interChunkDelayMs).toBe(250);
+    expect(options.submitDelayMs).toBe(1500);
+    // Deliver via keystrokes (proven-working), not buffer paste.
+    expect(options.pasteViaBuffer).toBeUndefined();
+  });
+
+  it("keeps the legacy 1024-char / 200ms / dynamic-delay paste for opencode", () => {
+    expect(resolveTmuxPasteOptions("opencode")).toEqual({});
+    expect(resolveTmuxPasteOptions(undefined)).toEqual({});
   });
 });
