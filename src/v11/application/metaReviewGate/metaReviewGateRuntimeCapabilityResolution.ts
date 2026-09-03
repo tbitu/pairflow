@@ -35,9 +35,15 @@ export function resolveMetaReviewGatePaneBindingTmuxCapabilities(
 ): MetaReviewGatePaneBindingTmuxCapabilities | undefined {
   const runner = runtime?.tmux?.runner;
   const respawnPaneCommand = runtime?.tmux?.respawnPaneCommand;
+  const deactivateOtherRolePanes = runtime?.tmux?.deactivateOtherRolePanes;
+  const waitForPaneReady = runtime?.tmux?.waitForPaneReady;
+  const sendSubmissionRequestMessage = runtime?.tmux?.sendSubmissionRequestMessage;
   const resolved = {
     ...(runner !== undefined ? { runner } : {}),
-    ...(respawnPaneCommand !== undefined ? { respawnPaneCommand } : {})
+    ...(respawnPaneCommand !== undefined ? { respawnPaneCommand } : {}),
+    ...(deactivateOtherRolePanes !== undefined ? { deactivateOtherRolePanes } : {}),
+    ...(waitForPaneReady !== undefined ? { waitForPaneReady } : {}),
+    ...(sendSubmissionRequestMessage !== undefined ? { sendSubmissionRequestMessage } : {})
   };
 
   return hasDefinedValues(resolved) ? resolved : undefined;

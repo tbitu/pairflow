@@ -6,6 +6,8 @@ import { describe, expect, it } from "vitest";
 
 import type { BubbleConfig } from "../../../../src/v11/shared/config/bubbleConfigTypes.js";
 import type { ProtocolEnvelope } from "../../../../src/v11/shared/protocol/protocolEnvelopeContract.js";
+import type { RefreshReviewerContextPort } from "../../../../src/v11/ports/reviewerContext.js";
+import type { EmitDeliveryNotificationAckPort } from "../../../../src/v11/ports/tmuxDelivery.js";
 import {
   executePassDelivery,
   type PassDeliveryDependencies
@@ -723,6 +725,64 @@ describe("executePassDelivery", () => {
     expect((refreshCalls[0] as { reviewerStartupPrompt?: unknown }).reviewerStartupPrompt)
       .toBeUndefined();
 
+    expect(emitCalls).toHaveLength(1);
+    expect(result.retried).toBe(false);
+  });
+
+  it("composes and passes reviewer startup prompt when reviewer is reasonix on implementer handoff", async () => {
+    const briefPath = "/tmp/repo/.pairflow/bubbles/b_delivery_v11_reasonix/artifacts/reviewer-brief.md";
+    const focusPath = "/tmp/repo/.pairflow/bubbles/b_delivery_v11_reasonix/artifacts/reviewer-focus.md";
+    const refreshCalls: unknown[] = [];
+    const refreshReviewerContext: RefreshReviewerContextPort = (input) => {
+      refreshCalls.push(input);
+      return Promise.resolve({ refreshed: true });
+    };
+    const emitCalls: unknown[] = [];
+    const emitDeliveryNotificationAck: EmitDeliveryNotificationAckPort = (input) => {
+      emitCalls.push(input);
+      return Promise.resolve({
+        status: "accepted",
+        message: "ok",
+        sessionName: "pf_bubble",
+        targetPaneIndex: 1
+      });
+    };
+    const reviewerDeliveryDependencies: PassDeliveryDependencies = {
+      refreshReviewerContext,
+      emitDeliveryNotificationAck,
+      readReviewerBriefArtifact,
+      readReviewerFocusArtifact,
+      resolveDeliveryMessageRef
+    };
+
+    const result = await executePassDelivery(
+      {
+        bubbleId: "b_delivery_v11_reasonix",
+        bubbleConfig: {
+          ...createBubbleConfig("fresh"),
+          id: "b_delivery_v11_reasonix",
+          agents: {
+            implementer: "opencode",
+            reviewer: "reasonix",
+            meta_reviewer: "opencode"
+          }
+        },
+        sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+        reviewerBriefArtifactPath: briefPath,
+        reviewerFocusArtifactPath: focusPath,
+        envelope: createEnvelope(),
+        senderRole: "implementer",
+        recipientRole: "reviewer"
+      },
+      reviewerDeliveryDependencies
+    );
+
+    expect(refreshCalls).toHaveLength(1);
+    const passedPrompt = (refreshCalls[0] as { reviewerStartupPrompt?: string }).reviewerStartupPrompt;
+    expect(typeof passedPrompt).toBe("string");
+    expect(passedPrompt).toContain("Pairflow reviewer start for bubble b_delivery_v11_reasonix.");
+    expect(passedPrompt).toContain("Reviewer policy file:");
+    expect(passedPrompt).toContain("Severity Ontology v1 reminder");
     expect(emitCalls).toHaveLength(1);
     expect(result.retried).toBe(false);
   });

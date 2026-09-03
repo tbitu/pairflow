@@ -67,19 +67,19 @@ interface PromptConcernBuildInputBase {
   workspacePath: string;
   pairflowCommandProfile: PairflowCommandProfile;
   taskArtifactPath: string;
-  reviewArtifactType?: ReviewArtifactType;
-  reviewerBlockingMinSeverity?: BubbleReviewAutoReworkSeverity;
-  policySnapshotPathAbs?: string;
-  kickoffDiagnostic?: string;
-  reviewerTestDirectiveLine?: string;
-  reviewerBriefText?: string;
-  reviewerFocus?: ReviewerFocusExtractionResult;
-  validationCommands?: BubbleCommandsConfig;
+  reviewArtifactType?: ReviewArtifactType | undefined;
+  reviewerBlockingMinSeverity?: BubbleReviewAutoReworkSeverity | undefined;
+  policySnapshotPathAbs?: string | undefined;
+  kickoffDiagnostic?: string | undefined;
+  reviewerTestDirectiveLine?: string | undefined;
+  reviewerBriefText?: string | undefined;
+  reviewerFocus?: ReviewerFocusExtractionResult | undefined;
+  validationCommands?: BubbleCommandsConfig | undefined;
 }
 
 export interface StartupPromptConcernBuildInput
   extends PromptConcernBuildInputBase {
-  ideationPending?: boolean;
+  ideationPending?: boolean | undefined;
   state?: undefined;
   transcriptSummary?: undefined;
 }

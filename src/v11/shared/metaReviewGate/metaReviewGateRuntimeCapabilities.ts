@@ -1,4 +1,4 @@
-import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
+import type { AgentName, AgentRole } from "../../../contracts/kernel/agentIdentity.js";
 import type {
   PairflowCommandProfile,
   RoleMcpPolicy
@@ -74,6 +74,39 @@ export interface MetaReviewGatePaneBindingTmuxCapabilities {
     command: string;
     runner?: MetaReviewGateTmuxRunner;
   }) => Promise<void>;
+  deactivateOtherRolePanes?: (input: {
+    activateInput: {
+      sessionName: string;
+      role: AgentRole;
+      cwd: string;
+      runner: MetaReviewGateTmuxRunner;
+      expectedPaneAgent?: AgentName;
+    };
+    topologyPaneIndexForRole: (role: AgentRole) => number;
+    respawnPane: (input: {
+      sessionName: string;
+      paneIndex: number;
+      command: string;
+      cwd: string;
+      runner: MetaReviewGateTmuxRunner;
+    }) => Promise<void>;
+    configureRoleAgent?: (role: AgentRole) => AgentName | undefined;
+  }) => Promise<void>;
+  waitForPaneReady?: (
+    agentName: AgentName | undefined,
+    input: {
+      runner: MetaReviewGateTmuxRunner;
+      targetPane: string;
+      attempts?: number;
+      retryDelayMs?: number;
+    }
+  ) => Promise<boolean>;
+  sendSubmissionRequestMessage?: (
+    runner: MetaReviewGateTmuxRunner,
+    targetPane: string,
+    message: string,
+    options?: Record<string, unknown>
+  ) => Promise<void>;
 }
 
 export interface MetaReviewGatePaneBindingRuntimeCapabilities {
@@ -116,6 +149,7 @@ export interface ResolveMetaReviewerPaneWarningInput {
   metaReviewerAgent: AgentName;
   metaReviewerMcpPolicy?: RoleMcpPolicy;
   metaReviewerModel?: string;
+  configureRoleAgent?: (role: AgentRole) => AgentName | undefined;
 }
 
 export type ResolveMetaReviewerPaneWarning = (

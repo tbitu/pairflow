@@ -1,8 +1,18 @@
+import { resolve } from "node:path";
 import {
   type DeliveryAck,
   type EmitDeliveryNotificationAckPort
 } from "../../../../ports/tmuxDelivery.js";
-import type { ReviewerTestExecutionDirective } from "../../../../shared/reviewer/testEvidence.js";
+import {
+  formatReviewerTestExecutionDirective,
+  type ReviewerTestExecutionDirective
+} from "../../../../shared/reviewer/testEvidence.js";
+import {
+  getAgentRuntimeProfile,
+  isAgentNameRegistered
+} from "../../../../shared/agent/agentRuntimeProfiles.js";
+import { composeRolePrompt } from "../../../../shared/role/prompts/roleStartupPromptComposer.js";
+import { reviewerPolicySnapshotFileName } from "../../../../shared/reviewer/reviewerPolicySnapshot.js";
 import type { BubbleConfig } from "../../../../shared/config/bubbleConfigTypes.js";
 import type { ProtocolEnvelope } from "../../../../shared/protocol/protocolEnvelopeContract.js";
 import type {
@@ -68,6 +78,51 @@ export interface ExecutePassDeliveryResult {
   retried: boolean;
 }
 
+function composePassReviewerStartupPrompt(input: {
+  executeInput: ExecutePassDeliveryInput;
+  reviewerBriefText?: string | undefined;
+  reviewerFocus?: ReturnType<typeof loadReviewerStartupPrompt> extends Promise<{ reviewerFocus: infer F }> ? F : never;
+}): string | undefined {
+  const reviewerAgent = input.executeInput.bubbleConfig.agents.reviewer;
+  if (
+    !isAgentNameRegistered(reviewerAgent)
+    || getAgentRuntimeProfile(reviewerAgent).startupPromptDelivery !== "tmux_paste"
+  ) {
+    return undefined;
+  }
+
+  const bubbleConfig = input.executeInput.bubbleConfig;
+  return composeRolePrompt({
+    agentName: reviewerAgent,
+    role: "reviewer",
+    phase: "startup",
+    context: {
+      bubbleId: input.executeInput.bubbleId,
+      repoPath: bubbleConfig.repo_path,
+      workspacePath: bubbleConfig.repo_path,
+      taskArtifactPath: resolve(
+        bubbleConfig.repo_path,
+        `.pairflow/bubbles/${input.executeInput.bubbleId}/artifacts/task.md`
+      ),
+      pairflowCommandProfile:
+        bubbleConfig.pairflow_command_profile ?? "external",
+      policySnapshotPathAbs: resolve(
+        bubbleConfig.repo_path,
+        `.pairflow/bubbles/${input.executeInput.bubbleId}/artifacts/${reviewerPolicySnapshotFileName}`
+      ),
+      reviewArtifactType: bubbleConfig.review_artifact_type,
+      reviewerBlockingMinSeverity:
+        bubbleConfig.review_policy?.reviewer_blocking_min_severity,
+      reviewerTestDirectiveLine:
+        input.executeInput.reviewerTestDirective !== undefined
+          ? formatReviewerTestExecutionDirective(input.executeInput.reviewerTestDirective)
+          : undefined,
+      reviewerBriefText: input.reviewerBriefText,
+      reviewerFocus: input.reviewerFocus
+    }
+  });
+}
+
 export async function executePassDelivery(
   input: ExecutePassDeliveryInput,
   dependencies: PassDeliveryDependencies = {}
@@ -110,10 +165,16 @@ export async function executePassDelivery(
   const refreshReviewer =
     dependencies.refreshReviewerContext
     ?? reviewerDeliveryDefaults.refreshReviewerContext;
-  // Phase 4: Do not pass reviewer startup prompt to delivery.
+
+  const reviewerStartupPrompt = composePassReviewerStartupPrompt({
+    executeInput: input,
+    reviewerBriefText,
+    reviewerFocus
+  });
+
   const deliveryInitialDelayMs = await resolveDeliveryInitialDelayMs({
     executeInput: input,
-    reviewerStartupPrompt: undefined,
+    reviewerStartupPrompt,
     refreshReviewer
   });
 

@@ -7,6 +7,9 @@ import {
 import type {
   ResolveMetaReviewerPaneWarning
 } from "../../shared/metaReviewGate/index.js";
+import type {
+  MetaReviewGatePaneBindingTmuxCapabilities
+} from "../../shared/metaReviewGate/metaReviewGateRuntimeCapabilities.js";
 import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
 import type {
   PairflowCommandProfile,
@@ -22,6 +25,17 @@ import {
   resolveRuntimeSessionWorkspaceAuthority
 } from "../../shared/runtimeSessionWorkspaceAuthority.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../config/defaults.js";
+import {
+  getAgentRuntimeProfile,
+  resolveTmuxPasteOptions
+} from "../../shared/agent/agentRuntimeProfiles.js";
+import {
+  deactivateOtherRolePanes
+} from "../../shared/channel/rolePaneLifecycle.js";
+import {
+  getSharedTopologySlotPaneIndexForRole
+} from "../../shared/topology/topologySlotPaneProjection.js";
+import { WATCHDOG_NUDGE_PROMPT } from "../../shared/watchdog/watchdogPrompt.js";
 
 function resolveMetaReviewerWorkspaceAuthority(input: {
   bubbleId: string;
@@ -197,6 +211,178 @@ function resolvePaneBindingPrerequisites(input: {
   };
 }
 
+type ResolveMetaReviewerPaneWarningInput = Parameters<ResolveMetaReviewerPaneWarning>[0];
+type ResolveMetaReviewerPaneWarningResult = Awaited<ReturnType<ResolveMetaReviewerPaneWarning>>;
+
+async function deliverMetaReviewerPromptViaTmuxPaste(input: {
+  paneBindingTmux: MetaReviewGatePaneBindingTmuxCapabilities;
+  metaReviewerAgent: AgentName;
+  sessionName: string;
+  paneIndex: number;
+  bubbleId: string;
+  round: number;
+  repoPath: string;
+  taskArtifactPath: string;
+  shouldDeactivate: boolean;
+}): Promise<ResolveMetaReviewerPaneWarningResult> {
+  const runner = input.paneBindingTmux.runner;
+  const waitForPaneReady = input.paneBindingTmux.waitForPaneReady;
+  const sendSubmissionRequestMessage = input.paneBindingTmux.sendSubmissionRequestMessage;
+
+  if (runner === undefined || waitForPaneReady === undefined || sendSubmissionRequestMessage === undefined) {
+    return buildMetaReviewerPaneFailure({
+      reasonCode: "META_REVIEWER_PANE_RUNTIME_UNAVAILABLE",
+      message:
+        "META_REVIEWER_PANE_RUNTIME_UNAVAILABLE: tmux prompt delivery capabilities are unavailable.",
+      shouldDeactivate: input.shouldDeactivate
+    });
+  }
+
+  const targetPane = `${input.sessionName}:0.${input.paneIndex}`;
+  const isReady = await waitForPaneReady(input.metaReviewerAgent, {
+    runner,
+    targetPane,
+    attempts: 100,
+    retryDelayMs: 300
+  });
+
+  if (!isReady) {
+    return buildMetaReviewerPaneFailure({
+      reasonCode: "META_REVIEWER_PANE_RESPAWN_FAILED",
+      message:
+        "META_REVIEWER_PANE_RESPAWN_FAILED: meta-reviewer pane failed readiness check after respawn.",
+      shouldDeactivate: input.shouldDeactivate
+    });
+  }
+
+  const startupPrompt = buildMetaReviewGateRunPrompt({
+    bubbleId: input.bubbleId,
+    round: input.round,
+    repoPath: input.repoPath,
+    taskArtifactPath: input.taskArtifactPath
+  });
+
+  await sendSubmissionRequestMessage(runner, targetPane, startupPrompt, {
+    maxChunkLength: 1024,
+    ...resolveTmuxPasteOptions(input.metaReviewerAgent)
+  });
+  await sendSubmissionRequestMessage(runner, targetPane, WATCHDOG_NUDGE_PROMPT, {
+    maxChunkLength: 1024,
+    ...resolveTmuxPasteOptions(input.metaReviewerAgent)
+  }).catch(() => undefined);
+
+  return {
+    delivery: {
+      status: "confirmed",
+      reasonCode: null,
+      message: "meta-review submit request delivered via tmux paste."
+    },
+    shouldDeactivate: input.shouldDeactivate
+  };
+}
+
+async function executeMetaReviewerRespawnAndDelivery(input: {
+  bindStartRecord: RuntimeSessionRecord;
+  workspacePath: string;
+  paneIndex: number;
+  input: ResolveMetaReviewerPaneWarningInput;
+  paneBindingTmux: MetaReviewGatePaneBindingTmuxCapabilities;
+  buildAgentCommand: MetaReviewGateCommandBuilder;
+  respawnPaneCommand: NonNullable<MetaReviewGatePaneBindingTmux["respawnPaneCommand"]>;
+  shouldDeactivate: boolean;
+}): Promise<ResolveMetaReviewerPaneWarningResult> {
+  const profile = getAgentRuntimeProfile(input.input.metaReviewerAgent);
+  try {
+    if (!profile.supportsConcurrentPanes) {
+      const runner = input.paneBindingTmux.runner;
+      if (runner === undefined) {
+        return buildMetaReviewerPaneFailure({
+          reasonCode: "META_REVIEWER_PANE_RUNTIME_UNAVAILABLE",
+          message: "meta-review gate pane binding is missing runner capability.",
+          shouldDeactivate: input.shouldDeactivate
+        });
+      }
+      const deactivateFn =
+        input.paneBindingTmux.deactivateOtherRolePanes ?? deactivateOtherRolePanes;
+      await deactivateFn({
+        activateInput: {
+          sessionName: input.bindStartRecord.tmuxSessionName,
+          role: "meta_reviewer",
+          cwd: input.workspacePath,
+          runner,
+          expectedPaneAgent: input.input.metaReviewerAgent
+        },
+        topologyPaneIndexForRole: getSharedTopologySlotPaneIndexForRole,
+        respawnPane: (respawnInput: Parameters<typeof input.respawnPaneCommand>[0]) =>
+          input.respawnPaneCommand({
+            ...respawnInput,
+            runner
+          }),
+        ...(input.input.configureRoleAgent !== undefined
+          ? { configureRoleAgent: input.input.configureRoleAgent }
+          : {})
+      });
+    }
+
+    const metaReviewerCommand = buildMetaReviewerCommand({
+      buildAgentCommand: input.buildAgentCommand,
+      metaReviewerAgent: input.input.metaReviewerAgent,
+      bubbleId: input.input.bubbleId,
+      round: input.input.round,
+      workspacePath: input.workspacePath,
+      repoPath: input.bindStartRecord.repoPath,
+      taskArtifactPath: input.input.taskArtifactPath,
+      pairflowCommandProfile: input.input.pairflowCommandProfile,
+      metaReviewerMcpPolicy:
+        input.input.metaReviewerMcpPolicy
+        ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer,
+      ...(input.input.metaReviewerModel !== undefined
+        ? { metaReviewerModel: input.input.metaReviewerModel }
+        : {})
+    });
+
+    await input.respawnPaneCommand({
+      sessionName: input.bindStartRecord.tmuxSessionName,
+      paneIndex: input.paneIndex,
+      cwd: input.workspacePath,
+      command: metaReviewerCommand,
+      ...(input.paneBindingTmux.runner !== undefined
+        ? { runner: input.paneBindingTmux.runner }
+        : {})
+    });
+
+    if (profile.startupPromptDelivery === "tmux_paste") {
+      return await deliverMetaReviewerPromptViaTmuxPaste({
+        paneBindingTmux: input.paneBindingTmux,
+        metaReviewerAgent: input.input.metaReviewerAgent,
+        sessionName: input.bindStartRecord.tmuxSessionName,
+        paneIndex: input.paneIndex,
+        bubbleId: input.input.bubbleId,
+        round: input.input.round,
+        repoPath: input.bindStartRecord.repoPath,
+        taskArtifactPath: input.input.taskArtifactPath,
+        shouldDeactivate: input.shouldDeactivate
+      });
+    }
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return buildMetaReviewerPaneFailure({
+      reasonCode: "META_REVIEWER_PANE_RESPAWN_FAILED",
+      message: `META_REVIEWER_PANE_RESPAWN_FAILED: ${reason}`,
+      shouldDeactivate: input.shouldDeactivate
+    });
+  }
+
+  return {
+    delivery: {
+      status: "confirmed",
+      reasonCode: null,
+      message: "meta-review submit request delivered as meta-reviewer launch prompt."
+    },
+    shouldDeactivate: input.shouldDeactivate
+  };
+}
+
 export const resolveMetaReviewerPaneWarning: ResolveMetaReviewerPaneWarning = async (
   input
 ) => {
@@ -255,47 +441,15 @@ export const resolveMetaReviewerPaneWarning: ResolveMetaReviewerPaneWarning = as
       shouldDeactivate
     });
   }
-  const workspacePath = workspaceAuthority.workspacePath;
-  try {
-    const metaReviewerCommand = buildMetaReviewerCommand({
-      buildAgentCommand,
-      metaReviewerAgent: input.metaReviewerAgent,
-      bubbleId: input.bubbleId,
-      round: input.round,
-      workspacePath,
-      repoPath: bindStart.record.repoPath,
-      taskArtifactPath: input.taskArtifactPath,
-      pairflowCommandProfile: input.pairflowCommandProfile,
-      metaReviewerMcpPolicy:
-        input.metaReviewerMcpPolicy
-        ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer,
-      ...(input.metaReviewerModel !== undefined
-        ? { metaReviewerModel: input.metaReviewerModel }
-        : {})
-    });
-    await respawnPaneCommand({
-      sessionName: bindStart.record.tmuxSessionName,
-      paneIndex,
-      cwd: workspacePath,
-      command: metaReviewerCommand,
-      ...(paneBindingTmux.runner !== undefined
-        ? { runner: paneBindingTmux.runner }
-        : {})
-    });
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    return buildMetaReviewerPaneFailure({
-      reasonCode: "META_REVIEWER_PANE_RESPAWN_FAILED",
-      message: `META_REVIEWER_PANE_RESPAWN_FAILED: ${reason}`,
-      shouldDeactivate
-    });
-  }
-  return {
-    delivery: {
-      status: "confirmed",
-      reasonCode: null,
-      message: "meta-review submit request delivered as meta-reviewer launch prompt."
-    },
+
+  return await executeMetaReviewerRespawnAndDelivery({
+    bindStartRecord: bindStart.record,
+    workspacePath: workspaceAuthority.workspacePath,
+    paneIndex,
+    input,
+    paneBindingTmux,
+    buildAgentCommand,
+    respawnPaneCommand,
     shouldDeactivate
-  };
+  });
 };

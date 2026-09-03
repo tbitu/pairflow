@@ -21,6 +21,7 @@ import type {
 import type { MetaReviewGateResult } from "../../../../shared/metaReviewGate/metaReviewGateResultContract.js";
 import { MetaReviewGateError } from "../../../../shared/metaReviewGate/metaReviewGateRouteContract.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
+import { resolveConfiguredAgentForRole } from "../../../../domain/agentIdentity/agentIdentity.js";
 
 export async function applyMetaReviewGateOnConvergence(
   input: ApplyMetaReviewGateOnConvergenceInput,
@@ -81,7 +82,12 @@ export async function applyMetaReviewGateOnConvergence(
       ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer,
     ...(context.resolved.bubbleConfig.agents.meta_reviewer_model !== undefined
       ? { metaReviewerModel: context.resolved.bubbleConfig.agents.meta_reviewer_model }
-      : {})
+      : {}),
+    configureRoleAgent: (role) =>
+      resolveConfiguredAgentForRole({
+        agents: context.resolved.bubbleConfig.agents,
+        role
+      })
   });
   if (paneBinding.shouldDeactivate && paneBinding.delivery.status !== "confirmed") {
     await context.deactivateMetaReviewerPane();

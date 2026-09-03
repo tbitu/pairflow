@@ -560,4 +560,59 @@ describe("refreshReviewerContext", () => {
       "export PAIRFLOW_REMOTE_START_WORKSPACE_ROOT='/remote/repos/pairflow--bubble-01'"
     );
   });
+
+  it("composes and submits Reasonix reviewer startup prompt when reviewer is reasonix and no prompt is explicitly provided", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: "reasonix TUI\n> ",
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      return Promise.resolve({
+        stdout: "",
+        stderr: "",
+        exitCode: 0
+      });
+    };
+
+    const result = await refreshReviewerContext({
+      bubbleId: "b_reviewer_ctx_reasonix",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          ...baseConfig.agents,
+          reviewer: "reasonix"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      runner,
+      startupSubmitDelayMs: 0,
+      readSessionsRegistry: () =>
+        Promise.resolve({
+          b_reviewer_ctx_reasonix: createRuntimeSessionRecord({
+            bubbleId: "b_reviewer_ctx_reasonix",
+            workspacePath: "/tmp/runtime-workspace",
+            workspaceKind: "worktree"
+          })
+        })
+    });
+
+    expect(result).toEqual({
+      refreshed: true
+    });
+    expect(calls[0]?.[0]).toBe("respawn-pane");
+    const reviewerCommand = calls[0]?.[6];
+    expect(typeof reviewerCommand).toBe("string");
+    const script = extractBashLcScript(reviewerCommand as string);
+    expect(script).toContain("'reasonix' 'code'");
+
+    const sendKeysCalls = calls.filter((call) => call[0] === "send-keys");
+    expect(sendKeysCalls.length).toBeGreaterThan(0);
+    const sentText = sendKeysCalls.map((call) => call[4]).filter(Boolean).join("");
+    expect(sentText).toContain("Pairflow reviewer start for bubble b_reviewer_ctx_reasonix.");
+  });
 });

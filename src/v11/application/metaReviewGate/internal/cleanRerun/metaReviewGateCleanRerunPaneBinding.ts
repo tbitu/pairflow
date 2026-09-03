@@ -13,6 +13,7 @@ import { failCleanRerunClosed } from "./metaReviewGateCleanRerunDispatch.js";
 import { persistCleanRerunDeliveryObservation } from "./metaReviewGateCleanRerunObservation.js";
 import type { MetaReviewGateResult } from "../../../../shared/metaReviewGate/metaReviewGateResultContract.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
+import { resolveConfiguredAgentForRole } from "../../../../domain/agentIdentity/agentIdentity.js";
 
 function isMetaReviewGateResult(
   value: LoadedStateSnapshot | MetaReviewGateResult
@@ -50,7 +51,12 @@ export async function resolveCleanRerunPaneBinding(input: {
         ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer,
       ...(finalizeInput.resolved.bubbleConfig.agents.meta_reviewer_model !== undefined
         ? { metaReviewerModel: finalizeInput.resolved.bubbleConfig.agents.meta_reviewer_model }
-        : {})
+        : {}),
+      configureRoleAgent: (role) =>
+        resolveConfiguredAgentForRole({
+          agents: finalizeInput.resolved.bubbleConfig.agents,
+          role
+        })
     });
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);

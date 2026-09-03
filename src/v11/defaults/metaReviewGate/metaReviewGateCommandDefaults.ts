@@ -14,9 +14,11 @@ import { setMetaReviewerPaneBinding } from "../../infrastructure/channel/tmux/me
 import { runTmux } from "../../infrastructure/channel/tmux/tmuxManager.js";
 import {
   acceptMetaReviewTrustPrompt,
+  deactivateOtherMetaReviewPanes,
   respawnMetaReviewPane,
   sendMetaReviewSubmissionRequest,
-  submitMetaReviewInput
+  submitMetaReviewInput,
+  waitForMetaReviewPaneReady
 } from "../../infrastructure/channel/tmux/metaReviewGateTmuxDefaultBindings.js";
 import type {
   ApplyMetaReviewGateOnConvergenceDependencies,
@@ -81,6 +83,24 @@ export interface MetaReviewGateDependencyDefaults {
               MetaReviewGatePaneBindingRuntimeCapabilities["tmux"]
             >["respawnPaneCommand"]
           >;
+        deactivateOtherRolePanes?:
+          NonNullable<
+            NonNullable<
+              MetaReviewGatePaneBindingRuntimeCapabilities["tmux"]
+            >["deactivateOtherRolePanes"]
+          >;
+        waitForPaneReady?:
+          NonNullable<
+            NonNullable<
+              MetaReviewGatePaneBindingRuntimeCapabilities["tmux"]
+            >["waitForPaneReady"]
+          >;
+        sendSubmissionRequestMessage?:
+          NonNullable<
+            NonNullable<
+              MetaReviewGatePaneBindingRuntimeCapabilities["tmux"]
+            >["sendSubmissionRequestMessage"]
+          >;
       };
     };
   };
@@ -108,7 +128,10 @@ export const metaReviewGateDependencyDefaults = {
       buildAgentCommand,
       tmux: {
         runner: runTmux,
-        respawnPaneCommand: respawnMetaReviewPane
+        respawnPaneCommand: respawnMetaReviewPane,
+        deactivateOtherRolePanes: deactivateOtherMetaReviewPanes,
+        waitForPaneReady: waitForMetaReviewPaneReady,
+        sendSubmissionRequestMessage: sendMetaReviewSubmissionRequest
       }
     }
   },

@@ -715,4 +715,143 @@ describe("metaReviewGatePaneBinding", () => {
     expect(notifySubmissionRequest).not.toHaveBeenCalled();
   });
 
+  it("deactivates other non-concurrent panes and pastes prompt via tmux when meta-reviewer is reasonix", async () => {
+    const paneRunner = vi.fn();
+    const respawnPaneCommand = vi.fn(async () => undefined);
+    const deactivateOtherRolePanes = vi.fn(async () => undefined);
+    const waitForPaneReady = vi.fn(async () => true);
+    const sendSubmissionRequestMessage = vi.fn(async () => undefined);
+
+    const result = await resolveMetaReviewerPaneWarning({
+      setMetaReviewerPane: async () => ({
+        updated: true,
+        reason: undefined,
+        record: {
+          bubbleId: "b_meta_review_gate_reasonix_01",
+          repoPath: "/repo",
+          worktreePath: "/runtime/workspace",
+          workspacePath: "/runtime/workspace",
+          workspaceKind: "worktree" as const,
+          tmuxSessionName: "pf-b_meta_review_gate_reasonix_01",
+          updatedAt: "2026-04-13T00:20:00.000Z",
+          metaReviewerPane: {
+            role: "meta-reviewer",
+            paneIndex: 3,
+            active: true,
+            updatedAt: "2026-04-13T00:20:00.000Z"
+          }
+        }
+      }),
+      runtime: {
+        paneBinding: {
+          buildAgentCommand: vi.fn(() => "reasonix code --dir /runtime/workspace"),
+          tmux: {
+            runner: paneRunner,
+            respawnPaneCommand,
+            deactivateOtherRolePanes,
+            waitForPaneReady,
+            sendSubmissionRequestMessage
+          }
+        }
+      },
+      sessionsPath: "/repo/.pairflow/runtime/sessions.json",
+      bubbleId: "b_meta_review_gate_reasonix_01",
+      round: 2,
+      now: new Date("2026-04-13T00:20:00.000Z"),
+      taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_reasonix_01/artifacts/task.md",
+      pairflowCommandProfile: "external",
+      metaReviewerAgent: "reasonix",
+      metaReviewerMcpPolicy: "enabled",
+      configureRoleAgent: (role) => (role === "implementer" ? "reasonix" : "opencode")
+    });
+
+    expect(deactivateOtherRolePanes).toHaveBeenCalledTimes(1);
+    expect(respawnPaneCommand).toHaveBeenCalledTimes(1);
+    expect(waitForPaneReady).toHaveBeenCalledWith("reasonix", expect.objectContaining({
+      targetPane: "pf-b_meta_review_gate_reasonix_01:0.3"
+    }));
+    expect(sendSubmissionRequestMessage).toHaveBeenCalledTimes(2);
+    expect(sendSubmissionRequestMessage).toHaveBeenNthCalledWith(
+      1,
+      paneRunner,
+      "pf-b_meta_review_gate_reasonix_01:0.3",
+      expect.stringContaining("[pairflow] bubble=b_meta_review_gate_reasonix_01 meta-review request round=2."),
+      expect.objectContaining({
+        collapseNewlines: true,
+        submitPerChunk: true
+      })
+    );
+    expect(result).toEqual({
+      delivery: {
+        status: "confirmed",
+        reasonCode: null,
+        message: "meta-review submit request delivered via tmux paste."
+      },
+      shouldDeactivate: true
+    });
+  });
+
+  it("fails closed when reasonix meta-reviewer pane fails readiness polling after respawn", async () => {
+    const paneRunner = vi.fn();
+    const respawnPaneCommand = vi.fn(async () => undefined);
+    const deactivateOtherRolePanes = vi.fn(async () => undefined);
+    const waitForPaneReady = vi.fn(async () => false);
+    const sendSubmissionRequestMessage = vi.fn(async () => undefined);
+
+    const result = await resolveMetaReviewerPaneWarning({
+      setMetaReviewerPane: async () => ({
+        updated: true,
+        reason: undefined,
+        record: {
+          bubbleId: "b_meta_review_gate_reasonix_not_ready",
+          repoPath: "/repo",
+          worktreePath: "/runtime/workspace",
+          workspacePath: "/runtime/workspace",
+          workspaceKind: "worktree" as const,
+          tmuxSessionName: "pf-b_meta_review_gate_reasonix_not_ready",
+          updatedAt: "2026-04-13T00:20:00.000Z",
+          metaReviewerPane: {
+            role: "meta-reviewer",
+            paneIndex: 3,
+            active: true,
+            updatedAt: "2026-04-13T00:20:00.000Z"
+          }
+        }
+      }),
+      runtime: {
+        paneBinding: {
+          buildAgentCommand: vi.fn(() => "reasonix code --dir /runtime/workspace"),
+          tmux: {
+            runner: paneRunner,
+            respawnPaneCommand,
+            deactivateOtherRolePanes,
+            waitForPaneReady,
+            sendSubmissionRequestMessage
+          }
+        }
+      },
+      sessionsPath: "/repo/.pairflow/runtime/sessions.json",
+      bubbleId: "b_meta_review_gate_reasonix_not_ready",
+      round: 1,
+      now: new Date("2026-04-13T00:20:00.000Z"),
+      taskArtifactPath: "/repo/.pairflow/bubbles/b_meta_review_gate_reasonix_not_ready/artifacts/task.md",
+      pairflowCommandProfile: "external",
+      metaReviewerAgent: "reasonix",
+      metaReviewerMcpPolicy: "enabled"
+    });
+
+    expect(deactivateOtherRolePanes).toHaveBeenCalledTimes(1);
+    expect(respawnPaneCommand).toHaveBeenCalledTimes(1);
+    expect(waitForPaneReady).toHaveBeenCalledTimes(1);
+    expect(sendSubmissionRequestMessage).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      delivery: {
+        status: "failed",
+        reasonCode: "META_REVIEWER_PANE_RESPAWN_FAILED",
+        message: "META_REVIEWER_PANE_RESPAWN_FAILED: meta-reviewer pane failed readiness check after respawn."
+      },
+      shouldDeactivate: true
+    });
+  });
+
 });
