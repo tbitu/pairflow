@@ -1,4 +1,4 @@
-import type { DispatchIntent } from "./dispatch.js";
+import type { DispatchIntent, HumanDecisionRequest } from "./dispatch.js";
 import type { InstanceId } from "./ids.js";
 import type { RejectionName } from "./rejections.js";
 
@@ -20,7 +20,25 @@ import type { RejectionName } from "./rejections.js";
  * an excess property.
  */
 export type Outcome =
-  | { readonly kind: "committed"; readonly version: number; readonly intent: DispatchIntent | null }
+  | {
+      readonly kind: "committed";
+      readonly version: number;
+      /**
+       * K6 (packet ch14-p2a): WIDENED from `DispatchIntent | null`. The
+       * committed arm's outbound effect is now selected from the status
+       * the arrival set — a dispatch for an ACTIVE run, the ASK for a
+       * run parked at a human gate, and null for a terminal run or a
+       * bare wait.
+       *
+       * NARROW ON A DISCRIMINATING FIELD at every read site — never a
+       * truthiness check and never a bare type assertion. The two
+       * members share no key by construction, so a discriminator
+       * exists; a `typecheck` run forces *a* narrow and cannot see
+       * WHICH, which is why the rule is driven by a lane rather than
+       * left to the compiler.
+       */
+      readonly intent: DispatchIntent | HumanDecisionRequest | null;
+    }
   | { readonly kind: "duplicate" }
   | { readonly kind: "stale"; readonly currentVersion: number }
   | {
@@ -137,3 +155,62 @@ export type CancelOutcome =
 export type FailOutcome =
   | Terminated
   | { readonly kind: "rejected"; readonly reason: "unknown_instance" };
+
+/**
+ * SUBMIT_DECISION's return vocabulary (packet ch14-p2b, Q1/Q9): the
+ * committed arm is HANDLE's own — `Committed(version,
+ * post_commit_output(…))` (C12) — because the decision routes through
+ * the SAME arrival and its post-commit selection produces the same
+ * outbound effect class. The rejection names are the operator ladder's
+ * rungs (C15) plus the key-scoped guards that run after the
+ * ChoicePoint selection.
+ */
+export type SubmitDecisionOutcome =
+  | {
+      readonly kind: "committed";
+      readonly version: number;
+      readonly intent: DispatchIntent | HumanDecisionRequest | null;
+    }
+  | { readonly kind: "duplicate" }
+  | { readonly kind: "stale"; readonly currentVersion: number }
+  | {
+      readonly kind: "rejected";
+      readonly reason:
+        | "unknown_instance"
+        | "op_id_collision"
+        | "not_awaiting_decision"
+        | "decision_request_mismatch"
+        | "missing_version"
+        | "operator_not_authorized"
+        | "unknown_decision"
+        | "missing_required_field"
+        | "override_required"
+        | "override_not_applicable";
+    };
+
+/**
+ * RESUME_WAIT's return vocabulary (packet ch14-p2b, Q1/Q9): the
+ * committed arm as above; the rejection names are C18's rungs plus the
+ * post-admission wait-SHAPE guard and the routing refusal. NO authority
+ * rung on this path — the selection is kernel-classified (C18), which
+ * is why no `operator_not_authorized` appears here.
+ */
+export type ResumeWaitOutcome =
+  | {
+      readonly kind: "committed";
+      readonly version: number;
+      readonly intent: DispatchIntent | HumanDecisionRequest | null;
+    }
+  | { readonly kind: "duplicate" }
+  | { readonly kind: "stale"; readonly currentVersion: number }
+  | {
+      readonly kind: "rejected";
+      readonly reason:
+        | "unknown_instance"
+        | "op_id_collision"
+        | "not_waiting"
+        | "resume_event_mismatch"
+        | "missing_version"
+        | "not_bare_wait"
+        | "no_resume_transition";
+    };

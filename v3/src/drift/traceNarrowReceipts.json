@@ -1,0 +1,38 @@
+[
+  {
+    "id": "R-NARROW-1",
+    "file": "v3/src/l0bTrace.test.ts",
+    "baseline_ref": "6b85904e",
+    "digests": {
+      "baseline": {
+        "transcript": "b63c82ca4f7adc11140bf5c74ce95d12682c45723ae7989d4d69a8d694cb422c",
+        "instance": "5fa3bf67ae35667495fb40beb781af97397a9162bb0b0e4d6d9ce3498111d6ab"
+      },
+      "current": {
+        "transcript": "b63c82ca4f7adc11140bf5c74ce95d12682c45723ae7989d4d69a8d694cb422c",
+        "instance": "5fa3bf67ae35667495fb40beb781af97397a9162bb0b0e4d6d9ce3498111d6ab"
+      }
+    }
+  },
+  {
+    "id": "R-NARROW-2",
+    "file": "v3/src/l0cTrace.test.ts",
+    "baseline_ref": "21aedbe3",
+    "behaviour_half": "unreachable",
+    "reason": "no_shared_replay_seam"
+  },
+  {
+    "id": "R-NARROW-3",
+    "file": "v3/src/l0eTrace.test.ts",
+    "baseline_ref": "21aedbe3",
+    "behaviour_half": "unreachable",
+    "reason": "no_shared_replay_seam"
+  },
+  {
+    "id": "R-NARROW-4",
+    "file": "v3/src/l2bTrace.test.ts",
+    "baseline_ref": "21aedbe3",
+    "behaviour_half": "unreachable",
+    "reason": "no_shared_replay_seam"
+  }
+]

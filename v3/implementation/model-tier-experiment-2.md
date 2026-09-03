@@ -320,3 +320,91 @@ design and this divergence is informative, not a defect. Spread:
   block was missing at build close and was late-written at this
   boundary from repo-carried records (process-log 2026-08-13 names
   the breach; the block's `baseline_note` names its sources).
+- 2026-08-14 — ch14 (human decision core) RATIFIED with main-thread
+  arm = **Fable-class** (the §2 alternating assignment following
+  ch13, the experiment's first Opus chapter; recorded at chapter
+  ratification per §5). Panel lenses and the external arm unchanged
+  (arm-pin.md); the mutation pilot is STOPPED (ch13 boundary verdict
+  (b)) — no dual-run. The chapter's per-packet difficulty scores
+  append here at each approve, main-thread model machine-confirmed
+  per the TIER-RECORD rule.
+
+- 2026-08-15 — ch14 assignment REVISED (the user's cost ruling): the
+  Fable-class main-thread arm covered the chapter ratification AND
+  the full draft round (scoping, the 26-row contract, the reopen
+  calls, the expressibility rulings — the high-judgment phase); from
+  ch14-P1 on the main thread runs OPUS-class (a new session, model
+  set BEFORE entry — the ch13 lesson). The ch14 data point is
+  therefore SPLIT: the draft phase counts as the Fable measurement,
+  the packet builds as Opus; whether the §2 alternation continues at
+  all is the ch14 boundary's question. Review layers unchanged
+  (panel Opus, arm gptsol per pin).
+- 2026-09-02 — ch14-P1 difficulty index, LATE-CAPTURED at the boundary
+  (the ch9/ch13 capture miss RECURRING, n=3: the vector was measured
+  and FROZEN at the packet's approve and recorded IN the packet — only
+  the §5-required append here was missed): **A 1** (17 rows) · **B 1**
+  (derived 3 + new-decision 2 = 5) · **C 1** (boundary 22 files) ·
+  **D 1** (stateful-persistent: the definition schema and its
+  admission staging) · **E 2** (the re-lock's COEXISTENCE half and
+  D17's widening with its class-closing guard — declared idiom-minting
+  under ADR-019's regime, resolved at the approve) — **Σ 6, MEDIUM**.
+  Main-thread model: `claude-opus-5[1m]` (the packet's metrics block).
+- 2026-09-02 — ch14-p2a difficulty index, LATE-CAPTURED at the boundary
+  (same miss, same sweep): **A 1** (20 rows) · **B 2** (derived 7 +
+  new-decision 6 = 13) · **C 2** (boundary 61 files at the frozen
+  approve-time score; the block later read 63 without re-scoring, as
+  the index directs) · **D 1** (RULED at the approve: K17's
+  subprocess-and-filesystem seam is build-time tooling, not the
+  shipped kernel's runtime substrate; the other reading gives Σ 8,
+  band-invariant) · **E 1** (precedented in kind) — **Σ 7, HEAVY**.
+  Main-thread model: `claude-opus-5[1m]` (the packet's metrics block).
+- 2026-09-02 — ch14-p2b difficulty index, LATE-CAPTURED at the boundary
+  (same miss, same sweep): **A 1** (19 rows) · **B 2** (derived 6 +
+  new-decision 7 = 13, the p2a mix inverted) · **C 2** (boundary 48
+  files, above the 45 edge) · **D 1** (one awaited store read in the
+  post-admission guard phase; the ladder stays synchronous per Q3) ·
+  **E 1** (precedented in kind: ch12-p1b's entry-handler shape) —
+  **Σ 7, HEAVY**. Main-thread model: `claude-opus-5[1m]` (the
+  packet's metrics block).
+- 2026-09-02 — ch14-p3a and ch14-p3b difficulty indices: a DEEPER miss
+  than the append class, first occurrence — the index was NEVER
+  COMPUTED at either approve (no difficulty paragraph exists in either
+  packet), so §3's freeze-at-approve rule was breached outright rather
+  than half-executed. The A–C axes are recovered NOW by exact
+  arithmetic over the approve-time committed blobs — the packet file
+  lands with its build commit, so those bytes are the frozen basis and
+  no build outcome can leak in: **ch14-p3a @ 4632ee1d — A 1** (18
+  rows) · **B 2** (derived 11 + new-decision 2 = 13) · **C 1**
+  (boundary 29 files); **ch14-p3b @ 6b85904e — A 1** (16 rows) ·
+  **B 2** (derived 7 + new-decision 5 = 12) · **C 1** (boundary 36
+  files). The D and E checklist calls were never resolved and are NOT
+  scored here: both go to the owner at the ch14 boundary review, and
+  the band TURNS on them (A+B+C = 4 for both packets: Medium at
+  D+E ≤ 2, Heavy at D+E ≥ 3), so no band-invariance shortcut exists.
+  Σ for both packets lands with that ratification, in a follow-up
+  entry. Main-thread model, both: `claude-opus-5[1m]` (the packets'
+  metrics blocks). One adjacent measurement rides here because this
+  sweep took it: ch14-p3a's mutation boundary grew 29 → 131 files
+  post-approve (the trace-narrow hardening aftermath — the routed
+  instrument-ownership signal, quantified), recorded without
+  re-scoring per the index's own rule.
+- 2026-09-02 — ch14-p3a and ch14-p3b D/E calls RESOLVED at the ch14
+  boundary review (owner-ratified stepwise, one packet per decision;
+  the A–C halves and the never-computed-at-approve breach are the
+  2026-09-02 entry above). **ch14-p3a: D 1** (the verbs' runtime is
+  synchronous store reads plus one transactional commit; the
+  pending-Ask read is stateful-persistent; the subprocess journey is
+  test-side harness, not the packet's runtime substrate — the p2a
+  build-time-tooling line and ch13-p1b's D 0 CLI precedent, not
+  ch13-P0's runner reading, where the subprocess WAS the product
+  runtime) · **E 1** (new module from existing idioms; nothing
+  declared idiom-minting under ADR-019's regime) — **Σ 6, MEDIUM**.
+  **ch14-p3b: D 0** (the production delta is declaration-side — a
+  template the EXISTING admission loads, plus tests; the park/decide/
+  resume machinery was already built upstream) · **E 1** (precedented
+  in kind: the ch13 activation-floor template wiring and p2a's
+  checker-with-adversarial-negatives class) — **Σ 5, MEDIUM**. The
+  disputable E 2 reading of p3b's single-use declared edit class was
+  weighed at the ratification and recorded: at D 0 it is
+  band-invariant (Σ 6, still Medium); the band flips only on D 1 AND
+  E 2 together, both against the ratified calls independently.

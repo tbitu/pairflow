@@ -232,3 +232,57 @@ describe("the ch13-p1b realized row (the l2b render-side slice)", () => {
     });
   });
 });
+
+// ── ch14-p1 (ch14-C25's registry-flip clause + plan §14.5's DoD line):
+// the ONE l3 row the definition side realizes. Its witness is the
+// step-class discriminator's own token union at FIELD grain — the shared
+// `Step` interface would be satisfied by every agent step and would
+// witness nothing, so the row is pinned VERBATIM here rather than left to
+// the key-set lane, which a wrong-but-existing typeName passes. ──────────
+
+describe("the ch14-p1 realized row (the l3 definition-side slice)", () => {
+  it("pins the row VERBATIM — a wrong-but-existing typeName is content-red", () => {
+    expect(DOMAIN_REGISTRY["l3/human_gate"]).toEqual({
+      kind: "realized",
+      typeName: "StepType",
+    });
+  });
+
+  it("ch14-p2a flips exactly TWO l3 rows, each pinned to its realized name", () => {
+    // Pinned VERBATIM, because the key-set lane cannot see a
+    // wrong-but-existing target: a row flipped to the wrong type would
+    // stay green everywhere else.
+    expect(DOMAIN_REGISTRY["l3/apply_target_entry_effects(...)"]).toEqual({
+      kind: "realized",
+      typeName: "ArrivalEffect",
+    });
+    expect(DOMAIN_REGISTRY["l3/HumanDecisionRequest"]).toEqual({
+      kind: "realized",
+      typeName: "HumanDecisionRequest",
+    });
+  });
+
+  // ch14-p2b (Q12) flips both: this lane asserted they stay PENDING and
+  // is REPLACED by the flip assertion below rather than deleted — the
+  // row it guarded still needs a guard, only its expected value moved.
+  it("ch14-p2b flips the remaining two l3 rows, each pinned VERBATIM to its realized type name", () => {
+    expect(DOMAIN_REGISTRY["l3/wait step + RESUME_WAIT"]).toEqual({
+      kind: "realized",
+      typeName: "WaitResumedEntry",
+    });
+    // The PAIR row flips only now, when BOTH members have writers: half
+    // of it existed after p2a, and a flip on half a pair is the error
+    // the row's own care exists to avoid.
+    expect(DOMAIN_REGISTRY["l3/DECISION_REQUEST / DECISION_MADE"]).toEqual({
+      kind: "realized",
+      typeName: "DecisionMadeEntry",
+    });
+  });
+
+  it("no l3 row is left pending — the chapter's kernel rows are all realized", () => {
+    const pendingL3 = Object.entries(DOMAIN_REGISTRY)
+      .filter(([id, entry]) => id.startsWith("l3/") && entry.kind === "pending")
+      .map(([id]) => id);
+    expect(pendingL3).toEqual([]);
+  });
+});

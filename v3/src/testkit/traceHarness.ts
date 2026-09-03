@@ -13,7 +13,12 @@ import type {
   TemplateRef,
   TerminalDisposition,
 } from "../domain/index.js";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+
+import type { IntentOutcome } from "../ingress/ingress.js";
 import type { InstanceDetail, StorePort } from "../ports/store.js";
+
+import { replayDigest } from "./replayDigest.js";
 import { runAllCheckers } from "./storeCheckers.js";
 import type { EvidenceResolveSeam } from "./storeCheckers.js";
 
@@ -47,6 +52,22 @@ export interface TraceSeams {
   readonly create: (input: HarnessCreateInput) => Promise<CreateOutcome>;
   /** kernel.start, bound to the kernel under test. */
   readonly start: (input: HarnessStartOpInput) => Promise<StartOutcome>;
+  /**
+   * Q13 (packet ch14-p2b): the INGRESS's `submitIntent`, NOT the
+   * kernel's two handlers — and the seam choice is the decision.
+   * Driving the kernel directly would leave the wire keysets (Q9)
+   * unexercised by the chapter's one end-to-end proof, and the `l3`
+   * trace is exactly where the ingress→kernel→store→floor path is
+   * proven as a path.
+   *
+   * OPTIONAL, on the `resolveEvidence` precedent directly above: every
+   * pre-`l3` trace carries no operator step and wires no such seam, so a
+   * REQUIRED member would force five files this packet's mutation
+   * boundary does not contain. A fixture that USES an operator step
+   * without the seam fails loudly at the step rather than silently — the
+   * absence is a wiring error, never a skip.
+   */
+  readonly submitIntent?: (raw: unknown) => Promise<IntentOutcome>;
   /** The REAL store the kernel commits into (floor-read side). */
   readonly store: StorePort;
   /**
@@ -98,6 +119,29 @@ export type TraceStep =
        */
       readonly expectedRole?: string;
       readonly expect: ExpectedOutcome;
+    }
+  // Q13: the two OPERATOR-INTENT step kinds, each carrying its own wire
+  // fields and its OWN typed `expect`. A generic "any intent" step was
+  // REFUSED: its `expect` could not be typed per intent and every
+  // fixture would carry an untyped bag.
+  | {
+      readonly kind: "submit-decision";
+      readonly opId: OpId;
+      readonly requestRef: string;
+      readonly verdict: string;
+      readonly override?: boolean;
+      readonly payload?: unknown;
+      readonly by?: string;
+      /** Explicit number, or omitted ⇒ supplied by the lift. */
+      readonly expectedVersion?: number;
+      readonly expect: ExpectedOutcome;
+    }
+  | {
+      readonly kind: "resume-wait";
+      readonly opId: OpId;
+      readonly type: EventType;
+      readonly expectedVersion?: number;
+      readonly expect: ExpectedOutcome;
     };
 
 export interface TraceFixture {
@@ -133,7 +177,7 @@ export interface ReplayResult {
   /** One entry per fixture step, the ACTUAL outcome value (a start
    * step contributes its START-leg outcome; the CREATE leg is
    * interior — the W2 bridge culture). */
-  readonly outcomes: readonly (Outcome | CreateOutcome | StartOutcome)[];
+  readonly outcomes: readonly (Outcome | CreateOutcome | StartOutcome | IntentOutcome)[];
   /**
    * The final store read the harness itself asserted against —
    * returned so supplemental blocks assert transcript-side shapes
@@ -192,7 +236,13 @@ function assertOutcome(
   label: string,
   stepIndex: number,
   expect: ExpectedOutcome,
-  outcome: Outcome,
+  // Q13: the comparison is over the OUTCOME SHAPE the harness knows —
+  // `kind`, `version`, `currentVersion`, `reason` — which the two
+  // operator unions share with the actor one. The per-step OUTPUT
+  // assertions (the Ask's fields, the two `none` answers, the dispatch)
+  // are the FIXTURE FILE's against the replay's returned outcomes, not
+  // this comparison's.
+  outcome: Outcome | IntentOutcome,
 ): void {
   if (outcome.kind !== expect.kind) {
     fail("outcome", stepIndex, `${label} (outcome kind)`, expect.kind, outcome.kind);
@@ -220,11 +270,34 @@ function assertOutcome(
   }
 }
 
+/**
+ * K17's digest sink (packet ch14-p2a). OPT-IN by environment: absent
+ * variable ⇒ absent behaviour, so every existing run is untouched.
+ *
+ * WHAT THE RECORDED PAIR EVIDENCES, scoped: the replayed behaviour of a
+ * named trace at THIS tree. Comparing two such records across an edit
+ * is the gate's (b) half. It is NOT provenance — the gate-time
+ * recomputation leg that would have bound a number to the ref it cites
+ * is dropped (it collides with the add-only instrument-landing
+ * confinement), so a reader must take exactly the equality and no more.
+ */
+function recordReplayDigest(name: string, detail: InstanceDetail): void {
+  const target = process.env["V3_TRACE_DIGESTS"];
+  if (target === undefined || target === "") return;
+  // An EMPTY file is the ordinary starting state (a caller that
+  // pre-created the path), not a corrupt one — reading it as `{}` keeps
+  // the sink total rather than making the first trace throw.
+  const raw = existsSync(target) ? readFileSync(target, "utf8").trim() : "";
+  const existing = raw === "" ? {} : (JSON.parse(raw) as Record<string, unknown>);
+  existing[name] = replayDigest(detail);
+  writeFileSync(target, `${JSON.stringify(existing, null, 2)}\n`, "utf8");
+}
+
 export async function replayTrace(
   fixture: TraceFixture,
   seams: TraceSeams,
 ): Promise<ReplayResult> {
-  const outcomes: (Outcome | CreateOutcome | StartOutcome)[] = [];
+  const outcomes: (Outcome | CreateOutcome | StartOutcome | IntentOutcome)[] = [];
   let instanceId: InstanceId | null = null;
   let runningVersion = 0;
 
@@ -275,6 +348,59 @@ export async function replayTrace(
     }
     if (instanceId === null) {
       throw new Error(`${label}: emit before start`);
+    }
+    if (step.kind === "submit-decision" || step.kind === "resume-wait") {
+      // The two operator intents ride the SAME version lift and the SAME
+      // pre-snapshot no-state-change rule as an emit — a rejected
+      // operator intent must leave the instance byte-identical, which is
+      // Leg B's step 3 in the golden trace.
+      let intentVersion = step.expectedVersion;
+      if (intentVersion === undefined) {
+        if (fixture.lift?.expectedVersion !== "track-running-version") {
+          throw new Error(
+            `${label}: no expectedVersion and no lift declaration — lift-less traces carry explicit versions`,
+          );
+        }
+        intentVersion = runningVersion;
+      }
+      const beforeIntent = await seams.store.loadInstance(instanceId);
+      const rawIntent: Record<string, unknown> =
+        step.kind === "submit-decision"
+          ? {
+              intent: "submit-decision",
+              instanceId,
+              opId: step.opId,
+              expectedVersion: intentVersion,
+              requestRef: step.requestRef,
+              verdict: step.verdict,
+              ...(step.override !== undefined ? { override: step.override } : {}),
+              ...("payload" in step ? { payload: step.payload } : {}),
+              ...(step.by !== undefined ? { by: step.by } : {}),
+            }
+          : {
+              intent: "resume-wait",
+              instanceId,
+              opId: step.opId,
+              expectedVersion: intentVersion,
+              type: step.type,
+            };
+      if (seams.submitIntent === undefined) {
+        throw new Error(
+          `${label}: fixture drives a '${step.kind}' step but the seams wire no submitIntent (fixture wiring)`,
+        );
+      }
+      const intentOutcome = await seams.submitIntent(rawIntent);
+      outcomes.push(intentOutcome);
+      assertOutcome(label, index, step.expect, intentOutcome);
+      if (intentOutcome.kind === "committed") {
+        runningVersion = intentOutcome.version;
+      } else {
+        const afterIntent = await seams.store.loadInstance(instanceId);
+        if (JSON.stringify(afterIntent) !== JSON.stringify(beforeIntent)) {
+          fail("state", index, `${label} (no-state-change: full instance)`, beforeIntent, afterIntent);
+        }
+      }
+      continue;
     }
     let expectedVersion = step.expectedVersion;
     if (expectedVersion === undefined) {
@@ -339,12 +465,30 @@ export async function replayTrace(
     throw new Error(`${fixture.name}: final read found no instance '${instanceId}'`);
   }
 
+  // K17 (packet ch14-p2a) — the BEHAVIOUR half's measurement point,
+  // OPT-IN and inert unless asked for. The digest is taken here rather
+  // than inside each trace file because the fixtures are file-local:
+  // this is the one seam every golden trace already passes through.
+  //
+  // It writes nothing and computes nothing unless `V3_TRACE_DIGESTS`
+  // names a file, so the default path is byte-unchanged.
+  recordReplayDigest(fixture.name, finalDetail);
+
   // [seq, opId] per class (C12): a transition's op id rides its
-  // envelope, a fact's rides the row itself.
-  const rows = finalDetail.transcript.map(
-    (entry) =>
-      [entry.seq, entry.entryKind === "transition" ? entry.envelope.opId : entry.opId] as const,
-  );
+  // envelope, a fact's rides the row itself — and K12 (ch14-p2a): the
+  // DECISION_REQUEST class has NO op id at all, so it contributes its
+  // correlation handle instead. The pair stays total over the union
+  // rather than dropping the row, because a fixture's expected
+  // transcript must still see every committed row in seq order.
+  const rows = finalDetail.transcript.map((entry) => {
+    if (entry.entryKind === "DECISION_REQUEST") {
+      return [entry.seq, entry.requestRef] as const;
+    }
+    return [
+      entry.seq,
+      entry.entryKind === "transition" ? entry.envelope.opId : entry.opId,
+    ] as const;
+  });
   const expectedRows = fixture.finalTranscript;
   const rowsMatch =
     rows.length === expectedRows.length &&

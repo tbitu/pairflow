@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import type { WorkflowTemplate } from "../domain/index.js";
@@ -728,7 +730,7 @@ describe("dimension 12 — the canonical example round-trip", () => {
     expect(step?.instruction).toBe("i");
     expect(Object.keys(step?.transitions ?? {})).toStrictEqual(["__proto__"]);
     expect(Object.hasOwn(step?.transitions ?? {}, "__proto__")).toBe(true);
-    expect(step?.transitions["__proto__"]).toBe("done");
+    expect(step?.transitions?.["__proto__"]).toBe("done");
   });
 
   it("loads the draft's canonical example to the exact WorkflowTemplate value", () => {
@@ -2007,3 +2009,596 @@ describe("ch13-p1a family 2 — the C9 stand-down over the derived trigger set (
     });
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════════
+// packet ch14-p1 — the human-decision / bare-wait DECLARATION surface on
+// the FILE-WALK channel. Both entries reach ONE computation, so this half
+// exists for what DIFFERENTIATES the channels — the `type` token DOMAIN
+// (ch14-C1's authored↔stored map), the produced-field carve-out, and the
+// cases only a file can EXPRESS (a non-string key, a duplicate key) —
+// plus every lane driven through the real file entry, because a
+// one-channel lane is exactly where a blind spot hides.
+// ═══════════════════════════════════════════════════════════════════════
+
+const CH14_HEAD = "ref:\n  id: t\n  version: 1\nstart: implement\n";
+const CH14_TAIL = "terminal:\n  - done\nroles:\n  implementer: {}\n  operator: {}\n";
+
+const CH14_AGENT = "  implement:\n    role: implementer\n    instruction: i\n    transitions:\n      PASS: gate\n";
+const CH14_GATE =
+  "  gate:\n    type: humanGate\n    role: operator\n    instruction: q\n" +
+  "    decisions:\n      approve:\n        target: done\n";
+const CH14_WAIT =
+  "  hold:\n    type: wait\n    wait:\n      kind: commit_pending\n      resumeEvents:\n        - COMMIT\n" +
+  "    onResume:\n      COMMIT: done\n";
+
+/** A three-class FILE, each step block replaceable. */
+function ch14File(over: { agent?: string; gate?: string; wait?: string; tail?: string } = {}): string {
+  return (
+    CH14_HEAD +
+    "steps:\n" +
+    (over.agent ?? CH14_AGENT) +
+    (over.gate ?? CH14_GATE) +
+    (over.wait ?? CH14_WAIT) +
+    (over.tail ?? CH14_TAIL)
+  );
+}
+
+function ch14Findings(text: string): readonly ValidationFinding[] {
+  return expectValidateErr(text).findings as readonly ValidationFinding[];
+}
+
+describe("ch14-P1 family 1 (file channel) — the discriminator's TOKEN DOMAIN and its STORE pin", () => {
+  it("the authored camelCase spelling admits, and the ADMITTED value carries the STORED token", () => {
+    const result = load(ch14File());
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const steps = result.template.steps as unknown as Record<string, Record<string, unknown>>;
+    expect(steps["gate"]?.["type"]).toBe("human_gate");
+    // `wait` is IDENTICAL on both sides — one unscoped member with its
+    // own store, not a duplicated pair.
+    expect(steps["hold"]?.["type"]).toBe("wait");
+  });
+
+  it("SENSITIVITY TWIN: the STORED token is refused as an authored FILE value", () => {
+    const findings = ch14Findings(ch14File({ gate: CH14_GATE.replace("humanGate", "human_gate") }));
+    expect(findings).toContainEqual({
+      path: "steps.gate.type",
+      message: 'type must be one of humanGate, wait; got "human_gate"',
+    });
+  });
+
+  it("each channel renders its OWN spellings — the enum lane filters members before rendering", () => {
+    const findings = ch14Findings(ch14File({ gate: CH14_GATE.replace("humanGate", "nope") }));
+    expect(findings).toContainEqual({
+      path: "steps.gate.type",
+      message: 'type must be one of humanGate, wait; got "nope"',
+    });
+  });
+});
+
+/** The ONE id grammar's message tail — the D9 ban clause beside the
+ * standing whitespace/dot clause — spelled once so a row asserting a
+ * grammar finding by literal value cannot drift from its neighbours. */
+const ID_RULE =
+  ': ids contain no whitespace and no "." and are not the canonical decimal spelling of an ' +
+  "integer in 0…4294967294 (a JS record hoists those keys)";
+
+// ── FAMILY 1 (FILE CHANNEL): the SAME declaration-derived lane register
+// the direct channel drives, expanded WHOLE here rather than sampled —
+// one row per lane of every node this packet mints, with the finding SET
+// asserted by equality so a spurious extra reds. The register's node set
+// is checked against the same seventeen-node derivation `admit.test.ts`
+// carries; drift between the two halves is what the pair exists to catch.
+// A lane that fires only on one channel is exactly the blind spot the
+// two-channel discipline exists for. ─────────────────────────────────────
+
+/** A humanGate whose `decisions` body is the variable. */
+function ch14Gate(decisions: string): string {
+  return "  gate:\n    type: humanGate\n    role: operator\n    instruction: q\n" + decisions;
+}
+
+/** A bare wait whose `wait` / `onResume` bodies are the variables. */
+function ch14Hold(body: string): string {
+  return "  hold:\n    type: wait\n" + body;
+}
+
+const APPROVE_DONE = "    decisions:\n      approve:\n        target: done\n";
+
+interface FileLaneRow {
+  /** The lane's CHANNEL-INDEPENDENT identity — the half the direct
+   * register carries verbatim. `lane` beside it is this channel's own
+   * prose, which the two registers legitimately word differently. */
+  readonly id: string;
+  readonly node: string;
+  readonly lane: string;
+  readonly text: string;
+  readonly findings: readonly ValidationFinding[];
+}
+
+const CH14_FILE_LANES: readonly FileLaneRow[] = [
+  { id: "d-step-type/value-unknown-token", node: "d-step-type", lane: "value (an unknown token)",
+    text: ch14File({ gate: ch14Gate(APPROVE_DONE).replace("humanGate", "nope") }),
+    findings: [
+      { path: "steps.gate.type", message: "type must be one of humanGate, wait; got \"nope\"" },
+    ] },
+  { id: "d-step-type/value-other-channels-spelling", node: "d-step-type", lane: "value (the STORED spelling is not this channel's authored one)",
+    text: ch14File({ gate: ch14Gate(APPROVE_DONE).replace("humanGate", "human_gate") }),
+    findings: [
+      { path: "steps.gate.type", message: "type must be one of humanGate, wait; got \"human_gate\"" },
+    ] },
+  { id: "d-decisions/container", node: "d-decisions", lane: "container",
+    text: ch14File({ gate: ch14Gate("    decisions: x\n") }),
+    findings: [
+      { path: "steps.gate.decisions", code: "invalid_decision_gate_config", message: "decisions must be a map of decision key -> { target, payload? }; got \"x\"" },
+    ] },
+  { id: "d-decision-key/key-grammar", node: "d-decision-key", lane: "key grammar",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      \"a b\":\n        target: done\n") }),
+    findings: [
+      { path: "steps.gate.decisions", message: `invalid decision key "a b"${ID_RULE}` },
+    ] },
+  { id: "d-decision-entry/container", node: "d-decision-entry", lane: "container",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      approve: 5\n") }),
+    findings: [
+      { path: "steps.gate.decisions.approve", code: "invalid_decision_gate_config", message: "a decision must be a map with exactly target (+ optional payload); got 5" },
+    ] },
+  { id: "d-decision-entry/unknown-key", node: "d-decision-entry", lane: "unknown key",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      approve:\n        target: done\n        paylod: {}\n") }),
+    findings: [
+      { path: "steps.gate.decisions.approve.paylod", code: "invalid_decision_gate_config", message: "unknown decision key 'paylod' (allowed: target, payload)" },
+    ] },
+  { id: "d-decision-entry/missing-target", node: "d-decision-entry", lane: "missing `target`",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      approve: {}\n") }),
+    findings: [
+      { path: "steps.gate.decisions.approve", code: "invalid_decision_gate_config", message: "missing required key \"target\"" },
+    ] },
+  { id: "d-decision-target/membership-unresolvable", node: "d-decision-target", lane: "membership (unresolvable)",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      approve:\n        target: ghost\n") }),
+    findings: [
+      { path: "steps.gate.decisions.approve.target", code: "decision_target_unresolved", message: "decision target must name a step or a terminal id; got \"ghost\"" },
+    ] },
+  { id: "d-decision-target/membership-non-string", node: "d-decision-target", lane: "membership owns the NON-STRING fault too — ONE finding, no type lane",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      approve:\n        target: 5\n") }),
+    findings: [
+      { path: "steps.gate.decisions.approve.target", code: "decision_target_unresolved", message: "decision target must name a step or a terminal id; got 5" },
+    ] },
+  { id: "d-decision-payload/container", node: "d-decision-payload", lane: "container",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      approve:\n        target: done\n        payload: true\n") }),
+    findings: [
+      { path: "steps.gate.decisions.approve.payload", code: "invalid_decision_payload_schema", message: "payload must be a map of field name -> { required? }; got true" },
+    ] },
+  { id: "d-payload-field/key-grammar", node: "d-payload-field", lane: "key grammar",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      approve:\n        target: done\n        payload:\n          \"a.b\": {}\n") }),
+    findings: [
+      { path: "steps.gate.decisions.approve.payload", message: `invalid payload field name "a.b"${ID_RULE}` },
+    ] },
+  { id: "d-payload-spec/container", node: "d-payload-spec", lane: "container",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      approve:\n        target: done\n        payload:\n          instruction: true\n") }),
+    findings: [
+      { path: "steps.gate.decisions.approve.payload.instruction", code: "invalid_decision_payload_schema", message: "a payload field spec must be a map with the single optional key required; got true" },
+    ] },
+  { id: "d-payload-spec/unknown-key", node: "d-payload-spec", lane: "unknown key (no nested types yet)",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      approve:\n        target: done\n        payload:\n          instruction:\n            type: markdown\n") }),
+    findings: [
+      { path: "steps.gate.decisions.approve.payload.instruction.type", code: "invalid_decision_payload_schema", message: "unknown payload spec key 'type' (allowed: required)" },
+    ] },
+  // YAML 1.2's unquoted `yes` arrives as a STRING, which is the model's
+  // own `NOT "yes"` case — driven by the substrate rather than by a hand
+  // check, and reachable only on this channel.
+  { id: "d-payload-required/value-non-boolean-scalar", node: "d-payload-required", lane: "value (YAML's unquoted `yes` is a STRING)",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      approve:\n        target: done\n        payload:\n          instruction:\n            required: yes\n") }),
+    findings: [
+      { path: "steps.gate.decisions.approve.payload.instruction.required", code: "invalid_decision_payload_schema", message: "required must be one of true, false; got \"yes\"" },
+    ] },
+  { id: "d-payload-required/value-quoted-boolean", node: "d-payload-required", lane: "value (a QUOTED boolean is not a boolean)",
+    text: ch14File({ gate: ch14Gate("    decisions:\n      approve:\n        target: done\n        payload:\n          instruction:\n            required: \"true\"\n") }),
+    findings: [
+      { path: "steps.gate.decisions.approve.payload.instruction.required", code: "invalid_decision_payload_schema", message: "required must be one of true, false; got \"true\"" },
+    ] },
+  { id: "d-wait/container", node: "d-wait", lane: "container",
+    text: ch14File({ wait: ch14Hold("    wait: 5\n    onResume: {}\n") }),
+    findings: [
+      { path: "steps.hold.wait", message: "wait must be a map with exactly kind and resumeEvents; got 5" },
+    ] },
+  { id: "d-wait/unknown-key", node: "d-wait", lane: "unknown key",
+    text: ch14File({ wait: ch14Hold("    wait:\n      kind: k\n      resumeEvents:\n        - E\n      extra: 1\n    onResume: {}\n") }),
+    findings: [
+      { path: "steps.hold.wait.extra", message: "unknown key \"extra\" (a wait's only keys are kind, resumeEvents)" },
+    ] },
+  { id: "d-wait-kind/presence", node: "d-wait-kind", lane: "presence",
+    text: ch14File({ wait: ch14Hold("    wait:\n      resumeEvents:\n        - E\n    onResume: {}\n") }),
+    findings: [
+      { path: "steps.hold.wait", message: "missing required key \"kind\"" },
+    ] },
+  { id: "d-wait-kind/type-non-string", node: "d-wait-kind", lane: "type (a non-string kind)",
+    text: ch14File({ wait: ch14Hold("    wait:\n      kind: 5\n      resumeEvents:\n        - E\n    onResume: {}\n") }),
+    findings: [
+      { path: "steps.hold.wait.kind", message: "wait kind must be a nonempty string, got 5" },
+    ] },
+  { id: "d-resume-events/presence", node: "d-resume-events", lane: "presence",
+    text: ch14File({ wait: ch14Hold("    wait:\n      kind: k\n    onResume: {}\n") }),
+    findings: [
+      { path: "steps.hold.wait", message: "missing required key \"resumeEvents\"" },
+    ] },
+  { id: "d-resume-events/container", node: "d-resume-events", lane: "container",
+    text: ch14File({ wait: ch14Hold("    wait:\n      kind: k\n      resumeEvents: COMMIT\n    onResume: {}\n") }),
+    findings: [
+      { path: "steps.hold.wait.resumeEvents", message: "resumeEvents must be a nonempty list of event-type ids; got \"COMMIT\"" },
+    ] },
+  { id: "d-resume-events/nonempty", node: "d-resume-events", lane: "nonempty (a wait no event can resume is dead config)",
+    text: ch14File({ wait: ch14Hold("    wait:\n      kind: k\n      resumeEvents: []\n    onResume: {}\n") }),
+    findings: [
+      { path: "steps.hold.wait.resumeEvents", message: "resumeEvents must be a NONEMPTY list" },
+    ] },
+  { id: "d-resume-events/per-occurrence-uniqueness", node: "d-resume-events", lane: "per-occurrence uniqueness",
+    text: ch14File({ wait: ch14Hold("    wait:\n      kind: k\n      resumeEvents:\n        - E\n        - E\n    onResume: {}\n") }),
+    findings: [
+      { path: "steps.hold.wait.resumeEvents[1]", message: "duplicate resume event \"E\"" },
+    ] },
+  { id: "d-resume-event/member-grammar", node: "d-resume-event", lane: "member grammar",
+    text: ch14File({ wait: ch14Hold("    wait:\n      kind: k\n      resumeEvents:\n        - \"a b\"\n    onResume: {}\n") }),
+    findings: [
+      { path: "steps.hold.wait.resumeEvents[0]", message: `invalid event type "a b"${ID_RULE}` },
+    ] },
+  { id: "d-on-resume/container", node: "d-on-resume", lane: "container",
+    text: ch14File({ wait: ch14Hold("    wait:\n      kind: k\n      resumeEvents:\n        - E\n    onResume: 5\n") }),
+    findings: [
+      { path: "steps.hold.onResume", message: "onResume must be a map of event-type -> target id (it may be empty); got 5" },
+    ] },
+  { id: "d-on-resume/dead-route", node: "d-on-resume", lane: "keysSubsetOf the step's own resumeEvents (dead route)",
+    text: ch14File({ wait: ch14Hold("    wait:\n      kind: k\n      resumeEvents:\n        - E\n    onResume:\n      GHOST: done\n") }),
+    findings: [
+      { path: "steps.hold.onResume.GHOST", message: "dead resume route: 'GHOST' is not a declared resume event of step 'hold'" },
+    ] },
+  { id: "d-resume-target/membership", node: "d-resume-target", lane: "membership",
+    text: ch14File({ wait: ch14Hold("    wait:\n      kind: k\n      resumeEvents:\n        - COMMIT\n    onResume:\n      COMMIT: ghost\n") }),
+    findings: [
+      { path: "steps.hold.onResume.COMMIT", message: "resume target must name a step or a terminal id; got \"ghost\"" },
+    ] },
+  { id: "d-recommends/container", node: "d-recommends", lane: "container",
+    text: ch14File({ agent: CH14_AGENT + "    recommends: 5\n" }),
+    findings: [
+      { path: "steps.implement.recommends", message: "recommends must be a map of event-type -> decision key; got 5" },
+    ] },
+  { id: "d-recommends/dead-recommendation", node: "d-recommends", lane: "keysSubsetOf keys(transitions) (dead recommendation)",
+    text: ch14File({ agent: CH14_AGENT + "    recommends:\n      GHOST: approve\n" }),
+    findings: [
+      { path: "steps.implement.recommends.GHOST", message: "dead recommendation: 'GHOST' is not a transition of step 'implement'" },
+    ] },
+  { id: "d-recommends-value/value-grammar", node: "d-recommends-value", lane: "value grammar (the decision-key class)",
+    text: ch14File({ agent: CH14_AGENT + "    recommends:\n      PASS: \"a b\"\n" }),
+    findings: [
+      { path: "steps.implement.recommends.PASS", message: `invalid decision key "a b"${ID_RULE}` },
+    ] },
+];
+
+/** A lane's CONTENT identity: its channel-independent id plus the SHAPE
+ * of the finding set it owes — every path, with its code where it
+ * carries one. A shared literal of these is what locks the two channel
+ * registers together (see `CH14_LANE_IDENTITIES`). */
+function laneIdentity(row: { readonly id: string; readonly findings: readonly ValidationFinding[] }): string {
+  const shape = row.findings
+    .map((finding) => (finding.code === undefined ? finding.path : `${finding.path}#${finding.code}`))
+    .join(" + ");
+  return `${row.id} | ${shape}`;
+}
+
+/** THE SHARED LANE REGISTER, compared by CONTENT.
+ *
+ * Family 1 runs the same declaration-derived register on both channels,
+ * and the two halves live in two test MODULES: a genuinely shared
+ * register is impossible between them, because importing one test file
+ * from the other re-registers its whole suite. So the CONTENT comparison
+ * is the mechanism — this list is spelled BYTE-IDENTICALLY in
+ * `admit.test.ts` and `validate.test.ts`, each half asserts its own
+ * register against it by equality, and each half additionally asserts
+ * that every entry appears verbatim in the SIBLING module's source. The
+ * pair is what closes the drift: a lane substituted in one register reds
+ * against its own list, and a list edited to match it reds against the
+ * sibling.
+ *
+ * Each entry is `<node>/<lane key> | <finding path>[#<code>]` — the
+ * lane's identity plus the SHAPE of what it owes, so a row that keeps
+ * its label while driving a NEIGHBOUR's case reds too. A node-set and a
+ * count are not content: the arm's proving substitution kept both
+ * (gate-2 re-check finding 2). The `lane` PROSE is deliberately not in
+ * the identity: each channel names its own case (`humanGate` authored
+ * against `human_gate` stored, YAML's unquoted `yes` against a JS
+ * string), and dimension 1 rules that difference legitimate. */
+const CH14_LANE_IDENTITIES: readonly string[] = [
+  "d-step-type/value-unknown-token | steps.gate.type",
+  "d-step-type/value-other-channels-spelling | steps.gate.type",
+  "d-decisions/container | steps.gate.decisions#invalid_decision_gate_config",
+  "d-decision-key/key-grammar | steps.gate.decisions",
+  "d-decision-entry/container | steps.gate.decisions.approve#invalid_decision_gate_config",
+  "d-decision-entry/unknown-key | steps.gate.decisions.approve.paylod#invalid_decision_gate_config",
+  "d-decision-entry/missing-target | steps.gate.decisions.approve#invalid_decision_gate_config",
+  "d-decision-target/membership-unresolvable | steps.gate.decisions.approve.target#decision_target_unresolved",
+  "d-decision-target/membership-non-string | steps.gate.decisions.approve.target#decision_target_unresolved",
+  "d-decision-payload/container | steps.gate.decisions.approve.payload#invalid_decision_payload_schema",
+  "d-payload-field/key-grammar | steps.gate.decisions.approve.payload",
+  "d-payload-spec/container | steps.gate.decisions.approve.payload.instruction#invalid_decision_payload_schema",
+  "d-payload-spec/unknown-key | steps.gate.decisions.approve.payload.instruction.type#invalid_decision_payload_schema",
+  "d-payload-required/value-non-boolean-scalar | steps.gate.decisions.approve.payload.instruction.required#invalid_decision_payload_schema",
+  "d-payload-required/value-quoted-boolean | steps.gate.decisions.approve.payload.instruction.required#invalid_decision_payload_schema",
+  "d-wait/container | steps.hold.wait",
+  "d-wait/unknown-key | steps.hold.wait.extra",
+  "d-wait-kind/presence | steps.hold.wait",
+  "d-wait-kind/type-non-string | steps.hold.wait.kind",
+  "d-resume-events/presence | steps.hold.wait",
+  "d-resume-events/container | steps.hold.wait.resumeEvents",
+  "d-resume-events/nonempty | steps.hold.wait.resumeEvents",
+  "d-resume-events/per-occurrence-uniqueness | steps.hold.wait.resumeEvents[1]",
+  "d-resume-event/member-grammar | steps.hold.wait.resumeEvents[0]",
+  "d-on-resume/container | steps.hold.onResume",
+  "d-on-resume/dead-route | steps.hold.onResume.GHOST",
+  "d-resume-target/membership | steps.hold.onResume.COMMIT",
+  "d-recommends/container | steps.implement.recommends",
+  "d-recommends/dead-recommendation | steps.implement.recommends.GHOST",
+  "d-recommends-value/value-grammar | steps.implement.recommends.PASS",
+];
+
+describe("ch14-P1 family 1 (file channel) — every declared lane, finding SET asserted WHOLE", () => {
+  for (const row of CH14_FILE_LANES) {
+    it(`${row.node}: ${row.lane}`, () => {
+      expect(ch14Findings(row.text)).toStrictEqual(row.findings);
+    });
+  }
+
+  it("the file register's node set IS the direct register's — the seventeen nodes this packet mints", () => {
+    // Derived by READING the declaration's ch14 growth: the eleven
+    // intended nodes plus the sub-nodes the composition rules mint. The
+    // same set is asserted in `admit.test.ts`'s DECLARED_LANES register;
+    // a node driven on one channel only cannot survive both checks.
+    expect(new Set(CH14_FILE_LANES.map((row) => row.node))).toStrictEqual(
+      new Set([
+        "d-step-type", "d-decisions", "d-decision-key", "d-decision-entry", "d-decision-target",
+        "d-decision-payload", "d-payload-field", "d-payload-spec", "d-payload-required",
+        "d-wait", "d-wait-kind", "d-resume-events", "d-resume-event",
+        "d-on-resume", "d-resume-target", "d-recommends", "d-recommends-value",
+      ]),
+    );
+    expect(new Set(CH14_FILE_LANES.map((row) => `${row.node} ${row.lane}`)).size).toBe(CH14_FILE_LANES.length);
+  });
+
+  it("this register IS the shared one, by CONTENT — identity and finding shape, in order", () => {
+    expect(CH14_FILE_LANES.map(laneIdentity)).toStrictEqual(CH14_LANE_IDENTITIES);
+  });
+
+  it("and the DIRECT register carries the same content — every identity present verbatim in its module", () => {
+    // The cross-module half of the lock. Reading the sibling's SOURCE is
+    // what an import cannot do here without re-registering its suite;
+    // the drift suites already read source text for the same reason.
+    const sibling = readFileSync(new URL("./admit.test.ts", import.meta.url), "utf8");
+    for (const identity of CH14_LANE_IDENTITIES) {
+      expect(sibling, `lane identity missing from the direct register: ${identity}`).toContain(
+        JSON.stringify(identity),
+      );
+    }
+  });
+
+  it("the CONFORMING direction: the three-class file admits whole", () => {
+    expect(load(ch14File()).ok).toBe(true);
+  });
+});
+
+describe("ch14-P1 family 1 (file channel) — the cases only a FILE can express", () => {
+  it("a NON-STRING decision key: refused before the own-key scan can be blinded", () => {
+    const findings = ch14Findings(
+      ch14File({ gate: "  gate:\n    type: humanGate\n    role: operator\n    instruction: q\n    decisions:\n      10:\n        target: done\n" }),
+    );
+    expect(findings.map((finding) => finding.path)).toContain("steps.gate.decisions");
+    expect(JSON.stringify(findings)).toContain("decision key must be a nonempty string");
+  });
+
+  it("a DUPLICATE decision key: the substrate's own uniqueness lane fires at the parse stage", () => {
+    const result = load(
+      ch14File({ gate: "  gate:\n    type: humanGate\n    role: operator\n    instruction: q\n    decisions:\n      approve:\n        target: done\n      approve:\n        target: implement\n" }),
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(JSON.stringify(result.error.findings)).toContain("Map keys must be unique");
+  });
+
+  it("a NON-STRING resume-event member", () => {
+    const findings = ch14Findings(
+      ch14File({ wait: "  hold:\n    type: wait\n    wait:\n      kind: k\n      resumeEvents:\n        - 5\n    onResume: {}\n" }),
+    );
+    expect(findings).toContainEqual({
+      path: "steps.hold.wait.resumeEvents[0]",
+      message: "event type must be a nonempty string, got 5",
+    });
+  });
+});
+
+// ── FAMILY 2 (FILE CHANNEL): the class partition in the AUTHORED
+// spelling. The direct channel drives the full `CLASS_KEYSETS ×
+// authorable × required` table; this half drives the SAME table on
+// authored file fixtures, because the class LABEL a message carries is
+// the authored token (`humanGate` here, `human_gate` there) and a sampled
+// file half cannot see a cell whose label is wrong. ──────────────────────
+
+/** Each authorable step key in its authored YAML form, chosen so the
+ * value SATISFIES its own declared lane — that is what makes a
+ * class-refusal cell draw the class refusal ALONE (D3's converse). */
+const FILE_KEY_YAML: Readonly<Record<string, string>> = {
+  role: "    role: operator\n",
+  instruction: "    instruction: i\n",
+  transitions: "    transitions:\n      PASS: done\n",
+  agentConfig: "    agentConfig: {}\n",
+  gates: "    gates: {}\n",
+  decisions: "    decisions:\n      approve:\n        target: done\n",
+  wait: "    wait:\n      kind: commit_pending\n      resumeEvents:\n        - COMMIT\n",
+  onResume: "    onResume: {}\n",
+  recommends: "    recommends: {}\n",
+};
+
+interface FileClass {
+  readonly id: string;
+  /** The role this class's OWN block declares, where it declares one —
+   * the agent step keeps `implementer` so the role-set equality stays
+   * satisfied and the class-refusal cells draw ONE finding. */
+  readonly ownRole?: string;
+  /** The AUTHORED class label a finding names — `humanGate`, not the
+   * stored `human_gate`. */
+  readonly label: string;
+  /** The `type` line, empty for the agent class (an ABSENT `type` IS the
+   * agent class; no `agent` token is minted). */
+  readonly typeYaml: string;
+  /** The class's own keyset, in the order its message enumerates. */
+  readonly keys: readonly string[];
+  /** The keys the class DEMANDS, `type` excluded — dropping `type` drops
+   * the CLASS, so the demand is only meaningful for the keys that
+   * survive the discriminator. */
+  readonly required: readonly string[];
+}
+
+const FILE_CLASSES: readonly FileClass[] = [
+  { id: "implement", label: "an agent", typeYaml: "", ownRole: "implementer",
+    keys: ["role", "instruction", "transitions", "agentConfig", "gates", "recommends"],
+    required: ["role", "instruction", "transitions"] },
+  { id: "gate", label: "a humanGate", typeYaml: "    type: humanGate\n",
+    keys: ["type", "role", "instruction", "decisions"],
+    required: ["role", "instruction", "decisions"] },
+  { id: "hold", label: "a wait", typeYaml: "    type: wait\n",
+    keys: ["type", "wait", "onResume"],
+    required: ["wait", "onResume"] },
+];
+
+/** The class's canonical step block, with one key ADDED or DROPPED. */
+function fileClassStep(cls: FileClass, over: { add?: string; drop?: string } = {}): string {
+  const own = cls.keys.filter((key) => key !== "type" && key !== over.drop);
+  const body = own
+    .map((key) => (key === "role" && cls.ownRole !== undefined ? `    role: ${cls.ownRole}\n` : FILE_KEY_YAML[key] ?? ""))
+    .join("");
+  const extra = over.add === undefined ? "" : FILE_KEY_YAML[over.add] ?? "";
+  return `  ${cls.id}:\n` + (over.drop === "type" ? "" : cls.typeYaml) + body + extra;
+}
+
+/** The whole three-class document with ONE class's block replaced. */
+function fileWithClass(cls: FileClass, over: { add?: string; drop?: string } = {}): string {
+  const block = fileClassStep(cls, over);
+  if (cls.id === "implement") return ch14File({ agent: block });
+  if (cls.id === "gate") return ch14File({ gate: block });
+  return ch14File({ wait: block });
+}
+
+describe("ch14-P1 family 2 (file channel) — every key a class does not own is REFUSED, in the AUTHORED spelling", () => {
+  for (const cls of FILE_CLASSES) {
+    for (const key of Object.keys(FILE_KEY_YAML)) {
+      if (cls.keys.includes(key)) continue;
+      it(`${cls.label} step: '${key}' draws the class refusal ALONE (its value satisfies its own declared lane)`, () => {
+        expect(ch14Findings(fileWithClass(cls, { add: key }))).toStrictEqual([
+          { path: `steps.${cls.id}.${key}`,
+            message: `unknown key ${key} on ${cls.label} step (${cls.label} step's keys are ${cls.keys.join(", ")})` },
+        ]);
+      });
+    }
+  }
+
+  it("the cross-product is TOTAL — no cell is construction-unreachable on this channel, so none is exempted", () => {
+    // The three keysets against the whole authorable union. `type` is
+    // absent from the union here for the reason the direct half states:
+    // a PRESENT legal `type` selects a different class by definition.
+    const cells = FILE_CLASSES.flatMap((cls) =>
+      Object.keys(FILE_KEY_YAML).filter((key) => !cls.keys.includes(key)).map((key) => `${cls.id}.${key}`),
+    );
+    expect(cells).toHaveLength(16);
+  });
+});
+
+describe("ch14-P1 family 2 (file channel) — every key a class REQUIRES is demanded", () => {
+  for (const cls of FILE_CLASSES) {
+    for (const key of cls.required) {
+      it(`${cls.label} step: a missing '${key}' is re-imposed by the hand lane, at the declared lane's own path and wording`, () => {
+        const findings = ch14Findings(fileWithClass(cls, { drop: key }));
+        expect(findings).toContainEqual(
+          key === "decisions"
+            ? { path: `steps.${cls.id}`, message: `missing required key "${key}"`, code: "invalid_decision_gate_config" }
+            : { path: `steps.${cls.id}`, message: `missing required key "${key}"` },
+        );
+      });
+    }
+  }
+});
+
+describe("ch14-P1 family 2 (file channel) — D3's composition rule, both directions", () => {
+  it("a class-refused key whose value ALSO fails its own declared lane draws BOTH findings", () => {
+    expect(ch14Findings(ch14File({ agent: CH14_AGENT + "    decisions: x\n" }))).toStrictEqual([
+      { path: "steps.implement.decisions", code: "invalid_decision_gate_config",
+        message: 'decisions must be a map of decision key -> { target, payload? }; got "x"' },
+      { path: "steps.implement.decisions",
+        message: "unknown key decisions on an agent step " +
+          "(an agent step's keys are role, instruction, transitions, agentConfig, gates, recommends)" },
+    ]);
+  });
+
+  it("its CONVERSE: a class-refused key whose value satisfies its lane draws the class refusal ALONE", () => {
+    expect(
+      ch14Findings(ch14File({ agent: CH14_AGENT + "    decisions:\n      approve:\n        target: done\n" })),
+    ).toStrictEqual([
+      { path: "steps.implement.decisions",
+        message: "unknown key decisions on an agent step " +
+          "(an agent step's keys are role, instruction, transitions, agentConfig, gates, recommends)" },
+    ]);
+  });
+});
+
+describe("ch14-P1 family 2 (file channel) — the discriminator GATE is per STEP, never template-wide", () => {
+  it("a broken `type` on one step does not stand the OTHER step's class lanes down", () => {
+    expect(
+      ch14Findings(ch14File({
+        gate: ch14Gate(APPROVE_DONE).replace("humanGate", "nope"),
+        wait: "  hold:\n    type: wait\n    wait:\n      kind: commit_pending\n      resumeEvents:\n        - COMMIT\n" +
+          "    onResume:\n      COMMIT: done\n    decisions:\n      approve:\n        target: done\n",
+      })),
+    ).toStrictEqual([
+      { path: "steps.gate.type", message: 'type must be one of humanGate, wait; got "nope"' },
+      { path: "steps.hold.decisions",
+        message: "unknown key decisions on a wait step (a wait step's keys are type, wait, onResume)" },
+    ]);
+  });
+
+  it("and the gated step draws ONE finding, never an enum finding plus an agent-class cascade", () => {
+    expect(ch14Findings(ch14File({ gate: ch14Gate(APPROVE_DONE).replace("humanGate", "nope") }))).toStrictEqual([
+      { path: "steps.gate.type", message: 'type must be one of humanGate, wait; got "nope"' },
+    ]);
+  });
+});
+
+describe("ch14-P1 family 2 (file channel) — the produced-field carve-out is the DIRECT channel's", () => {
+  it("the produced channel-direct positions stay FILE-illegal", () => {
+    expect(ch14Findings(ch14File({ agent: CH14_AGENT + "    advancesRound: {}\n" })).map((f) => f.path)).toContain(
+      "steps.implement.advancesRound",
+    );
+  });
+});
+
+describe("ch14-P1 family 6 (file channel) — the ban at the positions this chapter adds", () => {
+  const banned: readonly (readonly [string, string, string])[] = [
+    ["a decision key", ch14File({ gate: '  gate:\n    type: humanGate\n    role: operator\n    instruction: q\n    decisions:\n      "10":\n        target: done\n' }), "steps.gate.decisions"],
+    ["a payload field name", ch14File({ gate: '  gate:\n    type: humanGate\n    role: operator\n    instruction: q\n    decisions:\n      approve:\n        target: done\n        payload:\n          "10": {}\n' }), "steps.gate.decisions.approve.payload"],
+    ["a wait kind", ch14File({ wait: '  hold:\n    type: wait\n    wait:\n      kind: "10"\n      resumeEvents:\n        - E\n    onResume: {}\n' }), "steps.hold.wait.kind"],
+    ["a resume event", ch14File({ wait: '  hold:\n    type: wait\n    wait:\n      kind: k\n      resumeEvents:\n        - "10"\n    onResume: {}\n' }), "steps.hold.wait.resumeEvents[0]"],
+    ["a recommends value", ch14File({ agent: CH14_AGENT + '    recommends:\n      PASS: "10"\n', gate: '  gate:\n    type: humanGate\n    role: operator\n    instruction: q\n    decisions:\n      "10":\n        target: done\n' }), "steps.implement.recommends.PASS"],
+  ];
+  for (const [claim, text, path] of banned) {
+    it(`${claim} in the banned class is REFUSED on the file channel`, () => {
+      const own = ch14Findings(text).filter((finding) => finding.path === path);
+      expect(own.map((finding) => finding.message).join("\n")).toContain("0…4294967294");
+    });
+  }
+
+  it("the measured NON-members stay legal on this channel too", () => {
+    expect(
+      load(ch14File({ wait: '  hold:\n    type: wait\n    wait:\n      kind: "4294967295"\n      resumeEvents:\n        - "01"\n    onResume: {}\n' })).ok,
+    ).toBe(true);
+  });
+});
+
+// ── FAMILY 8 (FILE CHANNEL): NOT a separate register. The hand-lane
+// inventory is ONE register, and both channels are GENERATED from it —
+// see `admit.test.ts`'s HAND_LANES, whose every row carries a DIRECT
+// fixture and a FILE fixture and is driven through `loadTemplate` here
+// as well as through `admitTemplate` there. Hand-written file-channel
+// samples beside it were exactly the blind spot the shared register
+// closes: a member sampled on one side and forgotten on the other. ───────

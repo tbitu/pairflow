@@ -10,6 +10,8 @@ import type {
   ContextPacket,
   DispatchIntent,
   EventEnvelope,
+  DecisionMadeEntry,
+  HumanDecisionRequest,
   GateBinding,
   GateDecision,
   GatePipeline,
@@ -22,11 +24,13 @@ import type {
   RuntimeContextRef,
   RuntimeContextRequirement,
   Step,
+  StepType,
   TerminalDisposition,
   TranscriptEntry,
   WaitReason,
   WorkflowInstance,
   WorkflowTemplate,
+  WaitResumedEntry,
 } from "../domain/index.js";
 // ch11-P2a: the registration descriptor lives in ports/ (the injected
 // EXTENSION contract). ADR-007 allows type imports from any source in a
@@ -45,6 +49,14 @@ import type { CancelInput, CreateInput, Kernel, KickoffInput, StartInput } from 
 // ch12-p3 D2: the l0e provider port shapes live in ports/ (the injected
 // contract) — the same ADR-007 type-import allowance as the l2/l2a witnesses.
 import type { ProviderRegistry, RuntimeContextProvider } from "../ports/runtimeContextProvider.js";
+// ch14-p2a K13: the arrival's effect record lives in ports/ (the store's
+// transition input is what carries it), reached under the SAME ADR-007
+// allowance. K13's prose put this witness in `domain/`; the ground it
+// gave — "the drift registry imports only from domain/ at this basis" —
+// is measurably false (ports/gate.js and kernel/index.js are imported
+// above), so the built placement stands and the prose is corrected in
+// the packet's Build record rather than the type being moved.
+import type { ArrivalEffect } from "../ports/store.js";
 
 /**
  * The PI-3 domain-registry manifest (packet ch5-P1): every ledger §4
@@ -145,6 +157,31 @@ interface RealizedTypeTable {
   // ch13-p1b: the render side's row — its witness is the type the
   // packet's `contextBlocks` members carry.
   readonly "l2b/ContextBlock": ContextBlock;
+  // ch14-p1 (ch14-C1): the definition side's l3 row. The witness is the
+  // step-class discriminator's own token union at FIELD grain — the
+  // shared `Step` interface would be satisfied by every agent step and
+  // would witness nothing.
+  readonly "l3/human_gate": StepType;
+  // ch14-p2a K13, bound at the aftermath fold: the row's VERBATIM pin in
+  // the drift test compares a STRING, so on its own it cannot see the
+  // type it names disappear. These two bindings are what make "pinned to
+  // its realized type name" a compile-checked claim rather than a
+  // spelling. The arrival's witness is its EFFECT RECORD, not the
+  // function — the record is what the port carries and what the brand
+  // protects, so it is the thing a drift check can actually compare.
+  readonly "l3/apply_target_entry_effects(...)": ArrivalEffect;
+  readonly "l3/HumanDecisionRequest": HumanDecisionRequest;
+  // ch14-p2b Q12: the two rows this packet flips, each BOUND here as
+  // well as pinned verbatim in the registry — that binding is stated as
+  // a REQUIREMENT because the sibling packet's flip landed as a string
+  // with no binding and the aftermath had to add it. A renamed or
+  // vanished witness is now a COMPILE error rather than a stale string.
+  //
+  // The DECISION_REQUEST / DECISION_MADE row flips only NOW, when BOTH
+  // members have writers: half of it existed after p2a, and a flip on
+  // half a pair is the error this care exists to avoid.
+  readonly "l3/wait step + RESUME_WAIT": WaitResumedEntry;
+  readonly "l3/DECISION_REQUEST / DECISION_MADE": DecisionMadeEntry;
 }
 
 export type RegistryEntry =
@@ -357,11 +394,24 @@ export const DOMAIN_REGISTRY: Readonly<Record<string, RegistryEntry>> = {
   "l2b/ContextBlockRef": { kind: "realized", typeName: "BlockId" },
   "l2b/ContextBlock": { kind: "realized", typeName: "ContextBlock" },
   // ── l3 (5) ─────────────────────────────────────────────────────────
-  "l3/wait step + RESUME_WAIT": { kind: "pending" },
-  "l3/human_gate": { kind: "pending" },
-  "l3/apply_target_entry_effects(...)": { kind: "pending" },
-  "l3/HumanDecisionRequest": { kind: "pending" },
-  "l3/DECISION_REQUEST / DECISION_MADE": { kind: "pending" },
+  "l3/wait step + RESUME_WAIT": { kind: "realized", typeName: "WaitResumedEntry" },
+  // ch14-p1: the definition side flips the `human_gate` row with the
+  // FIELD-grain type witness ch14-C1 mints — the step-class discriminator
+  // union, not the shared `Step` interface every agent step already
+  // satisfies (which would make the row vacuous). The other four l3 rows
+  // are ch14-P2's by their own C-rows.
+  "l3/human_gate": { kind: "realized", typeName: "StepType" },
+  // ch14-p2a (K13): the two rows this packet realizes, each pinned
+  // VERBATIM to its realized name — the registry test pins KEY SETS and
+  // not dispositions, so a wrong-but-existing target would otherwise
+  // stay green on the generic lane.
+  //
+  // The arrival's witness is its EFFECT RECORD rather than the function:
+  // the record is what the port carries and what the brand protects, so
+  // pinning it is what a drift check can actually compare.
+  "l3/apply_target_entry_effects(...)": { kind: "realized", typeName: "ArrivalEffect" },
+  "l3/HumanDecisionRequest": { kind: "realized", typeName: "HumanDecisionRequest" },
+  "l3/DECISION_REQUEST / DECISION_MADE": { kind: "realized", typeName: "DecisionMadeEntry" },
   // ── storage-scope (2) — the sealed-projection contract's rows ─────
   "storage-scope/shape": { kind: "contract-row" },
   "storage-scope/constraints": { kind: "contract-row" },
@@ -522,6 +572,11 @@ export const REALIZED_TYPE_TABLE_KEYS = [
   "l2b/context_blocks catalog",
   "l2b/ContextBlockRef",
   "l2b/ContextBlock",
+  "l3/human_gate",
+  "l3/apply_target_entry_effects(...)",
+  "l3/HumanDecisionRequest",
+  "l3/wait step + RESUME_WAIT",
+  "l3/DECISION_REQUEST / DECISION_MADE",
 ] as const satisfies readonly (keyof RealizedTypeTable)[];
 
 type TypeTableFullyListed =

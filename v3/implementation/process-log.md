@@ -5880,3 +5880,869 @@ final CLEAN.
   count, and only the executed-counterexample discipline finds it.
   Rule attribution: [R-CLAIM-FORM-PROBES] ×4, [R-LANE-SENSITIVITY]
   ×2 — the first tally under the new convention.
+- 2026-08-14 · ch14 (human decision core) RATIFIED (user GO). The L3
+  human-decision surface entered as chapter 14, the FOURTH live use
+  of the map-extension mechanism — and the first deriving NOT from a
+  prior named candidate but from the ch13 boundary's critical-path
+  note (L3 + L4 chapterless = the MVP cut's own critical path; the
+  user opened the session on that note's letter, "elvileg az L3
+  jön"). Two scoping decisions, taken stepwise with the
+  one-decision-per-message cadence: (1) LC3a stays OUT — the user's
+  own framing ("how much must these two share one contract") decided
+  it: the model already factored the sharedness (ChoicePoint, the
+  shared arrival spine, the Directive family), so the sharedness is
+  CONTRACT-level, realized as the ch14 draft's shared-grain
+  ChoicePoint C-rows (key → { target, payload? }, no `emits` — §8.2
+  chapter grain), while the CAS-claim run protocol and the
+  ActionRunner leg are genuinely LC3a's own machinery; LC3a entered
+  as the SEVENTH named candidate with three bindings (adjacency =
+  the next implementation chapter, entry act staying the user's;
+  anchoring = its draft extends the ch14 rows additively, the
+  re-lock holding the fork; carried-item home = plan item (4) lands
+  there, runner-touching by construction). Scale was the second
+  ground: 18 units is ch11/ch12-scale, 29 would exceed every
+  precedent and muddy the Fable data point. (2) Acceptance floor =
+  capability AND shipped wiring (the ch13 disposition-1 precedent,
+  R-ACTIVATION-JOURNEY): local-pair-v0 gains operator +
+  human_approval + commit_pending, journey smoke through the shipped
+  entrypoint; v1-faithful, no product decision smuggled; the known
+  commit_pending → commit_action two-step accepted as the ladder's
+  own rhythm. Standing carriers routed at ratification: the
+  integer-key ban bundle rides HERE (first format-touching chapter
+  since the boundary named the carrier); carried item (4) and the
+  sixth candidate (gate-config) explicitly NOT taken, with grounds
+  (no spawn; human_gate is a step type, not the gates/ surface).
+  Main-thread arm: Fable-class (the §2 alternating assignment,
+  recorded in the experiment's §8 log; the session's model was set
+  to Fable BEFORE entry — the ch13 tier-deviation lesson applied
+  forward). The ratification presentation itself ran as a
+  decision-inventory round: the user asked "what substantive
+  decisions does this ratification carry" before GO — the answer
+  separated already-ratified scoping from the six ratification-borne
+  items (adjacency binding the heaviest) — a cadence worth keeping
+  for chapter ratifications.
+
+- 2026-08-15 · ch14 draft review round — a MODEL-WAVE CANDIDATE routed
+  by K0 triage: the ratifier raised a `sys:` prefix for the
+  KERNEL-OWNED wait kinds (the ch11 gate-reason precedent — system
+  tokens structurally demarcated from authored tokens sharing one
+  field), which would retire the ch14-C3 parametric reservation and
+  every future kernel-kind migration sweep. Routed model-plane, not
+  draft-local: the kernel kinds (`kickoff_pending`, `human_decision`)
+  are model-verbatim tokens in the pseudocode guards, the invariant
+  record, and the realized ch12 store rows — a rename is a model
+  vocabulary act (the fix-FIRST path, user-gated). The next model
+  wave decides; if adopted, the rename lands as the ch11 `sys:`
+  reopen did (own act, own sweep — cheap while zero authored kinds
+  ship). Recorded in the ch14 draft's Context triage; until the wave
+  rules, C3's parametric reservation is the standing guard.
+
+- 2026-08-15 · ch14 contract-draft RATIFIED (user GO after a stepwise
+  digest walk — all 5 digest points EZX-expanded and approved one at
+  a time, two of them with follow-up challenges the walk resolved:
+  the sys:-prefix K0 routing and the hand-lane-vs-construct weighing
+  on the role-set equality). The review loop: 2 full five-lens Opus
+  panel rounds + 1 targeted reconciliation + the gptsol external arm
+  (3 findings folded, re-check CLEAN). The act: content commit (draft
+  + plan §14.3 alignment + this log + the tier-log split note) → the
+  ch8 reopen cycle (C9 class-scoping + C10 integer ban, one
+  realized→reopened→realized cycle) → the ch11 cycle (C1 agent-class
+  scoping) → the ratifying commit (schema lock on templateFormat.ts;
+  ch14-C26 carries the reopen set). Main-thread model from P1 on:
+  Opus (the user's cost ruling — tier log §8).
+
+- 2026-08-16 · ch14-P1 BUILT and CLOSED (4 commits: build 889909ee →
+  gate-2 aftermath f6579c0e → re-check fold 4f7544fc → the re-lock act
+  d89228ca, with e48b6f2f recording the gate closure). Six friction
+  items, none fixed in place — capture, don't fix:
+
+  (a) **The external arm's PRIMARY transport cannot carry a large
+  packet.** The gptsol-agent transport died with `Prompt is too long`
+  before producing any verdict on a ~96 KB packet; the charter was
+  ~4 KB, so what overflows is the reviewing agent's own context once it
+  reads packet + contract. The `arm_run.sh` fallback then carried FIVE
+  runs cleanly (gate 1, its re-check, and gate 2 ×3 — pin
+  gpt-5.6-sol/high validated, byte guards clean, ~650 s each).
+  Boundary question: does arm-pin.md's transport column change, or does
+  the primary keep priority with a size caveat?
+
+  (b) **Two instrument-integrity failures in the probe harness, both
+  producing FALSE GREEN.** The build's first four probes piped their
+  command through `tail`, which masks the exit code — four vacuous
+  GREEN receipts, caught by the executor and re-run. Then an aftermath
+  probe's `-t 'family 1 (file channel)'` filter had its parentheses
+  read as a regex, selected ZERO tests, and yielded a baseline the
+  runner cannot distinguish from a real green. The runner's
+  green-baseline gate does not protect against a baseline that is green
+  because nothing ran. Candidate: the runner measures and records the
+  SELECTED TEST COUNT, and refuses zero.
+
+  (c) **The loop's own fold debt dominated the late rounds.** Panel
+  rounds 2 and 3 and both reconciliations found predominantly
+  propagation misses from the previous fold — a rule regrained, its
+  surfaces left written for the old grain — not defects in the original
+  authoring. The clearest instance: the code-grain fold moved the
+  guard's key from kind to position and left the probe receipt's
+  conclusion, the row's compiler-scope sentence and a family's build
+  trap all arguing the old grain. Lens 4's reconciliation duty caught
+  each, one round later than the fold.
+
+  (d) **Gate 2's yield curve: 8 → 5 → 1, zero product defects across
+  all three rounds.** Every finding was test-evidence or packet-docs:
+  five of ten acceptance families had been SAMPLED rather than expanded
+  to their declared memberships, and four assertions were true and
+  blind (a count instead of content; a whole-set assertion taken after
+  a prefix narrowing; two mirrored registers guarded by shape). The
+  gate closed on a convergence judgement (user, 2026-08-16) with one
+  residual routed boundary-review — the arm's own recommendation, on
+  the ground that another text-based cross-module lock buys brittleness
+  over proof. Data for the boundary's arm-yield read: this gate found
+  nothing in the product and everything in the proof.
+
+  (e) **Packet size: 96 KB at approve** against the template's advisory
+  48 KB / +50%-growth thresholds, both breached. The comparator is
+  ch13-p1a at 94 KB, shipped. Recommendation recorded at the approve:
+  accept-with-note, and recalibrate the v0 thresholds at a boundary
+  rather than per packet — every packet of this generation breaches
+  them.
+
+  (f) **The user approves WITH ADDITIONS, and they cluster.** Four at
+  this approve, each marked "an addition, not a condition", and every
+  one demanded DURABILITY of a decision just accepted: give the
+  deferred item a carrier outside the packet's prose (the plan's
+  build-close tracked item); make a divergence from precedent state
+  itself in the act; extend a deferral to cover the half that goes
+  silently dead rather than breaking (an unnecessary cast still
+  compiles). Worth anticipating wherever a packet defers, diverges, or
+  leaves something to prose.
+
+- 2026-08-17 · ch14-p2a authoring · THE TRIAGE RULE HAD NO SURFACE. §3's
+  "a round folding ~everything is a triage-inspection signal, never a
+  quality sign" was violated in three consecutive panel rounds and
+  stayed invisible, because no round-report field carries the ratio.
+  Each fold was a whole-file rewrite, so each round's ~35 findings ran
+  ~20 fold-byproducts of the previous fold — the loop converged on the
+  packet's substance while chasing its own last move. TWO fixes, the
+  user's additions at the round-3 report (2026-08-17): (i) the round
+  header gains a FOLD RATIO (folded / accepted) from round 4 on, so the
+  signal is readable at the round it happens rather than three rounds
+  later — ReviewPacket's Report block and its validity gate edited in
+  the same act; (ii) the standing lesson beside it, not yet a rule:
+  a TARGETED EDIT generates fewer byproducts than a rewrite, so fold
+  size is itself a review-cost lever. Boundary review decides whether
+  (ii) becomes a rule and whether the ratio wants a threshold
+
+- 2026-08-17 · ch14-p2a approve · TWO ITEMS ROUTED TO THE BOUNDARY
+  REVIEW (the ratifier's routing at this approve, explicitly NOT
+  conditions on the act). (1) An INSTRUMENT-ADMISSION rule, mirroring
+  ADR-019 D7's form: a new checker or guard is admitted only with a
+  NAMED DEFECT CLASS, a BACKING INCIDENT OR MEASUREMENT, and a
+  CHEAPEST-ALTERNATIVE comparison — and retroactively, this chapter's
+  accumulated instruments get one pass under that test. The gap it
+  closes: ADR-019 governs declaration constructs, nothing governs
+  verification apparatus, so instruments accrete on plausibility.
+  (2) THREE NAMED TRIM CANDIDATES from ch14-p2a's K17, to be reviewed
+  there rather than trimmed now — the gate-time baseline RECOMPUTATION
+  leg, the per-trace receipt GRANULARITY (exact commands + exit codes),
+  and the SEPARATE negative probes for the erasure sub-step. The
+  instrument's CORE is justified by measured recurrence (p2b's two new
+  entry classes, P3's named golden-trace re-pins); these three tiers are
+  where the ROI question stays open. ch14-p2b is authored in light of
+  whatever the boundary rules — a live dependency, not a note
+
+- 2026-08-17 · ch14-p2a approve · WHAT AN "EXCEPTION" COSTS, MEASURED —
+  entered as DATA for the boundary review's ROI question, recorded
+  independently of how the last round was decided. The plan §14.4
+  second named exception (the instrument-landing commit) took FOUR
+  review rounds on one exception class before its guard held, and the
+  finding curve is the point: the rounds did not repeat each other,
+  they walked one claim inward. Round 1 fixed a git-topological
+  impossibility (one commit cannot both introduce an instrument and be
+  what it baselines). Round 2 found the confinement's audit COULD NOT
+  RUN — the ratified `--post-build` path refuses any commit that does
+  not change the packet file, and the instrument commit by definition
+  does not carry it, so the machine-checkability claim named a check
+  that never executed. Round 3 found the freshly-built check was
+  PATH-ONLY: it would have passed a total rewrite or deletion of an
+  existing testkit file, and the barrel alone has 35 importers. Round 4
+  found the freshly-added status check MODE-BLIND: an added symlink or
+  gitlink passes path and add-only while its bytes live outside the
+  tree. ONE SHAPE UNDERNEATH ALL FOUR: a confinement asserted in prose,
+  with nothing measuring it — each round closed the stated claim and
+  exposed the next unstated one. THE NUMBER IS THE FINDING: an
+  exception to the one-commit rule cost four adversarial rounds and
+  three checker legs to make honest, and that is the real price of an
+  "exception" in this system — it belongs in the instrument-admission
+  discussion beside the admission tests themselves, because it is the
+  denominator those tests are weighed against
+
+- 2026-08-17 · ch14-p2a approve · A STOPPING RULE, DECLARED BY THE
+  RATIFIER at the fourth round rather than discovered at the sixth.
+  Further findings on the instrument-landing exception class ROUTE TO
+  THE BOUNDARY REVIEW by default instead of opening another round —
+  UNLESS a finding names a genuine FALSE-GREEN CHANNEL, one that
+  undermines what the gate claims to prove. The series ends; the escape
+  hatch stays. Why the shape matters: an open-ended "keep hardening
+  until clean" has no fixed point when each round's fix is the next
+  round's surface, and a flat "stop now" would suppress exactly the
+  class the guard exists for. The rule separates COST from SAFETY —
+  refinement is deferrable, a false green is not
+
+- 2026-08-17 · ch14-p2a approve · THE STOPPING RULE'S FIRST APPLICATION,
+  the same day it was declared — and the escape hatch fired. The review
+  run held under the rule separated its findings itself: THREE
+  FALSE-GREEN channels (acted on, below) and three ROUTE items (parked
+  here, not folded). What the split bought: the round was not decided by
+  whoever argued hardest for their finding, because the LABEL carried
+  the decision, and the reviewer was told the labelling rule in advance
+  so an inflated label would have been visible as inflation. The three
+  false greens were all in the round-4 fix itself, and two were MY
+  parser rather than the rule: a `.strip()` on the path aliased distinct
+  files onto a declared manifest member (" v3/src/testkit/hook.ts" is a
+  different tree, outside the prefix entirely), and a line-oriented read
+  split on U+0085 — a separator PYTHON honours and GIT does not — so a
+  path carrying one passed as a legal member with its remainder silently
+  dropped. Both closed by parsing `--raw -z` and never normalizing a
+  path. The third was in the RECEIPT, not the audit: `pnpm v3:test` is
+  `vitest run` alone, so the "both added files are typechecked" claim
+  had no backing command — a type-invalid added file is green under
+  vitest and red under `tsc --noEmit`. Closed by requiring `pnpm
+  v3:typecheck` beside it. THE LESSON UNDERNEATH, and it is not the same
+  as the earlier rounds': those found the RULE unstated; this one found
+  the rule stated correctly and the READING of git's output wrong. A
+  guard can be right in every sentence and still false-green on how it
+  parses its own evidence — which is why "the checker exists" was never
+  the claim worth making, and why a fix to a guard needs the same
+  adversarial pass as the guard did
+
+- 2026-08-17 · ch14-p2a approve · THREE ITEMS ROUTED under the stopping
+  rule (labelled ROUTE by the review, parked for the boundary review
+  rather than folded). (1) The instrument audit checks `changed ⊆
+  manifest`, so a hook may land WITHOUT its declared selftest; whether
+  the manifest should be an EXACT SET rather than a bound, and whether
+  selftest presence should be its own rule, is a contract-grain
+  question. (2) The template still calls the "no declaration bytes"
+  claim structural in one place while conceding two paragraphs later
+  that the general testkit prefix admits a `.d.ts` or a config file —
+  a prose correction whose right home is the same pass that decides
+  (1). (3) The symlink and gitlink fixtures do not separately assert
+  their git-commit step; a diagnostic weakness that cannot cause a
+  silent green (the mode-specific substring assert and the pinned dim
+  counter both red it), so it waits
+
+- 2026-08-17 · ch14-p2a APPROVE · THE SIX NEW-DECISION ROWS ADMITTED AS
+  SUBJECTS, and the reading's LETTER recorded because the letter is what
+  a future packet will cite, not the outcome. They are admitted on TWO
+  properties, both required: they share ONE FORCING ORIGIN — the
+  location the arrival spine touches, so the decisions are forced by
+  where the work lands rather than chosen — and EACH ROW NAMES ITS OWN
+  RISK. A future packet citing this precedent must demonstrate THOSE
+  TWO PROPERTIES, never the count: "ch14-p2a carried six" is not an
+  argument, and six rows without a shared forcing origin are a mass
+  however well each is written. K17 is admitted WITH an explicit ROI
+  reservation — it is verification apparatus rather than domain work,
+  it cost six review rounds, and its three named trim candidates are
+  already routed to the boundary review
+
+- 2026-08-17 · ch14-p2a APPROVE · single-packet allowed RATIFIED on
+  clause 6's SEPARATE reading, with its FALSIFIER noted in the record:
+  the closure proof FAILS if K16 is deferred. ROUTED as a rule
+  candidate: clause 6 over MULTIPLE HARD STOPS is carried only WITH a
+  stated falsifier — what this packet offered voluntarily becomes the
+  EXPECTED FORM. The gap it closes: "SEPARATE" means "would need its own
+  closure elsewhere", which is a strong instrument and therefore a
+  dangerous precedent — any tightly coupled work can be described as
+  inseparable. A falsifier is what distinguishes a real inseparability
+  claim from a lenient reading, because it names in advance the deferral
+  that would break the proof
+
+- 2026-08-18 · ch14-p2a build · TRIM CANDIDATE #1 CLOSED BY MEASUREMENT,
+  and the way it closed is the reusable part. The three trim candidates
+  routed to the boundary review were ROI questions — is this tier of
+  instrument worth its cost. The first, K17's GATE-TIME BASELINE
+  RECOMPUTATION leg, did not close on cost: it closed because the leg
+  COLLIDES WITH ITS OWN EXCEPTION. Recomputing a baseline at the
+  pre-change ref requires the measurement to be taken there, which
+  requires wiring inside an EXISTING file, while the instrument-landing
+  commit that puts the hook at that ref is ADD-ONLY by the confinement
+  that makes the exception auditable. The hook is additive; its call
+  site is not. THE GENERAL FORM, which is what the boundary review
+  should carry forward: an exception defined by a CONTENT confinement
+  bounds not only what may ride it but what KIND of instrument it can
+  carry at all — and that second limit is invisible until an instrument
+  needs it. The residual is recorded rather than inherited: a post-hoc
+  fabricated baseline is no longer refused. THE OTHER TWO CANDIDATES
+  REMAIN OPEN there — the per-trace receipt GRANULARITY and the erasure
+  step's SEPARATE negative probes — and neither is touched by this.
+
+- 2026-08-27 · ch14-p2a aftermath · THE CLOSE SEQUENCE HAS NO GATE-POINT
+  FOR ITS OWN BUILD-CLOSE COLUMN — one boundary-review item carrying
+  THREE facts of one class, all measured at this fold. **(1)** The build
+  closed on `pnpm v3:check-docs`'s four greens and read them as the gate
+  set; `check_coverage.py` in its DEFAULT (build-close) mode was never
+  invoked, and it was RED — eleven of this packet's own unit-map rows
+  still `pending` nine days later. README §5.5's Build-close column names
+  that invocation, but nothing in the close SEQUENCE does, and the
+  composite runner's own "not covered here" line is advisory prose rather
+  than a gate. **(2)** The same close claimed "typecheck clean, all four
+  doc gates green" and is SILENT on `pnpm v3:lint` — a named AGENTS.md
+  bridge and a `ci:local` member — which was RED with nine errors. A
+  Build record that lists the bridges it ran reads as complete precisely
+  because it does not list the one it skipped. **(3)** Six of the seven
+  open obligations were caught by NO gate at all: an invariant
+  disposition (`checker`), a test family, a doc comment, five barrel
+  re-exports, and a type-table binding are prose obligations with no
+  lock. THE PROPOSAL, for the boundary review to rule on: make the
+  build-close gate column a MANDATORY NAMED STEP of the close sequence —
+  invoked and recorded per gate, the way the approve column already is —
+  so a skipped bridge is a red step rather than an unlisted one. The
+  deeper half is (3) and is a separate question: nothing today reads a
+  packet's DECLARED obligations back against the tree, which is why the
+  packet's own `learned` line ("a confinement asserted in prose with
+  nothing measuring it survives every review that reads the prose")
+  describes its own close as well as its subject.
+
+- 2026-08-27 · ch14-p2a aftermath · THE `instrument_manifest` AUDIT LEG
+  NECESSARILY FAILS ON EVERY AFTERMATH COMMIT, found by exercising it
+  rather than by reading it. Declaring the block binds the `--post-build`
+  audit to check the audited commit's FIRST PARENT against the manifest.
+  Exactly ONE commit in a packet's life has the instrument commit as its
+  first parent — the BUILD commit. This packet's aftermath commit audits
+  its parent (the preceding `docs(v3)` commit) and reports
+  `instrument commit … touches files OUTSIDE the declared
+  instrument_manifest: ['v3/implementation/process-log.md']`, which is
+  the leg measuring an unrelated commit rather than a real confinement
+  breach. MEASURED both ways at this fold: the BUILD commit `267c230b`
+  audits green (0 errors), the aftermath commit `f7c22339` audits red on
+  this leg ALONE — its boundary half is clean. It is a FALSE RED, not a
+  false green, so it blocks rather than hides; but the aftermath rules
+  (README §4) explicitly expect a `fix(v3)` commit audited at its own
+  sha, so the two ratified surfaces contradict each other. NOT FIXED
+  HERE: `check_packet.py` participates in the verification surface, so
+  §5.5's tooling rule puts an external-arm review before any change to
+  it. The candidate shapes, for the boundary review: scope the leg to the
+  commit whose first parent actually carries the manifest's paths, or
+  make it opt-in per invocation, or record the build commit's sha in the
+  packet so the leg binds to THAT commit rather than to whichever one is
+  being audited.
+
+- 2026-08-27 · ch14-p2b authoring · WHERE THE LOOP SPENDS THE RATIFIER, AND
+  WHERE IT ACTUALLY BREAKS — four boundary-review items from ONE
+  measurement, raised by the owner's own question at this session's end
+  ("was that ask required by the process, or was it yours?"). THE
+  MEASUREMENT: four human touchpoints were taken in this session, and in
+  THREE of them the ratifier's answer amounted to the same sentence —
+  *the ratified letter already decides this; proceed, but record it more
+  loudly than you were going to*. The aftermath batch's size was answered
+  "all five are p2a's own ratified claim surface, close them under p2a's
+  letter"; the lint batch was answered "A, with two conditions", both
+  conditions about RECORDING durability rather than about the decision;
+  the fourth was a `refine` verdict offered for optional pre-discussion,
+  which the §5.5 matrix makes AUTONOMOUS outright. The diagnosis the four
+  items share: at these points the loop does not need the ratifier's
+  DECISIONS, it needs RATIFICATION DURABILITY — a different and much
+  cheaper interaction, and mostly a mechanizable one.
+
+  **(1) LETTER-FIRST, WITH ITS CARVE-OUT — the carve-out is the owner's
+  amendment at this recording and is the half the loop got wrong.** The
+  proposed default: where a ratified surface (a packet row, a C-row, a
+  README rule, plan text) already decides the case, EXECUTE THE
+  LETTER-FOLLOWING PATH WITHOUT ASKING and record it; come to the
+  ratifier only when PROPOSING TO DEVIATE from it. The first form of this
+  item was cut wrong — "does the letter already decide this?" — which
+  cannot separate *the letter decides it and I will follow it* from *the
+  letter decides it and I want not to*. TWO CLASSES ALWAYS COME TO THE
+  RATIFIER regardless: **waiving a RED GATE**, and **any contradiction
+  between two RATIFIED SURFACES** — because the letter cannot decide a
+  case where the letter itself is what is in dispute. THE LOOP'S OWN
+  MISCLASSIFICATION IS THE EVIDENCE and is recorded as such: it filed
+  touchpoint 3 — proceeding past a RED post-build audit whose redness came
+  from README §4 (an aftermath commit is audited at its own sha) colliding
+  with the `instrument_manifest` leg (which binds the audited commit's
+  FIRST PARENT) — as "not needed". It was needed, on BOTH limbs of the
+  carve-out at once. A rule that would have deleted three touchpoints and
+  also deleted the one legitimate one is not the rule to adopt; this is.
+  Sibling: the owner's standing assume-then-ASK rule says verify a step is
+  not something you can EXECUTE yourself before asking. This adds: verify
+  it is not something already DECIDED — and then stops, deliberately,
+  short of the disputed-letter case.
+
+  **(2) LOUD RECORDING AS A STANDING DEFAULT, not as a thing the ratifier
+  must ask for.** What the owner actually ADDED at two touchpoints was
+  durability: name the cross-packet unit-map move in the commit message
+  with its ground and its precedent; make the Build-record correction of a
+  ratified row's prose CITE THE MEASURED LINES rather than assert the
+  replacement sentence. Both are general. Proposed: an edit that moves
+  ANOTHER packet's ratified surface, and a correction of ratified prose,
+  each carry their evidence in the commit message and in the owning
+  packet's record BY DEFAULT. Then the ask disappears and the value
+  survives it.
+
+  **(3) NOTHING READS A PACKET'S DECLARED OBLIGATIONS BACK AGAINST THE
+  TREE — second occurrence, and the highest-autonomy-yield item here.**
+  Already logged at the ch14-p2a aftermath; this session is its second
+  data point and sharpens it. Of p2a's seven open obligations, ONE was
+  caught by a machine gate and SIX by nothing — an invariant disposition,
+  a test family, a doc comment, five barrel re-exports, a type-table
+  binding. This is where autonomy actually fails: not at decisions, but at
+  claims nothing measures. A loop that failed LOUDLY on its own
+  declarations would need the ratifier LESS, because the alternative to
+  asking is not guessing — it is being caught.
+
+  **(4) A CHEAP MECHANICAL PASS BEFORE THE PANEL, because round 1 spent
+  five Opus lenses on arithmetic.** The ch14-p2b first panel returned ~40
+  findings, 14 of them P1 — and the majority of the P1s were not semantic:
+  a boundary file whose absence a `tsc` probe finds in one run, three
+  transcribed counts that disagree with the lists they summarize, and test
+  families with no landing site in the declared boundary. The
+  downstream-viability lens found the boundary gap by ACTUALLY RUNNING the
+  change and reading `tsc`'s answer, which is mechanizable. Proposed: an
+  authoring-side self-check (counts recomputed from the blocks they
+  summarize; a type-probe over the declared shape changes; every declared
+  test family resolved to a boundary file) runs BEFORE the panel, so the
+  panel's Opus-class attention lands on semantics rather than on
+  bookkeeping the tree can answer.
+
+- 2026-08-27 · ch14-p2b approve · TWO ITEMS ADDED BY THE OWNER AT THE
+  FLAGGED APPROVE, both about where a rule LIVES rather than what it says.
+
+  **(1) DOES A FULLY RATIFIED STOP 4 SATISFY THE HUMAN GATE FOR THE
+  PRE-BUILD ARM RUN?** Today's letter is unambiguous and the loop followed
+  it: SKILL.md's hard boundaries say an *autonomous flag-free* approve
+  proceeds to build through the two external-arm gates, and that "the
+  authoring loop stops at every STOP and at every human-gated approve".
+  So a flag-bearing approve stops the loop even after every flag has been
+  ratified one at a time — which is what happened here, and the loop then
+  needed a second explicit go to move. THE QUESTION FOR THE REVIEW: once
+  a STOP 4 is FULLY ratified, may the loop proceed autonomously into the
+  PRE-BUILD ARM GATE, with the build itself still gated behind that arm's
+  result? The arm run is a measurement, not a decision; the ratification
+  that just happened is the human judgement the gate exists to collect.
+  The cost of today's reading is one extra round-trip per flagged approve,
+  spent on a step whose output is an external tool's verdict rather than
+  the loop's own. The cost of changing it is that "human-gated approve"
+  stops being a single crisp stopping rule. Either answer is defensible;
+  what the letter should not do is leave it to be inferred, which is what
+  nearly happened here — the loop read the ambiguous clause, then checked
+  the skill rather than acting on the reading, and the check is what
+  produced the correct behaviour.
+
+  **(2) OPERATIONALLY LOAD-BEARING FACTS MUST NOT LIVE ONLY IN SESSION
+  MEMORY — memory may ACCELERATE, never CARRY.** Two facts in this session
+  were reachable only because a personal memory file happened to hold
+  them, which means a fresh context would have met each one as a fresh
+  failure. Both have a repo home and belong in it:
+  - **The arm transport's behaviour on large packets** (the primary
+    transport does not carry them; `arm_run.sh` is what does) belongs in
+    ReviewPacket §6's mechanics, beside the preflight the letter already
+    requires — a packet's size is knowable before the run, so the
+    transport choice is a mechanical precondition, not lore.
+  - **The "measured the claim, not something near it" failure class**
+    belongs in the failure-class registry. Its eight instances in this
+    packet's rounds are the evidence: a count carried from a summary
+    rather than re-run; `grep -c` with an alternation read as a per-name
+    count; a symbol name never grepped; a loader declared un-forked
+    without searching for copies; a census keyed on one of two spellings
+    of the thing being counted; and — inside the sentence prescribing a
+    guard — a RUNTIME fact (`Function.length`) asserted from a TYPECHECKER
+    run. The class is not "did not verify"; the global rule already covers
+    that. It is "ran a command, and the command measured something
+    adjacent to the claim" — which reads as verified in prose and survives
+    review far longer than an ordinary error.
+
+- 2026-08-27 · ch14-p2b build entry · THE §4 BUILD-EXECUTION-CONTEXT
+  PARAGRAPH READS STANDING-ONLY TO A FRESH CONTEXT — raised by the owner
+  after the loop STOPPED to ask permission for something the letter
+  already makes the default.
+
+  WHAT HAPPENED, because the incident is the evidence: at the build entry
+  the loop treated the fresh-context delegated build as a STANDING-MODE
+  facility and put it to the ratifier as a permission question, offering
+  "I continue here" as the per-packet default. It is not. README §4's
+  build-execution-context paragraph is unconditional — *"the DEFAULT is a
+  FRESH-CONTEXT DELEGATED build"* — and assigns the split directly: the
+  subagent executes steps 1–3, the MAIN context retains orchestration,
+  the full verification chain, both §5.5 arm gates, and the
+  one-packet-one-commit boundary. Nothing in it is scoped to a mode.
+
+  WHERE THE MISREADING CAME FROM, and this is the part worth fixing: the
+  two surfaces the loop DID read both mention delegation only inside the
+  standing-mode clause. AGENTS.md's entry-mode bullet says standing mode
+  is *"valid only with the conductor architecture (heavy steps in
+  fresh-context subagents…)"*; the `CreateTaskPacket` SKILL.md carries
+  the same sentence. A reader who checks those two and stops concludes
+  that delegation is standing-mode machinery — which is exactly what
+  happened, and the loop compounded it by not reading the surface
+  AGENTS.md itself names as the build-loop authority (§4).
+
+  PROPOSED: §4's paragraph states EXPLICITLY that the fresh-context
+  delegated default applies in PER-PACKET mode too, and that standing
+  mode only GENERALIZES it across packets rather than introducing it.
+  Secondarily, the two mode bullets that mention delegation gain a
+  pointer to §4 rather than reading as its definition — a facility
+  described only inside one mode's clause will keep being read as that
+  mode's.
+
+## 2026-08-28 — ch14-p3a authoring: two error classes, neither caught by the internal panel
+
+The packet reached approve after five internal panel rounds, two
+external-arm passes and a ratified contract reopen. The findings
+cluster into two classes, and the clustering is the point: neither was
+content ignorance, and neither was caught by the packet lint or the
+five-lens panel. Both were caught by a reader who traced something.
+
+**CLASS 1 — unclosed quantifiers.** Three times the packet asserted a
+totality the code refutes: "the remaining rejections are post-load"
+(`unknown_instance` and the ladder's own reasons are pre-load);
+"the wait-shape rejections answer before any load" (they read the
+LOADED template); "the four write-class shapes" (four submit shapes
+plus a resume lane). All three were caught by the RATIFIER at source,
+not by the panel — and R-CLAIM-GRAMMAR already forbids exactly this
+("bare wholesale rhetoric with none of the three closures is a
+finding"). The rule exists and the panel's lens-3 owns it; it did not
+fire on any of the three. WATCH: whether the lens's claim-grammar duty
+needs the CODE-side probe the substrate lens has, since all three
+claims read as well-formed prose and only a source check falsifies
+them.
+
+**CLASS 2 — stated outcome, untraced mechanism.** Twice the packet
+stated a correct OUTCOME while the described mechanism produced the
+opposite: the read verb's recovery path (the floor's rejecting load
+would have destroyed the document the row promised to emit), and
+`resume`'s freedom from an early block (the floor's load would still
+have thrown on its resolution read, which is what C27 forbids). Both
+were caught by a verification pass that WALKED the call chain, not by
+one that read the text. The fix in both cases was structural — pass
+`null` where no derivation is needed — rather than textual.
+
+**WHAT THE TWO SHARE:** the packet reads as coherent in both cases. The
+lint cannot see either, and a lens that checks the text against itself
+cannot either. The cheap detector for both is a source trace of the
+specific claim, which is what the ratifier and the arm did.
+
+Also recorded: the reopen payload omitted the template-§5 metrics
+increment and the reopen record; `reopen_runner` does not require
+them, and both were added by hand after the fact. WATCH: whether the
+runner should refuse a payload that carries neither.
+
+## 2026-08-28 — ch14-p3a build entry: a gate that had never closed, and a fold that regenerated its own next round
+
+The build entry found ARM GATE 1 OPEN on a packet already marked
+APPROVED. Passes 1–2 had ended on a `not ready` whose five findings were
+folded, and no hash-citing re-check ran on the folded bytes — the second
+half of §5.5's `find → fold → ONE hash-citing re-check per fold` simply
+did not happen. Five further passes were the cost of finding that out
+late.
+
+**THE STATE WAS NOT ON A REPO SURFACE.** The packet header attested the
+two passes in prose, but the Build record held only its placeholder, so
+the entering session reconstructed the gate's position from `/tmp`
+artifacts. ch14-p2b had already solved this — its gate-1 record is
+written AT THE GATE, "so it survives a lost session" — and that practice
+was applied here rather than re-derived. PROPOSED: promote it from a
+p2b habit to the letter. A gate whose verdict lives only in a session is
+a gate that reopens silently.
+
+**THE RISING COUNT IS THE FINDING, not the total.** The five closing
+passes returned 2 → 3 → 4 → 4 → 0 substantive findings, thirteen in all,
+every one of them ONE class: the C27 reopen SPLIT THE TWO WRITE VERBS
+APART — `resume`'s floor is built with a `null` definition store, so it
+performs no floor load, no Ask derivation, no correlation join and
+carries none of the derivation's eight integrity throws, while
+`submit-decision` does all four — and the packet, written before that
+split existed, kept saying "the write verbs" as if they were one.
+Passes 3–5 folded the INSTANCES each pass named, and the count ROSE:
+an instance-wise fold of a class defect regenerates its own next round,
+because every fold leaves the untouched carriers of the same claim in
+place and makes the surviving ones easier to see. Pass 6 followed a
+SWEEP AGAINST THE CAUSE — the cause stated in the charter, every carrier
+of it checked at once — and that is the pass where the remainder became
+BOUNDED and the reviewer would assert completeness. Pass 7 closed it.
+THE CHEAP DETECTOR IS THEREFORE NOT ANOTHER LENS: it is naming the cause
+and sweeping its carriers, and the charter that ASKS for a complete list
+rather than a sample is what turns a reviewer into that sweep.
+
+**THE CLASS WAS BORN AT THE REOPEN AND NOTHING SWEPT FOR IT.** C27
+arrived at this packet's own contract reopen, mid-authoring, and it did
+not merely add an answer — it introduced an ASYMMETRY between two things
+the packet had treated as one. WATCH, and a candidate rule: a
+contract reopen that DISCRIMINATES two previously-equivalent subjects
+owes a sweep of every sentence that spoke about them together, and the
+reopen payload is where that obligation could be carried. This is the
+sibling of the same session's earlier `reopen_runner` note (the payload
+that omitted its metrics increment and reopen record) — both say the
+reopen's propagation is under-instrumented.
+
+**DETECTOR MISS, recorded for the boundary review:** five internal panel
+rounds and two external-arm passes marked this packet approved with the
+entire class alive. The packet lint cannot see it (it does not read
+prose) and neither can a lens that checks the text against itself — all
+thirteen sentences were well-formed, and only a reader tracing a claim
+against the code, or against a sibling sentence, falsifies them. That is
+the same closing sentence the ch14-p3a authoring entry above reached
+from two different defect classes on the same day, which makes this the
+third data point for one conclusion: THE PACKET'S PROSE IS THE SURFACE
+NOTHING MEASURES, and it is the surface a delegated build treats as its
+only authority.
+
+## 2026-08-29 — ROUTED TO THE BOUNDARY REVIEW: what may a hand-written masker claim, and whose instrument is `check_trace_narrow.py`?
+
+Routed by the owner's decision at the ch14-p3a build-close gate, 2026-08-29,
+choosing a separate carrier over a fourth aftermath round. The demonstrated
+hole (regex literals) IS fixed in that aftermath; the QUESTION below is not,
+and is deliberately not.
+
+**THE OBSERVATION.** The gate found the same shape three rounds running,
+each time in a different clothing: the new erasure entry applied
+context-blind (no masking at all); then the three LEGACY entries bypassing
+the masking that had just been built; then the masker recognizing strings,
+comments and template literals but not REGEX literals — where
+`/asDispatch(x)/` erases and a real re-pin rides through green. Each was a
+true finding and each was cheaply fixed. That is exactly what makes the
+pattern worth routing rather than folding again: THE FIXES KEEP WORKING AND
+THE CLASS KEEPS REGENERATING.
+
+**THE STRUCTURAL FACT UNDER IT.** `mask_noncode` is a hand-written lexer for
+a real language, and hand-written lexers are never complete. The next round
+plausibly finds tagged templates, JSX, or a `<T>` type assertion. No amount
+of adding cases converges, because the thing being approximated is a
+TypeScript grammar and the approximation has no closure condition. THE
+INSTRUMENT'S OWN CLAIM IS WHERE THIS BITES: a gate that decides whether a
+golden-trace edit is a compiler-forced narrow or a RE-PIN is making an
+assertion about SOURCE CODE, and it can only be as sound as its notion of
+what source code is.
+
+**THE QUESTION FOR THE REVIEW, in the form that admits an answer.** Not
+"add more literal forms" — that is the loop that produced this entry.
+Either (a) the checker becomes PARSER-BASED, so "is this span code" stops
+being an approximation; or (b) the checker's SCOPE SHRINKS to something a
+regex can be sound about — for instance erasures anchored to whole
+statements matched against a whitelist of exact known lines, where a
+non-match is a re-pin by default; or (c) the checker keeps its shape and
+the residual risk is stated as a KNOWN LIMIT with the argument for why a
+false green is tolerable there, which is the answer nobody has yet written
+down. Each is defensible; what is not defensible is the current implicit
+answer, which is (c) WITHOUT the argument.
+
+**WHOSE INSTRUMENT.** `check_trace_narrow.py` is ch14-p2a's — its K17 gate,
+its three original entries. ch14-p3a added a FOURTH entry, and the
+negatives written for that fourth entry are what exposed the other three
+(recorded in that packet's Build record and in `77e6118d`). So p3a has now
+spent three aftermath rounds hardening another packet's tool, on a surface
+its own claim never named. THE ROUTING GROUND IS THEREFORE TWO-PART: the
+question is unbounded, and it is not this packet's to answer. A packet
+whose aftermath keeps growing a neighbour's instrument is a signal about
+ownership, not only about the instrument.
+
+**THE CHEAP GENERAL RULE THIS SUGGESTS, offered rather than adopted:** an
+instrument that decides a question ABOUT SOURCE CODE should declare, in its
+own text, the grammar it assumes — and a finding against that declaration
+is a bug in the instrument, while a finding outside it is a scope change.
+The three rounds above were all arguably the second kind, and nobody could
+tell, because the declaration did not exist. The aftermath adds that
+declaration to `mask_noncode` as a stopgap; making it a form requirement is
+the review's call.
+
+## 2026-08-29 — ROUTED, and this one is URGENT rather than open-ended: `probe_runner.py` can certify a restore it did not perform
+
+Found by the external arm at the ch14-p3a build-close gate, pass 6, and
+REPRODUCED BY THAT REVIEWER in an isolated temporary directory. Routed
+here rather than folded because `tools/v3-plan/probe_runner.py` is
+chapter-12 infrastructure, sits outside ch14-p3a's mutation boundary, and
+the defect is not ch14-p3a's to own. THE ROUTING IS NOT A DEFERRAL OF
+IMPORTANCE — the opposite. Every packet's probe evidence from ch12 onward
+rests on this tool.
+
+**THE DEFECT.** If the mutated run leaves the target replaced by a
+SYMLINK, the runner returns 0, records `restore_verified: true`, LEAVES
+THE TARGET AS A SYMLINK, and writes the backup bytes THROUGH the link —
+overwriting whatever the link points at. Two failures in one: a receipt
+certifies a restore that did not happen, and the restore itself corrupts
+an unrelated file. The verification compares CONTENT and never asks what
+kind of filesystem object it is comparing.
+
+**WHY IT MATTERS MORE THAN ITS TRIGGER.** The tool exists precisely so
+probe evidence is machine-checked instead of self-reported — its own
+docstring calls the receipt *"the machine evidence the arm's spot-check
+audits — never the builder's prose"*, and it carries a green-baseline gate
+because a historical batch of eleven probes ran against an already-red
+baseline and produced vacuous receipts. This defect is the same class one
+level down: a receipt that says `restore_verified: true` when the target
+is not the file that was backed up is a VACUOUS RESTORE CERTIFICATE. An
+instrument whose whole purpose is to stop self-report from standing in for
+proof must not itself self-report.
+
+**THE PROPOSED FIX, as the reviewer stated it:** before restoring, remove
+symlink / directory / path replacements; recreate a REGULAR FILE from the
+backup; and verify `is_file && !is_symlink && digest matches`. Add a
+mutation-phase symlink selftest. The verification predicate is the real
+lesson — content equality is not identity, and a checker that compares
+bytes without checking WHAT it is comparing is the same shape as a text
+matcher that erases inside a string literal (this session's other running
+defect).
+
+**FOR THE REVIEW, one question beyond the fix:** how many committed
+receipts across ch12–ch14 were produced by runs this predicate would now
+reject? Probably none — a mutation replacing a file with a symlink is not
+a shape any builder wrote on purpose. But "probably none" is what the
+green-baseline hole also looked like before someone counted, and the count
+is cheap.
+
+**PROVENANCE NOTE, the second instance of one pattern this week:** this
+is the SECOND ratified instrument a ch14-p3a gate has found defective
+while using it — `check_trace_narrow.py`'s three legacy entries were the
+first. In both cases the packet's own use of a neighbour's tool, probed
+harder than the tool had been probed before, is what exposed it. That is
+an argument for probing instruments on their own terms rather than only
+through the packets that consume them.
+
+## 2026-08-29 — ROUTED TO THE BOUNDARY REVIEW: three ch14-p3b items, and one of them says a discharged rule was only half discharged
+
+Three subjects, one entry, because all three land at ch14-p3b's first
+aftermath commit and all three are routes rather than folds.
+
+**1. THE STALE FRAMINGS B1 DELIBERATELY DID NOT EDIT (ch14-p3a flag 4's
+carrier (b)).** ch14-p3a's flag 4 split its bookkeeping into two
+carriers, and the split is the point rather than a hedge: a reference
+that no longer RESOLVES is a different defect from a reference that is
+merely OLD. Carrier (a) — the dangling ones — was executed in
+`ch14-p3b`'s build commit at three sites (p2b's Q17 anchor, p2a's K15
+manifest ref, p2b's `REV-*` block). Carrier (b) is this line: the sibling
+packets' Order lines and their `ch14-P3` scope-label framings are TRUE AS
+HISTORY — the `ch14-P3` row existed and was split — so they are left as
+written. The boundary review decides whether a historically-true framing
+that no longer names a live row is worth a sweep at all, or whether the
+resolve-or-rot distinction is the whole rule.
+
+**2. K17's DROPPED RECOMPUTATION LEG, AND THE LIVE LEG'S MISSING CI
+WIRING (ch14-p3b flag 6, routed by the owner 2026-08-29 as ONE item).**
+The gate-time recomputation leg was dropped at ch14-p2a because its
+measurement point could not ride the add-only instrument-landing commit.
+That constraint has LAPSED: the digest hook lives in `traceHarness.ts`'s
+shared `replayTrace` and is present at every ref from p2a's instrument
+commit onward, so a baseline digest IS recomputable at the ref a receipt
+cites. Restoring it would put K17(b) — and therefore ch14-p3b's G1(b) —
+on a MEASURED baseline instead of a self-reported one. Beside it sits the
+adjacent fact flag 1 named: `pnpm v3:trace-narrow` wires the SELFTEST leg
+only, so the live leg runs when a human invokes it and nothing schedules
+it. Neither was taken in the packet: the first turns a text-and-JSON
+checker into one that checks out a ref and runs a suite, and the second
+is a CI-surface decision with its own blast radius. Both change an
+instrument's SHAPE rather than its readings, which is why they are here
+rather than in a packet.
+
+**3. A DISCHARGED RULE WAS DISCHARGED ON ONE SIDE ONLY — the item worth
+the review's time.** ch14-p3b's W1 closes `REV-NO-KEY-MEANING` by showing
+that no PRODUCTION branch keys on a decision-key or event-type literal.
+The build-close arm then found that the TESTS could not tell the
+difference: in `v3/src/shippedRoute.test.ts` — and, it noted, at
+`v3/src/kernel/operatorIntents.test.ts:785` — every tested
+`request_rework` edge advanced the round and every tested `approve` edge
+did not, so a runtime keyed on `edgeKey === "request_rework"` would have
+satisfied every assertion. The shipped-route half was FOLDED at
+ch14-p3b's first aftermath commit with two decorrelated runtime lanes and
+two executed mutation-probe receipts. The `operatorIntents.test.ts` half
+is ROUTED, not folded: that file is ch14-p2b's host, it drives its own
+`op-intents` template, and it sits outside ch14-p3b's enumerated mutation
+boundary — editing it would have been a silent reach past a declared
+scope, which is the class ch14-p3b's own flag 8 exists to refuse. **THE
+GENERAL QUESTION FOR THE REVIEW:** a `REV-*` rule discharged by reading
+the production code is discharged against the implementation that exists,
+not against the one a later change might write — and the suite is what
+carries the rule forward. Should a `REV-NO-KEY-MEANING`-class discharge
+REQUIRE a decorrelation lane as its evidence, the way a claim requires
+its measurement? No measurement of the `operatorIntents` suite was made
+here, and this entry takes no position on how far the pattern runs.
+
+## 2026-09-01 — ROUTED TO THE BOUNDARY REVIEW: three owner-carried items, entered out-of-band so the review meets them as routed rather than as interjections
+
+Routed by the owner, 2026-09-01, from the supervisor session. Until this
+entry the three facts below had either no repo carrier or a carrier with
+a missing link; the owner chose to land them on this surface BEFORE the
+ch14 boundary review opens rather than drop them into it mid-review.
+That choice is itself the fourth item.
+
+**(1) THE 2026-08-28 "two error classes" ENTRY HAS A THIRD SIGHTING,
+recorded on a packet surface but never attached to the class.** The
+class: a well-formed sentence whose justification or quantifier is wider
+than its evidence. At the ch14-p3b approve (2026-08-29), the flag-2
+ratification record stated a ground its row does not carry — the refused
+alternative's cost claimed as "covered on three other carriers", which
+the row does not state and which is not true. The fact IS on a repo
+surface: ch14-p3b's arm-gate-1 record names it as reconciliation finding
+F1 ("a ratification record stating a ground its row does not carry"),
+self-caught and rewritten to the real cost — the cost the owner actually
+ratified. What no surface carries is the ATTACHMENT: F1 is a third data
+point for the two-error-classes entry's second class, found this time in
+the loop's own bookkeeping prose rather than in a packet row. The review
+counts it when it weighs that class.
+
+**(2) THE ch14 CLOSE'S INHERITANCE OF THE MUTATION STOP LIVES ONLY IN A
+COMMIT MESSAGE.** The ch13 boundary review's verdict (b) is on this
+surface in full — STOP, nine runs, zero arm-missed defects, the wiring
+stays, the revival shape named. The ch14 chapter close correctly applied
+it: `v3:mutation` is the one bridge deliberately absent from its green
+list, and X1 asked the close to decide the bridge's standing rather than
+inherit it silently. The close DID decide it — but the statement lives
+only in commit `8b96ca95`'s message, which no future close reads. The
+review's question: where does a chapter close record an inherited
+disposition so the NEXT close finds it without re-deriving it, and does
+verdict (b) itself need a normative home outside a review entry?
+
+**(3) THE GATE PROTOCOL ON THE PACKET SURFACE — PRACTICE OR RULE?**
+ch14-p3a's third detector miss was a gate record that lived only in
+`/tmp`; ch14-p3b answered it by writing both arm gates' protocols (hash
+chain, per-pass verdicts and findings, transport and tier validation,
+the reconciliation findings) into the packet's own Build record. It
+worked — this entry's item (1) cites a fact that reached a repo surface
+ONLY because of it. Nothing ratified requires the next packet to do the
+same. The review decides whether this stays a per-packet practice or
+becomes a standing rule with a named home (task-packet template or
+README §5.5), and if a rule, its minimum content — on the evidence, the
+hash chain and per-pass verdicts at least.
+
+**(4) THE SHARED OBSERVATION.** All three were born at owner-facing
+moments — an approve, a close report, a design choice inside a build —
+and each reached this surface only because the owner remembered to carry
+it. The supervisor-session boundary (decisions travel to the agent;
+process observations travel to the repo via the boundary review)
+presumes a carrier for the second half, and this entry is that carrier,
+hand-operated. The review's question: does the loop need a named landing
+place for approve-time and close-time observations as they occur, or is
+the hand-operated route's cost — three items in one chapter, one of them
+nearly lost — acceptable and simply now measured?
+
+- 2026-09-02 (ch14 CLOSE, the dogfooding checkpoint — RUN, late: after
+  the mechanical close commit rather than before it) · **THE OPERATOR
+  SURFACE, DRIVEN BY HAND, END TO END — TWICE THROUGH THE PARK.**
+  Executed on the shipped surfaces (`pnpm v3:cli`, the canonical
+  `v3/templates/local-pair-v0@1.yaml`, a throwaway store): create →
+  start → PASS → CONVERGED → the park, the pending Ask discovered
+  through `detail` (question, recommendation, allowedDecisions, the
+  per-decision REQUIRED-field lists, the task context) →
+  `request_rework` WITHOUT `--override` refused `override_required` at
+  exit 3 → `request_rework --override` with its required instruction
+  COMMITTED, the handoff instruction arriving verbatim in the round-2
+  implementer packet → PASS → CONVERGED → the second park →
+  `submit-decision --decision approve` → the `commit_pending` wait →
+  `resume --event COMMIT` → `done` (TERMINAL, round 2, version 9; the
+  transcript carries both DECISION_REQUEST/DECISION_MADE pairs and the
+  WAIT_RESUMED). NO product finding: the surface behaved as the
+  chapter's rows say. Three operator-experience observations, none a
+  defect: (i) the `override_required` rejection names no remedy — not
+  which flag, not what the recommendation was — so a human re-reads
+  `detail`; consistent under the JSON contract, recorded as a candidate
+  for a later operator-UX pass, not folded. (ii) a hand-miscounted
+  `--expected-version` was answered by `{"kind":"stale",
+  "currentVersion":5}` — the CAS surface self-corrects the operator,
+  working as designed. (iii) the read verbs' option surfaces differ:
+  `detail` accepts `--templates-dir` (it derives the pending Ask),
+  `timeline` refuses it with a usage error — principled (need-based)
+  but surprising at the prompt. The store was removed after the run;
+  this entry is the receipt. THE PROCESS FACT rides with the run
+  rather than beside it: the checkpoint ran AFTER the mechanical close
+  (8b96ca95) because nothing in the close sequence gates on the DoD's
+  dogfooding element — neither a run nor the user's recorded waiver was
+  present and the close still read as complete. That is the third fact
+  of the 2026-08-27 "no gate-point for its own close column" entry's
+  class, and the boundary agenda's own item 0a is its evidence.

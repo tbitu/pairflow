@@ -153,7 +153,7 @@ new-decision rows: 0 (the decisions live in the ch9 draft +
 ADR-018). Code realization = ch9-P0 (the map's C31 entry delegates).
 
 **Close metrics (recorded at the ch11 close, 2026-07-18):**
-post-ratification reopenings: 2 (the 2026-07-12 round-declaration
+post-ratification reopenings: 3 (the 2026-08-15 ch14-ratification reopen — C1 scoped to the agent class, one cycle; the 2026-07-12 round-declaration
 reopen — closed by re-ratification the same day; the 2026-07-19
 ch12-ratification pointer reopen — C18/C19/C21/C30 delegated to the
 ch12 successor, closed by re-ratification within the same act); every row realized
@@ -167,6 +167,15 @@ authored key named), and C41's comparative parenthetical (tensed, both
 mentions) — one act, prepared texts and itemized map duties in the ch13
 draft's Context (its C16 carrier row). Reopen-delta new-decision rows: 0
 (pointer/tense conversions; every decision lives in the ch13 rows).
+
+**Fifth reopen record (2026-08-15, the ch14 draft-ratification act —
+the step-class partition).** Reopened C1 from `realized`: its
+universal step-keyset aggregate scoped to the AGENT class, the
+discriminator and per-type keysets delegated to the ch14 contract
+(prepared text and grounds in the ch14 draft's C26 carrier row +
+Context call table). Reopen-delta new-decision rows: 0 (the decisions
+live in the ch14 draft). The delegated keysets realize VACUOUSLY here
+— the successor realizes at ch14's close.
 
 **Dated update (2026-07-23, the ch9-act reopen):** post-ratification
 reopenings 2 → 3 (the `sys:` rename reopen above — closed by
@@ -192,7 +201,7 @@ frozen predecessor file remains readable beside its successor.
 
 | ID | Rule |
 |---|---|
-| C1 | A step map gains the OPTIONAL `gates` key — the ch8-C7 forward declaration's "first expected" additive growth (ch8-C9's step keyset becomes `role`, `instruction`, `transitions`, + optional `agentConfig`, + optional `gates`). Its value is a map of event-type → gate list. An absent `gates` key means the step has no gated transitions. DECIDED HERE — a recorded divergence from the model's exhibited Config view, which nests gates INSIDE the transition entry (`on_converged: {target, gates}`): ch8-C24's additive-only evolution forbids turning `transitions`' scalar targets into maps, so the binding moves to a parallel step key; the (step, event type) grain is preserved (C2). |
+| C1 | A step map of the AGENT class (the ch14 `type` discriminator absent — the only class at this surface's ratification; the class partition and the other classes' keysets are `contract:ch14-human-decision#C1` / `contract:ch14-human-decision#C2` / `contract:ch14-human-decision#C3`'s, the 2026-08-15 reopen's scoping) gains the OPTIONAL `gates` key — the ch8-C7 forward declaration's "first expected" additive growth (ch8-C9's agent-class keyset becomes `role`, `instruction`, `transitions`, + optional `agentConfig`, + optional `gates`). Its value is a map of event-type → gate list. An absent `gates` key means the step has no gated transitions. DECIDED HERE — a recorded divergence from the model's exhibited Config view, which nests gates INSIDE the transition entry (`on_converged: {target, gates}`): ch8-C24's additive-only evolution forbids turning `transitions`' scalar targets into maps, so the binding moves to a parallel step key; the (step, event type) grain is preserved (C2). |
 | C2 | The `gates` map is OPEN-KEY (ch8-C13 vocabulary): its keys are event types under ch8-C10's id grammar, and every key MUST be a member of `keys(step.transitions)` — a gate bound to a non-transition event type is an ADMISSION issue (dead config, the silent-typo class). The binding grain is (step, event type), realizing the model's `gates_for(step, event_type)`. |
 | C3 | Each event-type key's value is a NONEMPTY list of gate maps; authored order IS pipeline order (the runtime's ordered, first-block-wins evaluation consumes it; the format fixes only the order). An empty list is an ADMISSION issue — the parser accepts it (probe GP5), so the rule is admission-owned. |
 | C4 | A gate map is FIXED-KEYSET: `uses` (required) + `config` (optional map) + `contextBlockRefs` (optional — value class and semantics owned by `contract:ch13-context-block#C6`). NO `implementation` / `execution` / `id` keys exist — the implementation and execution axes are evaluator-INTRINSIC (registry-resolved from `uses`), never authored; unknown keys are ADMISSION issues per the ch8-C13 fail-closed culture. |
@@ -257,11 +266,15 @@ frozen predecessor file remains readable beside its successor.
 {"ratification": {"date": "2026-07-26", "arms": ["none external — the ch13 draft loop's internal five-lens Opus panel (4 full + 1 targeted round + clean top-level close); the codex arm consciously waived by the owner at GO (2026-07-26)"], "commit": "f507cda2220489a214de2580e5b8c58e2f061e23"}}
 ```
 
+```json
+{"ratification": {"date": "2026-08-15", "arms": ["the ch14 draft ratification's reopen rider (ch14-C26): grounds and prepared shape reviewed by the ch14 draft's two full Opus panel rounds + targeted reconciliation + the agent-invoked gptsol arm (pin gpt-5.6-sol/high, re-check CLEAN); resolved as the ratifying user's explicit STOP decision at the ch14 GO, diff-reviewed"], "commit": "17732018a9c583b7a1bce370cc7a9488a5669206"}}
+```
+
 ## Realized map (empty until chapter close)
 
 ```json
 {"realized_map": {
-"C1": "ch11-P2a D1 (domain Step.gates value) + ch11-P4 F2 (format-walk step keyset) + ch11-P3b W3 (reachability honesty: no shipped channel authors gates until P4) — domain/template.ts Step.gates field (the GateBinding/GatePipeline types are domain/gate.ts); definition/validate.ts F2 walk; admit.test.ts / validate.test.ts",
+"C1": "ch11-P2a D1 (domain Step.gates value) + ch11-P4 F2 (format-walk step keyset) + ch11-P3b W3 (reachability honesty: no shipped channel authors gates until P4) — domain/template.ts Step.gates field (the GateBinding/GatePipeline types are domain/gate.ts); definition/validate.ts F2 walk; admit.test.ts / validate.test.ts (agent-class scope since the 2026-08-15 reopen; the per-type keysets realize VACUOUSLY here — delegation, the successor realizes at ch14's close)",
 "C2": "ch11-P2a A4 + D1 (the Step gate lookup realizing the gates_for(step, event_type) grain) — definition/admit.ts event-type membership (gates bound to keys(transitions)); domain/template.ts; admit.test.ts A4 lane (+ ch11-P4 F3 gates-subtree walk, validate.ts)",
 "C3": "ch11-P2a A4/D3 — definition/admit.ts nonempty-list admission + authored pipeline order; admit.test.ts (+ ch11-P2b K1 ordered first-block-wins eval, kernel/kernel.ts)",
 "C4": "ch11-P4 A1 — definition/admit.ts gate-binding fixed-keyset (uses + optional config; + contextBlockRefs at ch13 — delegation: ch13#C6), unknown-key fail-closed; admit.test.ts A1 lane ; reopened at the ch13 ratification (2026-07-26) — successor contract:ch13-context-block#C6 (that draft superseded 2026-08-05; the semantics live unchanged in contract:ch13-context-block-v2#C6, realized at the ch13 close); realized vacuously (delegation — the successor realizes at ch13's close)",
@@ -305,3 +318,5 @@ frozen predecessor file remains readable beside its successor.
 }
 }
 ```
+
+

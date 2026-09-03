@@ -1,5 +1,7 @@
 import type {
+  ActorId,
   AgentConfig,
+  DecisionRequestBody,
   EventEnvelope,
   InstanceId,
   KernelStatus,
@@ -22,6 +24,60 @@ import type {
  * CHK-C-TS-SOURCE; the implementation stamps created_at / committed_at
  * inside the commit boundary from its injected TimeSource (plan §4.3).
  */
+/**
+ * K1 (packet ch14-p2a): the ARRIVAL's committed effect, as ONE closed
+ * record — every state change a target entry produces, plus the optional
+ * second row the human-gate park appends.
+ *
+ * THE MEMBER LIST IS CLOSED, and `newWait` is ALWAYS EXPLICIT (a value
+ * or null) rather than optional: the `commitLifecycle` F1 rule is
+ * adopted here so the S5 same-move clear cannot be FORGOTTEN. An
+ * optional field would let an agent-branch arrival silently leave a
+ * stale wait behind, which is a state no reader could explain.
+ *
+ * THE BRAND IS THE POINT, on the live `AdmittedTemplate` precedent: a
+ * unique-symbol brand with no runtime value, whose only sanctioned
+ * producer is the arrival function. A caller cannot hand-build a
+ * substitute (it does not typecheck) and cannot swap ONE member (the
+ * field is the whole record), so "the object the store receives is the
+ * object the arrival returned" becomes a property the TYPE carries
+ * rather than a lane's aspiration.
+ */
+declare const arrivalEffectBrand: unique symbol;
+
+export interface ArrivalEffectFields {
+  readonly newCurrentStep: StepId;
+  readonly newRound: number;
+  readonly newKernelStatus: KernelStatus;
+  /**
+   * Non-null EXACTLY when the commit enters TERMINAL — the type face of
+   * the single-write rule (T1).
+   */
+  readonly newTerminalDisposition: TerminalDisposition | null;
+  /** ALWAYS explicit: value or null. See the class comment. */
+  readonly newWait: WaitReason | null;
+  /**
+   * The human-gate park's SECOND ROW, appended in the SAME transaction
+   * as the state write. Two commits would be exactly the half-entered
+   * gate the atomicity rule forbids, and a kernel-side compensating
+   * delete would be a second correctness mechanism beside the
+   * transaction (REV-A1-TXN).
+   */
+  readonly decisionRequest?: DecisionRequestBody;
+  /**
+   * Resolved from the step being LEFT, not the target — a REQUIRED
+   * member of the record rather than a sibling of it, so a caller
+   * cannot substitute its own.
+   */
+  readonly issuedAgentConfig: AgentConfig;
+}
+
+export type ArrivalEffect = ArrivalEffectFields & { readonly [arrivalEffectBrand]: true };
+
+/* ch14-p3a (F4): `DecisionRequestBody` is DECLARED in `domain/` now — the
+ * Ask derivation reads it and lives there, and re-declaring it here would
+ * make `domain/` import `ports/`. This port consumes the domain type. */
+
 export interface CommitTransitionInput {
   readonly instanceId: InstanceId;
   readonly expectedVersion: number;
@@ -35,29 +91,17 @@ export interface CommitTransitionInput {
    * transaction and stamps nothing into the list.
    */
   readonly gateDecisions: readonly RetainedGateDecision[];
-  readonly newCurrentStep: StepId;
-  readonly newRound: number;
   /**
-   * E3 (packet ch12-p1a): the axis replacement of the ch-4 `newStatus`
-   * field. Both fields ride the SAME transaction the commit always used
+   * K1 (packet ch14-p2a): the arrival's effect, NESTED as one branded
+   * field rather than flattened alongside the caller's members. The
+   * remaining members above stay the CALLER's, and the port type is what
+   * closes the split — which is what made the caller-substitution defect
+   * provable instead of merely asserted.
+   *
+   * Both halves ride the SAME transaction the commit always used
    * (REV-A1-TXN unchanged).
    */
-  readonly newKernelStatus: KernelStatus;
-  /**
-   * Non-null EXACTLY when the commit enters TERMINAL — the type face of
-   * the single-write rule (T1): a terminal arrival writes `TERMINAL` +
-   * `"done"` (the COMPLETE branch), a non-terminal commit writes
-   * `ACTIVE` + null.
-   */
-  readonly newTerminalDisposition: TerminalDisposition | null;
-  /**
-   * C2/C10 (packet ch12-p2): the run profile the kernel issued for this
-   * dispatched step — the store writes it CANONICAL JSON into the
-   * transition row's `issued_agent_config` column (in place of the P1a
-   * NULL) inside the SAME commit transaction (REV-A1-TXN unchanged). A
-   * map, possibly `{}`; never null on a transition row.
-   */
-  readonly issuedAgentConfig: AgentConfig;
+  readonly arrival: ArrivalEffect;
 }
 
 /**
@@ -104,6 +148,69 @@ export interface CommitLifecycleInput {
   readonly newFailureReason?: string;
 }
 
+/**
+ * Q2 (packet ch14-p2b): the OPERATOR-ENTRY write member's input — ONE
+ * member for BOTH op-carrying operator classes, discriminated by
+ * `entry.kind`, rather than two members or a widened
+ * `commitTransition`. Two members would duplicate the CAS + arrival-
+ * write half twice over; widening `commitTransition` would make the
+ * envelope optional and hand every existing caller a shape that can be
+ * under-filled.
+ *
+ * THE MEMBER WRITES UP TO TWO ROWS: the arrival's effect record carries
+ * the human-gate park's OPTIONAL SECOND ROW, so a decision routing back
+ * to a gate commits its own op-carrying row AND a fresh
+ * DECISION_REQUEST in the SAME transaction — exactly as the transition
+ * member already does (REV-A1-TXN).
+ *
+ * The body rides `entry_body` as canonical JSON with the model's SNAKE
+ * keys — the same store casing seam the `wait` column and the
+ * DECISION_REQUEST body already follow. The in-transaction idempotency
+ * re-check is KIND-AWARE (Q15): an existing (instance_id, op_id) row of
+ * the entry's OWN kind → duplicate_op; any other kind → op_id_collision.
+ */
+export interface CommitOperatorEntryInput {
+  readonly instanceId: InstanceId;
+  readonly expectedVersion: number;
+  readonly entry: OperatorEntryWrite;
+  /** The arrival's branded effect — the SAME record `commitTransition` nests. */
+  readonly arrival: ArrivalEffect;
+}
+
+/**
+ * The written row, discriminated by `kind`. The body carries the class's
+ * own fields; the store serializes it into `entry_body` and writes the
+ * transition-only columns NULL (Q2's column iff).
+ */
+export type OperatorEntryWrite =
+  | {
+      readonly kind: "DECISION_MADE";
+      readonly opId: OpId;
+      readonly body: DecisionMadeBody;
+    }
+  | {
+      readonly kind: "WAIT_RESUMED";
+      readonly opId: OpId;
+      readonly body: WaitResumedBody;
+    };
+
+/** DECISION_MADE's closed field list (C22/Q5), less the store-stamped
+ * `committedAt` and the `seq` the store assigns. */
+export interface DecisionMadeBody {
+  readonly decision: string;
+  readonly payload?: unknown;
+  readonly by: ActorId;
+  readonly requestRef: string;
+  /** `true` IFF against a recorded recommendation — never `false`. */
+  readonly override?: true;
+}
+
+/** WAIT_RESUMED's closed field list (C22/Q7). */
+export interface WaitResumedBody {
+  readonly kind: string;
+  readonly event: string;
+}
+
 export interface InstanceDetail {
   readonly instance: WorkflowInstance;
   /** Ordered by seq; committed rows only. */
@@ -139,6 +246,13 @@ export interface StorePort {
   /** The lifecycle write member (F1) — result vocabulary shared with
    * commitTransition; every lifecycle commit advances version by one. */
   commitLifecycle(input: CommitLifecycleInput): Promise<CommitTransitionResult>;
+  /**
+   * Q2 (packet ch14-p2b): the OPERATOR-ENTRY write member — result
+   * vocabulary shared with the two members above. Writes the
+   * op-carrying row AND, when the arrival parked at a human gate, the
+   * DECISION_REQUEST second row, in ONE transaction.
+   */
+  commitOperatorEntry(input: CommitOperatorEntryInput): Promise<CommitTransitionResult>;
   /** Committed rows only (trivially: the store holds nothing else). */
   listInstances(): Promise<readonly WorkflowInstance[]>;
   getInstanceDetail(instanceId: InstanceId): Promise<InstanceDetail | null>;

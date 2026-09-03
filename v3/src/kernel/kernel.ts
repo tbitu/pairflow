@@ -7,7 +7,6 @@ import type {
   GateDecision,
   GateProjection,
   InstanceId,
-  KernelStatus,
   KickoffOutcome,
   Outcome,
   RejectionName,
@@ -16,11 +15,11 @@ import type {
   RuntimeContextCompletionOutcome,
   RuntimeContextFailedOutcome,
   RuntimeContextReadyOutcome,
+  ResumeWaitOutcome,
   RuntimeContextRef,
   StartOutcome,
-  TerminalDisposition,
+  SubmitDecisionOutcome,
   WorkflowInstance,
-  WorkflowTemplate,
 } from "../domain/index.js";
 import { resolveRuntimeContextRequirement } from "../domain/index.js";
 import type { DefinitionStore } from "../ports/definition.js";
@@ -35,8 +34,18 @@ import type { StorePort } from "../ports/store.js";
 import type { TimeSource } from "../ports/time.js";
 import { admitLoaded } from "./admission.js";
 import { resolveAgentConfig } from "./agentConfig.js";
+import { applyTargetEntryEffects } from "./arrival.js";
+import { postCommitOutput } from "./postCommitOutput.js";
+// The loader MOVED to a kernel-internal module (packet ch14-p2b): the
+// operator-intent module needs it too, and a third copy is refused.
+import { loadPinnedTemplate } from "./pinnedTemplate.js";
+import { resumeWait, submitDecision } from "./operatorIntents.js";
+import type {
+  OperatorIntentDeps,
+  ResumeWaitInput,
+  SubmitDecisionInput,
+} from "./operatorIntents.js";
 import { capability } from "./capability.js";
-import { deriveDispatchIntent } from "./dispatchIntent.js";
 import { deriveGateProjection } from "./gateProjection.js";
 import { runProcessGate } from "./processGate.js";
 import {
@@ -124,6 +133,17 @@ export interface Kernel {
   start(input: StartInput): Promise<StartOutcome>;
   kickoff(input: KickoffInput): Promise<KickoffOutcome>;
   cancel(input: CancelInput): Promise<CancelOutcome>;
+  /**
+   * l3-pseudocode/SUBMIT_DECISION (packet ch14-p2b) — the operator's
+   * decision on a parked human gate, a KICKOFF sibling in the
+   * operator_intent source class.
+   */
+  submitDecision(input: SubmitDecisionInput): Promise<SubmitDecisionOutcome>;
+  /**
+   * l3-pseudocode/RESUME_WAIT — the BARE-wait dual, generalizing
+   * KICKOFF. Kernel-classified: no authority rung on this path (C18).
+   */
+  resumeWait(input: ResumeWaitInput): Promise<ResumeWaitOutcome>;
   fail(instanceId: InstanceId, reason: string): Promise<FailOutcome>;
   /**
    * l0e-pseudocode/RUNTIME_CONTEXT_READY (packet ch12-p3, K1): the new kernel
@@ -180,21 +200,6 @@ export interface Kernel {
   settleRuntimeContextDeliveries(): Promise<RuntimeContextCompletionOutcome[]>;
 }
 
-async function loadTemplate(
-  definitions: DefinitionStore,
-  instance: WorkflowInstance,
-): Promise<WorkflowTemplate> {
-  const template = await definitions.load(instance.templateRef);
-  if (template === null) {
-    // The ref was pinned at create — a missing definition is an
-    // integrity failure, not a rejection (P1 matrix).
-    throw new Error(
-      `kernel integrity: pinned template '${instance.templateRef.id}@${String(instance.templateRef.version)}' not found`,
-    );
-  }
-  return template;
-}
-
 /** Per-ATTEMPT mutable holder: the digest THREADED from the current
  * attempt only — reset at the top of every attempt (the digest-point
  * contract is attempt-scoped; see the post-build regression lanes). */
@@ -202,22 +207,15 @@ interface AttemptContext {
   payloadDigest?: string;
 }
 
-/**
- * l0d-pseudocode/COMPLETE (packet ch12-p1a, E4): the kernel-internal
- * terminal branch — never routed, never exported as a handler (done
- * originates only from a terminal step). The unit's REQUIRE
- * `kernel_status = ACTIVE` is structural at P1a: this branch is reached
- * only from an admitted ACTIVE commit (the E5 state rung admits only
- * ACTIVE), so the guard is stated as the invariant it protects. Both
- * axis writes land in the SAME atomic commit as the transition (E3) —
- * the single-write discipline's only P1a writer (T1).
- */
-function complete(): {
-  readonly newKernelStatus: KernelStatus;
-  readonly newTerminalDisposition: TerminalDisposition;
-} {
-  return { newKernelStatus: "TERMINAL", newTerminalDisposition: "done" };
-}
+// l0d-pseudocode/COMPLETE lived HERE (packet ch12-p1a, E4) until the
+// ch14-p2a aftermath fold. p2a's ratified arrival took over the terminal
+// branch — `applyTargetEntryEffects` writes TERMINAL + `done` in the
+// arrival's own effect record — which left this function a DEAD PARALLEL
+// PATH: a second, unreachable statement of one rule, which the domain
+// registry's own doc forbids as a surviving parallel path. So it is
+// deleted rather than kept behind a lint exemption, and the unit-map row
+// re-points to the function that now carries the branch. The unit did
+// not change; its address did.
 
 function errorFields(error: unknown): { readonly name: string; readonly message: string } {
   return error instanceof Error
@@ -297,6 +295,11 @@ export function createKernel(deps: KernelDeps): Kernel {
     }
   };
   const readyDeps: ReadyDeps = { store, definitions, providerRegistry, assertRefCanonical };
+  // ch14-p2b: the two operator intents' dependency record. `newRequestId`
+  // is the SAME minting seam the arrival uses on the actor path — one
+  // counter, so a provisioning request_id and a decision request_ref
+  // never collide under the controlled clock.
+  const operatorDeps: OperatorIntentDeps = { store, definitions, providerRegistry, newRequestId };
   const startDeps: StartDeps = {
     store,
     definitions,
@@ -457,7 +460,7 @@ export function createKernel(deps: KernelDeps): Kernel {
     if (instance === null) {
       return { kind: "rejected", reason: "unknown_instance" };
     }
-    const template = await loadTemplate(definitions, instance);
+    const template = await loadPinnedTemplate(definitions, instance);
 
     // Hoisted positional read (l1 HANDLE) — TOLERATES undefined AND the
     // pre-activation NULL position (G2, packet ch12-p1b): a terminal
@@ -478,12 +481,28 @@ export function createKernel(deps: KernelDeps): Kernel {
     // The consolidated ADMISSION ladder (ch11-P1) — rung order is
     // contract; the commit txn stays the correctness mechanism.
     const existing = await store.findOp(envelope.instanceId, envelope.opId);
+    // The ladder's call site MOVES with the opening (packet ch14-p2b,
+    // Q3) — the expectation is parameterized where it was hard-coded.
+    // HANDLE's OUTCOMES are byte-unmoved, which family 2's no-move
+    // control measures outcome by outcome rather than resting on
+    // "HANDLE passes neither".
+    //
+    // THE AUTHORITY GROUP IS PASSED ALWAYS, with `claim` =
+    // `envelope.expectedRole`: an absent claim keeps meaning
+    // `missing_role`, exactly as today. Only an ABSENT GROUP is a skip,
+    // and the resume path is its one inhabitant — mapping HANDLE's
+    // absent expectedRole onto an absent group would hand an actor with
+    // no role claim an `accepted`.
     const admitted = admitLoaded(instance, {
-      existingOp: existing,
-      payloadDigest,
+      idempotency: { existing, compare: { mode: "digest", payloadDigest } },
+      state: { holds: (loaded) => loaded.kernelStatus === "ACTIVE", reject: "not_active" },
       expectedVersion: envelope.expectedVersion,
-      expectedRole: envelope.expectedRole,
-      grantedRole: step?.role,
+      authority: {
+        claim: envelope.expectedRole,
+        granted: step?.role,
+        missing: "missing_role",
+        mismatch: "role_not_authorized",
+      },
     });
     if (admitted.kind !== "accepted") {
       return admitted;
@@ -491,7 +510,13 @@ export function createKernel(deps: KernelDeps): Kernel {
 
     // Navigation (L0b): does this action exist here? `step` is defined
     // past the state rung; the `?.` is the type-level belt only.
-    const target = step?.transitions[envelope.type];
+    // K11 (ch14-p2a): `transitions` is optional since the class set
+    // opened, and the extra `?.` is not a type-level belt like the one
+    // beside it — it carries MEANING. An actor event arriving at a
+    // `humanGate` or `wait` step finds no transition map at all, and
+    // `no_transition` is the honest answer: those classes are left by
+    // DECISION and RESUME routing (p2b), never by an actor transition.
+    const target = step?.transitions?.[envelope.type];
     if (target === undefined || step === undefined) {
       return { kind: "rejected", reason: "no_transition" };
     }
@@ -506,7 +531,16 @@ export function createKernel(deps: KernelDeps): Kernel {
     }
     // L1 action authorization: the action EXISTS as a transition, but
     // may this role emit it here? Dormant under default derivation.
-    if (!capability(template, step.role, instance.currentStep).includes(envelope.type)) {
+    // A role-less step grants nothing through the transition channel:
+    // `not_authorized` rather than a throw, because the position is a
+    // legitimately admitted step and the actor simply has no authority
+    // there. (Unreachable while the `no_transition` rung above fires
+    // first for the same classes; stated so the ordering is not the
+    // only thing holding it.)
+    if (
+      step.role === undefined ||
+      !capability(template, step.role, instance.currentStep).includes(envelope.type)
+    ) {
       return { kind: "rejected", reason: "not_authorized" };
     }
 
@@ -629,26 +663,6 @@ export function createKernel(deps: KernelDeps): Kernel {
       });
     }
 
-    const terminal = template.terminal.includes(target);
-    // The axis derivation (E3): a terminal arrival takes the COMPLETE
-    // branch (TERMINAL + "done", E4); a non-terminal commit writes
-    // ACTIVE + null. Non-null disposition EXACTLY when TERMINAL — the
-    // type face of the single-write rule (T1).
-    const axis = terminal
-      ? complete()
-      : {
-          newKernelStatus: "ACTIVE" as const,
-          newTerminalDisposition: null,
-        };
-    // K1 (packet ch11-P2c): round advancement is DECLARED transition
-    // semantics — the CURRENT step's admission-normalized flag for the
-    // committed event type, never inferred from target equality (the
-    // ch-4 heuristic retired, C39's ban). `=== true` is explicit-flag
-    // consumption (an admitted map is complete, D3); the `?.` exists only
-    // because the TYPE is shared with the raw pre-admission form.
-    const newRound =
-      step.advancesRound?.[envelope.type] === true ? instance.round + 1 : instance.round;
-
     // C1 (packet ch12-p2): the run profile the kernel ISSUES for this
     // dispatched step — resolved on the OPTIMISTIC commit path, downstream
     // of every synchronous admission guard and the gate pipeline (a
@@ -660,17 +674,34 @@ export function createKernel(deps: KernelDeps): Kernel {
     // equals the packet's effective_agent_config byte-identically.
     const issuedAgentConfig = resolveAgentConfig(template, instance.currentStep, instance);
 
+    // K1 (packet ch14-p2a): the inline arrival is REFACTORED onto the
+    // one shared target-entry rule. `HANDLE` is this packet's only
+    // ARRIVAL inhabitant; the two operator intents join it at p2b, and
+    // what p2a proves is STRUCTURAL — one function, one signature, no
+    // second copy.
+    //
+    // The mint rides INSIDE the restart loop (K2): a CAS-restarted
+    // attempt mints again, so the committed ref is the winning
+    // attempt's and the losing attempt's value is burned from the
+    // shared sequence. Hoisting it out would pin a ref computed against
+    // stale state onto a commit that re-resolved its target.
+    const arrival = applyTargetEntryEffects(
+      { newRequestId },
+      instance,
+      template,
+      { stepId: instance.currentStep, edgeKey: envelope.type },
+      target,
+      "payload" in envelope ? { payload: envelope.payload } : {},
+      issuedAgentConfig,
+    );
+
     const result = await store.commitTransition({
       instanceId: instance.instanceId,
       expectedVersion: instance.version,
       envelope,
       payloadDigest,
       gateDecisions,
-      newCurrentStep: target,
-      newRound,
-      newKernelStatus: axis.newKernelStatus,
-      newTerminalDisposition: axis.newTerminalDisposition,
-      issuedAgentConfig,
+      arrival,
     });
     switch (result.kind) {
       case "duplicate_op":
@@ -682,21 +713,29 @@ export function createKernel(deps: KernelDeps): Kernel {
       case "cas_conflict":
         return "restart";
       case "committed": {
-        // Post-commit intent guard (the l0d HANDLE unit): a TERMINAL
-        // instance derives no intent — `kernel_status = TERMINAL ⇒ none`.
-        if (axis.newKernelStatus === "TERMINAL") {
-          return { kind: "committed", version: result.version, intent: null };
-        }
+        // K5 (packet ch14-p2a): the post-commit assembly must carry the
+        // ARRIVAL's wait — reproducing the pre-ch14 assembly verbatim
+        // would read a PRE-arrival wait and return no Ask at all.
         const committed: WorkflowInstance = {
           ...instance,
-          currentStep: target,
-          round: newRound,
-          kernelStatus: axis.newKernelStatus,
-          terminalDisposition: axis.newTerminalDisposition,
+          currentStep: arrival.newCurrentStep,
+          round: arrival.newRound,
+          kernelStatus: arrival.newKernelStatus,
+          terminalDisposition: arrival.newTerminalDisposition,
+          wait: arrival.newWait,
           version: result.version,
         };
-        const intent = deriveDispatchIntent(committed, template, target, providerRegistry, envelope.payload);
-        return { kind: "committed", version: result.version, intent };
+        return {
+          kind: "committed",
+          version: result.version,
+          intent: postCommitOutput(
+            committed,
+            template,
+            providerRegistry,
+            envelope.payload,
+            arrival.decisionRequest,
+          ),
+        };
       }
     }
   }
@@ -790,6 +829,36 @@ export function createKernel(deps: KernelDeps): Kernel {
     // ch9-P1 F family: the RUNTIME_CONTEXT_FAILED kernel event, wired the same way.
     runtimeContextFailed: (instanceId, requestId, reason, detail) =>
       failedOp(instanceId, requestId, reason, detail),
+    // ch14-p2b: RECEIVE's two new operator_intent routes. Both ride the
+    // SAME shared wrapper the other operator intents ride (its `stale`
+    // arm exists for exactly these two), and each emits its OWN
+    // `cas_restart` from its own restart loop.
+    submitDecision: (input) =>
+      lifecycleOp(
+        () =>
+          submitDecision(operatorDeps, input, () => {
+            diag.emit({
+              source: "kernel",
+              kind: "cas_restart",
+              instanceId: input.instanceId,
+              opId: input.opId,
+            });
+          }),
+        { instanceId: input.instanceId, opId: input.opId },
+      ),
+    resumeWait: (input) =>
+      lifecycleOp(
+        () =>
+          resumeWait(operatorDeps, input, () => {
+            diag.emit({
+              source: "kernel",
+              kind: "cas_restart",
+              instanceId: input.instanceId,
+              opId: input.opId,
+            });
+          }),
+        { instanceId: input.instanceId, opId: input.opId },
+      ),
     deliverCompletion,
     settleRuntimeContextDeliveries,
   };
@@ -803,7 +872,11 @@ export function createKernel(deps: KernelDeps): Kernel {
    * every emit BARE (REV-DIAG-FAILOPEN).
    */
   async function lifecycleOp<
-    T extends { readonly kind: string; readonly reason?: RejectionName },
+    T extends {
+      readonly kind: string;
+      readonly reason?: RejectionName;
+      readonly currentVersion?: number;
+    },
   >(
     op: () => Promise<T>,
     attribution: Pick<DiagnosticEventBody, "instanceId" | "opId">,
@@ -812,6 +885,32 @@ export function createKernel(deps: KernelDeps): Kernel {
       const outcome = await op();
       if (outcome.kind === "duplicate") {
         diag.emit({ source: "kernel", kind: "duplicate", ...attribution });
+      } else if (outcome.kind === "stale" && outcome.currentVersion !== undefined) {
+        // Q18 (packet ch14-p2b): the wrapper's `stale` arm, opened for
+        // the FIRST operator intents that carry a VERSION RUNG. Before
+        // it, a stale operator intent emitted NOTHING while the actor
+        // path emitted `stale` with its `currentVersion` — the generic
+        // bound accepted a stale-carrying union silently.
+        //
+        // OPENING IT IS A CHANGE TO THE WRAPPER'S SIGNATURE, not only
+        // its body: a `kind`-narrowed generic cannot reach
+        // `currentVersion`, so the CONSTRAINT widened to admit it as an
+        // OPTIONAL member. That stays compile-silent for EVERY existing
+        // rider — an added optional member moves no call site — and
+        // their unions carry no `stale` arm at all, so this arm is
+        // unreachable for every one of them.
+        //
+        // `cas_restart` is NOT here and cannot be: this wrapper awaits
+        // ONE call and classifies the RESOLVED outcome — it has no loop
+        // and no sentinel, so no arm added to an outcome-inspecting
+        // wrapper could ever fire that class. Each new handler emits it
+        // from its OWN restart loop, which is HANDLE's pattern.
+        diag.emit({
+          source: "kernel",
+          kind: "stale",
+          ...attribution,
+          currentVersion: outcome.currentVersion,
+        });
       } else if (outcome.kind === "rejected" && outcome.reason !== undefined) {
         diag.emit({ source: "kernel", kind: "rejected", reason: outcome.reason, ...attribution });
       }

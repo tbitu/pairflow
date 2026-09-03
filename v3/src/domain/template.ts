@@ -1,5 +1,5 @@
 import type { GateBinding } from "./gate.js";
-import type { ActorId, BlockId, EventType, RoleName, StepId } from "./ids.js";
+import type { ActorId, BlockId, DecisionKey, EventType, RoleName, StepId, WaitKind } from "./ids.js";
 import type { ActivationMode } from "./instance.js";
 
 /**
@@ -26,11 +26,119 @@ export interface TemplateRef {
  */
 export type AgentConfig = Readonly<Record<string, unknown>>;
 
+/**
+ * ch14-C1 (packet ch14-p1): the step-class DISCRIMINATOR at the domain
+ * grain, whose token domain is the STORED form — the direct channel's
+ * input IS this type, and the authored↔stored map lives in the
+ * declaration's `[d-step-type]` enum (authored `humanGate` stores as
+ * `human_gate`; `wait` is identical on both sides). An ABSENT `type` is
+ * the AGENT class and no `agent` token exists: the three classes
+ * partition the step space this chapter admits, and the set grows
+ * additively with later step types in their realizing chapters.
+ *
+ * The union is the D12 registry-flip WITNESS for `l3/human_gate` — a
+ * FIELD-grain witness, because the shared `Step` interface every agent
+ * step already satisfies would make that row vacuous.
+ */
+export type StepType = "human_gate" | "wait";
+
+/**
+ * ch14-C5 (packet ch14-p1): one declared payload field's spec. The spec
+ * legislates REQUIRED-PRESENCE ONLY, and `required` is itself optional
+ * with absent = not-required, so `{}` is a legal spec. Fields a submitted
+ * decision carries BEYOND the declared spec are carried as uninterpreted
+ * data, never refused.
+ */
+export interface DecisionPayloadFieldSpec {
+  readonly required?: boolean;
+}
+
+/**
+ * ch14-C4 (packet ch14-p1): ONE decision of a `humanGate`'s routing map —
+ * the ChoicePoint's second instance at the shared grain. `emits` is
+ * deliberately absent (the §8.2 no-key-without-its-consumer rule); a route
+ * naming its OWN gate is admissible and genuinely re-arrives.
+ */
+export interface DecisionEntry {
+  /** ∈ steps ∪ terminal — the same domain a transition target has. */
+  readonly target: StepId;
+  readonly payload?: Readonly<Record<string, DecisionPayloadFieldSpec>>;
+}
+
+/**
+ * ch14-C3 (packet ch14-p1): a bare wait's declaration — a CLOSED
+ * `{ kind, resumeEvents }` pair. `kind` is an authored kind that must not
+ * collide with the kernel-owned set (an admission finding); `resumeEvents`
+ * is a nonempty list of unique event types, because a wait no event can
+ * resume is dead config.
+ */
+export interface WaitDeclaration {
+  readonly kind: WaitKind;
+  readonly resumeEvents: readonly EventType[];
+}
+
 export interface Step {
-  readonly role: RoleName;
-  readonly instruction: string;
+  /**
+   * ch14-C1: the class discriminator. ABSENT = the agent class, which is
+   * every pre-ch14 template.
+   */
+  readonly type?: StepType;
+  /**
+   * RELAXED(ch14-p2a, K11): `role`, `instruction` and `transitions` are
+   * OPTIONAL, because the class set they were written for no longer
+   * holds — the `humanGate` class carries no `transitions` and the
+   * `wait` class carries none of the three. The type is now honest for
+   * every ADMITTED value rather than honest for the agent class and
+   * cast-authored elsewhere.
+   *
+   * The CLASS DISCIPLINE is unchanged and still lives at ADMISSION: an
+   * agent step without a role is refused there, not here. This type
+   * states what an admitted value MAY carry; it has never been the
+   * place where a class's requirements are enforced.
+   *
+   * The relaxation's cost is a per-site narrow at every production READ
+   * (the compiler enumerates them), and TWO cells it cannot surface
+   * because both stay compile-clean: an error message that said
+   * "terminal step" now also means "role-less step", and a role
+   * comparison that now yields an EMPTY capability set for a role-less
+   * step. Those are driven by lanes, not by the type.
+   *
+   * The ch14-P1 casts these fixtures were written through are NOT
+   * retired wholesale here: the P1 obligation assumed the casts become
+   * unnecessary, and the measurement says otherwise — they are double
+   * assertions over builders typed loose ON PURPOSE, to author
+   * admission-negative input. The per-site census is K11's.
+   */
+  readonly role?: RoleName;
+  readonly instruction?: string;
   /** event_type → target step; every target ∈ steps ∪ terminal. */
-  readonly transitions: Readonly<Record<EventType, StepId>>;
+  readonly transitions?: Readonly<Record<EventType, StepId>>;
+  /**
+   * ch14-C4 (packet ch14-p1): a `humanGate`'s declared decision
+   * vocabulary — the gate's transition map, keyed by DATA the kernel
+   * never interprets. Legal on the `humanGate` class ONLY, where it is
+   * REQUIRED and must offer at least one decision; the class discipline
+   * lives at ADMISSION, never in this type, which is the witness.
+   */
+  readonly decisions?: Readonly<Record<DecisionKey, DecisionEntry>>;
+  /** ch14-C3 (packet ch14-p1): the `wait` class's park declaration. */
+  readonly wait?: WaitDeclaration;
+  /**
+   * ch14-C3 (packet ch14-p1): the `wait` class's resume routing — event
+   * type → target, its keys constrained to the step's own declared
+   * `resumeEvents`. REQUIRED on that class but legally EMPTY: a declared
+   * resume event with no route is admissible by design, so the runtime's
+   * `no_resume_transition` stays reachable.
+   */
+  readonly onResume?: Readonly<Record<EventType, StepId>>;
+  /**
+   * ch14-C6 (packet ch14-p1): the firing edge's STATIC recommendation —
+   * an edge-keyed sibling map on the SOURCE (agent) step, since the
+   * format's transition values are plain targets. The referenced
+   * transition's target must be a `humanGate` and the value one of that
+   * gate's declared decision keys.
+   */
+  readonly recommends?: Readonly<Record<EventType, DecisionKey>>;
   /**
    * The step's run-profile override (packet ch12-p2, T1): the SECOND
    * cascade layer (`role.defaultAgentConfig ⊕ step.agentConfig ⊕

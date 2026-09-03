@@ -17,10 +17,21 @@ export type {
   ProcessResult,
 } from "./gate.js";
 export type {
+  // ch14-p2a: the arrival's committed EFFECT — the closed, branded record
+  // the store's transition input nests, plus the human-gate park's second
+  // row. Named here because the port contract is what carries them.
+  ArrivalEffect,
+  ArrivalEffectFields,
   CommitTransitionInput,
   CommitTransitionResult,
   InstanceDetail,
   StorePort,
+  // ch14-p2b (Q2): the operator-entry write member's input and the two
+  // op-carrying bodies it discriminates.
+  CommitOperatorEntryInput,
+  DecisionMadeBody,
+  OperatorEntryWrite,
+  WaitResumedBody,
 } from "./store.js";
 export type { DefinitionStore } from "./definition.js";
 export type {

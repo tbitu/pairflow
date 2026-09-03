@@ -81,8 +81,14 @@ describe("the unit→code manifest (v3/model/units ↔ drift/unitMap.json)", () 
       disposition: "implement",
       status: "realized",
     });
+    // RE-POINTED at the ch14-p2a aftermath fold, and loudly: p2a's
+    // ratified arrival took over the terminal branch, which left
+    // `kernel.ts#complete` a dead parallel path — the exact shape the
+    // registry's own doc forbids. The unit did not change; its ADDRESS
+    // did, to the function that now carries the branch. Same
+    // containing-symbol form as `l0d/HANDLE → #createKernel`.
     expect(unitMap["l0d-pseudocode/COMPLETE"]).toEqual({
-      codeRef: "v3/src/kernel/kernel.ts#complete",
+      codeRef: "v3/src/kernel/arrival.ts#applyTargetEntryEffects",
       disposition: "implement",
       status: "realized",
     });
@@ -227,6 +233,142 @@ describe("the ch13-p1b unit-map flips (packet row D12)", () => {
     expect(unitMap["l2b-pseudocode/dispatch_intent"]).toEqual({
       codeRef: "v3/src/kernel/dispatchIntent.ts#deriveDispatchIntent",
       disposition: "alias/inherited",
+      status: "realized",
+    });
+  });
+});
+
+
+describe("the ch14-p1 unit-map flip (packet row D12)", () => {
+  const unitMap = loadUnitMap();
+
+  it("pins the packet-owned mapping VERBATIM, FULLY QUALIFIED (a second row of the same bare name exists)", () => {
+    // `implement` rather than `generated/mapped`: the unit's load-bearing
+    // half — the per-type class rules — is NOT expressible in the
+    // declaration vocabulary, so it realizes as named hand lanes in the
+    // audited residual's module, with the ordinary field grammars riding
+    // the schema beside them.
+    expect(unitMap["l3-pseudocode/validate_decision_gates"]).toEqual({
+      codeRef: "v3/src/definition/schema/templateSurface.ts#stepClassFindings",
+      disposition: "implement",
+      status: "realized",
+    });
+    // The fully-qualified address matters: a bare-name edit would flip
+    // the wrong row.
+    expect(unitMap["auto-action-pseudocode/validate_decision_gates"]).toEqual({ status: "pending" });
+  });
+});
+
+describe("the ch14-p2a unit-map flips (packet row K13 — the aftermath fold)", () => {
+  const unitMap = loadUnitMap();
+
+  it("pins the ELEVEN packet-owned mappings VERBATIM, FULLY QUALIFIED", () => {
+    // The generic resolution lane below stays green on a
+    // wrong-but-existing symbol, so every packet-owned row is an exact
+    // string here — and every address is FULLY QUALIFIED, because four
+    // of these bare names (HANDLE, CREATE_INSTANCE, RECEIVE, directive)
+    // also exist in other sections.
+    //
+    // The four inline rows address the function that CONTAINS them
+    // (`applyTargetEntryEffects`): the arrival's fan-out realizes the
+    // two parks, the recommendation read and the decision-key read as
+    // branches rather than as separate exports — the same
+    // containing-symbol form `l0d/HANDLE → #createKernel` already uses.
+    expect(unitMap["l3-pseudocode/apply_target_entry_effects"]).toEqual({
+      codeRef: "v3/src/kernel/arrival.ts#applyTargetEntryEffects",
+      disposition: "implement",
+      status: "realized",
+    });
+    for (const inline of [
+      "l3-pseudocode/park_for_human_decision",
+      "l3-pseudocode/park_for_wait",
+      "l3-pseudocode/incoming_recommendation",
+      "l3-pseudocode/decision_keys",
+    ]) {
+      expect(unitMap[inline], inline).toEqual({
+        codeRef: "v3/src/kernel/arrival.ts#applyTargetEntryEffects",
+        disposition: "implement",
+        status: "realized",
+      });
+    }
+    expect(unitMap["l3-pseudocode/post_commit_output"]).toEqual({
+      codeRef: "v3/src/kernel/postCommitOutput.ts#postCommitOutput",
+      disposition: "implement",
+      status: "realized",
+    });
+    expect(unitMap["l3-pseudocode/human_decision_request"]).toEqual({
+      codeRef: "v3/src/domain/humanDecisionRequest.ts#humanDecisionRequest",
+      disposition: "implement",
+      status: "realized",
+    });
+    // Its own export, because the Ask and p2b's submit guard read ONE
+    // function — the reason it was minted at p2a at all.
+    expect(unitMap["l3-pseudocode/required_fields"]).toEqual({
+      codeRef: "v3/src/domain/humanDecisionRequest.ts#requiredFields",
+      disposition: "implement",
+      status: "realized",
+    });
+    // REVIEW-ONLY: a family block, not a routine. Its witness is the
+    // family's second member — the one this chapter added.
+    expect(unitMap["l3-pseudocode/directive"]).toEqual({
+      codeRef: "v3/src/domain/dispatch.ts#HumanDecisionRequest",
+      disposition: "review-only",
+      status: "realized",
+    });
+    // The two REPRINTS, each carrying one delta: HANDLE's arrival line
+    // and CREATE_INSTANCE's role-less binding skip.
+    expect(unitMap["l3-pseudocode/HANDLE"]).toEqual({
+      codeRef: "v3/src/kernel/kernel.ts#createKernel",
+      disposition: "implement",
+      status: "realized",
+    });
+    expect(unitMap["l3-pseudocode/CREATE_INSTANCE"]).toEqual({
+      codeRef: "v3/src/kernel/lifecycle.ts#createInstance",
+      disposition: "implement",
+      status: "realized",
+    });
+  });
+
+  // ch14-p2b flips all six. The lane asserted they stay PENDING and is
+  // REPLACED rather than deleted — each row still needs a guard, and
+  // each is addressed FULLY QUALIFIED, because the bare names
+  // `COMPLETE` and `RECEIVE` exist in several other sections and a
+  // bare-name edit would flip the wrong row.
+  it("ch14-p2b flips its six l3 rows, each to the code that carries the unit", () => {
+    expect(unitMap["l3-pseudocode/admit_input"]).toEqual({
+      codeRef: "v3/src/kernel/operatorIntents.ts#admitInput",
+      disposition: "implement",
+      status: "realized",
+    });
+    expect(unitMap["l3-pseudocode/SUBMIT_DECISION"]).toEqual({
+      codeRef: "v3/src/kernel/operatorIntents.ts#submitDecision",
+      disposition: "implement",
+      status: "realized",
+    });
+    expect(unitMap["l3-pseudocode/RESUME_WAIT"]).toEqual({
+      codeRef: "v3/src/kernel/operatorIntents.ts#resumeWait",
+      disposition: "implement",
+      status: "realized",
+    });
+    // COMPLETE's widened precondition lives in the ARRIVAL's terminal
+    // branch: the unit did not change, its ADDRESS moved with the code
+    // that carries it (the ch14-p2a fold's own precedent).
+    expect(unitMap["l3-pseudocode/COMPLETE"]).toEqual({
+      codeRef: "v3/src/kernel/arrival.ts#applyTargetEntryEffects",
+      disposition: "implement",
+      status: "realized",
+    });
+    // RECEIVE IS the kernel entry object's source routing.
+    expect(unitMap["l3-pseudocode/RECEIVE"]).toEqual({
+      codeRef: "v3/src/kernel/kernel.ts#createKernel",
+      disposition: "implement",
+      status: "realized",
+    });
+    // The review-only unit keeps its declared disposition through the
+    // flip — a flip is not a promotion.
+    expect(unitMap["l3-pseudocode/choice_point"]).toEqual({
+      codeRef: "v3/src/kernel/operatorIntents.ts#submitDecision",
+      disposition: "review-only",
       status: "realized",
     });
   });

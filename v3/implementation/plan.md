@@ -1,7 +1,7 @@
 # V3 Implementation Plan
 
 Written chapter by chapter, each chapter proposed → ratified → committed
-(process: [`README.md`](README.md) §3). Chapters present: 1–9, 11–13.
+(process: [`README.md`](README.md) §3). Chapters present: 1–9, 11–14.
 
 **Genre note.** This is the implementation **master plan** — it is NOT a
 directly `ExecutePairflowPlan`-executable task list, and it carries no
@@ -105,6 +105,7 @@ convention is itself a chapter-1 rule.
 | 12 | **Runtime core** (appended chapter, build order: BEFORE ch 9 — §12): the L0c run profile (AgentConfig cascade + issued provenance), the L0d lifecycle/activation axis (kernel_status, source-routed entry, the CREATE/START split, typed waits, terminal dispositions, KICKOFF/CANCEL), the L0e runtime-context provider contract (requirement + registry + packet projection; testkit provider — the real worktree provider stays ch 9's), the gate-field watchpoint realization (model fix `6dd8bd15`), the format's runtime keys (§8.2 stance) + lifecycle operator verbs + floor extension | — (map-extension, §1.3) | realized |
 | 9 | Runner MVP (chapter §9): local worktree provider (`pairflow.worktree` — the ch-12 L0e contract's first real provider), one real actor adapter, process-gate runner spawn side, attach channel (tmux observe/takeover); **MVP scope RESOLVED (user, 2026-07-18): local-worktree only** — headless/cloud is a later provider behind the same contract (its async ready-event + opaque-ref shape keeps that additive; the deferred teardown / provider-health / retry-on-FAILED Absents are the named rework surface — the one-shot provisioning-failure→FAIL channel itself realizes IN ch9, §9 opening disposition 2; aligned at the ch9 draft rounds, 2026-07-23); **watchpoint RESOLVED (user, 2026-07-18):** the gate-block observability fix landed as a model-plane change (ratified @ `6dd8bd15` — `Rejected(gate_blocked)` carries the blocking binding's `uses` as `gate`), code realization owned by ch12-P0; prerequisites: ch 11 (gate call site) + ch 12 (runtime core) + **the production-provider gate (the ch12 ratifier's D5 condition, 2026-07-19 — the ch12 draft's C15):** no production provider registers until the provisioning-failure → correlated kernel `FAIL` channel is ratified and realized; **ch12-boundary work item (2026-07-22):** wire the MUTATION-TESTING PILOT — StrykerJS+vitest scoped to the packet `mutation_boundary` (`pnpm v3:mutation` bridge; first step = feasibility proof), DUAL-RUN beside arm gate-2 for two chapters, catches labeled code-mutation vs input-domain (the ch12 boundary's test-reliability verdict; ch9 ratification disposes it) | PI-8 | realized |
 | 13 | **Context blocks** (appended chapter, build order: AFTER ch 9 — §13): the L2b render (`assemble_context_blocks` at dispatch, ordered/deduped, provenance-carrying), the definition-load ref check (`validate_context_refs` under `admit_definition`, the `unresolved_context_block_ref` issue lane), the format's three context keys (catalog + role/step + gate refs) per the §8.2 stance, the shipped template's first real catalog entry, and the ch9-carried EPIPE fix as the chapter's hygiene packet | — (map-extension, §11.1) | realized |
+| 14 | **Human decision core** (appended chapter, build order: AFTER ch 13 — §14): the L3 three-entry spine (`SUBMIT_DECISION` + `RESUME_WAIT` beside `HANDLE`, all over one shared `apply_target_entry_effects`), the `human_gate` step type (atomic park + `DECISION_REQUEST`/`DECISION_MADE` + the override rule), the minimal `type: wait` bare wait (`commit_pending` ⇐ `COMMIT`), `admit_input` (the F-W4-2 delta), `validate_decision_gates` under admission, the format's decision/wait keys + the `operator` role (§8.2 stance), the integer-key ban bundle (ch13 boundary verdict (f)), the two operator intent verbs + the floor's pending-Ask read, the shipped template's `human_approval` wiring + journey smoke | — (map-extension, §1.3 critical-path note) | realized |
 | 10 | Operator recourse card: one page (query via the floor, cancel, deleteRequested; no watchdog/retry until L9) | PI-9 | planned(ch 10) |
 
 **Predicted-class convention (process-v2, added at the Phase-1 flip;
@@ -222,6 +223,32 @@ L0e kernel slices the runner MVP presupposes. **ENTERED as chapter
 12 (ratified 2026-07-18, §12)**, build order before ch 9 — the
 second live use of the mechanism, numbering per the ch-11-minted
 convention.
+**The L3 human-decision surface ENTERED as chapter 14 (ratified
+2026-08-14, §14)**, build order after ch 13 — the fourth live use of
+the mechanism, and the first whose entry derives NOT from a prior
+named candidate but from the ch13 boundary's critical-path note
+below (L3 never had a candidate row; the MVP-cut walk's sequencing
+record is the derivation source). Seventh named candidate (added at
+ch-14 ratification, 2026-08-14): the **LC3a workflow-actions
+surface** — `type: action` + `RUN_ACTION` + the `ActionRunner` leg
+(the L2a runner family), the `outcomes` ChoicePoint instantiation
+with its additive `emits?` extension and kernel-classified selector,
+the CAS-claim single-winner run protocol, the commit/merge anchor
+actions, `ActionRequest`. THREE bindings recorded at entry: (a)
+**adjacency** — it is sequenced as the NEXT implementation chapter
+after ch 14 (the critical-path note's "sequences adjacent" read,
+user-ratified 2026-08-14: without it approve→commit→merge stays
+half-manual); (b) **anchoring** — its contract-draft EXTENDS ch 14's
+shared-grain ChoicePoint C-rows additively (`emits?`, the
+kernel-classified selector), never a parallel shape — the
+declared-schema re-lock machinery holds the fork; (c) **carried-item
+home** — it is runner-touching by construction (the ActionRunner
+spawns), so plan carried item (4) (the spawn-outcome diagnostics
+gap) lands there. Unit-side tripwire: the 11 still-`pending`
+`action-pseudocode/*` entries in `v3/src/drift/unitMap.json`; the
+shipped template's `commit_pending` wait grows into `commit_action`
+there (the model ladder's own rhythm, accepted at the ch14 scoping
+round).
 **Close verdict (the ch11 boundary, 2026-07-18 — §11.5's
 first-exercise verdict): VALIDATED** — the appended chapter ran the
 standard rails end-to-end (own ratification; contract-draft lifecycle
@@ -297,6 +324,30 @@ port-shape change, the `[d-gc-*]` paper declarations, a per-surface
 parity gate. Never a while-we-are-here act (the routing entry's own
 rule).
 
+**Eighth and ninth named candidates (added at ch14-p2a pre-approval,
+2026-08-16 — the two `later-chapter` routes that packet takes, landing
+their plan-map rows in the routing act itself per the §7 rule; the
+packet's own K18 and K16 carry the reasoning, this map carries the
+obligation):**
+
+- **A non-agent `start` step refused at ADMISSION.** ch14-p2a closes
+  the reachable defect with a fail-loud kernel guard at each activation
+  commit, because a declaration rule does not belong in a packet whose
+  boundary excludes the definition plane. The durable home is an
+  admission cross-rule: a template whose `start` step carries a `type`
+  is refused at `admit_definition`, which retires the kernel guard.
+  Scope: the next definition-plane-touching chapter's ordinary work.
+  Never a while-we-are-here act.
+- **The bundle redaction seam and envelope-less rows.** The debug
+  bundle's policy predicate takes an ENVELOPE, so no policy can be
+  consulted about a field on an envelope-less transcript row;
+  ch14-p2a omits the field uniformly, fail-closed, under both shipped
+  policies. The durable question — may a pass-through policy carry a
+  decision request's context surface, and what shape does the seam take
+  to ask it — belongs to the next bundle-touching chapter, together
+  with the port change and both shipped policies' suites. Scope: that
+  chapter's ordinary work. Never a while-we-are-here act.
+
 **Critical-path note (recorded at the ch13 boundary walk, 2026-08-13
 — sequencing input for the next-chapter derivation; chapter entry
 stays the owner's explicit act):** the MVP cut's own remaining
@@ -307,7 +358,10 @@ LC3a (workflow actions) sequences adjacent to L3 (the `commit_pending`
 action), else approve→commit→merge stays half-manual. EC is the first
 post-cut chapter (its row above); the L2b computed-bodies/phase-axis
 Absents route to the MODEL PLANE for leveling FIRST if v1-replacement
-ever becomes a target (audit §7's conditional route).
+ever becomes a target (audit §7's conditional route). **(Aligned at
+the ch14 ratification, 2026-08-14: L3 ENTERED as chapter 14; LC3a =
+the seventh named candidate carrying the adjacency binding; L4
+remains chapterless — this note stays its carrier.)**
 
 **Ordering note (walking-skeleton-first, README §3.4).** Chapter 3 before
 chapter 4 does not contradict the principle: ch 3 is the constraint-sink /
@@ -3162,3 +3216,426 @@ across two sessions relaying through the user by copy-paste — Claude
 reconstruction of that hour exists outside the tree; the user brings
 it into the boundary session if the history is wanted. No finding
 above depends on it.
+
+## Chapter 14 — Human decision core: the L3 human_gate + bare wait + operator decision intents (ratified 2026-08-14)
+
+(autonomy stage: **measurement** — flag-free panel approves proceed
+to build autonomously THROUGH the two transitional external-arm gates
+(README §5.5, arm-pin.md); flags, STOPs, and the draft ratification
+route to the human. Main-thread arm: **Fable-class** — the
+alternating rule's assignment (`model-tier-experiment-2.md` §2: ch13
+was the experiment's first Opus chapter), recorded in its §8 log at
+this ratification; the TIER-RECORD rule binds (arm-pin.md — a record
+names a model tier only machine-confirmed). The mutation-testing
+pilot is STOPPED (ch13 boundary verdict (b)) — no dual-run beside
+the arm gates; the wiring stays.)
+
+The **fourth live use of the §1.3 map-extension mechanism** (ch 11
+closed VALIDATED; ch 12, ch 13 followed) — and the first whose entry
+derives NOT from a prior named candidate but from the ch13 boundary's
+CRITICAL-PATH note (2026-08-13): the MVP cut's own remaining critical
+path is L3 + L4, neither owning a chapter. This chapter enters L3 —
+the largest unbuilt pre-cut slice (18 pending units); L4 remains on
+the critical-path note as its carrier. Numbered 14 (arrival order),
+build order after ch 13. No PI item: model-ladder surface.
+
+**What the layer is for.** L2/L2a/L2b gated and communicated MACHINE
+policy; L3 introduces the human as DECISION-MAKER — and the human is
+a different mover: a decision is an operator-intent on a
+WAITING(human_decision) state (a KICKOFF sibling), never an actor
+envelope through HANDLE's ACTIVE path, so ACTIVE stays honest ("an
+agent is working") and WAITING means "blocked on a human." A
+`human_gate` step parks the instance and records a DECISION_REQUEST;
+the operator's decision routes the workflow through the gate's
+`decisions` map — a keyed routing map whose keys the kernel does not
+know (`approve` / `request_rework` are the anchor's vocabulary, not
+the kernel's). With it comes the WAITING axis's missing other half:
+the minimal `type: wait` bare wait and its RESUME_WAIT (the
+`commit_pending` ⇐ COMMIT anchor) — a decision targeting a wait
+would otherwise dead-end. The narrowest Ask — not a general human
+platform (the agent-initiated ask-human/help reply is L5).
+
+**Opening dispositions (user, 2026-08-14 — the scoping round):**
+
+1. **LC3a stays OUT; the sharedness is contract-level, not
+   chapter-level.** The scoping question was explicitly "how much
+   must these two share one contract." The model's own answer: the
+   routing map is ONE construct (the wave-4 **ChoicePoint** —
+   `decisions` and `outcomes` are the same keyed map, different
+   selector authority), the arrival spine is one unit
+   (`apply_target_entry_effects`), and the Ask family is one
+   (**Directive**); but the CAS-claim run protocol, the ActionRunner
+   leg, and the recorded-vs-derived ask weight are genuinely LC3a's
+   own machinery. Resolution: this chapter's draft declares the
+   ChoicePoint C-rows at the SHARED grain (key →
+   `{ target, payload? }` — `emits` deliberately absent: the §8.2
+   chapter-grain rule, no key without its consumer), with L3's
+   `decisions` as the first live instantiation; LC3a enters as the
+   seventh named §1.3 candidate with the adjacency binding and the
+   anchoring duty (its draft EXTENDS these rows additively, never a
+   parallel shape). Scale was the second ground: 18 units is
+   ch11/ch12-scale; 29 would exceed every precedent and muddy the
+   chapter's Fable data point in the tier experiment.
+2. **Acceptance floor = capability AND shipped wiring** (the ch13
+   opening-disposition-1 precedent, R-ACTIVATION-JOURNEY): the
+   shipped `local-pair-v0` template gains the `operator` role, the
+   converge route's target flips to a `human_approval` `human_gate`,
+   approve targets a `commit_pending` `type: wait` (⇐ COMMIT →
+   done), request_rework returns to implement — and a journey smoke
+   proves park → decide → resume through the shipped entrypoint.
+   This is v1-faithful (READY_FOR_HUMAN_APPROVAL and the commit wait
+   are v1's live behavior), so no product decision is smuggled; the
+   known two-step (`commit_pending` grows into `commit_action` at
+   LC3a) is the model ladder's own rhythm, accepted. Existing golden
+   traces re-pin where the template change reaches them — a named
+   duty, not a side effect.
+3. **The integer-key ban bundle rides here** (ch13 boundary verdict
+   (f) named "the next format-touching chapter" as carrier, and this
+   is it): the ban itself, the ch8-C10 reopen, the schema re-lock,
+   and the ch13v2-C10 narrowing land with this chapter — the reopen
+   act rides the draft ratification (the
+   ch13-draft-carrying-the-ch11-reopen precedent).
+4. **Two standing carriers explicitly NOT taken:** plan carried item
+   (4) (spawn-outcome diagnostics) belongs to "the next
+   runner-touching chapter" — this chapter spawns nothing; it lands
+   with LC3a (runner-touching by construction, recorded in the
+   seventh candidate's bindings). The sixth named candidate
+   (gate-config declarations as data) belongs to "the next
+   gate-surface-touching chapter" — `human_gate` is a STEP type in
+   the kernel/definition plane, not the `gates/` L2 surface; not
+   taken.
+
+### 14.1 Scope and boundaries
+
+**In scope:**
+
+1. **The three-entry spine.** `SUBMIT_DECISION` (a new
+   operator-intent handler, KICKOFF's sibling) and `RESUME_WAIT`
+   join `HANDLE`; each keeps its own guards and its own commit, and
+   all three share ONE
+   `apply_target_entry_effects(instance, template, from_step_id,
+   target)` — the target-entry rule factored OUT of HANDLE's inline
+   form so the entry paths cannot drift — plus the shared
+   `post_commit_output` that reads the resulting status (dispatch /
+   Ask / nothing / terminal).
+2. **The human_gate step type.** `park_for_human_decision` parks
+   WAITING(human_decision) + appends DECISION_REQUEST (recipient,
+   declared decision keys, recommendation + recommendation_source,
+   context ref) INSIDE the same atomic arrival commit — no
+   half-entered gate; `SUBMIT_DECISION` guards (wait.kind,
+   request_ref correlation, operator authority via the binding, CAS,
+   op_id) and appends DECISION_MADE; the override rule — `override`
+   required exactly when the chosen key ≠ the recorded
+   recommendation (`override_required` / `override_not_applicable`);
+   per-decision required payload fields, delivered as the rework
+   target's first-dispatch handoff.
+3. **The bare wait.** `type: wait` declares
+   `wait: { kind, resume_events }` + `on_resume`; arrival parks
+   WAITING(kind) with NO Ask; `RESUME_WAIT(event)` resumes on a
+   matching event (WAIT_RESUMED) via `on_resume` — the anchor
+   realizes `commit_pending` ⇐ [COMMIT] → done. Result payloads, the
+   resume ACTION, child-event sources (L4), timeouts/correlation
+   (L9) are declared Absents.
+4. **admit_input.** The admission ladder's load-first companion
+   (announced at L0d): the two operator ops fold their guard heads
+   into it; the one deliberate behavior delta is F-W4-2 (a
+   version-less operator intent gets the ladder's `missing_version`
+   entry guard, never an absent-vs-current `Stale`).
+5. **validate_decision_gates.** Definition-static validation of
+   `human_gate` and `wait` declarations under `admit_definition`,
+   beside the existing definition-static family — issue codes on the
+   established named-lane carrier; lanes and
+   accumulate-vs-short-circuit per the draft.
+6. **The format's decision/wait surface** (§8.2 stance): the two
+   step types, the `decisions` map, the wait declaration +
+   `on_resume`, the `operator` role — camelCase realization per the
+   established rename culture (ch11-C13/C16/C37, ch12, ch13);
+   unknown keys are ADMISSION issues per the ch8-C13 fail-closed
+   culture.
+7. **The integer-key ban bundle** (opening disposition 3).
+8. **The operator surface.** CLI verbs for the two intents
+   (submit-decision, resume) beside ch12's lifecycle verbs; the
+   floor's detail read shows the pending Ask (HumanDecisionRequest
+   is local/derived delivery — a durable channel is L8).
+9. **The shipped wiring + journey smoke** (opening disposition 2) +
+   the `l3-pseudocode` golden trace.
+
+**Out of scope (deliberate):**
+
+- **LC3a action steps** — `type: action`, `RUN_ACTION`,
+  `ActionRunner`, `emits` — the seventh named candidate (adjacent
+  next chapter).
+- **Result payloads on resume; the resume ACTION mechanics** — the
+  actual git commit/merge runs are LC3a's.
+- **Child-event resume sources** (L4); **timeouts / escalation /
+  external-or-fuzzy correlation** (L9); **a durable Ask channel**
+  (L8).
+- **Warn-sensitive / dynamic recommendation** — the recommendation
+  is the firing edge's static `recommends`, recorded with its
+  source.
+- **Deferred rework; the agent-initiated ask-human/help reply**
+  (L5).
+- **Carried item (4) and the sixth named candidate** (opening
+  disposition 4 — both explicitly not taken, with their carriers
+  named).
+
+### 14.2 Coverage and intake impact
+
+Unit ownership: **18 ids** (all `l3-pseudocode`) — new-name handler
+and rule units (`SUBMIT_DECISION`, `RESUME_WAIT`,
+`apply_target_entry_effects`, `park_for_human_decision`,
+`park_for_wait`, `admit_input`, `validate_decision_gates`,
+`post_commit_output`), declaration-class units (`choice_point`,
+`directive`, `decision_keys`, `required_fields`,
+`human_decision_request`, `incoming_recommendation`), and reprints
+(`CREATE_INSTANCE`, `RECEIVE`, `HANDLE`, `COMPLETE`) — per-unit
+dispositions are the owning packets' authoring-time discovery, the
+authority as ever. Rejections: **ZERO new names** — the 54-name
+registry is byte-untouched (every decision/wait name shipped with it
+on day one); the chapter's contribution is the BEHAVIORAL scoped
+extension over ~11 of them (`not_awaiting_decision`,
+`decision_request_mismatch`, `operator_not_authorized`,
+`unknown_decision`, `missing_required_field`, `override_required`,
+`override_not_applicable`, `not_waiting`, `not_bare_wait`,
+`resume_event_mismatch`, `no_resume_transition` — plus
+`Stale`/`Duplicate` on the two new operator paths and the F-W4-2
+`missing_version` canonicalization). Invariants: **8**, dispositions
+fixed by the ch-5 map (5 `test` / 1 `type/schema` / 1 `review` / 1
+**`checker`** — `l3/waiting-is-honest`, landing on the EXISTING S5
+wait⇔WAITING iff checker in `storeCheckers`; whether it extends or
+is already satisfied by ch12's typed-wait machinery is the owning
+packet's disposition call, stated not assumed). Chapter traces:
+**1 golden trace** (`l3-pseudocode`: converge → park + Ask; approve
+→ `commit_pending`; COMMIT → done; the alternate override rework
+round). Domain registry: the **5 `l3/*` rows** flip realized by
+their owning packets (a named duty — the registry test pins key
+sets, not dispositions). No IC/PI intake rows flip: map-extension
+surface.
+
+### 14.3 The draft phase
+
+Before ANY packet (README §4):
+`contracts/ch14-human-decision-contract.md` (surface:
+`human-decision`), authored on the ADR-019 declared-schema substrate
+(the ch13v2 precedent). Indicative C-row set — the draft decides,
+this list only scopes it: the **ChoicePoint keyed-routing-map schema
+at the shared grain** (key → `{ target, payload? }`; opening
+disposition 1 — `emits` deliberately absent) with `decisions` as its
+first instantiation; the two step types' YAML keysets, camelCase
+spellings, and attachment points; the wait declaration (`kind`,
+`resume_events`, `on_resume`) and its keyset rules; the `operator`
+role binding row; the DECISION_REQUEST / DECISION_MADE row shapes +
+the override recording rule (override present ONLY when chosen ≠
+recommendation); the HumanDecisionRequest TS shape (the
+self-contained Ask); `admit_input`'s rung order + the F-W4-2
+`missing_version` row; the admission finding lanes for
+`validate_decision_gates` (issue codes, path form,
+accumulate-vs-short-circuit against ch8-C21/C36); the empty/absent
+matrix (a `human_gate` with no/empty `decisions`; an unknown
+decision target; an undeclared payload field; a wait with empty
+`resume_events`; an `on_resume` key outside `resume_events`; a
+decision arriving on a bare wait and a resume arriving on a decision
+wait); the **integer-key ban rows** (the bundle: ban + ch8-C10
+reopen + re-lock + the ch13v2-C10 narrowing — the reopen act rides
+this draft's ratification; aligned at the ch14 draft ratification,
+2026-08-15: the act's reopen SET also carries ch8-C9 and ch11-C1 —
+the step-class partition's falsified keyset universals — with
+ch14-C26 as the normative carrier); and the shipped template's PRESENCE rule
+(the gate id, the wait id, and that the wiring exists — its prose is
+packet-time authoring, not a contract row). Ratification is
+permanently human; packets anchor as
+`contract:ch14-human-decision#Cn`.
+
+### 14.4 Packets and flow mode
+
+Draft reference (§1.3 convention):
+`contracts/ch14-human-decision-contract.md` — NOT YET RATIFIED at
+this chapter ratification; the draft round runs FIRST, before any
+packet, so the prediction bases below are visibly CONDITIONAL per
+the §1.3 convention.
+
+| Packet | Content | Mode |
+|---|---|---|
+| ch14-P1 | the definition side: the format's decision/wait keys + the `operator` role, `validate_decision_gates` under `admit_definition` with its issue lanes, the integer-key ban bundle's code half (the re-lock act its build triggers), the registry flips it owns | flag-free approve → autonomous build (measurement; the §5.5 fallbacks stand); predicted: projection (basis: the chapter draft — pending ratification). The inherited flag-free-⇒-autonomous letter REACHES this packet and its §5.5 condition then fails at authoring: the packet carries `approve-ratified` routes (the two amendment placements, the re-lock's doubled red window, the build-choice names, the two registry flips), plus two new-decision rows (the resolved code-grain STOP and the type-relaxation scope call), so the MODE resolves to **human approve** (STOP `4:flagged-approve`) — recorded in place at ch14-p1 pre-approval, 2026-08-15, on the ch13-P0 / ch13-p1a precedent. **BUILD-CLOSE TRACKED ITEM** (aligned at ch14-p1 pre-approval, 2026-08-16, the ratifier's addition at the flag-2 approve): the load guard's REVERSE direction — a declared inventory entry whose READER disappears — is not closed by the inventory and is not claimed to be; it is discharged at THIS packet's build close by an EXECUTED mutation probe (remove the reader, keep the entry) with its receipt, under the standing probe protocol. The receipt is collected from this row, never from the packet's prose |
+| ch14-P2 | the kernel core: `apply_target_entry_effects` factored out + `post_commit_output`, `park_for_human_decision` / `park_for_wait`, `SUBMIT_DECISION` + `RESUME_WAIT` over `admit_input` (the F-W4-2 delta), the DECISION_REQUEST/DECISION_MADE transcript pair, the override rule, the HumanDecisionRequest value, the `l3-pseudocode` golden trace | flag-free approve → autonomous build (measurement); predicted: projection (basis: the chapter draft — pending ratification) |
+| ch14-P3 | the activation: the two operator CLI verbs + the floor's pending-Ask read, the shipped template wiring (`operator` role + `human_approval` + `commit_pending`), the golden-trace re-pins the template change reaches, the journey smoke through the shipped entrypoint | flag-free approve → autonomous build (measurement); predicted: projection (basis: the chapter draft — pending ratification) |
+
+Order: draft ratification → P1 → P2 → P3 (definition → kernel →
+activation: the kernel reads admitted declarations, the activation
+wires what the kernel realizes — the ch13 producer-precedes-consumer
+reading; the §8.2 no-speculative-keys stance binds at CHAPTER grain,
+so P1's keys being consumed at P2/P3 is inside the stance, not an
+exception to it). One packet = packet file + code + tests in ONE
+commit, with TWO named exception classes. THE FIRST: the schema re-lock a
+declaration edit owes each contract bound to it lands in a FOLLOW-UP
+commit, because its block records the build commit's own sha (the
+form authority's §4 shape), together with the form-authority prose
+that act entails. That follow-up is a human act inside the order, not
+a packet boundary; its choreography is recorded in the
+owning packet's own rows and rides its approve rather than being
+settled here (aligned at ch14-p1 pre-approval, 2026-08-15; the
+ch13-p1a precedent). In-chapter splits stay the loop's per §5.5.
+
+**THE SECOND named exception class — the INSTRUMENT-LANDING commit
+(aligned at ch14-p2a pre-approval, 2026-08-17):** where a packet's
+acceptance proof requires a baseline RECOMPUTABLE at a pre-change ref,
+the measuring instrument must EXIST at that ref — and a single commit
+cannot both introduce an instrument and be the change the instrument
+baselines. The reason is stated here so the exception reads as
+time-forced rather than convenient, and the two exceptions are mirror
+images: the schema re-lock is forced AFTER the build because its block
+records the build commit's own sha; this one is forced BEFORE it
+because a ref cannot carry an instrument landed later. Every
+alternative breaks a ratified rule — a sibling commit is not an
+ancestor, and overlaying the instrument onto an old checkout means the
+cited ref does not carry it and the instrument's provenance is
+unratified.
+THE EXCEPTION IS DEFINED BY CONTENT, not by intent, and the definition
+is machine-checkable: the instrument commit carries BEHAVIOUR-PRESERVING
+TESTKIT ADDITIONS ONLY — the measuring hook and its selftest — and NO
+product code, NO declaration bytes, and NOT the packet file. THE
+CARRIER OF THAT DEFINITION IS A MACHINE BLOCK, `instrument_manifest`,
+and the audit leg that reads it was BUILT for this exception rather
+than assumed: the ratified `--post-build` path could not check the
+instrument commit at all — it refuses any commit that does not change
+the packet file, which the instrument commit by definition does not —
+so the first form of this paragraph named a check that could never run
+(caught by the pre-approval arm, 2026-08-17, and closed in the same
+act). The realized shape binds the two commits together: declaring the
+manifest makes the BUILD commit's audit also audit its FIRST PARENT —
+nonempty change list, no packet file, a subset of the manifest whose
+own paths must all sit under the testkit (so "no product code" is
+refused at DECLARATION time and not merely at audit time), and
+ADDITIONS ONLY (every entry a git addition), and ORDINARY BLOBS ONLY
+(no symlink, no gitlink). THE THREE AXES ARE ONE CLAIM MEASURED THREE
+WAYS, and each was found open in turn at this pre-approval rather than
+reasoned about in advance: without add-only, a commit may modify or
+delete an existing testkit file, which is inside the manifest by path
+while changing what every existing consumer of that file sees; without
+the mode leg, an added symlink or gitlink satisfies both other axes
+while its bytes live where the confinement never looks. One audit, two
+commits, nothing optional to remember; a product path, a non-addition,
+or a non-blob in an instrument commit is an audit failure, not a
+judgement call. Beside it, the receipt for what no path check reaches:
+THE INSTRUMENT COMMIT'S REF MUST CARRY A GREEN `pnpm v3:test` AND A
+GREEN `pnpm v3:typecheck`, both recorded in the owning packet's Build
+record. TWO COMMANDS, because the suite alone is `vitest run` and a
+type-invalid added file passes it while `tsc --noEmit` refuses it —
+requiring only the first would leave the typecheck claim below
+unbacked, which is a false green in the receipt rather than in the
+audit. AND NEITHER COMMAND'S EXIT CODE IS THE EVIDENCE: a file of
+skipped cases exits zero from both, so the instrument selftest's proof
+of execution is the runner's machine-read per-file summary — passed
+> 0 and skipped = 0 — carried in the Build record. Its reach is stated
+exactly, because this is where earlier forms of this paragraph
+overclaimed in BOTH directions. It is not a proof that the added files
+are correct — that is the instrument's own selftest's job, shipped in
+the same commit. And it is not blind to them either: an added test
+file is DISCOVERED BY THE EXISTING GLOB (`src/**/*.test.ts`), and both
+added files are typechecked under `include: ["src"]`, so the suite at
+that ref runs the new selftest as well as every old test. That same
+glob is why the receipt is REQUIRED and not optional — an addition can
+change what an existing run does precisely because existing
+configuration picks it up. What remains after all of it is a human
+read of the added files, named as a residual rather than a gate. The
+build commit that follows is
+the ordinary one-commit shape, packet file included. Like the first
+exception, this is an act inside the order rather than a packet
+boundary, and its per-packet choreography is recorded in the owning
+packet's own rows.
+
+**The instrument-landing exception, MEASURED AGAINST ITS OWN CONTENTS
+(aligned at ch14-p2a build, 2026-08-18):** the exception above is kept,
+and one thing it was built to carry is now known NOT to fit inside it.
+The ch14-p2a gate specified a leg that RECOMPUTES a baseline digest at
+the pre-change ref, so that a cited ref would have to reproduce its own
+number rather than merely be an ancestor. That leg is DROPPED, and the
+reason belongs here rather than only in the packet: recomputing at the
+pre-change ref requires the measurement to be TAKEN there, and taking it
+requires wiring inside an EXISTING file — while the instrument commit
+that puts the measuring hook at that ref is ADD-ONLY by the very
+confinement that makes this exception auditable. THE HOOK IS ADDITIVE;
+ITS CALL SITE IS NOT. So the exception cannot carry an instrument whose
+measurement must modify something that already exists, and that is a
+PROPERTY OF THE EXCEPTION rather than a defect of one packet's gate.
+WHAT IS NO LONGER PROVEN IS NAMED, not inherited silently: a post-hoc
+FABRICATED BASELINE — a receipt asserting a digest never computed at the
+ref it cites. What stands in its place is less, and is written as less:
+the gate's TEXT half remains the primary re-pin guard (the defect class
+being a changed expectation, which bytes catch and digests do not), the
+instrument commit's ancestry remains a cheap precondition it always was,
+and the receipt's claim is scoped to the equality it actually evidences.
+Two alternatives were declined with their reasons recorded — relaxing
+add-only would reopen a confinement whose carve-out is semantically
+uncheckable, and building substitute proof machinery at the ROOT of the
+evidence chain, at the last step of a build, runs against this chapter's
+measured new-mechanism error rate.
+
+**The ch14-P2 split, EXECUTED (aligned at ch14-p2a pre-approval,
+2026-08-16):** the in-chapter split pre-authorization — §5.5's, kept
+by the ORDER paragraph above the two exception classes — was
+taken — the combined `ch14-P2` scope trips six risk-gate hard stops
+and the implementation-closure proof fails. WHICH stops, the per-part
+re-evaluation, the closure proof and the coverage-union partition are
+materialized ONCE, in `packets/ch14-p2a-arrival-spine.md`'s
+`## Sizing/risk`, and are deliberately not restated here — not even in
+summary — so the two cannot drift. Shape: `foundation → delivery`,
+depth 1, coverage union preserved and declared.
+
+**The prose line above is HISTORY from this point:** its `ch14-P2` and
+`ch14-P3` rows never acquire packet files, and its `Order:` sentence is superseded by
+the Order line below. **This is ch14's LIVE Packets-and-flow-mode
+table**, and the mechanical next-packet derivation reads it.
+
+| Packet | Content | Mode |
+|---|---|---|
+| ch14-p2a | the arrival half: `apply_target_entry_effects` factored out of HANDLE with its golden-trace parity obligation and the machine gate that distinguishes a compiler-forced narrow from a re-pin, `park_for_human_decision` / `park_for_wait`, `post_commit_output` and the `HumanDecisionRequest` value, the DECISION_REQUEST transcript class with the chapter's one fenced schema bump, the debug bundle's third row class, the wait record's opened kind seam, the binding-coverage role-less skip with the activation guard it makes necessary, the `Step` type relaxation ch14-P1 deferred, and the registry flips it owns | inherited from the `ch14-P2` row (flag-free approve → autonomous build, measurement; the §5.5 fallbacks stand); predicted: projection (basis: the ratified `ch14-human-decision` contract). The inherited letter REACHES this packet and its §5.5 condition then fails at authoring: the packet carries six new-decision rows and six `approve-ratified` routes — each enumerated ONCE, in the packet's own header and flags — so the MODE resolves to **human approve** (STOP `4:flagged-approve`), recorded in place at ch14-p2a pre-approval, 2026-08-16, on the ch14-P1 / ch13-p1a precedent. ONE of those routes is the RATIFIER's own binding condition at that approve, recorded here because it originated outside the packet: the compiler-forced-vs-re-pin distinction must be machine-checkable in both halves rather than narrative; its realization is the packet's K17 |
+| ch14-p2b | the delivery half — its content is enumerated ONCE, in `packets/ch14-p2a-arrival-spine.md`'s out-of-scope row, and deliberately not repeated here, so the two cannot drift | inherited from the `ch14-P2` row; predicted: projection. The inherited letter REACHES this packet and its §5.5 condition then fails at authoring: the packet carries seven new-decision rows and nine pre-approval flags, seven of them `approve-ratified` and two `fold-now` — each enumerated ONCE, in the packet's own header and flags — so the MODE resolves to **human approve** (STOP `4:flagged-approve`), recorded in place at ch14-p2b pre-approval, 2026-08-27, on the ch14-p2a / ch14-P1 precedent. The seven are admitted against the test the ch14-p2a approve RATIFIED — a shared forcing origin plus a per-row risk statement, never a count: all seven follow from ONE fact, that the two operator intents are a THIRD ENTRY CLASS, sibling to neither the actor envelope nor the lifecycle intent — from which follow the op-carrying row that is neither a transition nor a lifecycle fact, a guard that must consult a record an earlier commit wrote, an admission that needs rungs no existing ladder parameterizes, the version rung no existing lifecycle intent carries, and a driver no existing harness step can supply. TWO of the seven OPEN A SHARED PRODUCTION SURFACE the actor path also rides (the admission ladder, the diagnostic wrapper), and that pair is the substance of two of the flags. They RAISED NO AXIS, stated here because the obvious reading of the equal Σ is false and this row is what a later derivation reads: two of the three axis inputs FELL against ch14-p2a and the third held EXACTLY EQUAL (rows 20 → 19, boundary 61 → 48 frozen-to-frozen, derived+new-decision 13 → 13 with the mix inverted), and Σ=7 is EQUAL because the two that fell fell WITHIN their bands rather than across a threshold. The shared-surface reach is what keeps the boundary axis over its edge, never what pushed the index up; the packet's difficulty-index paragraph carries the arithmetic. A FURTHER cut would be depth 2 and therefore NOT the loop's; the packet's `## Sizing/risk` records the eleven-stop walk (seven trip), the six consume families, and the closure proof WITH its falsifier (the proof fails if the replay closures are deferred, because the golden trace runs the checker kit) |
+| ch14-p3a | the operator surface: the floor's pending-Ask read with the definition-store dependency C21 names, kept at C21's two values with no unavailability member elected anywhere, the two operator CLI verbs with their one-read resolution, `submit-decision`'s `--by` default and per-flag absence class, and an activation journey over a STAGED gate template | inherited from the `ch14-P3` row (flag-free approve → autonomous build, measurement; the §5.5 fallbacks stand); predicted: projection (basis: the ratified `ch14-human-decision` contract). The inherited letter REACHES this packet and its §5.5 condition then fails at authoring: the packet carries TWO new-decision rows and FOUR `approve-ratified` routes — each enumerated ONCE, in the packet's own header and flags — so the MODE resolves to **human approve** (STOP `4:flagged-approve`), recorded in place at ch14-p3a pre-approval, 2026-08-28, on the ch14-p2b / ch14-p2a / ch14-P1 precedent. The two are a MEASURING-INSTRUMENT decision (a checker's erasure list) and a MODULE HOME. The packet walks the Case-B signal on both limbs: the mass limb does not fire at two rows, and the SEMANTIC limb DOES — the module home is separation — closed not by a classification but by the ratifier's explicit resolution of it at a STOP, twice, the second time after the pre-build arm refused the first home. The chapter's third undecided surface, the disposition of a non-yielded pinned template, was ratified OUT of the packet at this packet's own contract reopen (C27, 2026-08-28) |
+| ch14-p3b | the activation half — its content is enumerated ONCE, in `packets/ch14-p3a-operator-surface.md`'s out-of-scope row (X1), and deliberately not repeated here, so the two cannot drift | inherited from the `ch14-P3` row; predicted: projection. The inherited letter REACHES this packet and its §5.5 condition then fails at authoring: the packet carries FIVE new-decision rows and EIGHT pre-approval flags, seven of them `approve-ratified` and one `boundary-review` — each enumerated ONCE, in the packet's own header and flags — so the MODE resolves to **human approve** (STOP `4:flagged-approve`), recorded in place at ch14-p3b pre-approval, 2026-08-29, on the ch14-p3a / ch14-p2b / ch14-p2a / ch14-P1 precedent. The five are a MEASURING-INSTRUMENT decision, two VERIFICATION-CORPUS calls — a re-pin disposition and a membership widening past C24's word `suites`, the latter raised by the pre-ratification arm against an internal close that had cleared it — and two DECLARATION-side elections, a product-facing sentence and the two maps' key order — and the packet walks the Case-B signal on both limbs with NEITHER firing: the mass limb does not fire at five rows (p2a carried six, p2b seven), and the SEMANTIC limb does not either, because none of the five touches authority, separation or availability-class semantics; the instrument row's clearance is argued directly rather than by the p3a-F2 precedent, which does not reach it. The instrument decision is forced rather than reached for: the shipped template's retarget reaches exactly one file of ch14-p2a's K17 gate's four-entry live corpus and reds BOTH its halves correctly, so the gate learns a DECLARED EDIT CLASS whose receipt names `contract:ch14-human-decision#C24` as the delta it is declared against — and which cannot survive its own commit, because a declaration that did would satisfy the inverted checks forever and green a later deleted assertion. Its `## Sizing/risk` records this part's own post-split re-evaluation: ONE enumerated surface (the testkit contract), hard stop 11 binding once and answered by an explicitly narrowed reuse, five consume families reached by a declaration whose authority does not move, and the six-clause closure proof holding WITH its two falsifiers (the proof fails if the boundary acquires a kernel, floor, ingress, store or definition-schema source file, or a CLI source file other than the one named exception; and it fails a second way if the declared edit class grows beyond its one file and one delta, or if its single-use check (g) is dropped) |
+
+Order: ch14-p2a → ch14-p2b → ch14-p3a → ch14-p3b (the arrival precedes
+the intents that route through it, the operator's tooling precedes the
+shipped workflow that is driven through it, and the activation wires
+what the kernel realizes — the same producer-precedes-consumer reading
+the P1 → P2 → P3 order already carried).
+
+**The ch14-P3 split, EXECUTED (aligned at ch14-p3a pre-approval,
+2026-08-28):** the in-chapter split pre-authorization — §5.5's, kept by
+the ORDER paragraph above the two exception classes — was taken a second
+time in this chapter. The combined `ch14-P3` scope trips the risk gate
+and the implementation-closure proof fails. WHICH stops, the per-part
+re-evaluation, the closure proof, the two declined alternative cuts and
+the coverage-union partition are materialized ONCE, in
+`packets/ch14-p3a-operator-surface.md`'s `## Sizing/risk`, and are
+deliberately not restated here — not even in summary — so the two cannot
+drift. Shape: `delivery → activation`, depth 1, coverage union preserved
+and declared.
+
+### 14.5 Deliverables and DoD
+
+Shipped: this section; the ratified-then-realized
+`ch14-human-decision` contract-draft; the three-entry spine + the
+shared target-entry rule; the `human_gate` and bare-wait step types
+end to end (park → decide/resume → route); `admit_input`;
+`validate_decision_gates` + its issue lanes; the format's
+decision/wait surface; the integer-key ban bundle; the two operator
+verbs + the floor's Ask read; the shipped template wiring + the
+journey smoke.
+
+DoD: the packets' contract tests green with claim-derived negatives
+EXECUTED; the `l3` golden trace green; the drift suite green (the
+unit-map lock extends with the 18 ids; the 54-name registry
+byte-untouched asserted before AND after; the 5 `l3/*`
+domain-registry rows flipped realized by their owning packets);
+invariant dispositions realized per the ch-5 map INCLUDING the
+`waiting-is-honest` checker disposition resolved
+(extend-or-satisfied, stated in the owning packet); the F-W4-2 delta
+realized and tested on BOTH operator paths; coverage validation
+green; all v3 bridges + the FULL `pnpm ci:local` gate green; the
+draft flipped `realized`-in-place with its `realized_map` and
+`pnpm v3:realized-map` GREEN inside the close act; the ch-14 map row
+flipped; `pnpm v3:deferred --closed ch14` clean; the §1.3 header
+"Chapters present" range updated (done at this ratification, the
+ch11-minted duty); the boundary review runs per README §6/§7 with
+the seventh candidate's adjacency binding on its reading path.

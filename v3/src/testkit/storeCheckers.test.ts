@@ -61,7 +61,7 @@ function detail(
     instanceId: "i1",
     templateRef: template.ref,
     task: "fixture task",
-    binding: { implementer: "codex", reviewer: "claude" },
+    binding: { implementer: "codex", reviewer: "claude", operator: "human" },
     currentStep: "done",
     round: 1,
     kernelStatus: "TERMINAL",
@@ -80,11 +80,27 @@ function detail(
 // The STARTED activation fact (seq 1) heads every green history so the
 // round reconstructs to 1 (the C11 activation basis); the transitions
 // follow at seq 2+.
-const greenRows = [startedFact("s0"), row(2, "a1", "PASS"), row(3, "b2", "CONVERGED")];
+//
+// ch14-p3b: the shipped CONVERGED edge no longer sinks at `done` — it
+// PARKS at `human_approval`, committing the transition and the OP-LESS
+// DECISION_REQUEST together. The green history is RESTATED through the
+// new route rather than truncated: approve routes to `commit_pending`
+// and a COMMIT resume reaches the terminal. FIVE commits, SIX rows —
+// which is why the fixture's version is stated explicitly here rather
+// than left to `detail()`'s row-count default.
+const greenRows = [
+  startedFact("s0"),
+  row(2, "a1", "PASS"),
+  row(3, "b2", "CONVERGED"),
+  parkRow(4, "R-1"),
+  decisionRow(5, "d1", "approve"),
+  resumeRow(6, "r1", "COMMIT"),
+];
+const GREEN_VERSION = 6;
 
 describe("post-condition checker kit (packet ch5-P2)", () => {
   it("green fixture: every checker passes and the aggregator is empty", () => {
-    const green = detail(greenRows);
+    const green = detail(greenRows, { version: GREEN_VERSION });
     expect(checkSeqContinuity(green)).toEqual([]);
     expect(checkVersionArithmetic(green)).toEqual([]);
     expect(checkOpUniqueness(green)).toEqual([]);
@@ -156,7 +172,7 @@ describe("post-condition checker kit (packet ch5-P2)", () => {
 
 describe("checkTerminalSink — the axis extension (packet ch12-p1a, T2)", () => {
   it("(a) TERMINAL without a disposition is a violation (single-write rule)", () => {
-    const bare = detail(greenRows, { terminalDisposition: null });
+    const bare = detail(greenRows, { version: GREEN_VERSION, terminalDisposition: null });
     const violations = checkTerminalSink(bare, template);
     expect(violations.some((v) => v.includes("without a terminal_disposition"))).toBe(true);
   });
@@ -182,6 +198,7 @@ describe("checkTerminalSink — the axis extension (packet ch12-p1a, T2)", () =>
 
   it("(b) a terminal replayed position whose disposition is not 'done' is a violation (P1a inventory)", () => {
     const wrongToken = detail(greenRows, {
+      version: GREEN_VERSION,
       kernelStatus: "TERMINAL",
       terminalDisposition: "cancelled",
     });
@@ -191,6 +208,7 @@ describe("checkTerminalSink — the axis extension (packet ch12-p1a, T2)", () =>
 
   it("(d) a non-null wait at TERMINAL is a violation (S5's iff at the terminal cell)", () => {
     const waiting = detail(greenRows, {
+      version: GREEN_VERSION,
       wait: { kind: "kickoff_pending", requestedBy: "activation", resumeEvents: ["KICKOFF"] },
     });
     const violations = checkTerminalSink(waiting, template);
@@ -198,7 +216,7 @@ describe("checkTerminalSink — the axis extension (packet ch12-p1a, T2)", () =>
   });
 
   it("the aggregator carries the extension: a TERMINAL-without-disposition detail fails through runAllCheckers", () => {
-    const bare = detail(greenRows, { terminalDisposition: null });
+    const bare = detail(greenRows, { version: GREEN_VERSION, terminalDisposition: null });
     expect(runAllCheckers(bare, template).some((v) => v.includes("terminal_disposition"))).toBe(
       true,
     );
@@ -249,8 +267,17 @@ const multiLoopRows = [
   row(4, "c3", "PASS"), // implement → review        round 2
   row(5, "d4", "PASS"), // review → implement (+1)   round 3
   row(6, "e5", "PASS"), // implement → review        round 3
-  row(7, "f6", "CONVERGED"), // review → done        round 3
+  // ch14-p3b: CONVERGED reaches the GATE, not the terminal — so the
+  // history is RESTATED through the human route it now takes. Neither
+  // operator edge is named by `advanceOnArrivalAt`, so the round stays 3
+  // and this lane keeps its subject.
+  row(7, "f6", "CONVERGED"), // review → human_approval  round 3
+  parkRow(8, "R-1"), //        the park's OP-LESS row     round 3
+  decisionRow(9, "d1", "approve"), // gate → commit_pending  round 3
+  resumeRow(10, "r1", "COMMIT"), //   commit_pending → done  round 3
 ];
+/** NINE commits over TEN rows — the park's second row is op-less. */
+const MULTI_LOOP_VERSION = 10;
 
 describe("checkRoundReconstruction — replay = stored (dimension 5, packet ch11-P2c)", () => {
   it("a multi-loop-back committed history over a DECLARED-ADVANCING template reconstructs the stored round (green)", () => {
@@ -313,7 +340,7 @@ describe("checkRoundReconstruction — replay = stored (dimension 5, packet ch11
   });
 
   it("the aggregate carries the checker: a tampered round fails through runAllCheckers", () => {
-    const tampered = detail(multiLoopRows, { round: 2 });
+    const tampered = detail(multiLoopRows, { round: 2, version: MULTI_LOOP_VERSION });
     const violations = runAllCheckers(tampered, admittedDeclared);
     expect(violations).toHaveLength(1);
     expect(violations[0]).toContain("round reconstruction");
@@ -538,14 +565,13 @@ describe("checkTerminalSink — the wait iff both directions + fact-after-termin
   }
 
   it("a FACT row committed AFTER the terminal TRANSITION row → sink violation (complements the after-CANCELLED lane)", () => {
-    // greenRows reach `done` at seq 3; a STARTED fact fabricated at seq 4
-    // lands after the terminal transition row — the sink walk reds on the
-    // OTHER row-bearing writer (a fact after `done`, not after CANCELLED).
+    // ch14-p3b: the green history reaches `done` on the RESUME row at
+    // seq 6, so the fabricated fact lands at seq 7 — after the terminal
+    // row, which is the lane's subject. The sink walk reds on the OTHER
+    // row-bearing writer (a fact after `done`, not after CANCELLED).
     const afterDone = detail([
-      startedFact("s0"),
-      row(2, "a1", "PASS"),
-      row(3, "b2", "CONVERGED"),
-      lateFact("STARTED", 4, "late"),
+      ...greenRows,
+      lateFact("STARTED", 7, "late"),
     ]);
     expect(checkTerminalSink(afterDone, template).join("\n")).toMatch(
       /committed AFTER the terminal row/,
@@ -585,5 +611,421 @@ describe("checkTerminalSink — the wait iff both directions + fact-after-termin
     expect(
       checkTerminalSink(terminalWithWait, template).some((v) => v.includes("non-null wait")),
     ).toBe(true);
+  });
+});
+
+// ── ch14-p2a aftermath: the two obligations the packet declared and the
+// build left open. Both are of the class the packet's own `learned` line
+// names — a rule asserted in prose with nothing measuring it. ───────────
+
+/**
+ * A gate- and wait-bearing template. Since ch14-p3b the shipped
+ * `local-pair-v0` carries a gate and a wait of its own, so the old
+ * ground for a LOCAL fixture — that no shipped wiring existed yet — has
+ * expired. The fixture stays local for a DIFFERENT and standing reason:
+ * the correspondence needs edges the shipped template does not declare
+ * (a HOLD route out of the start step, a decision reaching a terminal),
+ * and driving it off the shipped value would tie this lane's inventory
+ * to a product declaration it does not own.
+ */
+const CORRESPONDENCE_TEMPLATE: WorkflowTemplate = {
+  ref: { id: "t-corr", version: 1 },
+  start: "implement",
+  steps: {
+    implement: {
+      role: "implementer",
+      instruction: "build it",
+      transitions: { PASS: "gate", HOLD: "hold" },
+    },
+    gate: {
+      type: "human_gate",
+      role: "operator",
+      instruction: "approve it?",
+      decisions: { approve: { target: "implement" }, reject: { target: "done" } },
+    },
+    hold: {
+      type: "wait",
+      wait: { kind: "ci_pending", resumeEvents: ["CI_DONE"] },
+      onResume: { CI_DONE: "implement" },
+    },
+  },
+  terminal: ["done"],
+  roles: { implementer: { defaultActor: "codex" }, operator: { defaultActor: "human-1" } },
+};
+
+/** The same template with the WAIT step at `start` — the only shape that
+ * puts a kernel-owned activation hold at a `wait` position, which is the
+ * exemption conjunct (iii) is scoped against. */
+const WAIT_START_TEMPLATE: WorkflowTemplate = { ...CORRESPONDENCE_TEMPLATE, start: "hold" };
+
+const ACTIVATION_HOLD = {
+  kind: "kickoff_pending",
+  requestedBy: "activation",
+  resumeEvents: ["KICKOFF"],
+} as const;
+
+/** Parked, mid-run: the STARTED fact plus the rows that replay to `at`. */
+function parked(
+  rows: readonly TranscriptEntry[],
+  wait: WorkflowInstance["wait"],
+  at: string | null,
+): InstanceDetail {
+  return detail(rows, {
+    currentStep: at,
+    kernelStatus: "WAITING",
+    terminalDisposition: null,
+    wait,
+  });
+}
+
+const toGate = [startedFact("s0"), row(2, "a1", "PASS")];
+const toHold = [startedFact("s0"), row(2, "a1", "HOLD")];
+
+const DECISION_WAIT = {
+  kind: "human_decision",
+  requestedBy: "gate",
+  resumeEvents: ["approve", "reject"],
+  requestRef: "req-1000-1",
+} as const;
+
+describe("checkTerminalSink — l3/waiting-is-honest, the kind↔position half (ch14-C14)", () => {
+  // The S5 iff above this says a WAITING run HAS a wait. It says nothing
+  // about that wait's KIND agreeing with WHERE the run is parked, which
+  // is the chapter's own half and the reason the disposition is `checker`
+  // rather than `satisfied`.
+
+  it("green: a decision wait at a parked humanGate with a live request_ref is clean", () => {
+    expect(checkTerminalSink(parked(toGate, DECISION_WAIT, "gate"), CORRESPONDENCE_TEMPLATE)).toEqual(
+      [],
+    );
+  });
+
+  it("green: an authored kind at the wait step DECLARING it is clean", () => {
+    const wait = { kind: "ci_pending", requestedBy: "hold", resumeEvents: ["CI_DONE"] };
+    expect(checkTerminalSink(parked(toHold, wait, "hold"), CORRESPONDENCE_TEMPLATE)).toEqual([]);
+  });
+
+  it("(i) a human_decision record at a NON-gate position is a violation", () => {
+    // Replays to `implement` (an agent step) — the kernel's decision kind
+    // exists only at a parked gate.
+    const wrongPosition = parked([startedFact("s0")], DECISION_WAIT, "implement");
+    expect(
+      checkTerminalSink(wrongPosition, CORRESPONDENCE_TEMPLATE).some((v) =>
+        v.includes("human_decision"),
+      ),
+    ).toBe(true);
+  });
+
+  it("(ii) a human_decision record at a gate with NO live request_ref is a violation", () => {
+    const noRef = parked(
+      toGate,
+      { kind: "human_decision", requestedBy: "gate", resumeEvents: ["approve", "reject"] },
+      "gate",
+    );
+    expect(
+      checkTerminalSink(noRef, CORRESPONDENCE_TEMPLATE).some((v) => v.includes("request_ref")),
+    ).toBe(true);
+  });
+
+  it("(iii) an authored kind at a wait step declaring a DIFFERENT one is a violation", () => {
+    const drifted = parked(
+      toHold,
+      { kind: "deploy_pending", requestedBy: "hold", resumeEvents: ["CI_DONE"] },
+      "hold",
+    );
+    expect(
+      checkTerminalSink(drifted, CORRESPONDENCE_TEMPLATE).some((v) =>
+        v.includes("declares wait kind"),
+      ),
+    ).toBe(true);
+  });
+
+  it("(iii) the activation hold at a wait-class START step is NOT a violation (the scoping's own negative)", () => {
+    // The kernel-owned hold names no step (`requestedBy: activation`), so
+    // it is outside the correspondence — and a build that dropped that
+    // scoping would red exactly here while every other lane stayed green.
+    const hold = parked([], ACTIVATION_HOLD, null);
+    expect(checkTerminalSink(hold, WAIT_START_TEMPLATE)).toEqual([]);
+  });
+
+  it("the aggregator carries the correspondence", () => {
+    const wrongPosition = parked([startedFact("s0")], DECISION_WAIT, "implement");
+    expect(
+      runAllCheckers(wrongPosition, CORRESPONDENCE_TEMPLATE).some((v) =>
+        v.includes("human_decision"),
+      ),
+    ).toBe(true);
+  });
+});
+
+// ── K12's checker-contract boundary (family 16): the op-less class is
+// SKIPPED, and the skip must not become a blanket. ─────────────────────
+
+function decisionRequestRow(seq: number, requestRef: string): TranscriptEntry {
+  return {
+    entryKind: "DECISION_REQUEST",
+    seq,
+    requestRef,
+    recipient: "operator",
+    decisions: ["approve", "reject"],
+    committedAt: 1_000 + seq,
+  };
+}
+
+describe("checkOpUniqueness — the op-less class boundary (ch14-p2a, K12)", () => {
+  it("TWO op-less rows on one instance report NO violation", () => {
+    // The false-duplicate defect K12 names: recording `undefined` as a
+    // seen key makes the SECOND op-less row look like a repeat.
+    const twoOpLess = detail([
+      startedFact("s0"),
+      decisionRequestRow(2, "req-1000-1"),
+      decisionRequestRow(3, "req-1000-2"),
+    ]);
+    expect(checkOpUniqueness(twoOpLess)).toEqual([]);
+  });
+
+  it("the skip is NOT a blanket: duplicate op-carrying rows beside op-less rows still report", () => {
+    const mixed = detail([
+      decisionRequestRow(1, "req-1000-1"),
+      row(2, "a1", "PASS"),
+      decisionRequestRow(3, "req-1000-2"),
+      row(4, "a1", "PASS"),
+    ]);
+    const violations = checkOpUniqueness(mixed);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toContain("a1");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// FAMILY 11 — the FOUR blind replay readers, CLOSED
+// (packet ch14-p2b, Q11). THE TWO AXES ARE DRIVEN SEPARATELY, because
+// one obligation cannot cover both: three readers are POSITION-blind,
+// the fourth is ROW-COUNT-blind.
+// ─────────────────────────────────────────────────────────────────────
+
+const gatedTemplate: WorkflowTemplate = {
+  ref: { id: "f11", version: 1 },
+  start: "implement",
+  steps: {
+    implement: {
+      role: "implementer",
+      instruction: "build it",
+      transitions: { PASS: "gate" },
+      recommends: { PASS: "approve" },
+    },
+    gate: {
+      type: "human_gate",
+      role: "operator",
+      instruction: "decide",
+      decisions: { approve: { target: "commit_wait" }, back: { target: "implement" } },
+    },
+    commit_wait: {
+      type: "wait",
+      wait: { kind: "commit_pending", resumeEvents: ["COMMIT"] },
+      onResume: { COMMIT: "done" },
+    },
+  },
+  terminal: ["done"],
+  roles: { implementer: { defaultActor: "codex" }, operator: { defaultActor: "human-1" } },
+  round: { advanceOnArrivalAt: ["implement"] },
+};
+const admittedF11 = admit(gatedTemplate);
+
+function parkRow(seq: number, requestRef: string): TranscriptEntry {
+  return {
+    entryKind: "DECISION_REQUEST",
+    seq,
+    requestRef,
+    recipient: "operator",
+    decisions: ["approve", "back"],
+    committedAt: 1_000 + seq,
+  };
+}
+
+function decisionRow(seq: number, opId: string, decision: string): TranscriptEntry {
+  return {
+    entryKind: "DECISION_MADE",
+    seq,
+    opId,
+    decision,
+    by: "human-1",
+    requestRef: "R-1",
+    committedAt: 1_000 + seq,
+  };
+}
+
+function resumeRow(seq: number, opId: string, event: string): TranscriptEntry {
+  return {
+    entryKind: "WAIT_RESUMED",
+    seq,
+    opId,
+    kind: "commit_pending",
+    event,
+    committedAt: 1_000 + seq,
+  };
+}
+
+/**
+ * A history containing a DECISION-routed AND a RESUME-routed arrival:
+ * start → PASS (park, TWO rows in ONE commit) → approve → COMMIT → done.
+ * FOUR commits, FIVE rows.
+ */
+const threeWayRows: readonly TranscriptEntry[] = [
+  startedFact("s0"),
+  row(2, "a1", "PASS"),
+  parkRow(3, "R-1"),
+  decisionRow(4, "d1", "approve"),
+  resumeRow(5, "r1", "COMMIT"),
+];
+
+function f11Detail(
+  rows: readonly TranscriptEntry[],
+  overrides: Partial<WorkflowInstance> = {},
+): InstanceDetail {
+  return {
+    instance: {
+      instanceId: "i1",
+      templateRef: gatedTemplate.ref,
+      task: "t",
+      binding: { implementer: "codex", operator: "human-1" },
+      currentStep: "done",
+      round: 1,
+      kernelStatus: "TERMINAL",
+      terminalDisposition: "done",
+      activationMode: "immediate",
+      wait: null,
+      runtimeContext: { state: "ready", ref: null },
+      failureReason: null,
+      runOverrides: {},
+      // COMMITS, not rows: the park's second row is the OP-LESS class.
+      version: 5,
+      ...overrides,
+    },
+    transcript: rows,
+  };
+}
+
+describe("family 11 — the THREE POSITION-blind readers, driven POSITIVELY", () => {
+  it("the terminal-sink walk advances on BOTH new row classes", () => {
+    expect(checkTerminalSink(f11Detail(threeWayRows), admittedF11)).toEqual([]);
+  });
+
+  it("the round reconstruction advances on BOTH new row classes", () => {
+    // The decision routes to `commit_wait` (no advance) and the resume to
+    // `done` (no advance), so the round stays 1 — reconstructed through
+    // the SAME per-step map ch14-P1 expanded all three edge classes into.
+    expect(checkRoundReconstruction(f11Detail(threeWayRows), admittedF11)).toEqual([]);
+  });
+
+  it("the round walk counts a DECISION edge that DOES advance", () => {
+    // `back` targets `implement`, which `advanceOnArrivalAt` names — so a
+    // reader keyed only on transition rows reconstructs 1 against a
+    // stored 2 and REDS. The lane proves the edge is really consumed.
+    const rows = [startedFact("s0"), row(2, "a1", "PASS"), parkRow(3, "R-1"), decisionRow(4, "d1", "back")];
+    expect(
+      checkRoundReconstruction(
+        f11Detail(rows, {
+          currentStep: "implement",
+          round: 2,
+          kernelStatus: "ACTIVE",
+          terminalDisposition: null,
+          version: 4,
+        }),
+        admittedF11,
+      ),
+    ).toEqual([]);
+  });
+
+  it("EACH POSITION READER REJECTS A CORRUPT HISTORY — so the fix is not a SKIP", () => {
+    // The non-resolving key is a PROTOTYPE MEMBER NAME rather than an
+    // arbitrary miss (→[own-property-indexes]): a fixture keyed on `zzz`
+    // satisfies the discipline sentence while leaving both replay indexes
+    // unguarded.
+    const hostile = [
+      startedFact("s0"),
+      row(2, "a1", "PASS"),
+      parkRow(3, "R-1"),
+      decisionRow(4, "d1", "constructor"),
+    ];
+    expect(checkTerminalSink(f11Detail(hostile), admittedF11).length).toBeGreaterThan(0);
+    expect(checkRoundReconstruction(f11Detail(hostile), admittedF11).length).toBeGreaterThan(0);
+
+    // …and the same on the RESUME index.
+    const hostileResume = [
+      startedFact("s0"),
+      row(2, "a1", "PASS"),
+      parkRow(3, "R-1"),
+      decisionRow(4, "d1", "approve"),
+      resumeRow(5, "r1", "constructor"),
+    ];
+    expect(checkTerminalSink(f11Detail(hostileResume), admittedF11).length).toBeGreaterThan(0);
+    expect(
+      checkRoundReconstruction(f11Detail(hostileResume), admittedF11).length,
+    ).toBeGreaterThan(0);
+  });
+});
+
+describe("family 11 — THE FOURTH READER's OWN NEGATIVE LANE (the row-count axis)", () => {
+  it("the version arithmetic is a count of COMMITS, not of ROWS", () => {
+    // FIVE rows, FOUR commits (the park wrote two in one), version 5.
+    // The pre-re-base reader computed 1 + 5 = 6 and REDS here.
+    expect(checkVersionArithmetic(f11Detail(threeWayRows))).toEqual([]);
+  });
+
+  it("A DEGENERATE SKIP IS REFUSED: an off-by-one park history REPORTS a violation", () => {
+    // THE ANTI-SKIP INSTRUMENT FOR THIS READER, written in ITS OWN
+    // vocabulary: the three position readers' corrupt-history lanes are
+    // meaningless for a checker that replays no positions. A build can
+    // discharge the re-base by DEGENERATING the check — reporting nothing
+    // whenever the transcript carries an op-less row — and the golden
+    // trace then goes GREEN, satisfying every other lane here while
+    // silently removing version arithmetic from every future trace.
+    //
+    // The transcript carries a PARK (TWO rows, ONE commit) and the
+    // version is deliberately off by one. A degenerate skip returns
+    // empty and REDS this lane; the correct commit-count re-base passes.
+    const offByOne = f11Detail(threeWayRows, { version: 6 });
+    const violations = checkVersionArithmetic(offByOne);
+    expect(violations.length).toBe(1);
+    expect(violations[0]).toContain("version arithmetic");
+  });
+
+  it("the reader still runs on histories with NO op-less row — the re-base is a NO-OP there", () => {
+    // ch14-p3b: the green history now CARRIES an op-less row, so this
+    // lane states its own no-op-less history rather than borrowing one —
+    // otherwise the claim's subject would have quietly moved.
+    const noOpLess = [startedFact("s0"), row(2, "a1", "PASS")];
+    expect(checkVersionArithmetic(detail(noOpLess))).toEqual([]);
+    expect(checkVersionArithmetic(detail(noOpLess, { version: 99 })).length).toBe(1);
+  });
+});
+
+describe("family 11 — the op-uniqueness checker's SKIP SCOPING", () => {
+  it("BOTH new classes' op ids ARE seen — the skip stays scoped to the OP-LESS class", () => {
+    // The lane that reds if a build widens the skip to "non-transition":
+    // a duplicated op id across a transition and a DECISION_MADE row must
+    // still be caught.
+    const duplicated = [
+      startedFact("s0"),
+      row(2, "a1", "PASS"),
+      parkRow(3, "R-1"),
+      decisionRow(4, "a1", "approve"),
+    ];
+    expect(checkOpUniqueness(f11Detail(duplicated, { version: 4 })).length).toBe(1);
+
+    const duplicatedResume = [
+      startedFact("s0"),
+      row(2, "a1", "PASS"),
+      parkRow(3, "R-1"),
+      decisionRow(4, "d1", "approve"),
+      resumeRow(5, "d1", "COMMIT"),
+    ];
+    expect(checkOpUniqueness(f11Detail(duplicatedResume)).length).toBe(1);
+  });
+
+  it("TWO op-less rows do NOT report a false duplicate — the skip is still needed", () => {
+    const twoParks = [startedFact("s0"), row(2, "a1", "PASS"), parkRow(3, "R-1"), parkRow(4, "R-2")];
+    expect(checkOpUniqueness(f11Detail(twoParks, { version: 3 }))).toEqual([]);
   });
 });
