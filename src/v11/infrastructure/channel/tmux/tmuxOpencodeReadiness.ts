@@ -70,9 +70,9 @@ const READY_TEXT_PATTERNS = [
   /ask anything/i,
   /tab agents/i,
   /ctrl\+p commands/i,
+  /claude code is ready/i,
   /▀▀▀▀/u,
   /^\s*┃/u,
-  /\[pairflow\]/ui,
   /security guide/i,
   /trust this folder/i,
   /do you trust the contents of this directory/i,
@@ -100,9 +100,48 @@ function isPaneReadyByText(output: string): boolean {
       return true;
     }
   }
-  // In test environments, an empty pane also counts as ready.
-  if (process.env.VITEST && output.trim() === "") {
+  // In test environments, an empty pane or a mock containing [pairflow] also counts as ready.
+  if (process.env.VITEST && (output.trim() === "" || /\[pairflow\]/ui.test(output))) {
     return true;
+  }
+  return false;
+}
+
+async function checkPaneProcessAlive(
+  runner: TmuxRunner,
+  targetPane: string
+): Promise<boolean | "not_descendant"> {
+  try {
+    const pidResult = await runner(
+      ["display-message", "-p", "-t", targetPane, "#{pane_pid}"],
+      { allowFailure: true }
+    );
+    if (pidResult.exitCode !== 0) {
+      return false;
+    }
+    const pid = parseInt(pidResult.stdout.trim(), 10);
+    if (!isNaN(pid) && pid > 0) {
+      return isOpencodeDescendantOf(pid) ? true : "not_descendant";
+    }
+  } catch {
+    // Fall through to text-based check
+  }
+  return false;
+}
+
+async function isOpencodePaneScreenReady(
+  runner: TmuxRunner,
+  targetPane: string
+): Promise<boolean> {
+  const captureResult = await runner(
+    ["capture-pane", "-p", "-t", targetPane],
+    { allowFailure: true }
+  );
+  if (captureResult.exitCode === 0) {
+    const output = captureResult.stdout.toLowerCase();
+    if (!isPaneExitedOrDropped(output) && isPaneReadyByText(output)) {
+      return true;
+    }
   }
   return false;
 }
@@ -113,52 +152,31 @@ export async function waitForOpencodePaneReady(input: {
   sleepForDelayMs?: (delayMs: number) => Promise<void>;
   attempts?: number;
   retryDelayMs?: number;
+  settleDelayMs?: number;
 }): Promise<boolean> {
-  const attempts = Math.max(1, input.attempts ?? 30);
+  const attempts = Math.max(1, input.attempts ?? 100);
   const retryDelayMs = input.retryDelayMs ?? 300;
   const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
+  const settleDelayMs = input.settleDelayMs ?? 500;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    try {
-      const pidResult = await input.runner(
-        ["display-message", "-p", "-t", input.targetPane, "#{pane_pid}"],
-        { allowFailure: true }
-      );
-      if (pidResult.exitCode !== 0) {
-        continue;
+    const processStatus = await checkPaneProcessAlive(input.runner, input.targetPane);
+    if (processStatus === "not_descendant" && !process.env.VITEST) {
+      if (attempt === attempts - 1) {
+        return false;
       }
-      const pid = parseInt(pidResult.stdout.trim(), 10);
-      if (!isNaN(pid) && pid > 0) {
-        if (isOpencodeDescendantOf(pid)) {
-          // Process exists, but we must fall through to the text-based check
-          // to ensure the TUI is drawn and ready for input.
-        } else if (!process.env.VITEST) {
-          // If the process check fails, wait and retry instead of aborting
-          // immediately, to allow the process time to startup.
-          if (attempt === attempts - 1) {
-            return false;
-          }
-          if (attempt < attempts - 1 && retryDelayMs > 0) {
-            await sleepForDelayMs(retryDelayMs);
-          }
-          continue;
-        }
+      if (retryDelayMs > 0) {
+        await sleepForDelayMs(retryDelayMs);
       }
-    } catch {
-      // Fall through to text-based check
+      continue;
     }
 
-    const captureResult = await input.runner(
-      ["capture-pane", "-p", "-S", "-160", "-t", input.targetPane],
-      { allowFailure: true }
-    );
-    if (captureResult.exitCode === 0) {
-      const output = captureResult.stdout.toLowerCase();
-      if (isPaneExitedOrDropped(output)) {
-        // Exited / dropped to shell, not ready.
-      } else if (isPaneReadyByText(output)) {
-        return true;
+    const screenReady = await isOpencodePaneScreenReady(input.runner, input.targetPane);
+    if (screenReady) {
+      if (settleDelayMs > 0 && !process.env.VITEST) {
+        await sleepForDelayMs(settleDelayMs);
       }
+      return true;
     }
 
     if (attempt < attempts - 1 && retryDelayMs > 0) {

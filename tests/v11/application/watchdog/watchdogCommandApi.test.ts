@@ -21,6 +21,7 @@ import {
   readWatchdogPaneActivity,
   writeWatchdogPaneActivity
 } from "../../../../src/v11/infrastructure/artifact/watchdog/watchdogPaneActivityStore.js";
+import { WATCHDOG_NUDGE_PROMPT } from "../../../../src/v11/shared/watchdog/watchdogPrompt.js";
 import {
   getWatchdogTracePath
 } from "../../../../src/v11/infrastructure/artifact/watchdog/watchdogTraceStore.js";
@@ -664,6 +665,84 @@ describe("watchdogCommandApi", () => {
     expect(nudgeCalls).toBe(0);
   });
 
+  it("does not send watchdog nudge immediately when execution_context.started_at is recent even if active_since is old", async () => {
+    const repoPath = await createTempRepo();
+    const oldStartedAt = "2026-02-22T11:50:00.000Z";
+    const bubble = await setupWatchdogRunningBubbleFixture({
+      repoPath,
+      bubbleId: "b_watchdog_v11_nudge_exec_grace_01",
+      task: "Watchdog v11 nudge grace on new execution context",
+      startedAt: oldStartedAt
+    });
+
+    const loaded = await readStateSnapshot(bubble.paths.statePath);
+    const recentStartedAt = "2026-02-22T12:04:30.000Z";
+    await writeStateSnapshot(
+      bubble.paths.statePath,
+      {
+        ...loaded.state,
+        state: "RUNNING",
+        active_agent: bubble.config.agents.reviewer,
+        active_role: "reviewer",
+        // active_since is older than 2m grace period:
+        active_since: "2026-02-22T11:50:00.000Z",
+        last_command_at: "2026-02-22T11:50:00.000Z",
+        // but execution_context.started_at is only 30s ago:
+        execution_context: buildRunningExecutionContext({
+          bubbleId: bubble.bubbleId,
+          round: 1,
+          activeRole: "reviewer",
+          startedAt: recentStartedAt,
+          watchdogTimeoutMinutes: bubble.config.watchdog_timeout_minutes
+        })
+      },
+      {
+        expectedFingerprint: loaded.fingerprint,
+        expectedState: "RUNNING"
+      }
+    );
+
+    // Stale watchdog pane activity record from the old execution
+    await writeWatchdogPaneActivity({
+      runtimeDir: bubble.paths.runtimeDir,
+      bubbleId: bubble.bubbleId,
+      record: {
+        bubble_id: bubble.bubbleId,
+        sampled_at: "2026-02-22T11:59:00.000Z",
+        pane_hash: "pane-hash-stable",
+        last_changed_at: "2026-02-22T11:50:00.000Z",
+        session_name: "pf-watchdog-v11",
+        target_pane: "pf-watchdog-v11:0.2",
+        last_sample_status: "sampled",
+        last_seen_esc_interrupt_at: "2026-02-22T11:45:00.000Z",
+        last_nudge_at: "2026-02-22T11:45:00.000Z",
+        last_nudge_execution_id: "old-exec-id"
+      }
+    });
+
+    let nudgeCalls = 0;
+    const result = await runBubbleWatchdog(
+      {
+        bubbleId: bubble.bubbleId,
+        cwd: repoPath,
+        now: new Date("2026-02-22T12:05:00.000Z") // 30s after recentStartedAt
+      },
+      baseDependencies({
+        sampleWatchdogPaneActivity: () =>
+          Promise.resolve(
+            sampledPaneActivity("2026-02-22T12:05:00.000Z", "pane-hash-stable", false)
+          ),
+        sendAndSubmitTmuxPaneMessage: async () => {
+          nudgeCalls += 1;
+        }
+      })
+    );
+
+    expect(result.escalated).toBe(false);
+    expect(result.reason).toBe("not_expired");
+    expect(nudgeCalls).toBe(0);
+  });
+
   it("escalates expired RUNNING watchdog after the quiet window is reached", async () => {
     const repoPath = await createTempRepo();
     const startedAt = "2026-02-22T12:00:00.000Z";
@@ -1145,6 +1224,7 @@ describe("watchdogCommandApi", () => {
 
     let restartCalled = false;
     let nudgeCalls = 0;
+    let sentNudgeMessage: string | undefined;
 
     const result = await runBubbleWatchdog(
       {
@@ -1157,8 +1237,9 @@ describe("watchdogCommandApi", () => {
           Promise.resolve(
             sampledPaneActivity("2026-02-22T12:05:00.000Z", "pane-hash-stable", false)
           ),
-        sendAndSubmitTmuxPaneMessage: async () => {
+        sendAndSubmitTmuxPaneMessage: async (_runner, _targetPane, message) => {
           nudgeCalls += 1;
+          sentNudgeMessage = message;
         },
         restartBubble: async (input: RestartBubbleInput) => {
           restartCalled = true;
@@ -1175,6 +1256,7 @@ describe("watchdogCommandApi", () => {
     );
 
     expect(nudgeCalls).toBe(1);
+    expect(sentNudgeMessage).toBe(WATCHDOG_NUDGE_PROMPT);
     expect(restartCalled).toBe(true);
     expect(result.reason).toBe("restarted");
 

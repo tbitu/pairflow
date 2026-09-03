@@ -132,11 +132,6 @@ export async function launchFreshTmuxSession(input: {
   // single active interactive session) launch only the initially active
   // implementer pane; reviewer/meta-reviewer panes are respawned lazily by
   // their first delivery.
-  const allRolesSupportConcurrentPanes = [
-    implementerAgent,
-    reviewerAgent,
-    metaReviewerAgent
-  ].every((agent) => getAgentRuntimeProfile(agent).supportsConcurrentPanes);
   const ack = await input.deps.launchSessionAck({
     bubbleId: input.context.resolved.bubbleId,
     workspacePath: input.launchWorkspacePath,
@@ -157,9 +152,8 @@ export async function launchFreshTmuxSession(input: {
     ),
     reviewerSubmitStartupPrompt: shouldSubmitStartupPrompt(reviewerAgent, undefined),
     metaReviewerSubmitStartupPrompt: shouldSubmitStartupPrompt(metaReviewerAgent, undefined),
-    ...(allRolesSupportConcurrentPanes
-      ? {}
-      : { launchReviewerAgent: false, launchMetaReviewerAgent: false }),
+    launchReviewerAgent: getAgentRuntimeProfile(reviewerAgent).supportsConcurrentPanes,
+    launchMetaReviewerAgent: getAgentRuntimeProfile(metaReviewerAgent).supportsConcurrentPanes,
     implementerCommand: buildRoleAgentLaunchCommand({
       ...launchInput,
       roleName: "implementer",

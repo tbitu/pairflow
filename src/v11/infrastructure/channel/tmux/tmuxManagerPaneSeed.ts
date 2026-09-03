@@ -8,9 +8,11 @@ import {
   confirmTmuxPaneMarkerSubmission,
   maybeAcceptOpencodeTrustPrompt,
   sendAndSubmitTmuxPaneMessage,
-  submitTmuxPaneInput
+  submitTmuxPaneInput,
+  waitForTuiReady
 } from "./tmuxInput.js";
 import { waitForReasonixPaneReady } from "./tmuxReasonixReadiness.js";
+import { WATCHDOG_NUDGE_PROMPT } from "../../../shared/watchdog/watchdogPrompt.js";
 import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
 
 /**
@@ -70,6 +72,9 @@ export interface SeedBubbleTmuxPaneMessagesInput {
   reviewerAgentName: AgentName | undefined;
   metaReviewerAgentName: AgentName | undefined;
   metaReviewerKickoffMessage?: string | undefined;
+  launchImplementerAgent?: boolean | undefined;
+  launchReviewerAgent?: boolean | undefined;
+  launchMetaReviewerAgent?: boolean | undefined;
 }
 
 function resolvePairflowPaneMessageMarker(message: string): string | undefined {
@@ -151,8 +156,15 @@ async function sendPaneMessage(
   const isStructuredPairflowEnvelope = marker !== undefined;
   // Give the TUI time to initialize during very early pane bootstrap
   // before submitting the whole prompt as one tmux input.
+  if (
+    agentName === undefined
+    || !isAgentNameRegistered(agentName)
+    || getAgentRuntimeProfile(agentName).readiness !== "reasonix"
+  ) {
+    await waitForTuiReady(runner, targetPane);
+  }
   try {
-    // Match the watchdog's working delivery path: no waitForTuiReady (reasonix
+    // Match the watchdog's working delivery path: no waitForTuiReady for reasonix (reasonix
     // may not report a detectable prompt early, and the 30s wait + 25s settle
     // pushed the kickoff past the watchdog nudge). Paste immediately so the
     // kickoff lands before the nudge.
@@ -195,9 +207,7 @@ async function sendPaneMessage(
       targetPane
     });
     // Exact watchdog nudge message — proven to land and trigger a turn.
-    const nudgeMessage =
-      'Continue exactly where you left off. Do not summarize or repeat the previous text. '
-      + 'Remember your task only ends when you run "pairflow agent emit", never before.';
+    const nudgeMessage = WATCHDOG_NUDGE_PROMPT;
     await sendAndSubmitTmuxPaneMessage(runner, targetPane, nudgeMessage, {
       maxChunkLength: 1024,
       ...resolveTmuxPasteOptions(agentName)
@@ -245,7 +255,10 @@ export async function seedBubbleTmuxPaneMessages(
   // constant, per-task guidance varies. So for tmux_paste agents the kickoff
   // is always delivered even when a startup prompt was submitted.
 
-  if (!shouldSkipKickoffAfterStartup(input.implementerAgentName, input.implementerSubmitStartupPrompt === true)) {
+  if (
+    input.launchImplementerAgent !== false
+    && !shouldSkipKickoffAfterStartup(input.implementerAgentName, input.implementerSubmitStartupPrompt === true)
+  ) {
     await sendPaneMessage(
       input.runner,
       input.implementerPaneId,
@@ -253,7 +266,10 @@ export async function seedBubbleTmuxPaneMessages(
       mergeAndDeduplicateMessages(input.implementerBootstrapMessage, input.implementerKickoffMessage)
     );
   }
-  if (!shouldSkipKickoffAfterStartup(input.reviewerAgentName, input.reviewerSubmitStartupPrompt === true)) {
+  if (
+    input.launchReviewerAgent !== false
+    && !shouldSkipKickoffAfterStartup(input.reviewerAgentName, input.reviewerSubmitStartupPrompt === true)
+  ) {
     await sendPaneMessage(
       input.runner,
       input.reviewerPaneId,
@@ -261,7 +277,10 @@ export async function seedBubbleTmuxPaneMessages(
       mergeAndDeduplicateMessages(input.reviewerBootstrapMessage, input.reviewerKickoffMessage)
     );
   }
-  if (!shouldSkipKickoffAfterStartup(input.metaReviewerAgentName, input.metaReviewerSubmitStartupPrompt === true)) {
+  if (
+    input.launchMetaReviewerAgent !== false
+    && !shouldSkipKickoffAfterStartup(input.metaReviewerAgentName, input.metaReviewerSubmitStartupPrompt === true)
+  ) {
     await sendPaneMessage(
       input.runner,
       input.metaReviewerPaneId,

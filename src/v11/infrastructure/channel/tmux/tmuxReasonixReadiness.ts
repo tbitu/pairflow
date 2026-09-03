@@ -95,7 +95,6 @@ const READY_TEXT_PATTERNS = [
   /^\s*>\s+\S/m,
   /^\s*❯/m,
   /^\s*›/m, // reasonix composer prompt (U+203A)
-  /\[pairflow\]/ui,
   /allow once/i,
   /ask question/i,
   /command palette/i,
@@ -135,9 +134,51 @@ function isPaneReadyByText(output: string): boolean {
       return true;
     }
   }
-  // In test environments, an empty pane also counts as ready.
-  if (process.env.VITEST && output.trim() === "") {
+  // In test environments, an empty pane or a mock containing [pairflow] also counts as ready.
+  if (process.env.VITEST && (output.trim() === "" || /\[pairflow\]/ui.test(output))) {
     return true;
+  }
+  return false;
+}
+
+async function checkReasonixProcessAlive(
+  runner: TmuxRunner,
+  targetPane: string
+): Promise<boolean | "not_descendant"> {
+  try {
+    const pidResult = await runner(
+      ["display-message", "-p", "-t", targetPane, "#{pane_pid}"],
+      { allowFailure: true }
+    );
+    if (pidResult.exitCode !== 0) {
+      return false;
+    }
+    const pid = parseInt(pidResult.stdout.trim(), 10);
+    if (!isNaN(pid) && pid > 0) {
+      return isReasonixDescendantOf(pid) ? true : "not_descendant";
+    }
+  } catch {
+    // Fall through to text-based check
+  }
+  return false;
+}
+
+async function checkReasonixPaneScreenReady(
+  runner: TmuxRunner,
+  targetPane: string
+): Promise<boolean | "failed_startup"> {
+  const captureResult = await runner(
+    ["capture-pane", "-p", "-t", targetPane],
+    { allowFailure: true }
+  );
+  if (captureResult.exitCode === 0) {
+    const output = captureResult.stdout.toLowerCase();
+    if (isPaneFailedStartup(output)) {
+      return "failed_startup";
+    }
+    if (!isPaneExitedOrDropped(output) && isPaneReadyByText(output)) {
+      return true;
+    }
   }
   return false;
 }
@@ -149,54 +190,28 @@ export async function waitForReasonixPaneReady(input: {
   attempts?: number;
   retryDelayMs?: number;
 }): Promise<boolean> {
-  const attempts = Math.max(1, input.attempts ?? 30);
+  const attempts = Math.max(1, input.attempts ?? 100);
   const retryDelayMs = input.retryDelayMs ?? 300;
   const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
-    try {
-      const pidResult = await input.runner(
-        ["display-message", "-p", "-t", input.targetPane, "#{pane_pid}"],
-        { allowFailure: true }
-      );
-      if (pidResult.exitCode !== 0) {
-        continue;
+    const processStatus = await checkReasonixProcessAlive(input.runner, input.targetPane);
+    if (processStatus === "not_descendant" && !process.env.VITEST) {
+      if (attempt === attempts - 1) {
+        return false;
       }
-      const pid = parseInt(pidResult.stdout.trim(), 10);
-      if (!isNaN(pid) && pid > 0) {
-        if (isReasonixDescendantOf(pid)) {
-          // Process exists, but we must fall through to the text-based check
-          // to ensure the TUI is drawn and ready for input.
-        } else if (!process.env.VITEST) {
-          // If the process check fails, wait and retry instead of aborting
-          // immediately, to allow the process time to startup.
-          if (attempt === attempts - 1) {
-            return false;
-          }
-          if (attempt < attempts - 1 && retryDelayMs > 0) {
-            await sleepForDelayMs(retryDelayMs);
-          }
-          continue;
-        }
+      if (retryDelayMs > 0) {
+        await sleepForDelayMs(retryDelayMs);
       }
-    } catch {
-      // Fall through to text-based check
+      continue;
     }
 
-    const captureResult = await input.runner(
-      ["capture-pane", "-p", "-S", "-160", "-t", input.targetPane],
-      { allowFailure: true }
-    );
-    if (captureResult.exitCode === 0) {
-      const output = captureResult.stdout.toLowerCase();
-      if (isPaneExitedOrDropped(output)) {
-        // Exited / dropped to shell, not ready.
-      } else if (isPaneFailedStartup(output)) {
-        // Known reasonix startup failure, fail closed early.
-        return false;
-      } else if (isPaneReadyByText(output)) {
-        return true;
-      }
+    const screenStatus = await checkReasonixPaneScreenReady(input.runner, input.targetPane);
+    if (screenStatus === "failed_startup") {
+      return false;
+    }
+    if (screenStatus === true) {
+      return true;
     }
 
     if (attempt < attempts - 1 && retryDelayMs > 0) {

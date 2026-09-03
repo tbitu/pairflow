@@ -54,8 +54,8 @@ export interface PaneReadinessConfig {
  */
 export const DEFAULT_PANE_READINESS_CONFIG: PaneReadinessConfig = {
   respawnWarmupMs: 0,
-  markerSettleMs: 300,
-  maxRetryAttempts: 20,
+  markerSettleMs: 500,
+  maxRetryAttempts: 100,
   retryDelayMs: 300
 };
 
@@ -136,6 +136,8 @@ export function createRolePaneLifecycle(input: {
     agentName?: AgentName;
   }) => Promise<boolean>;
   readinessConfig?: PaneReadinessConfig;
+  /** Resolve whether a given role pane runs a non-concurrent agent. */
+  configureRoleAgent?: ((role: AgentRole) => AgentName | undefined) | undefined;
 }): RolePaneLifecycle {
   const config = input.readinessConfig ?? DEFAULT_PANE_READINESS_CONFIG;
 
@@ -152,7 +154,10 @@ export function createRolePaneLifecycle(input: {
         await deactivateOtherRolePanes({
           activateInput,
           topologyPaneIndexForRole: input.topologyPaneIndexForRole,
-          respawnPane: input.respawnPane
+          respawnPane: input.respawnPane,
+          ...(input.configureRoleAgent !== undefined
+            ? { configureRoleAgent: input.configureRoleAgent }
+            : {})
         });
 
         // Step 1: Respawn pane with new command (kills previous process, resets context)

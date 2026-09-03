@@ -56,7 +56,14 @@ export async function refreshImplementerContext(
   }
 
   // Use unified RolePaneLifecycle to activate implementer pane
-  const paneLifecycle = createDefaultRolePaneLifecycle();
+  const paneLifecycle = createDefaultRolePaneLifecycle({
+    configureRoleAgent: (role) => {
+      if (role === "implementer") return input.bubbleConfig.agents.implementer;
+      if (role === "reviewer") return input.bubbleConfig.agents.reviewer;
+      if (role === "meta_reviewer") return input.bubbleConfig.agents.meta_reviewer;
+      return undefined;
+    }
+  });
   const runner = input.runner ?? runTmux;
 
   const roleMcpPolicy =
