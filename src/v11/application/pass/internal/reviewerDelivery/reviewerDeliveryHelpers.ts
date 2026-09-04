@@ -79,20 +79,38 @@ export async function resolveDeliveryInitialDelayMs(input: {
     return undefined;
   }
 
-  // Best effort only; protocol/state progression must not fail if tmux refresh fails.
-  const refreshResult = await input.refreshReviewer({
-    bubbleId: input.executeInput.bubbleId,
-    bubbleConfig: input.executeInput.bubbleConfig,
-    sessionsPath: input.executeInput.sessionsPath,
-    ...(input.reviewerStartupPrompt !== undefined
-      ? { reviewerStartupPrompt: input.reviewerStartupPrompt }
-      : {})
-  }).catch(() => undefined);
-  if (refreshResult?.refreshed === true) {
-    // Give the respawned reviewer CLI a short warm-up before delivery injection.
-    return 1500;
+  // Best effort only for protocol/state progression, but NEVER silent: a
+  // fresh-mode handoff that skips the respawn reuses the existing reviewer
+  // pane. The shared-session reuse is how round-2 delivery landed in a pane
+  // that was still mid-turn. The idle-wait gate in the delivery runtime now
+  // guards a reused busy pane; here we surface the skipped respawn loudly so
+  // the operator is not left wondering why no fresh session was created.
+  let refreshResult: Awaited<ReturnType<RefreshReviewerContextPort>> | undefined;
+  try {
+    refreshResult = await input.refreshReviewer({
+      bubbleId: input.executeInput.bubbleId,
+      bubbleConfig: input.executeInput.bubbleConfig,
+      sessionsPath: input.executeInput.sessionsPath,
+      ...(input.reviewerStartupPrompt !== undefined
+        ? { reviewerStartupPrompt: input.reviewerStartupPrompt }
+        : {})
+    });
+  } catch (error) {
+    console.error(
+      `[pass delivery] refreshReviewerContext threw (bubble=${input.executeInput.bubbleId}): ${error instanceof Error ? error.message : String(error)}`
+    );
+    return undefined;
   }
-  return undefined;
+  if (refreshResult?.refreshed !== true) {
+    console.error(
+      `[pass delivery] reviewer context NOT refreshed for bubble=${input.executeInput.bubbleId}`
+      + ` (refreshed=${String(refreshResult?.refreshed)}, reason=${refreshResult?.reason ?? "unset"}).`
+      + " The reviewer pane will be reused as-is; a fresh reviewer session was requested but not established."
+    );
+    return undefined;
+  }
+  // Give the respawned reviewer CLI a short warm-up before delivery injection.
+  return 1500;
 }
 
 export function buildPassDeliveryInput(input: {

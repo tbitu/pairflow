@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { BubbleConfig } from "../../../../src/v11/shared/config/bubbleConfigTypes.js";
 import type { ProtocolEnvelope } from "../../../../src/v11/shared/protocol/protocolEnvelopeContract.js";
@@ -159,6 +159,101 @@ describe("executePassDelivery", () => {
       },
       retried: false
     });
+  });
+
+  it("surfaces a non-refreshed reviewer context instead of silently swallowing the fresh handoff", async () => {
+    const emitCalls: unknown[] = [];
+    const warnSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const result = await executePassDelivery(
+        {
+          bubbleId: "b_delivery_v11_01",
+          bubbleConfig: createBubbleConfig("fresh"),
+          sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+          reviewerBriefArtifactPath: "/tmp/missing-brief.md",
+          reviewerFocusArtifactPath: "/tmp/missing-focus.json",
+          envelope: createEnvelope(),
+          senderRole: "implementer",
+          recipientRole: "reviewer"
+        },
+        {
+          refreshReviewerContext: async () => ({
+            refreshed: false,
+            reason: "no_runtime_session"
+          }),
+          emitDeliveryNotificationAck: async (input) => {
+            emitCalls.push(input);
+            return {
+              status: "accepted",
+              message: "delivered against non-fresh reviewer pane",
+              sessionName: "pf_bubble",
+              targetPaneIndex: 1
+            };
+          },
+          readReviewerBriefArtifact,
+          readReviewerFocusArtifact,
+          resolveDeliveryMessageRef
+        }
+      );
+
+      // Progression is preserved (best-effort), but the skipped respawn is NOT silent.
+      expect(emitCalls).toHaveLength(1);
+      expect(emitCalls[0]).not.toHaveProperty("initialDelayMs");
+      expect(result.result?.status).toBe("accepted");
+      const warning = warnSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(warning).toContain("reviewer context NOT refreshed");
+      expect(warning).toContain("no_runtime_session");
+    } finally {
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("logs a throwing reviewer-context refresh loudly but preserves pass progression", async () => {
+    const emitCalls: unknown[] = [];
+    const warnSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const result = await executePassDelivery(
+        {
+          bubbleId: "b_delivery_v11_01",
+          bubbleConfig: createBubbleConfig("fresh"),
+          sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+          reviewerBriefArtifactPath: "/tmp/missing-brief.md",
+          reviewerFocusArtifactPath: "/tmp/missing-focus.json",
+          envelope: createEnvelope(),
+          senderRole: "implementer",
+          recipientRole: "reviewer"
+        },
+        {
+          refreshReviewerContext: async () => {
+            throw new Error("REFRESH_READER_REJECTED");
+          },
+          emitDeliveryNotificationAck: async (input) => {
+            emitCalls.push(input);
+            return {
+              status: "accepted",
+              // Stale reviewer pane is reused; the idle-wait delivery gate is
+              // what protects it from a busy-pane swallow, not a fatal refresh.
+              message: "delivered after review-refresh threw",
+              sessionName: "pf_bubble",
+              targetPaneIndex: 1
+            };
+          },
+          readReviewerBriefArtifact,
+          readReviewerFocusArtifact,
+          resolveDeliveryMessageRef
+        }
+      );
+
+      // Best-effort policy: a hard refresh failure must NOT abort the pass.
+      expect(result.result?.status).toBe("accepted");
+      expect(emitCalls).toHaveLength(1);
+      expect(emitCalls[0]).not.toHaveProperty("initialDelayMs");
+      const warning = warnSpy.mock.calls.map((c) => String(c[0])).join("\n");
+      expect(warning).toContain("refreshReviewerContext threw");
+      expect(warning).toContain("REFRESH_READER_REJECTED");
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 
   it("omits reviewer focus from delivery when the artifact is absent", async () => {

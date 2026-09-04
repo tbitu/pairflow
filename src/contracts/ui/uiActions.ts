@@ -124,6 +124,7 @@ export type UiDeliveryFailureReason =
   | "unsupported_recipient"
   | "registry_read_failed"
   | "delivery_unconfirmed"
+  | "pane_busy"
   | "command_failed";
 
 export type UiDeliveryTargetReasonCode =

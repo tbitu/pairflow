@@ -12,7 +12,7 @@ import {
   maybeAcceptOpencodeTrustPrompt,
   sendAndSubmitTmuxPaneMessage
 } from "./tmuxInput.js";
-import { waitForAgentPaneReady } from "./tmuxPaneReadiness.js";
+import { waitForAgentPaneReady, waitForAgentPaneIdle } from "./tmuxPaneReadiness.js";
 import {
   getAgentRuntimeProfile,
   isAgentNameRegistered,
@@ -57,6 +57,7 @@ function resolveDeliveryAckReasonCode(
     case "unsupported_recipient":
       return "DELIVERY_ACK_TARGET_UNSUPPORTED";
     case "delivery_unconfirmed":
+    case "pane_busy":
     case "command_failed":
       return "DELIVERY_ACK_REJECTED";
   }
@@ -110,6 +111,11 @@ export interface TmuxDeliveryTimingOptions {
   submitDelayMs?: number;
   markerSettleDelayMs?: number;
   markerRetryDelayMs?: number;
+  /** Idle-gate tuning for handoff delivery (see waitForAgentPaneIdle). */
+  idleWaitAttempts?: number;
+  idleWaitRetryDelayMs?: number;
+  /** Skip the busy/idle gate entirely (used by panic-style recovery paths). Defaults to false in production. */
+  skipIdleWait?: boolean;
 }
 
 export async function ensureAgentPaneReady(input: {
@@ -263,6 +269,42 @@ export async function attemptTmuxDelivery(input: {
         message: input.message,
         ...ackOptions
       });
+    }
+
+    // Wait for the agent to finish its in-flight turn before typing the handoff.
+    // "Ready" (TUI chrome visible) is not the same as "idle": a busy opencode
+    // silently drops mid-turn input and a busy reasonix queues it as a literal
+    // message, so a round handover typed early never reaches the agent. If the
+    // pane stays busy past the budget, fail loudly instead of swallowing the
+    // handoff. Reproduced by round-2 handovers delivered at 12:16 while the
+    // reviewer was mid-turn (no step-finish until after 12:19).
+    const skipIdleWait =
+      process.env.VITEST === "skip-idle-wait"
+      || input.timing?.skipIdleWait === true;
+    if (!skipIdleWait) {
+      const paneIdle = await waitForAgentPaneIdle(input.expectedPaneAgent, {
+        runner: input.runner,
+        targetPane: input.targetPane,
+        ...(input.timing?.sleepForDelayMs !== undefined
+          ? { sleepForDelayMs: input.timing.sleepForDelayMs }
+          : {}),
+        ...(input.timing?.idleWaitAttempts !== undefined
+          ? { attempts: input.timing.idleWaitAttempts }
+          : {}),
+        ...(input.timing?.idleWaitRetryDelayMs !== undefined
+          ? { retryDelayMs: input.timing.idleWaitRetryDelayMs }
+          : {})
+      });
+      if (!paneIdle) {
+        console.error(
+          `[tmux delivery] pane still busy for target_pane=${input.targetPane} envelope=${input.envelopeId}; handoff not delivered.`
+        );
+        return createRejectedDeliveryAck({
+          reason: "pane_busy",
+          message: input.message,
+          ...ackOptions
+        });
+      }
     }
 
     // Accept trust prompt if any (opencode-only; reasonix has no folder-trust prompt)

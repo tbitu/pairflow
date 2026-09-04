@@ -416,6 +416,127 @@ describe("tmux delivery canonical ack helpers", () => {
   });
 });
 
+describe("attemptTmuxDelivery pane-idle gate", () => {
+  const targetPane = "pf-b_delivery_01:0.2";
+  const message =
+    "[pairflow] r1 PASS opencode->opencode msg=msg_busy_pane_test ref=artifact://handoff.md.";
+
+  function busyRunner(captureOutput: () => string): {
+    calls: string[][];
+    runner: TmuxRunner;
+    setCaptureOutput: (out: string) => void;
+  } {
+    const calls: string[][] = [];
+    let dynamic = captureOutput;
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({ stdout: dynamic(), stderr: "", exitCode: 0 });
+      }
+      if (args[0] === "display-message") {
+        return Promise.resolve({ stdout: "12345", stderr: "", exitCode: 0 });
+      }
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    };
+    return {
+      calls,
+      runner,
+      setCaptureOutput: (out: string) => {
+        dynamic = () => out;
+      }
+    };
+  }
+
+  function idleOpencodePane(): string {
+    return "┃  > Ask anything.  Ctrl+P commands, @ to mention, ↑ for history";
+  }
+
+  function busyOpencodePane(): string {
+    // A busy opencode keeps its TUI chrome (so readiness passes) while showing
+    // an in-flight-turn busy indicator that the idle gate must detect.
+    return "esc interrupt\n┃  > Ask anything. Ctrl+P commands, ↑ for history";
+  }
+
+  it("rejects with pane_busy and sends nothing while the pane stays mid-turn", async () => {
+    const { calls, runner } = busyRunner(busyOpencodePane);
+    vi.useFakeTimers();
+    try {
+      const resultPromise = attemptTmuxDelivery({
+        runner,
+        targetPane,
+        envelopeId: "msg_busy_pane_stuck",
+        message,
+        sessionName: "pf-b_delivery_01",
+        targetPaneIndex: 2,
+        expectedPaneAgent: "opencode",
+        deliveryAttempts: 1,
+        // Keep the test fast: one busy sample then fail without sleeping past it.
+        timing: {
+          idleWaitAttempts: 1,
+          idleWaitRetryDelayMs: 5,
+          sleepForDelayMs: () => Promise.resolve()
+        }
+      });
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      expect(result).toEqual(
+        createRejectedDeliveryAck({
+          reason: "pane_busy",
+          message,
+          sessionName: "pf-b_delivery_01",
+          targetPaneIndex: 2
+        })
+      );
+      const writeCalls = calls.filter((c) => c[0] === "send-keys" && c[3] === "-l");
+      expect(writeCalls).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("lets the handoff message through once the pane becomes idle after initial busy samples", async () => {
+    const { calls, runner, setCaptureOutput } = busyRunner(busyOpencodePane);
+    vi.useFakeTimers();
+    try {
+      const resultPromise = attemptTmuxDelivery({
+        runner,
+        targetPane,
+        envelopeId: "msg_busy_pane_recovers",
+        message,
+        sessionName: "pf-b_delivery_01",
+        targetPaneIndex: 2,
+        expectedPaneAgent: "opencode",
+        deliveryAttempts: 1,
+        timing: {
+          idleWaitRetryDelayMs: 5
+          // Real (vi-faked) sleep lets the reviewer-finishes-turn timer below
+          // fire between idle-gate samples; a no-op sleep would burn through all
+          // samples before the transition.
+        }
+      });
+
+      // The reviewer finishes its turn after two busy samples; from then on the
+      // pane is idle so the idle gate lets the handoff message be typed.
+      setTimeout(() => setCaptureOutput(idleOpencodePane()), 9);
+      await vi.runAllTimersAsync();
+      const result = await resultPromise;
+
+      // The pane-idle gate here is the behavior under test. Whether the submit
+      // is later confirmed as accepted is a separate concern covered by the
+      // confirmation scenarios elsewhere in this suite, so assert only that the
+      // gate unblocked the actual handoff write (no pane_busy / not-ready stop).
+      expect(result.reason).not.toBe("pane_busy");
+      expect(result.reason).not.toBe("command_failed");
+      const writeCalls = calls.filter((c) => c[0] === "send-keys" && c[3] === "-l");
+      expect(writeCalls.length).toBe(1);
+      expect(writeCalls[0]?.[4]).toContain("[pairflow] r1 PASS");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
 describe("tmux delivery explicit recipient-role routing", () => {
   it("keeps bare agent recipients from implicitly resolving meta-review routing", async () => {
     const resolution = resolveEnvelopeTargetPane(
