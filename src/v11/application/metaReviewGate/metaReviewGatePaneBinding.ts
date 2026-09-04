@@ -35,7 +35,6 @@ import {
 import {
   getSharedTopologySlotPaneIndexForRole
 } from "../../shared/topology/topologySlotPaneProjection.js";
-import { WATCHDOG_NUDGE_PROMPT } from "../../shared/watchdog/watchdogPrompt.js";
 
 function resolveMetaReviewerWorkspaceAuthority(input: {
   bubbleId: string;
@@ -266,10 +265,6 @@ async function deliverMetaReviewerPromptViaTmuxPaste(input: {
     maxChunkLength: 1024,
     ...resolveTmuxPasteOptions(input.metaReviewerAgent)
   });
-  await sendSubmissionRequestMessage(runner, targetPane, WATCHDOG_NUDGE_PROMPT, {
-    maxChunkLength: 1024,
-    ...resolveTmuxPasteOptions(input.metaReviewerAgent)
-  }).catch(() => undefined);
 
   return {
     delivery: {

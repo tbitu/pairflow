@@ -10,6 +10,28 @@ import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
  *
  * opencode's profile reproduces today's behavior verbatim; reasonix gets its
  * own profile (launch via `npx reasonix code`, npm `reasonix` package).
+ *
+ * ## Delivery Policy (Standing Instructions + Work Guidance)
+ *
+ * All agents follow a two-message delivery model:
+ *
+ * 1. **Standing Instructions (Role Context)** — Delivered once per actual process activation:
+ *    - opencode: via CLI `--agent PF-<role>` flag at process launch
+ *    - reasonix (tmux_paste): exactly one startup prompt paste (only when a startup
+ *      prompt exists), then the pane awaits work guidance
+ *    - Effect: Sets the agent's role identity and standing behavioral rules
+ *
+ * 2. **Work Guidance (Task/Run Context)** — Delivered once per role activation, separately:
+ *    - opencode: as a tmux paste after launch (skipped if no guidance needed)
+ *    - reasonix: as a separate second tmux paste after the role startup prompt
+ *    - Effect: Provides task artifact path, state context, and per-run instructions
+ *
+ * **Watchdog Nudges** — Recovery-only, not part of normal delivery:
+ *    - Delivered only by the watchdog mechanism after grace/readiness criteria
+ *    - Never as an unconditional follow-up to successful work-guidance delivery
+ *    - If a normal work-guidance delivery succeeds, no extra nudge occurs
+ *
+ * This policy eliminates duplicate inputs and keeps agent activation idempotent.
  */
 
 export type StartupPromptDeliveryMode = "cli_arg" | "tmux_paste";
@@ -50,12 +72,23 @@ export type PlanWatchBackendName = "opencode" | "reasonix";
 
 export interface AgentRuntimeProfile {
   name: AgentName;
-  /** How the startup prompt reaches the agent on launch/resume. */
+  /**
+   * How standing instructions (role identity + behavioral rules) reach the agent
+   * at process activation or role resume.
+   *
+   * - "cli_arg": delivered via CLI launch flags (opencode `--agent PF-<role>`)
+   * - "tmux_paste": delivered as a single pasted message into the active TUI (reasonix)
+   *
+   * Note: this EXCLUDES work guidance, which is delivered separately after activation.
+   */
   startupPromptDelivery: StartupPromptDeliveryMode;
   /**
-   * opencode receives its role context via CLI args, so pasted guidance would
-   * be redundant (the OVERFLOW double-input rules). reasonix receives all
-   * context through tmux paste, so it needs the full guidance text.
+   * Whether work guidance (task artifact path, bubble state, per-run instructions)
+   * can be delivered in full detail, or must be kept minimal to avoid overflow.
+   *
+   * opencode receives standing instructions via CLI args, so a long pasted work
+   * guidance would be redundant/overwhelming; reasonix has no CLI args and needs
+   * the work guidance via tmux paste. Both receive short per-task kickoffs.
    */
   minimalPastedGuidance: boolean;
   /** How the CLI interrupts the agent's turn after `pairflow agent emit`. */
@@ -106,14 +139,6 @@ export interface AgentRuntimeProfile {
    * to one line keeps Enter as the send key.
    */
   collapsePastedNewlines?: boolean;
-  /**
-   * Extra delay applied after the TUI readiness prompt is detected and before
-   * the message is pasted. reasonix's composer renders its prompt before it is
-   * fully ready to accept input, so pasting immediately after
-   * waitForTuiReady (~3s) drops the input. A settle delay restores the
-   * historical ~30s paste timing that reliably landed.
-   */
-  tmuxPasteSettleMs?: number;
 }
 
 const profiles: Record<AgentName, AgentRuntimeProfile> = {
@@ -145,10 +170,7 @@ const profiles: Record<AgentName, AgentRuntimeProfile> = {
     tmuxPasteSubmitPerChunk: true,
     tmuxPasteViaBuffer: false,
     // Collapse newlines so pasted messages stay single-line and Enter sends.
-    collapsePastedNewlines: true,
-    // reasonix renders its prompt before it is ready; settle ~25s before paste
-    // to restore the historical ~30s paste timing that landed.
-    tmuxPasteSettleMs: 25000
+    collapsePastedNewlines: true
   }
 };
 
@@ -210,8 +232,5 @@ export function resolveTmuxPasteOptions(
     ...(profile.collapsePastedNewlines === true
       ? { collapseNewlines: true }
       : {}),
-    ...(profile.tmuxPasteSettleMs !== undefined
-      ? { settleMs: profile.tmuxPasteSettleMs }
-      : {})
   };
 }

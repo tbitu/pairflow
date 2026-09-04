@@ -13,6 +13,7 @@ function isOpencodeDescendantOf(pid: number): boolean {
     const lines = psOutput.trim().split("\n");
 
     const parentToChildren = new Map<number, { pid: number; comm: string }[]>();
+    const processes = new Map<number, string>();
     for (const line of lines) {
       const parts = line.trim().split(/\s+/);
       if (parts.length < 3) continue;
@@ -24,12 +25,23 @@ function isOpencodeDescendantOf(pid: number): boolean {
       const comm = parts.slice(2).join(" ");
       if (isNaN(childPid) || isNaN(parentPid)) continue;
 
+      processes.set(childPid, comm);
+
       let list = parentToChildren.get(parentPid);
       if (!list) {
         list = [];
         parentToChildren.set(parentPid, list);
       }
       list.push({ pid: childPid, comm });
+    }
+
+    const rootComm = processes.get(pid)?.toLowerCase();
+    if (
+      rootComm?.includes("opencode")
+      || rootComm?.includes("node")
+      || rootComm?.includes("mainthread")
+    ) {
+      return true;
     }
 
     const queue = [pid];

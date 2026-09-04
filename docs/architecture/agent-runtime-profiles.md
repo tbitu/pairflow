@@ -21,7 +21,7 @@ Supported agents today:
 | Field | opencode | reasonix |
 | --- | --- | --- |
 | `startupPromptDelivery` | `cli_arg` | `tmux_paste` |
-| `minimalPastedGuidance` | `true` (OVERFLOW rules) | `false` (full guidance text) |
+| `minimalPastedGuidance` | `true` (OVERFLOW rules) | `true` (composer-safe kickoff) |
 | `postEmitInterruption` | `opencode_double_escape` | `none` |
 | `trustPromptHandling` | `opencode` | `none` |
 | `readiness` | `opencode` | `reasonix` |
@@ -53,6 +53,26 @@ reasonix either has an equivalent or explicitly does not need them:
 - **`OPENCODE_CONFIG_CONTENT` env injection**: opencode-only; reasonix is
   file-configured (`reasonix.toml` / `~/.reasonix/config.toml`) and Pairflow
   never injects provider config for it.
+
+## Input delivery contract
+
+Standing role instructions are delivered once for each actual role-process
+activation. OpenCode receives them through its launch arguments; Reasonix
+receives them through one startup paste when a startup prompt is present.
+Per-task or per-run work guidance is a separate single delivery after
+activation. Reusing an already active pane must not resend standing role
+instructions.
+
+The normal delivery path does not append a watchdog nudge. Watchdog prompts are
+recovery messages and are sent only by watchdog logic after its readiness and
+grace-period checks. This keeps a successful task delivery from becoming
+multiple agent turns.
+
+After a meta-reviewer emits `meta_review_result`, Pairflow persists and routes
+the authoritative result, then deactivates the meta-reviewer pane. This applies
+whether the route returns to the implementer, reaches approval or a human gate,
+is inconclusive, or falls back after an error. Pane cleanup is best effort once
+the result has been persisted.
 
 ## reasonix-specific behavior
 

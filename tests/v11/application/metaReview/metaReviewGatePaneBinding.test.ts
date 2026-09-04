@@ -770,7 +770,8 @@ describe("metaReviewGatePaneBinding", () => {
     expect(waitForPaneReady).toHaveBeenCalledWith("reasonix", expect.objectContaining({
       targetPane: "pf-b_meta_review_gate_reasonix_01:0.3"
     }));
-    expect(sendSubmissionRequestMessage).toHaveBeenCalledTimes(2);
+    // Only one submission: the meta-review run request. No unconditional watchdog nudge.
+    expect(sendSubmissionRequestMessage).toHaveBeenCalledTimes(1);
     expect(sendSubmissionRequestMessage).toHaveBeenNthCalledWith(
       1,
       paneRunner,

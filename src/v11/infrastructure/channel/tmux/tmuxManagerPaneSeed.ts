@@ -8,11 +8,9 @@ import {
   confirmTmuxPaneMarkerSubmission,
   maybeAcceptOpencodeTrustPrompt,
   sendAndSubmitTmuxPaneMessage,
-  submitTmuxPaneInput,
-  waitForTuiReady
+  submitTmuxPaneInput
 } from "./tmuxInput.js";
-import { waitForReasonixPaneReady } from "./tmuxReasonixReadiness.js";
-import { WATCHDOG_NUDGE_PROMPT } from "../../../shared/watchdog/watchdogPrompt.js";
+import { waitForAgentPaneReady } from "./tmuxPaneReadiness.js";
 import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
 
 /**
@@ -93,6 +91,17 @@ async function submitStartupPrompt(input: {
     return;
   }
 
+  const ready = await waitForAgentPaneReady(input.agentName, {
+    runner: input.runner,
+    targetPane: input.targetPane
+  });
+  if (!ready) {
+    console.error(
+      `[tmux seed] startup prompt skipped because pane is not ready for target_pane=${input.targetPane}.`
+    );
+    return;
+  }
+
   const promptText = input.startupPrompt?.trim();
   if (promptText !== undefined && promptText.length > 0) {
     // tmux_paste agents (reasonix) receive their startup prompt through the
@@ -154,20 +163,17 @@ async function sendPaneMessage(
   const concreteMessage = message as string;
   const marker = resolvePairflowPaneMessageMarker(concreteMessage);
   const isStructuredPairflowEnvelope = marker !== undefined;
-  // Give the TUI time to initialize during very early pane bootstrap
-  // before submitting the whole prompt as one tmux input.
-  if (
-    agentName === undefined
-    || !isAgentNameRegistered(agentName)
-    || getAgentRuntimeProfile(agentName).readiness !== "reasonix"
-  ) {
-    await waitForTuiReady(runner, targetPane);
+  const ready = await waitForAgentPaneReady(agentName, {
+    runner,
+    targetPane
+  });
+  if (!ready) {
+    console.error(
+      `[tmux seed] kickoff skipped because pane is not ready for target_pane=${targetPane}.`
+    );
+    return;
   }
   try {
-    // Match the watchdog's working delivery path: no waitForTuiReady for reasonix (reasonix
-    // may not report a detectable prompt early, and the 30s wait + 25s settle
-    // pushed the kickoff past the watchdog nudge). Paste immediately so the
-    // kickoff lands before the nudge.
     await sendAndSubmitTmuxPaneMessage(runner, targetPane, concreteMessage, {
       requireSuccess: !isStructuredPairflowEnvelope,
       maxChunkLength: 1024,
@@ -191,32 +197,10 @@ async function sendPaneMessage(
     }).catch(() => undefined);
   }
 
-  // reasonix absorbs long pasted instructions into its project-memory system
-  // (<memory-update> / AGENTS.md), and it drops keystrokes while still
-  // initializing. The watchdog nudge provably lands (it is the message that
-  // starts the model in every run) because it is gated on the pane being live
-  // AND ready, and it uses a short conversational prompt that reasonix does
-  // not classify as memory. Replicate that EXACTLY: same readiness gate, same
-  // nudge text, same send + paste options. No retry spam.
-  if (
-    agentName !== undefined
-    && getAgentRuntimeProfile(agentName).startupPromptDelivery === "tmux_paste"
-  ) {
-    await waitForReasonixPaneReady({
-      runner,
-      targetPane
-    });
-    // Exact watchdog nudge message — proven to land and trigger a turn.
-    const nudgeMessage = WATCHDOG_NUDGE_PROMPT;
-    await sendAndSubmitTmuxPaneMessage(runner, targetPane, nudgeMessage, {
-      maxChunkLength: 1024,
-      ...resolveTmuxPasteOptions(agentName)
-    }).catch((error: unknown) => {
-      console.error(
-        `[tmux seed] follow-up user prompt failed for target_pane=${targetPane}: ${error instanceof Error ? error.message : String(error)}`
-      );
-    });
-  }
+  // Note: Watchdog nudges are recovery-only and belong in the watchdog mechanism,
+  // not in normal delivery paths. Successful work-guidance delivery does not
+  // trigger an unconditional follow-up message; the agent proceeds on the
+  // guidance received.
 }
 
 export async function seedBubbleTmuxPaneMessages(
