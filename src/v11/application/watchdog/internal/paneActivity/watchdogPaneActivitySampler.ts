@@ -6,6 +6,8 @@ import type {
 } from "../../../../ports/runtimeSessions.js";
 import type { TmuxRunner } from "../../../../ports/tmuxSessions.js";
 import type { PaneActivitySampleResult } from "../../watchdogCommandContract.js";
+import { isPaneBusyOutput } from "../../../../shared/agent/agentRuntimeProfiles.js";
+import { resolveConfiguredAgentForRole } from "../../../../domain/agentIdentity/agentIdentity.js";
 import {
   resolveWatchdogTargetPaneIndex
 } from "../../../../shared/watchdog/watchdogPaneTargeting.js";
@@ -80,8 +82,13 @@ export async function sampleWatchdogPaneActivity(input: {
   }
 
   const paneHash = createHash("sha1").update(capture.stdout).digest("hex");
-  const lower = capture.stdout.toLowerCase();
-  const hasEscInterrupt = lower.includes("esc interrupt") || /\besc\b.*?\binterrupt\b/i.test(lower);
+  const hasEscInterrupt = isPaneBusyOutput({
+    agentName: resolveConfiguredAgentForRole({
+      agents: input.bubbleConfig.agents,
+      role: input.activeRole
+    }),
+    paneOutput: capture.stdout
+  });
   return {
     status: "sampled",
     sampled_at: sampledAt,

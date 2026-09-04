@@ -93,8 +93,15 @@ export interface AgentRuntimeProfile {
   minimalPastedGuidance: boolean;
   /** How the CLI interrupts the agent's turn after `pairflow agent emit`. */
   postEmitInterruption: PostEmitInterruptionMode;
-  /** Whether pane bootstrap must accept an agent-specific trust prompt. */
+  /**
+   * Whether pane bootstrap must accept an agent-specific trust prompt.
+   */
   trustPromptHandling: TrustPromptHandlingMode;
+  /**
+   * Pane text proving the agent is mid-turn. The watchdog nudges only when no
+   * pattern matches, so a busy agent is never interrupted or queued onto.
+   */
+  paneBusyPatterns: readonly RegExp[];
   /** Which tmux readiness module detects the agent TUI. */
   readiness: AgentReadinessMode;
   /** Which plan-watch runner backend drives headless executions. */
@@ -141,6 +148,11 @@ export interface AgentRuntimeProfile {
   collapsePastedNewlines?: boolean;
 }
 
+const OPENCODE_PANE_BUSY_PATTERNS: readonly RegExp[] = [
+  /esc interrupt/i,
+  /\besc\b.*?\binterrupt\b/i
+];
+
 const profiles: Record<AgentName, AgentRuntimeProfile> = {
   opencode: {
     name: "opencode",
@@ -148,6 +160,7 @@ const profiles: Record<AgentName, AgentRuntimeProfile> = {
     minimalPastedGuidance: true,
     postEmitInterruption: "opencode_double_escape",
     trustPromptHandling: "opencode",
+    paneBusyPatterns: OPENCODE_PANE_BUSY_PATTERNS,
     readiness: "opencode",
     planWatchBackend: "opencode",
     supportsConcurrentPanes: true
@@ -161,6 +174,8 @@ const profiles: Record<AgentName, AgentRuntimeProfile> = {
     minimalPastedGuidance: true,
     postEmitInterruption: "none",
     trustPromptHandling: "none",
+    // reasonix reports progress as `working · 12s` instead of an esc-interrupt hint.
+    paneBusyPatterns: [/\bworking\s*·\s*\d+/i, ...OPENCODE_PANE_BUSY_PATTERNS],
     readiness: "reasonix",
     planWatchBackend: "reasonix",
     supportsConcurrentPanes: false,
@@ -188,6 +203,29 @@ export function getAgentRuntimeProfile(
 
 export function isAgentNameRegistered(agentName: string): boolean {
   return Object.prototype.hasOwnProperty.call(profiles, agentName);
+}
+
+/**
+ * Resolve the pane patterns that prove an agent is mid-turn. Unknown/undefined
+ * agents keep the opencode patterns.
+ */
+export function resolvePaneBusyPatterns(
+  agentName: AgentName | undefined
+): readonly RegExp[] {
+  if (agentName === undefined || !isAgentNameRegistered(agentName)) {
+    return OPENCODE_PANE_BUSY_PATTERNS;
+  }
+  return getAgentRuntimeProfile(agentName).paneBusyPatterns;
+}
+
+/** Whether captured pane output shows the agent actively working on a turn. */
+export function isPaneBusyOutput(input: {
+  agentName: AgentName | undefined;
+  paneOutput: string;
+}): boolean {
+  return resolvePaneBusyPatterns(input.agentName).some((pattern) =>
+    pattern.test(input.paneOutput)
+  );
 }
 
 /**

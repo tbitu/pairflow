@@ -7,6 +7,7 @@ import {
   sampleWatchdogPaneActivity
 } from "../../../../../../src/v11/application/watchdog/internal/paneActivity/watchdogPaneActivitySampler.js";
 import type { TmuxRunner } from "../../../../../../src/v11/ports/tmuxSessions.js";
+import type { PaneActivitySampleResult } from "../../../../../../src/v11/application/watchdog/watchdogCommandContract.js";
 import { BubbleWatchdogError } from "../../../../../../src/v11/shared/watchdog/watchdogCommandError.js";
 import {
   resolveWatchdogTargetPaneIndex
@@ -213,6 +214,96 @@ describe("watchdogPaneActivitySampler", () => {
       session_name: "pf-watchdog-sampler",
       target_pane: "pf-watchdog-sampler:0.1",
       has_esc_interrupt: true
+    });
+  });
+
+  describe("agent-specific busy detection", () => {
+    const reasonixBubbleConfig: BubbleConfig = {
+      ...bubbleConfig,
+      agents: {
+        implementer: "reasonix",
+        reviewer: "reasonix",
+        meta_reviewer: "reasonix"
+      }
+    };
+
+    async function sampleWith(input: {
+      config: BubbleConfig;
+      stdout: string;
+    }): Promise<PaneActivitySampleResult> {
+      return sampleWatchdogPaneActivity({
+        bubbleId: "b_watchdog_sampler_busy",
+        bubbleConfig: input.config,
+        sessionsPath: "/tmp/runtime-sessions.json",
+        activeRole: "implementer",
+        now: new Date("2026-03-27T20:24:00.000Z"),
+        runner: vi.fn<TmuxRunner>(() =>
+          Promise.resolve({ stdout: input.stdout, stderr: "", exitCode: 0 })
+        ),
+        readSessionsRegistry: () =>
+          Promise.resolve({
+            b_watchdog_sampler_busy: {
+              bubbleId: "b_watchdog_sampler_busy",
+              repoPath: "/tmp/pairflow",
+              worktreePath: "/tmp/pairflow-worktree",
+              tmuxSessionName: "pf-watchdog-sampler",
+              updatedAt: "2026-03-27T20:21:30.000Z"
+            }
+          })
+      });
+    }
+
+    // Captured from a live reasonix pane that was mid-turn while the watchdog
+    // queued repeated nudges onto it.
+    const reasonixWorkingPane = [
+      "  ⎿  ⠦ working · 5s",
+      "  ⣟  working · 177s · ↓4.2K · ✎ 4 in inbox",
+      "────────────────────────────────────────────",
+      " ❯"
+    ].join("\n");
+
+    const reasonixIdlePane = [
+      "◆ reasonix  · deepseek-v4-flash",
+      "  Context is kept across turns. Type 'exit' or Ctrl-D to quit.",
+      "────────────────────────────────────────────",
+      " ❯",
+      "   YOLO  · tool approvals skipped · Shift+Tab ask/auto/plan"
+    ].join("\n");
+
+    it("treats a working reasonix pane as busy so the watchdog does not nudge it", async () => {
+      const result = await sampleWith({
+        config: reasonixBubbleConfig,
+        stdout: reasonixWorkingPane
+      });
+
+      expect(result).toMatchObject({
+        status: "sampled",
+        has_esc_interrupt: true
+      });
+    });
+
+    it("treats an idle reasonix composer as not busy", async () => {
+      const result = await sampleWith({
+        config: reasonixBubbleConfig,
+        stdout: reasonixIdlePane
+      });
+
+      expect(result).toMatchObject({
+        status: "sampled",
+        has_esc_interrupt: false
+      });
+    });
+
+    it("does not treat reasonix progress text as busy for an opencode pane", async () => {
+      const result = await sampleWith({
+        config: bubbleConfig,
+        stdout: reasonixWorkingPane
+      });
+
+      expect(result).toMatchObject({
+        status: "sampled",
+        has_esc_interrupt: false
+      });
     });
   });
 });

@@ -174,10 +174,15 @@ function hasVisiblePromptLine(capture: { exitCode: number; stdout: string }): bo
 export async function confirmTmuxPaneMarkerSubmission(
   input: ConfirmTmuxPaneMarkerSubmissionInput
 ): Promise<boolean> {
-  const attempts = Math.max(1, input.attempts ?? 3);
+  // Agent TUIs can take many seconds to echo a submitted message (model load on
+  // first prompt), so the window must outlast the echo or delivery gets resent.
+  const attempts = Math.max(1, input.attempts ?? 8);
   const settleDelayMs = input.settleDelayMs ?? 800;
-  const retryDelayMs = input.retryDelayMs ?? 900;
+  const retryDelayMs = input.retryDelayMs ?? 1500;
   const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
+  // A busy pane only proves submission once the marker itself was seen; a pane
+  // can be mid-turn for reasons unrelated to this delivery.
+  let markerSeenInPane = false;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     if (settleDelayMs > 0) {
@@ -191,21 +196,30 @@ export async function confirmTmuxPaneMarkerSubmission(
     if (status === "submitted") {
       return true;
     }
+    if (status === "stuck_in_input") {
+      markerSeenInPane = true;
+    }
     const capture = await input.runner(
       ["capture-pane", "-p", "-t", input.targetPane],
       { allowFailure: true }
     );
-    if (capture.exitCode === 0) {
+    if (capture.exitCode === 0 && markerSeenInPane) {
       const lowerOutput = capture.stdout.toLowerCase();
       if (hasInterruptPrompt(lowerOutput)) {
         return true;
       }
     }
     if (attempt < attempts - 1) {
-      // Guard: only resend Enter when an active agent prompt line is visible.
-      // If tmux hasn't yet reflected the initial submission in capture, blindly
-      // sending Enter can duplicate keystrokes at a stale input buffer. A
-      // visible prompt confirms the pane has settled and is ready for more input.
+      // Only press Enter for a marker still sitting in the composer; a blind
+      // Enter elsewhere injects stray input into the agent's turn.
+      if (status !== "stuck_in_input") {
+        if (retryDelayMs > 0) {
+          await sleepForDelayMs(retryDelayMs);
+        }
+
+        continue;
+      }
+
       const promptCheck = await input.runner(
         ["capture-pane", "-p", "-S", "-200", "-t", input.targetPane],
         { allowFailure: true }

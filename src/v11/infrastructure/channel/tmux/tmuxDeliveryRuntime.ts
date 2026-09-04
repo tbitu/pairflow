@@ -283,6 +283,9 @@ export async function attemptTmuxDelivery(input: {
     const ackOptions = buildAckOptions(input);
 
     if (!paneReady) {
+      console.error(
+        `[tmux delivery] pane not ready for target_pane=${input.targetPane} envelope=${input.envelopeId}; handoff not delivered.`
+      );
       return createRejectedDeliveryAck({
         reason: "command_failed",
         message: input.message,
@@ -347,12 +350,18 @@ export async function attemptTmuxDelivery(input: {
       });
     }
 
+    console.error(
+      `[tmux delivery] handoff unconfirmed for target_pane=${input.targetPane} envelope=${input.envelopeId}; marker never observed as submitted.`
+    );
     return createRejectedDeliveryAck({
       reason: "delivery_unconfirmed",
       message: input.message,
       ...ackOptions
     });
-  } catch {
+  } catch (error) {
+    console.error(
+      `[tmux delivery] handoff failed for target_pane=${input.targetPane} envelope=${input.envelopeId}: ${error instanceof Error ? error.message : String(error)}`
+    );
     return createRejectedDeliveryAck({
       reason: "command_failed",
       message: input.message,

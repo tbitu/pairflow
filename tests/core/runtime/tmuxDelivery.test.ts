@@ -3454,8 +3454,9 @@ describe("emitDeliveryNotificationAck", () => {
         call[2] === "pf-b_delivery_01:0.2" &&
         call[3] === "Enter"
     );
-    // 1 initial Enter + 2 retry Enters = 3.
-    expect(enterCalls.length).toBe(3);
+    // Only the initial submit Enter: a marker that was never seen in the pane is
+    // not sitting in the composer, so extra Enters would be stray input.
+    expect(enterCalls.length).toBe(1);
     const captureCalls = calls.filter((call) => call[0] === "capture-pane");
     expect(captureCalls.length).toBeGreaterThanOrEqual(2);
   });

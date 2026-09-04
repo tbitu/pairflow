@@ -24,6 +24,7 @@ Supported agents today:
 | `minimalPastedGuidance` | `true` (OVERFLOW rules) | `true` (composer-safe kickoff) |
 | `postEmitInterruption` | `opencode_double_escape` | `none` |
 | `trustPromptHandling` | `opencode` | `none` |
+| `paneBusyPatterns` | `esc interrupt` | `working · <n>` + `esc interrupt` |
 | `readiness` | `opencode` | `reasonix` |
 | `planWatchBackend` | `opencode` | `reasonix` |
 | `supportsConcurrentPanes` | `true` | `false` |
@@ -67,6 +68,13 @@ The normal delivery path does not append a watchdog nudge. Watchdog prompts are
 recovery messages and are sent only by watchdog logic after its readiness and
 grace-period checks. This keeps a successful task delivery from becoming
 multiple agent turns.
+
+The watchdog nudges only for lazy-agent behavior: a pane that is neither working
+nor handed over. "Working" is detected per agent through `paneBusyPatterns`,
+because the busy indicator is agent-specific — opencode prints an
+`esc interrupt` hint while reasonix prints `working · <seconds>`. Matching only
+opencode's hint made reasonix look idle mid-turn and queued repeated nudges onto
+a busy agent.
 
 After a meta-reviewer emits `meta_review_result`, Pairflow persists and routes
 the authoritative result, then deactivates the meta-reviewer pane. This applies

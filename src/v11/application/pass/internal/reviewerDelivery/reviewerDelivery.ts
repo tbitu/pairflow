@@ -78,6 +78,22 @@ export interface ExecutePassDeliveryResult {
   retried: boolean;
 }
 
+/** Without this the reviewer silently receives nothing while `emit` reports success. */
+function reportUndeliveredReviewerHandoff(input: {
+  bubbleId: string;
+  envelopeId: string;
+  deliveryResult: DeliveryAck | undefined;
+  retried: boolean;
+}): void {
+  if (input.deliveryResult?.status === "accepted") {
+    return;
+  }
+  console.error(
+    `[pass delivery] reviewer handoff was not delivered for bubble=${input.bubbleId} envelope=${input.envelopeId}`
+    + ` (status=${input.deliveryResult?.status ?? "none"}, reason=${input.deliveryResult?.reason ?? "unknown"}, retried=${String(input.retried)}).`
+  );
+}
+
 function composePassReviewerStartupPrompt(input: {
   executeInput: ExecutePassDeliveryInput;
   reviewerBriefText?: string | undefined;
@@ -230,6 +246,13 @@ export async function executePassDelivery(
       convergencePolicy: ConvergencePolicy.Respawn
     }).then((result) => mapDeliveryResultToDeliveryAck(result)).catch(() => deliveryResult);
   }
+
+  reportUndeliveredReviewerHandoff({
+    bubbleId: input.bubbleId,
+    envelopeId: input.envelope.id,
+    deliveryResult,
+    retried: deliveryRetried
+  });
 
   return {
     result: deliveryResult,
