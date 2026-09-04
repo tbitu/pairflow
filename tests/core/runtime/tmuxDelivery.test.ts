@@ -972,6 +972,51 @@ describe("emitDeliveryNotificationAck", () => {
       calls.some((call) => call[0] === "send-keys" && call[2] === "/clear")
     ).toBe(false);
   });
+
+  it("does not send /clear to a live reasonix pane before delivery", async () => {
+    // Regression: reasonix has no confirmation modal, so `/clear` was typed into
+    // its composer and queued as a literal message alongside the handover.
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "[pairflow] r1 PASS opencode->reasonix msg=msg_20260222_101 ref=artifact://handoff.md.",
+            "",
+            "❯ "
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      if (args[0] === "display-message") {
+        return Promise.resolve({ stdout: "12345", stderr: "", exitCode: 0 });
+      }
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    };
+
+    await emitDeliveryNotificationAck({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          implementer: "reasonix",
+          reviewer: "reasonix",
+          meta_reviewer: "reasonix"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      envelope: createEnvelope({ recipient: "reasonix" }),
+      recipientRole: "implementer",
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry())
+    });
+
+    expect(
+      calls.some((call) => call.includes("/clear"))
+    ).toBe(false);
+  });
 });
 
 describe("tmux delivery T6 runtime observability baseline", () => {

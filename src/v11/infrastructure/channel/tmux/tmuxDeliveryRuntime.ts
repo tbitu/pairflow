@@ -105,34 +105,6 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
-/**
- * Clear a live pane's conversation history before a fresh delivery, matching
- * the historical reset behavior. NOTE: skipped for opencode panes — opencode's
- * `/clear` opens a confirmation gate in the TUI that swallows the following
- * send-keys, so the handover message never types. The working watchdog path
- * sends WITHOUT `/clear` and reliably lands; we match that for opencode.
- */
-async function clearLiveSessionForDelivery(input: {
-  runner: TmuxRunner;
-  targetPane: string;
-  convergencePolicy: "respawn" | "assume_running" | undefined;
-  sleepForDelayMs?: (ms: number) => Promise<void>;
-}, isLiveSession: boolean, trustPromptHandling: "opencode" | "none"): Promise<void> {
-  if (!isLiveSession || input.convergencePolicy !== "respawn") {
-    return;
-  }
-  if (trustPromptHandling === "opencode") {
-    return;
-  }
-  await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, "/clear", {
-    requireSuccess: false,
-    maxChunkLength: 1024,
-    ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
-  }).catch(() => undefined);
-  const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
-  await sleepForDelayMs(500);
-}
-
 export interface TmuxDeliveryTimingOptions {
   sleepForDelayMs?: (delayMs: number) => Promise<void>;
   submitDelayMs?: number;
@@ -272,7 +244,7 @@ export async function attemptTmuxDelivery(input: {
       await sleepForDelayMs(input.initialDelayMs as number);
     }
 
-    const { ok: paneReady, isLiveSession } = await ensureLiveSessionOrRespawn({
+    const { ok: paneReady } = await ensureLiveSessionOrRespawn({
       runner: input.runner,
       targetPane: input.targetPane,
       expectedPaneAgent: input.expectedPaneAgent,
@@ -303,14 +275,8 @@ export async function attemptTmuxDelivery(input: {
       await maybeAcceptOpencodeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
     }
 
-    await clearLiveSessionForDelivery({
-      runner: input.runner,
-      targetPane: input.targetPane,
-      convergencePolicy: input.convergencePolicy,
-      ...(input.timing?.sleepForDelayMs !== undefined
-        ? { sleepForDelayMs: input.timing.sleepForDelayMs }
-        : {})
-    }, isLiveSession, trustPromptHandling);
+    // No `/clear` before delivery: opencode opens a confirmation gate that
+    // swallows the handover, and reasonix queues it as a literal message.
 
     // Deliver the handoff message via send-keys
     await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
