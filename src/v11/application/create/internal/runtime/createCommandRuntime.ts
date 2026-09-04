@@ -85,6 +85,7 @@ export interface CreateBubbleConfigInput {
   roleMcp?: Partial<Record<"implementer" | "reviewer" | "meta_reviewer", RoleMcpPolicy>>;
   metaReviewerModel?: string;
   watchdogTimeoutMinutes?: number;
+  watchdogTimeoutMinutesByAgent?: Partial<Record<AgentName, number>>;
   maxRounds?: number;
   severityGateRound?: number;
   reviewerContextMode?: BubbleConfig["reviewer_context_mode"];
@@ -318,6 +319,9 @@ export function buildBubbleConfig(input: CreateBubbleConfigInput): BubbleConfig 
       input.reviewerContextMode ?? DEFAULT_REVIEWER_CONTEXT_MODE,
     watchdog_timeout_minutes:
       input.watchdogTimeoutMinutes ?? DEFAULT_WATCHDOG_TIMEOUT_MINUTES,
+    ...(input.watchdogTimeoutMinutesByAgent !== undefined
+      ? { watchdog_timeout_minutes_by_agent: input.watchdogTimeoutMinutesByAgent }
+      : {}),
     max_rounds: input.maxRounds ?? DEFAULT_MAX_ROUNDS,
     severity_gate_round: input.severityGateRound ?? DEFAULT_SEVERITY_GATE_ROUND,
     commit_requires_approval: true,

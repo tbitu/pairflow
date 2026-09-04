@@ -13,6 +13,7 @@ import {
   reconcileRemoteStartExecution,
   type StartCommandResultLike
 } from "./startCommandRemoteExecutionFlow.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
 
 export {
   remoteCloneExternalPairflowCommandEnvVar,
@@ -130,8 +131,10 @@ export async function runRemoteCloneInnerStart(input: {
     bubbleId: input.context.resolved.bubbleId,
     implementer: input.context.resolved.bubbleConfig.agents.implementer,
     reviewer: input.context.resolved.bubbleConfig.agents.reviewer,
-    watchdogTimeoutMinutes:
-      input.context.resolved.bubbleConfig.watchdog_timeout_minutes,
+    watchdogTimeoutMinutes: resolveWatchdogTimeoutMinutesForAgent(
+      input.context.resolved.bubbleConfig,
+      input.context.resolved.bubbleConfig.agents.implementer
+    ),
     ideationPending,
     writeStateSnapshot: input.deps.writeState
   });

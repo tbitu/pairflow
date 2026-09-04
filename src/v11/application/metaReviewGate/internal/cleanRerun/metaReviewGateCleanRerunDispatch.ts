@@ -6,6 +6,7 @@ import { persistDispatchFailedHumanRoute } from "../currentRun/routePersistence.
 import { buildGateLockPath } from "../state/metaReviewGateShared.js";
 import { setMetaReviewConsecutiveCleanRuns } from "../../../../domain/metaReviewGate/snapshotState.js";
 import type { MetaReviewGateResult } from "../../../../shared/metaReviewGate/metaReviewGateResultContract.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
 
 export function failCleanRerunClosed(input: {
   routeInput: RouteCleanMetaReviewRerunInput;
@@ -43,8 +44,10 @@ export async function stageCleanRerunRunningState(
       loadedRunning: loadedWithUpdatedStreak,
       metaReviewerAgent: finalizeInput.resolved.bubbleConfig.agents.meta_reviewer,
       nowIso: finalizeInput.now.toISOString(),
-      watchdogTimeoutMinutes:
-        finalizeInput.resolved.bubbleConfig.watchdog_timeout_minutes,
+      watchdogTimeoutMinutes: resolveWatchdogTimeoutMinutesForAgent(
+        finalizeInput.resolved.bubbleConfig,
+        finalizeInput.resolved.bubbleConfig.agents.meta_reviewer
+      ),
       statePath: finalizeInput.resolved.bubblePaths.statePath,
       writeState: finalizeInput.writeState
     });

@@ -6,6 +6,8 @@ import type {
   BubbleExecutionContext
 } from "../../domain/state/execution/executionContext.js";
 import { buildRunningExecutionContext } from "../../domain/state/execution/executionContext.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../shared/config/watchdogTimeoutResolution.js";
+import type { WatchdogTimeoutMinutesByAgent } from "../../../config/bubbleConfig/watchdogTimeoutByAgent.js";
 
 export interface ResolveRuntimeAlignedNextRoundContinuationInput {
   bubbleId: string;
@@ -15,6 +17,7 @@ export interface ResolveRuntimeAlignedNextRoundContinuationInput {
   reviewer: AgentName;
   nowIso: string;
   watchdogTimeoutMinutes: number;
+  watchdogTimeoutMinutesByAgent?: WatchdogTimeoutMinutesByAgent | undefined;
 }
 
 export interface RuntimeAlignedNextRoundContinuation {
@@ -43,7 +46,13 @@ export function resolveRuntimeAlignedNextRoundContinuation(
       round: nextRound,
       activeRole: "implementer",
       startedAt: input.nowIso,
-      watchdogTimeoutMinutes: input.watchdogTimeoutMinutes
+      watchdogTimeoutMinutes: resolveWatchdogTimeoutMinutesForAgent(
+        {
+          watchdog_timeout_minutes: input.watchdogTimeoutMinutes,
+          watchdog_timeout_minutes_by_agent: input.watchdogTimeoutMinutesByAgent
+        },
+        input.implementer
+      )
     }),
     ...(hasRoundEntry
       ? {}

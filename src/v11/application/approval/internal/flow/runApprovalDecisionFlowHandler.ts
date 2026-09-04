@@ -150,6 +150,8 @@ async function persistLocalApprovalState(input: {
     reviewer: input.execution.resolved.bubbleConfig.agents.reviewer,
     watchdogTimeoutMinutes:
       input.execution.resolved.bubbleConfig.watchdog_timeout_minutes,
+    watchdogTimeoutMinutesByAgent:
+      input.execution.resolved.bubbleConfig.watchdog_timeout_minutes_by_agent,
     applyStateTransition: input.dependencies.applyStateTransition
   });
 

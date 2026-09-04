@@ -1017,6 +1017,18 @@ Each time the reviewer sends a `PASS` back to the implementer, a new **round** s
 The status pane runs a watchdog loop. If an agent hasn't produced a protocol message within the configured timeout, the watchdog escalates the bubble to `WAITING_HUMAN` so you know something is stuck.
 Built-in default timeout is 30 minutes (`watchdog_timeout_minutes` in
 `bubble.toml`); repository defaults may override it for newly created bubbles.
+An optional `watchdog_timeout_minutes_by_agent` table (settable under
+`[defaults]` in `pairflow.toml`, or directly in `bubble.toml`) overrides the
+timeout per agent name — e.g. giving a slower, local-LLM-backed agent more
+room than a faster one:
+
+```toml
+[watchdog_timeout_minutes_by_agent]
+opencode = 120
+reasonix = 30
+```
+
+Any agent not listed falls back to the flat `watchdog_timeout_minutes`.
 
 ---
 

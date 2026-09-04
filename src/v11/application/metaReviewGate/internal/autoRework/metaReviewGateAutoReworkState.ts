@@ -13,12 +13,14 @@ import {
 import {
   resolveRuntimeAlignedNextRoundContinuation
 } from "../../../../domain/state/roundContinuation.js";
+import type { WatchdogTimeoutMinutesByAgent } from "../../../../../config/bubbleConfig/watchdogTimeoutByAgent.js";
 
 export interface AutoReworkStateInput {
   resolved: {
     bubbleId: string;
     bubbleConfig: {
       watchdog_timeout_minutes: number;
+      watchdog_timeout_minutes_by_agent?: WatchdogTimeoutMinutesByAgent | undefined;
       agents: {
         implementer: AgentName;
         reviewer: AgentName;
@@ -46,7 +48,9 @@ export function buildAutoReworkResumedState(
     reviewer: input.resolved.bubbleConfig.agents.reviewer,
     nowIso,
     watchdogTimeoutMinutes:
-      input.resolved.bubbleConfig.watchdog_timeout_minutes
+      input.resolved.bubbleConfig.watchdog_timeout_minutes,
+    watchdogTimeoutMinutesByAgent:
+      input.resolved.bubbleConfig.watchdog_timeout_minutes_by_agent
   });
   const resumedBase = assertParsedBubbleStateSnapshot({
     ...streakResetState,

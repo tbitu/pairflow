@@ -69,4 +69,34 @@ describe("buildKickoffNextState", () => {
       1
     );
   });
+
+  it("applies a per-agent watchdog timeout override for the round-1 implementer deadline", async () => {
+    const repoPath = await createTempRepo();
+    const created = await createBubble({
+      id: "b_kickoff_state_transition_02",
+      repoPath,
+      baseBranch: "main",
+      reviewArtifactType: "code",
+      ideation: true,
+      cwd: repoPath
+    });
+    const loaded = await readStateSnapshot(created.paths.statePath);
+    const nowIso = "2026-03-19T22:00:00.000Z";
+
+    const next = buildKickoffNextState({
+      state: loaded.state,
+      bubbleConfig: {
+        ...created.config,
+        watchdog_timeout_minutes: 30,
+        watchdog_timeout_minutes_by_agent: { opencode: 120, reasonix: 30 }
+      },
+      nowIso
+    });
+
+    expect(created.config.agents.implementer).toBe("opencode");
+    expect(next.execution_context?.deadline_at).toBe(
+      "2026-03-20T00:00:00.000Z"
+    );
+  });
 });
+

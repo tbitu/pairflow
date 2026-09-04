@@ -15,6 +15,13 @@ implementer_model = "lmstudio/pairflow-implementer"
 meta_reviewer = "opencode"
 meta_reviewer_model = "lmstudio/pairflow-meta-reviewer"
 
+# opencode runs against a local LLM here and is legitimately slow; reasonix
+# stays fast. Per-agent override falls back to the flat default for any
+# agent not listed here.
+[defaults.watchdog_timeout_minutes_by_agent]
+opencode = 120
+reasonix = 30
+
 [plan_watch.runner]
 backend = "opencode"
 idle_timeout_seconds = 1800

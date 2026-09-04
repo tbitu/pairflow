@@ -49,6 +49,7 @@ import { validateBubbleNotifications } from "./bubbleConfig/notifications.js";
 import { assertValidBubbleConfigRemoteReferences } from "./bubbleConfig/remoteReferences.js";
 import { validateBubbleReviewPolicy } from "./bubbleConfig/reviewPolicy.js";
 import { validateBubbleValidationTarget } from "./bubbleConfig/validationTarget.js";
+import { validateWatchdogTimeoutMinutesByAgent } from "./bubbleConfig/watchdogTimeoutByAgent.js";
 
 export {
   assertCreateReviewArtifactType,
@@ -157,6 +158,11 @@ export function validateBubbleConfig(input: unknown): ValidationResult<BubbleCon
       message: "Must be a positive integer"
     });
   }
+  const watchdogTimeoutMinutesByAgent = validateWatchdogTimeoutMinutesByAgent(
+    input.watchdog_timeout_minutes_by_agent,
+    "watchdog_timeout_minutes_by_agent",
+    errors
+  );
 
   const maxRounds = input.max_rounds ?? DEFAULT_MAX_ROUNDS;
   if (!isInteger(maxRounds) || maxRounds <= 0) {
@@ -376,6 +382,10 @@ export function validateBubbleConfig(input: unknown): ValidationResult<BubbleCon
 
   if (openRemoteCommand !== undefined) {
     validatedConfig.open_remote_command = openRemoteCommand;
+  }
+
+  if (watchdogTimeoutMinutesByAgent !== undefined) {
+    validatedConfig.watchdog_timeout_minutes_by_agent = watchdogTimeoutMinutesByAgent;
   }
 
   return validationOk(validatedConfig);

@@ -27,6 +27,7 @@ import {
   readCreatedRemotePointerOrThrow,
   resolveRemoteTarget
 } from "./startCommandRemoteExecutionSupport.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
 
 type StartPreparingMutationResult = Awaited<
   ReturnType<typeof executeStartPreparingMutation>
@@ -137,8 +138,10 @@ async function persistConfirmedRemoteStart(input: {
     bubbleId: input.context.resolved.bubbleId,
     implementer: input.context.resolved.bubbleConfig.agents.implementer,
     reviewer: input.context.resolved.bubbleConfig.agents.reviewer,
-    watchdogTimeoutMinutes:
-      input.context.resolved.bubbleConfig.watchdog_timeout_minutes,
+    watchdogTimeoutMinutes: resolveWatchdogTimeoutMinutesForAgent(
+      input.context.resolved.bubbleConfig,
+      input.context.resolved.bubbleConfig.agents.implementer
+    ),
     ideationPending: isIdeationPending(input.context),
     writeStateSnapshot: input.deps.writeState
   });

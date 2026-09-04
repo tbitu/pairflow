@@ -49,6 +49,7 @@ export interface BubbleCreateInput {
   roleMcp?: Partial<Record<"implementer" | "reviewer" | "meta_reviewer", RoleMcpPolicy>>;
   metaReviewerModel?: string;
   watchdogTimeoutMinutes?: number;
+  watchdogTimeoutMinutesByAgent?: Partial<Record<AgentName, number>>;
   maxRounds?: number;
   severityGateRound?: number;
   reviewerContextMode?: BubbleConfig["reviewer_context_mode"];

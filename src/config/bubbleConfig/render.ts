@@ -147,6 +147,15 @@ export function renderBubbleConfigToml(config: BubbleConfig): string {
     config.agents.meta_reviewer_model !== undefined
       ? `meta_reviewer_model = ${tomlString(config.agents.meta_reviewer_model)}`
       : undefined,
+    ...(config.watchdog_timeout_minutes_by_agent !== undefined
+      ? [
+          "",
+          "[watchdog_timeout_minutes_by_agent]",
+          ...Object.entries(config.watchdog_timeout_minutes_by_agent).map(
+            ([agentName, minutes]) => `${agentName} = ${minutes}`
+          )
+        ]
+      : []),
     "",
     "[role_mcp]",
     `implementer = ${tomlString(roleMcp.implementer)}`,

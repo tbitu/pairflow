@@ -25,6 +25,7 @@ import type {
   WriteStateSnapshotPort
 } from "../../../../ports/stateSnapshots.js";
 import { BubbleWatchdogError } from "../error/watchdogCommandRuntime.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
 
 function buildEscalationQuestion(
   bubbleId: string,
@@ -121,7 +122,10 @@ export async function escalateRunningWatchdog(
         question: buildEscalationQuestion(
           context.resolved.bubbleId,
           context.state.active_agent ?? "unknown",
-          context.resolved.bubbleConfig.watchdog_timeout_minutes
+          resolveWatchdogTimeoutMinutesForAgent(
+            context.resolved.bubbleConfig,
+            context.state.active_agent
+          )
         )
       },
       refs: []
@@ -184,7 +188,10 @@ export async function escalateMetaReviewWatchdog(
   context: WatchdogRuntimeContext
 ): Promise<BubbleWatchdogResult> {
   const question =
-    `Watchdog timeout: meta-review submit did not complete within ${context.resolved.bubbleConfig.watchdog_timeout_minutes} minutes. ` +
+    `Watchdog timeout: meta-review submit did not complete within ${resolveWatchdogTimeoutMinutesForAgent(
+      context.resolved.bubbleConfig,
+      context.resolved.bubbleConfig.agents.meta_reviewer
+    )} minutes. ` +
     `Please intervene and restart or re-run meta-review for bubble ${context.resolved.bubbleId}.`;
   const appended = await context.appendEnvelope({
     transcriptPath: context.resolved.bubblePaths.transcriptPath,

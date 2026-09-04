@@ -1,6 +1,7 @@
 import { join } from "node:path";
 
 import { buildRunningExecutionContext } from "../../../domain/state/execution/executionContext.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../../shared/config/watchdogTimeoutResolution.js";
 import { applyStateTransition } from "../../../domain/state/machine.js";
 import { buildHumanReplyEnvelopeDraft } from "../../../domain/reply/replyEnvelopeDraft.js";
 import {
@@ -41,7 +42,10 @@ export async function executeReplyMutation(
       round: input.state.round,
       activeRole: input.state.active_role,
       startedAt: input.nowIso,
-      watchdogTimeoutMinutes: input.resolved.bubbleConfig.watchdog_timeout_minutes
+      watchdogTimeoutMinutes: resolveWatchdogTimeoutMinutesForAgent(
+        input.resolved.bubbleConfig,
+        input.state.active_agent
+      )
     }),
     activeSince: input.nowIso,
     lastCommandAt: input.nowIso

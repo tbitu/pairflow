@@ -10,12 +10,14 @@ import type { Finding } from "../../../../../contracts/kernel/findings.js";
 import type { FindingsParityMetadata } from "../../../../shared/metaReviewGate/findingsParityMetadataContract.js";
 import type { MetaReviewResult } from "../../../../shared/metaReview/metaReviewTypes.js";
 import type { MetaReviewGateResult } from "../../../../shared/metaReviewGate/metaReviewGateResultContract.js";
+import type { WatchdogTimeoutMinutesByAgent } from "../../../../../config/bubbleConfig/watchdogTimeoutByAgent.js";
 
 export interface AutoReworkFinalizeInput {
   resolved: {
     bubbleId: string;
     bubbleConfig: {
       watchdog_timeout_minutes: number;
+      watchdog_timeout_minutes_by_agent?: WatchdogTimeoutMinutesByAgent | undefined;
       agents: {
         implementer: AgentName;
         reviewer: AgentName;

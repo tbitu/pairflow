@@ -13,6 +13,7 @@ import type {
   EmitRequestReworkImmediateResult,
   EmitRequestReworkQueuedResult
 } from "../../approvalCommandContract.js";
+import type { WatchdogTimeoutMinutesByAgent } from "../../../../../config/bubbleConfig/watchdogTimeoutByAgent.js";
 
 export interface ResolveApprovalNextStateInput {
   state: BubbleStateSnapshot;
@@ -21,6 +22,7 @@ export interface ResolveApprovalNextStateInput {
   implementer: AgentName;
   reviewer: AgentName;
   watchdogTimeoutMinutes: number;
+  watchdogTimeoutMinutesByAgent?: WatchdogTimeoutMinutesByAgent | undefined;
   applyStateTransition: typeof applyStateTransition;
 }
 
@@ -41,7 +43,8 @@ export function resolveApprovalNextState(
     implementer: input.implementer,
     reviewer: input.reviewer,
     nowIso: input.nowIso,
-    watchdogTimeoutMinutes: input.watchdogTimeoutMinutes
+    watchdogTimeoutMinutes: input.watchdogTimeoutMinutes,
+    watchdogTimeoutMinutesByAgent: input.watchdogTimeoutMinutesByAgent
   });
   const resumed = input.applyStateTransition(input.state, {
     to: "RUNNING",

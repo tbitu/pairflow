@@ -668,6 +668,10 @@ describe("createBubble", () => {
         "",
         "[defaults.doc_contract_gates]",
         "round_gate_applies_after = 4",
+        "",
+        "[defaults.watchdog_timeout_minutes_by_agent]",
+        "opencode = 120",
+        "reasonix = 30",
         ""
       ].join("\n"),
       "utf8"
@@ -704,11 +708,16 @@ describe("createBubble", () => {
       },
       doc_contract_gates: {
         round_gate_applies_after: 4
+      },
+      watchdog_timeout_minutes_by_agent: {
+        opencode: 120,
+        reasonix: 30
       }
     });
     const bubbleToml = await readFile(result.paths.bubbleTomlPath, "utf8");
     expect(bubbleToml).toContain('base_branch = "develop"');
     expect(bubbleToml).toContain("watchdog_timeout_minutes = 45");
+    expect(bubbleToml).toContain("opencode = 120");
     expect(bubbleToml).toContain("meta_review_consecutive_clean_runs_required = 3");
     const reparsedConfig = parseBubbleConfigToml(bubbleToml);
     expect(reparsedConfig.base_branch).toBe("develop");

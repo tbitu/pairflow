@@ -199,6 +199,9 @@ export function resolveRepoDefaultedCreateInput(input: {
     explicit: input.command.watchdogTimeoutMinutes,
     repoDefault: defaults.watchdog_timeout_minutes
   });
+  const watchdogTimeoutMinutesByAgent =
+    input.command.watchdogTimeoutMinutesByAgent
+    ?? defaults.watchdog_timeout_minutes_by_agent;
   const maxRounds = pickResolvedNumber({
     explicit: input.command.maxRounds,
     repoDefault: defaults.max_rounds
@@ -218,6 +221,9 @@ export function resolveRepoDefaultedCreateInput(input: {
   const resolvedFields: Partial<BubbleCreateInput> = {
     baseBranch: input.baseBranch,
     ...(watchdogTimeoutMinutes !== undefined ? { watchdogTimeoutMinutes } : {}),
+    ...(watchdogTimeoutMinutesByAgent !== undefined
+      ? { watchdogTimeoutMinutesByAgent }
+      : {}),
     ...(maxRounds !== undefined ? { maxRounds } : {}),
     ...(severityGateRound !== undefined ? { severityGateRound } : {}),
     ...(reviewerContextMode !== undefined ? { reviewerContextMode } : {}),

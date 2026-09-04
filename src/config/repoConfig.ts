@@ -46,6 +46,10 @@ import {
 } from "../v11/shared/validation/validationTargetPaths.js";
 import { MAX_NODE_TIMER_DELAY_SECONDS } from "../v11/shared/timing/nodeTimerDelay.js";
 import { parseToml } from "./bubbleConfig.js";
+import {
+  validateWatchdogTimeoutMinutesByAgent,
+  type WatchdogTimeoutMinutesByAgent
+} from "./bubbleConfig/watchdogTimeoutByAgent.js";
 
 export const VALIDATION_TARGET_DEFAULT_NOT_UNIQUE =
   "VALIDATION_TARGET_DEFAULT_NOT_UNIQUE" as const;
@@ -106,6 +110,7 @@ export interface RepoDefaultsDocContractGatesConfig {
 export interface RepoDefaultsConfig {
   base_branch?: string;
   watchdog_timeout_minutes?: number;
+  watchdog_timeout_minutes_by_agent?: WatchdogTimeoutMinutesByAgent;
   max_rounds?: number;
   severity_gate_round?: number;
   pairflow_command_profile?: PairflowCommandProfile;
@@ -235,6 +240,7 @@ function validateRepoDefaultsConfig(
   const allowedDefaultsKeys = new Set([
     "base_branch",
     "watchdog_timeout_minutes",
+    "watchdog_timeout_minutes_by_agent",
     "max_rounds",
     "severity_gate_round",
     "pairflow_command_profile",
@@ -273,6 +279,14 @@ function validateRepoDefaultsConfig(
   });
   if (watchdogTimeoutMinutes !== undefined) {
     validated.watchdog_timeout_minutes = watchdogTimeoutMinutes;
+  }
+  const watchdogTimeoutMinutesByAgent = validateWatchdogTimeoutMinutesByAgent(
+    defaults.watchdog_timeout_minutes_by_agent,
+    "defaults.watchdog_timeout_minutes_by_agent",
+    errors
+  );
+  if (watchdogTimeoutMinutesByAgent !== undefined) {
+    validated.watchdog_timeout_minutes_by_agent = watchdogTimeoutMinutesByAgent;
   }
   const maxRounds = readOptionalInteger({
     source: defaults,

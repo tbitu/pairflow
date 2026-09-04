@@ -23,6 +23,7 @@ import {
   runRemoteCloneInnerStart,
   runRemoteStartExecution
 } from "../remote/startCommandRemoteExecution.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
 
 type StartWrittenState = StartLoadedStateSnapshot;
 
@@ -212,8 +213,10 @@ export async function runFreshStartFlow(input: {
     bubbleId: input.context.resolved.bubbleId,
     implementer: input.context.resolved.bubbleConfig.agents.implementer,
     reviewer: input.context.resolved.bubbleConfig.agents.reviewer,
-    watchdogTimeoutMinutes:
-      input.context.resolved.bubbleConfig.watchdog_timeout_minutes,
+    watchdogTimeoutMinutes: resolveWatchdogTimeoutMinutesForAgent(
+      input.context.resolved.bubbleConfig,
+      input.context.resolved.bubbleConfig.agents.implementer
+    ),
     ideationPending,
     writeStateSnapshot: input.deps.writeState
   });
@@ -265,8 +268,10 @@ export async function runResumeStartFlow(input: {
     statePath: input.context.resolved.bubblePaths.statePath,
     loadedState: input.context.loadedState,
     nowIso: input.context.nowIso,
-    watchdogTimeoutMinutes:
-      input.context.resolved.bubbleConfig.watchdog_timeout_minutes,
+    watchdogTimeoutMinutes: resolveWatchdogTimeoutMinutesForAgent(
+      input.context.resolved.bubbleConfig,
+      input.context.loadedState.state.active_agent
+    ),
     writeStateSnapshot: input.deps.writeState
   });
 

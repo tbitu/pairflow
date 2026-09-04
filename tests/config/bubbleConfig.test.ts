@@ -109,6 +109,57 @@ observer = "enabled"
     });
   });
 
+  it("parses and roundtrips a per-agent watchdog timeout override", () => {
+    const config = parseBubbleConfigToml(`${baseToml}
+[watchdog_timeout_minutes_by_agent]
+opencode = 120
+reasonix = 30
+`);
+
+    expect(config.watchdog_timeout_minutes_by_agent).toEqual({
+      opencode: 120,
+      reasonix: 30
+    });
+
+    const rendered = renderBubbleConfigToml(config);
+    expect(rendered).toContain("[watchdog_timeout_minutes_by_agent]");
+    expect(rendered).toContain("opencode = 120");
+    expect(
+      parseBubbleConfigToml(rendered).watchdog_timeout_minutes_by_agent
+    ).toEqual({ opencode: 120, reasonix: 30 });
+  });
+
+  it("omits watchdog_timeout_minutes_by_agent from the rendered config when unset", () => {
+    const config = parseBubbleConfigToml(baseToml);
+    expect(config.watchdog_timeout_minutes_by_agent).toBeUndefined();
+    expect(renderBubbleConfigToml(config)).not.toContain(
+      "watchdog_timeout_minutes_by_agent"
+    );
+  });
+
+  it("rejects unknown agent names and non-positive values in watchdog_timeout_minutes_by_agent", () => {
+    const result = validateBubbleConfig(
+      parseToml(`${baseToml}
+[watchdog_timeout_minutes_by_agent]
+opencode = 0
+made_up_agent = 10
+`)
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      return;
+    }
+    expect(result.errors).toContainEqual({
+      path: "watchdog_timeout_minutes_by_agent.opencode",
+      message: "Must be a positive integer"
+    });
+    expect(result.errors).toContainEqual({
+      path: "watchdog_timeout_minutes_by_agent.made_up_agent",
+      message: "Must be one of: opencode, reasonix"
+    });
+  });
+
   it("normalizes legacy two-agent TOML to a canonical meta-reviewer binding", () => {
     const config = parseBubbleConfigToml(baseToml);
 

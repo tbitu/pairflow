@@ -1,4 +1,5 @@
 import type {
+  AgentName,
   AgentRole,
   BubbleAgentsConfig
 } from "../../../contracts/kernel/agentIdentity.js";
@@ -43,6 +44,8 @@ export type BubbleRoleMcpConfig = Record<
   RoleMcpPolicy
 >;
 
+export type { AgentName };
+
 export interface BubbleConfig {
   id: string;
   bubble_instance_id?: string;
@@ -55,6 +58,7 @@ export interface BubbleConfig {
   pairflow_command_profile: PairflowCommandProfile;
   reviewer_context_mode: ReviewerContextMode;
   watchdog_timeout_minutes: number;
+  watchdog_timeout_minutes_by_agent?: Partial<Record<AgentName, number>>;
   max_rounds: number;
   severity_gate_round: number;
   commit_requires_approval: boolean;

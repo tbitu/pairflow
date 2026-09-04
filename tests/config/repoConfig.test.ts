@@ -217,6 +217,28 @@ round_gate_applies_after = 2
     });
   });
 
+  it("parses a per-agent watchdog timeout override in repo defaults", () => {
+    const parsed = parsePairflowRepoConfigToml(`
+[defaults.watchdog_timeout_minutes_by_agent]
+opencode = 120
+reasonix = 30
+`);
+
+    expect(parsed.defaults?.watchdog_timeout_minutes_by_agent).toEqual({
+      opencode: 120,
+      reasonix: 30
+    });
+  });
+
+  it("rejects invalid entries in defaults.watchdog_timeout_minutes_by_agent", () => {
+    expect(() =>
+      parsePairflowRepoConfigToml(`
+[defaults.watchdog_timeout_minutes_by_agent]
+opencode = 0
+`)
+    ).toThrow(SchemaValidationError);
+  });
+
   it("trims trailing slashes from default agent model names", () => {
     const parsed = parsePairflowRepoConfigToml(`
 [defaults.agents]

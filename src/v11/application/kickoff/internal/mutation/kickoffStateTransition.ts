@@ -2,6 +2,7 @@ import type { BubbleStateSnapshot } from "../../../../domain/state/snapshot/bubb
 import { toPersistedSnapshot } from "../../../../domain/state/snapshot/projection.js";
 import { assertParsedBubbleStateSnapshot } from "../../../../domain/state/stateSchema.js";
 import { buildRunningExecutionContext } from "../../../../domain/state/execution/executionContext.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
 import type { BubbleConfig } from "../../../../shared/config/bubbleConfigTypes.js";
 import type {
   RoundRoleHistoryEntry
@@ -9,7 +10,10 @@ import type {
 
 export interface BuildKickoffNextStateInput {
   state: BubbleStateSnapshot;
-  bubbleConfig: Pick<BubbleConfig, "agents" | "watchdog_timeout_minutes">;
+  bubbleConfig: Pick<
+    BubbleConfig,
+    "agents" | "watchdog_timeout_minutes" | "watchdog_timeout_minutes_by_agent"
+  >;
   nowIso: string;
 }
 
@@ -48,7 +52,10 @@ export function buildKickoffNextState(
       round: 1,
       activeRole: "implementer",
       startedAt: input.nowIso,
-      watchdogTimeoutMinutes: input.bubbleConfig.watchdog_timeout_minutes
+      watchdogTimeoutMinutes: resolveWatchdogTimeoutMinutesForAgent(
+        input.bubbleConfig,
+        input.bubbleConfig.agents.implementer
+      )
     }),
     active_since: input.nowIso,
     last_command_at: input.nowIso,

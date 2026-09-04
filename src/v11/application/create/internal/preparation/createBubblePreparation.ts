@@ -73,6 +73,10 @@ export function prepareCreateBubbleInput(input: {
     bubbleConfigInput.watchdogTimeoutMinutes =
       input.command.watchdogTimeoutMinutes;
   }
+  if (input.command.watchdogTimeoutMinutesByAgent !== undefined) {
+    bubbleConfigInput.watchdogTimeoutMinutesByAgent =
+      input.command.watchdogTimeoutMinutesByAgent;
+  }
   if (input.command.maxRounds !== undefined) {
     bubbleConfigInput.maxRounds = input.command.maxRounds;
   }

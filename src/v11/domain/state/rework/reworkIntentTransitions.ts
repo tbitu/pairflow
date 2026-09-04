@@ -10,6 +10,7 @@ import { toPersistedSnapshot } from "../snapshot/projection.js";
 import type {
   BubbleReworkIntentRecord
 } from "./reworkIntentTypes.js";
+import type { WatchdogTimeoutMinutesByAgent } from "../../../../config/bubbleConfig/watchdogTimeoutByAgent.js";
 
 export interface DeriveQueuedDeferredReworkIntentStateInput {
   state: BubbleStateSnapshot;
@@ -31,6 +32,7 @@ export interface ApplyDeferredReworkIntentInput {
   implementer: AgentName;
   reviewer: AgentName;
   watchdogTimeoutMinutes: number;
+  watchdogTimeoutMinutesByAgent?: WatchdogTimeoutMinutesByAgent | undefined;
   now: Date;
 }
 
@@ -121,7 +123,8 @@ export function applyDeferredReworkIntent(
     implementer: input.implementer,
     reviewer: input.reviewer,
     nowIso,
-    watchdogTimeoutMinutes: input.watchdogTimeoutMinutes
+    watchdogTimeoutMinutes: input.watchdogTimeoutMinutes,
+    watchdogTimeoutMinutesByAgent: input.watchdogTimeoutMinutesByAgent
   });
 
   const resumed = toPersistedSnapshot(

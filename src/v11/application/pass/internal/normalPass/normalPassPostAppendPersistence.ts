@@ -5,6 +5,7 @@ import type { Finding } from "../../../../../contracts/kernel/findings.js";
 import type { ResolvedPassHandoff } from "../../../../domain/pass/handoff.js";
 import type { LoadedStateSnapshot } from "../../../../ports/stateSnapshots.js";
 import type { evaluateReviewerGateWarnings } from "../../../../shared/gates/docContractGates.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
 
 export interface PersistNormalPassPostAppendInput {
   reviewerVerification: ReviewVerificationInputResolution | undefined;
@@ -92,7 +93,10 @@ export async function persistNormalPassPostAppend(
     state: input.state,
     handoff: input.handoff,
     nowIso: input.generatedAt,
-    watchdogTimeoutMinutes: input.bubbleConfig.watchdog_timeout_minutes,
+    watchdogTimeoutMinutes: resolveWatchdogTimeoutMinutesForAgent(
+      input.bubbleConfig,
+      input.handoff.recipientAgent
+    ),
     expectedFingerprint: input.expectedFingerprint,
     envelopeId: input.appendEnvelopeId,
     createError: input.createError

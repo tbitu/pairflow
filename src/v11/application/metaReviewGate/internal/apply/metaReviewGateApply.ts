@@ -22,6 +22,7 @@ import type { MetaReviewGateResult } from "../../../../shared/metaReviewGate/met
 import { MetaReviewGateError } from "../../../../shared/metaReviewGate/metaReviewGateRouteContract.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
 import { resolveConfiguredAgentForRole } from "../../../../domain/agentIdentity/agentIdentity.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
 
 export async function applyMetaReviewGateOnConvergence(
   input: ApplyMetaReviewGateOnConvergenceInput,
@@ -43,7 +44,10 @@ export async function applyMetaReviewGateOnConvergence(
       loadedRunning: loadedRunningWithFreshCleanStreak,
       metaReviewerAgent: context.resolved.bubbleConfig.agents.meta_reviewer,
       nowIso: context.nowIso,
-      watchdogTimeoutMinutes: context.resolved.bubbleConfig.watchdog_timeout_minutes,
+      watchdogTimeoutMinutes: resolveWatchdogTimeoutMinutesForAgent(
+        context.resolved.bubbleConfig,
+        context.resolved.bubbleConfig.agents.meta_reviewer
+      ),
       statePath: context.resolved.bubblePaths.statePath,
       writeState: context.writeState
     });
