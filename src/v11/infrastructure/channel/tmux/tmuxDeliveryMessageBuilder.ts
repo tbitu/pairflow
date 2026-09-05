@@ -33,6 +33,10 @@ import {
   type ImplementerDeliveryEvent
 } from "../../../shared/role/prompts/roleActionGuidance.js";
 import {
+  buildResolvedImplementerEmitCommand,
+  buildResolvedReviewerEmitDirective
+} from "../../../shared/role/prompts/resolvedEmitDirective.js";
+import {
   buildMetaReviewSubmitApproveParityNote,
   buildMetaReviewSubmitCommandTemplate
 } from "../../../shared/metaReview/metaReviewSubmitGuidance.js";
@@ -126,12 +130,13 @@ function buildImplementerDeliveryAction(input: {
     }
   }
 
+  const event = toImplementerDeliveryEvent(input.envelope.type);
   const docsOnly = input.bubbleConfig.review_artifact_type === "document";
   const validationGuidance = buildImplementerDeliveryValidationGuidance(
     input.bubbleConfig.commands
   );
-  return buildImplementerDeliveryActionGuidance({
-    event: toImplementerDeliveryEvent(input.envelope.type),
+  const actionGuidance = buildImplementerDeliveryActionGuidance({
+    event,
     docsOnly,
     validationGuidance,
     actorLabel: input.actorLabel,
@@ -140,6 +145,19 @@ function buildImplementerDeliveryAction(input: {
       : {}),
     reworkOrigin: resolveImplementerReworkOrigin(input.envelope)
   });
+  const emitsPassAfterEvent =
+    event === "TASK"
+    || event === "PASS"
+    || event === "HUMAN_REPLY"
+    || (event === "APPROVAL_DECISION"
+      && input.envelope.type === "APPROVAL_DECISION"
+      && input.envelope.payload.decision === "rework");
+  return emitsPassAfterEvent
+    ? `${actionGuidance} ${buildResolvedImplementerEmitCommand({
+        repoPath: input.bubbleConfig.repo_path,
+        bubbleId: input.bubbleConfig.id
+      })}`
+    : actionGuidance;
 }
 
 function buildReviewerDeliveryAction(input: {
@@ -230,6 +248,19 @@ function buildReviewerDeliveryAction(input: {
       buildReviewerPassOutputContractGuidance(),
       convergenceInstruction,
       findingsDetailInstruction,
+      buildResolvedReviewerEmitDirective({
+        round: input.envelope.round,
+        severityGateRound: input.bubbleConfig.severity_gate_round,
+        ...(input.bubbleConfig.review_policy?.reviewer_blocking_min_severity !== undefined
+          ? {
+              reviewerBlockingMinSeverity:
+                input.bubbleConfig.review_policy.reviewer_blocking_min_severity
+            }
+          : {}),
+        reviewArtifactType: input.bubbleConfig.review_artifact_type,
+        repoPath: input.bubbleConfig.repo_path,
+        bubbleId: input.bubbleConfig.id
+      }),
       input.reviewerBrief !== undefined
         ? formatReviewerBriefDeliveryReminder(input.reviewerBrief)
         : "",
