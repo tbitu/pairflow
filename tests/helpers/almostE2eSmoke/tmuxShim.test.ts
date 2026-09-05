@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { describe, expect, it } from "vitest";
 
-import { checkTmuxPaneMarkerStatus } from "../../../src/v11/infrastructure/channel/tmux/tmuxInput.js";
+import { checkTmuxPaneMarkerStatus } from "../../../src/v11/infrastructure/channel/tmux/tmuxPaneMarkerConfirmation.js";
 import {
   createAlmostE2eSmokeFixtureRepo,
   installCompiledCliShimEnvironment

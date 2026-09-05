@@ -1,4 +1,5 @@
-import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
+import type { TmuxRunner, TmuxRunOptions } from "../../../ports/tmuxSessions.js";
+import type { SendAndSubmitTmuxPaneMessageOptions } from "../../../ports/tmuxDelivery.js";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -24,44 +25,7 @@ async function removeTempFile(path: string): Promise<void> {
   await rm(path, { force: true, recursive: true }).catch(() => undefined);
 }
 
-export interface SendAndSubmitTmuxPaneMessageOptions {
-  requireSuccess?: boolean;
-  submitDelayMs?: number;
-  sleepForDelayMs?: (delayMs: number) => Promise<void>;
-  maxChunkLength?: number;
-  /** Gap between literal send-keys chunks. Defaults to 200ms. */
-  interChunkDelayMs?: number;
-  /**
-   * Submit each chunk as its own turn (Enter per chunk) instead of pasting all
-   * chunks then a single Enter. Required for agents whose composer input field
-   * is capacity-limited (reasonix): a long paste overflows the field and the
-   * composer then rejects further keystrokes including Enter.
-   */
-  submitPerChunk?: boolean;
-  /**
-   * Paste the whole message via the tmux paste buffer (load-buffer +
-   * paste-buffer) instead of sending keystrokes. Some agents — reasonix is a
-   * Bubble Tea TUI — insert long messages only on a genuine terminal paste
-   * event (tea.PasteMsg); send-keys keystrokes overflow their single-line
-   * composer and lock it. The buffer is deleted after pasting.
-   */
-  pasteViaBuffer?: boolean;
-  /** Buffer name for the paste-buffer path (default: a per-call unique name). */
-  pasteBufferName?: string;
-  /** Override the temp-file writer for the paste-buffer path (testing). */
-  writeTempFile?: (content: string) => Promise<string>;
-  /**
-   * Collapse newline sequences to a single space before pasting, keeping the
-   * message single-line (reasonix's composer only submits single-line input).
-   */
-  collapseNewlines?: boolean;
-  /**
-   * Extra delay before the message is pasted (after readiness detection), so a
-   * TUI that rendered its prompt but isn't yet ready to accept input receives
-   * the paste. reasonix needs ~25s; opencode/unknown leave it unset.
-   */
-  settleMs?: number;
-}
+export type { SendAndSubmitTmuxPaneMessageOptions } from "../../../ports/tmuxDelivery.js";
 
 function resolveDynamicSubmitDelayMs(message: string): number {
   const minimumDelayMs = 500;
@@ -340,4 +304,21 @@ export async function submitTmuxPaneInput(
   await runner(["send-keys", "-t", targetPane, "Enter"], {
     allowFailure: true
   });
+}
+
+/**
+ * Send raw key presses into a tmux pane outside the send+submit path (e.g. the
+ * post-emit Escape interruption). This is the single escape hatch for keystroke
+ * emission so `send-keys` does not leak into other modules.
+ */
+export async function sendTmuxPaneKeys(
+  runner: TmuxRunner,
+  targetPane: string,
+  keys: string,
+  options?: TmuxRunOptions
+): Promise<void> {
+  await runner(
+    ["send-keys", "-t", targetPane, keys],
+    options ?? { allowFailure: true }
+  );
 }

@@ -13,11 +13,11 @@ import {
 import { setMetaReviewerPaneBinding } from "../../infrastructure/channel/tmux/metaReviewerPaneBinding.js";
 import { runTmux } from "../../infrastructure/channel/tmux/tmuxManager.js";
 import {
-  acceptMetaReviewTrustPrompt,
+  confirmMetaReviewSubmission,
   deactivateOtherMetaReviewPanes,
+  resolveMetaReviewAgentPaneAdapter,
   respawnMetaReviewPane,
   sendMetaReviewSubmissionRequest,
-  submitMetaReviewInput,
   waitForMetaReviewPaneReady
 } from "../../infrastructure/channel/tmux/metaReviewGateTmuxDefaultBindings.js";
 import type {
@@ -47,11 +47,11 @@ export interface MetaReviewGateDependencyDefaults {
           NonNullable<
             NonNullable<MetaReviewGateNotifyRuntimeCapabilities["tmux"]>["runner"]
           >;
-        maybeAcceptTrustPrompt:
+        resolveAgentPaneAdapter:
           NonNullable<
             NonNullable<
               MetaReviewGateNotifyRuntimeCapabilities["tmux"]
-            >["maybeAcceptTrustPrompt"]
+            >["resolveAgentPaneAdapter"]
           >;
         sendSubmissionRequestMessage:
           NonNullable<
@@ -59,11 +59,11 @@ export interface MetaReviewGateDependencyDefaults {
               MetaReviewGateNotifyRuntimeCapabilities["tmux"]
             >["sendSubmissionRequestMessage"]
           >;
-        submitPaneInput:
+        confirmSubmission:
           NonNullable<
             NonNullable<
               MetaReviewGateNotifyRuntimeCapabilities["tmux"]
-            >["submitPaneInput"]
+            >["confirmSubmission"]
           >;
       };
     };
@@ -76,6 +76,12 @@ export interface MetaReviewGateDependencyDefaults {
             NonNullable<
               MetaReviewGatePaneBindingRuntimeCapabilities["tmux"]
             >["runner"]
+          >;
+        resolveAgentPaneAdapter:
+          NonNullable<
+            NonNullable<
+              MetaReviewGatePaneBindingRuntimeCapabilities["tmux"]
+            >["resolveAgentPaneAdapter"]
           >;
         respawnPaneCommand:
           NonNullable<
@@ -119,15 +125,16 @@ export const metaReviewGateDependencyDefaults = {
     notify: {
       tmux: {
         runner: runTmux,
-        maybeAcceptTrustPrompt: acceptMetaReviewTrustPrompt,
+        resolveAgentPaneAdapter: resolveMetaReviewAgentPaneAdapter,
         sendSubmissionRequestMessage: sendMetaReviewSubmissionRequest,
-        submitPaneInput: submitMetaReviewInput
+        confirmSubmission: confirmMetaReviewSubmission
       }
     },
     paneBinding: {
       buildAgentCommand,
       tmux: {
         runner: runTmux,
+        resolveAgentPaneAdapter: resolveMetaReviewAgentPaneAdapter,
         respawnPaneCommand: respawnMetaReviewPane,
         deactivateOtherRolePanes: deactivateOtherMetaReviewPanes,
         waitForPaneReady: waitForMetaReviewPaneReady,

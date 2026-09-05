@@ -5,8 +5,9 @@ import {
 } from "../../../shared/topology/topologySlotPaneProjection.js";
 import type { AgentRole } from "../../../../contracts/kernel/agentIdentity.js";
 import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
-import { getAgentRuntimeProfile } from "../../../shared/agent/agentRuntimeProfiles.js";
+import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
 import { runTmux } from "./tmuxRunner.js";
+import { sendTmuxPaneKeys } from "./tmuxPaneWrite.js";
 import type { TmuxRunOptions } from "../../../ports/tmuxSessions.js";
 
 export interface PostEmitInterruptionInput {
@@ -37,7 +38,7 @@ async function sendDoubleEscape(input: {
   interEscapeDelayMs: number;
   sleepForDelayMs: (delayMs: number) => Promise<void>;
 }): Promise<void> {
-  await input.runner(["send-keys", "-t", input.targetPane, "Escape"], input.tmuxOpts);
+  await sendTmuxPaneKeys(input.runner, input.targetPane, "Escape", input.tmuxOpts);
 
   const maxAttempts = 30;
   const pollIntervalMs = 50;
@@ -62,7 +63,7 @@ async function sendDoubleEscape(input: {
     if (input.interEscapeDelayMs > 0) {
       await input.sleepForDelayMs(input.interEscapeDelayMs);
     }
-    await input.runner(["send-keys", "-t", input.targetPane, "Escape"], input.tmuxOpts);
+    await sendTmuxPaneKeys(input.runner, input.targetPane, "Escape", input.tmuxOpts);
   }
 }
 
@@ -76,7 +77,7 @@ async function sendDoubleEscape(input: {
  * Best-effort: all failures are silently logged and never thrown. The emit
  * result is already committed at this point — interruption is a side effect.
  */
-export async function postEmitInterruptOpencodePane(
+export async function postEmitInterruptDoubleEscape(
   input: PostEmitInterruptionInput,
 ): Promise<void> {
   const tmuxRunner = input.tmuxRunner ?? runTmux;
@@ -162,12 +163,11 @@ export async function postEmitInterruptOpencodePane(
 export async function postEmitInterruptAgentPane(
   input: PostEmitInterruptionInput & { agentName?: AgentName }
 ): Promise<void> {
-  const agentName = input.agentName ?? "opencode";
-  const profile = getAgentRuntimeProfile(agentName);
-  if (profile.postEmitInterruption === "none") {
+  const paneAgent = resolveAgentPaneAdapter(input.agentName ?? "opencode");
+  if (paneAgent.postEmitInterruption === "none") {
     return;
   }
-  await postEmitInterruptOpencodePane(input);
+  await postEmitInterruptDoubleEscape(input);
 }
 
 /**

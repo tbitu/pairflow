@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { confirmTmuxPaneMarkerSubmission } from "../../../../../src/v11/infrastructure/channel/tmux/tmuxInput.js";
+import { confirmTmuxPaneMarkerSubmission } from "../../../../../src/v11/infrastructure/channel/tmux/tmuxPaneMarkerConfirmation.js";
 import type { TmuxRunner, TmuxRunResult } from "../../../../../src/v11/ports/tmuxSessions.js";
 
 const marker = "[pairflow] bubble=b_confirm_01";

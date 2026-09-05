@@ -1,17 +1,14 @@
 import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
-import {
-  getAgentRuntimeProfile,
-  isAgentNameRegistered,
-  resolveStartupPasteSettleMs,
-  resolveTmuxPasteOptions
-} from "../../../shared/agent/agentRuntimeProfiles.js";
+import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
+import type { AgentPaneAdapter } from "../../../shared/agent/agentPaneAdapter.js";
 import {
   checkTmuxPaneMarkerStatus,
-  confirmTmuxPaneMarkerSubmission,
-  maybeAcceptOpencodeTrustPrompt,
+  confirmTmuxPaneMarkerSubmission
+} from "./tmuxPaneMarkerConfirmation.js";
+import {
   sendAndSubmitTmuxPaneMessage,
   submitTmuxPaneInput
-} from "./tmuxInput.js";
+} from "./tmuxPaneWrite.js";
 import { waitForAgentPaneReady } from "./tmuxPaneReadiness.js";
 import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
 
@@ -117,20 +114,19 @@ async function submitStartupPrompt(input: {
     console.error(
       `[tmux seed][${input.agentName ?? "unknown"}] startup prompt present (chars=${promptText.length}) for pane=${input.targetPane}.`
     );
-    const startupPasteSettleMs = resolveStartupPasteSettleMs(input.agentName);
+    const paneAgent = resolveAgentPaneAdapter(input.agentName);
+    const startupPasteSettleMs = paneAgent.startupPasteSettleMs;
     await sendAndSubmitTmuxPaneMessage(
       input.runner,
       input.targetPane,
       promptText,
       {
-        maxChunkLength: 1024,
+        ...paneAgent.resolvePasteOptions(),
         // reasonix renders its composer prompt well before its input loop
         // attaches; a paste in that window is silently dropped. The seed waits
         // out the settle before its first paste (round deliveries gate on
         // their own signals and never pay this).
-        ...(startupPasteSettleMs > 0 ? { settleMs: startupPasteSettleMs } : {}),
-        // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
-        ...resolveTmuxPasteOptions(input.agentName)
+        ...(startupPasteSettleMs > 0 ? { settleMs: startupPasteSettleMs } : {})
       }
     ).catch((error: unknown) => {
       // Catching here (best-effort paste) is intentional: a paste hiccup must
@@ -151,6 +147,74 @@ async function submitStartupPrompt(input: {
   await submitTmuxPaneInput(input.runner, input.targetPane);
 }
 
+/**
+ * Paste the kickoff message and confirm the pairflow marker was submitted,
+ * re-sending once for agents documented to swallow early keystrokes (reasonix).
+ */
+async function pasteKickoffMessage(input: {
+  runner: TmuxRunner;
+  targetPane: string;
+  paneAgent: AgentPaneAdapter;
+  message: string;
+  marker: string | undefined;
+  startupPasteSettleMs: number;
+}): Promise<boolean> {
+  const isStructuredPairflowEnvelope = input.marker !== undefined;
+  const maxPasteAttempts =
+    input.marker !== undefined && input.startupPasteSettleMs > 0 ? 2 : 1;
+  let confirmed = false;
+  for (
+    let pasteAttempt = 0;
+    pasteAttempt < maxPasteAttempts && !confirmed;
+    pasteAttempt += 1
+  ) {
+    if (pasteAttempt > 0) {
+      console.error(
+        `[tmux seed] kickoff marker not confirmed; re-sending paste to target_pane=${input.targetPane} (attempt ${pasteAttempt + 1} of ${maxPasteAttempts}).`
+      );
+      await sleep(2000);
+    }
+    try {
+      await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
+        requireSuccess: !isStructuredPairflowEnvelope,
+        ...input.paneAgent.resolvePasteOptions(),
+        ...(input.startupPasteSettleMs > 0 && pasteAttempt === 0
+          ? { settleMs: input.startupPasteSettleMs }
+          : {})
+      });
+    } catch (error) {
+      console.error(
+        `[tmux seed] kickoff paste failed for target_pane=${input.targetPane}: ${error instanceof Error ? error.message : String(error)}`
+      );
+      break;
+    }
+    if (input.marker === undefined) {
+      confirmed = true;
+      continue;
+    }
+    confirmed = await confirmTmuxPaneMarkerSubmission({
+      runner: input.runner,
+      targetPane: input.targetPane,
+      marker: input.marker,
+      paneAgent: input.paneAgent
+    }).catch(() => false);
+    if (!confirmed && pasteAttempt < maxPasteAttempts - 1) {
+      const markerStatus = await checkTmuxPaneMarkerStatus(
+        input.runner,
+        input.targetPane,
+        input.marker,
+        input.paneAgent
+      ).catch(() => "not_found" as const);
+      if (markerStatus === "stuck_in_input") {
+        // The paste is sitting in the composer and the confirm loop already
+        // retries Enter; re-sending the text would duplicate it.
+        break;
+      }
+    }
+  }
+  return confirmed;
+}
+
 async function sendPaneMessage(
   runner: TmuxRunner,
   targetPane: string,
@@ -167,16 +231,12 @@ async function sendPaneMessage(
   // Only opencode shows folder-trust / bypass-permissions prompts that need
   // accepting during pane bootstrap (see agent runtime profiles). Undefined or
   // unknown agents keep the historical opencode-default behavior.
-  const trustPromptHandling =
-    agentName !== undefined && isAgentNameRegistered(agentName)
-      ? getAgentRuntimeProfile(agentName).trustPromptHandling
-      : "opencode";
-  if (trustPromptHandling === "opencode") {
-    await maybeAcceptOpencodeTrustPrompt(runner, targetPane).catch(() => undefined);
+  const paneAgent = resolveAgentPaneAdapter(agentName);
+  if (paneAgent.trustPromptHandling === "opencode") {
+    await paneAgent.acceptTrustPrompt(runner, targetPane).catch(() => undefined);
   }
   const concreteMessage = message as string;
   const marker = resolvePairflowPaneMessageMarker(concreteMessage);
-  const isStructuredPairflowEnvelope = marker !== undefined;
   const ready = await waitForAgentPaneReady(agentName, {
     runner,
     targetPane
@@ -187,73 +247,17 @@ async function sendPaneMessage(
     );
     return;
   }
-  const startupPasteSettleMs = resolveStartupPasteSettleMs(agentName);
-  // A structured pairflow envelope whose paste drops in the pane is only
-  // re-sent for the agent class documented to swallow early keystrokes
-  // (startupPasteSettleMs > 0, i.e. reasonix). Other agents keep the single
-  // paste: re-sending risks the historical "double input" steering confusion
-  // when the first paste actually landed but only echoed late.
-  const maxPasteAttempts =
-    marker !== undefined && startupPasteSettleMs > 0 ? 2 : 1;
-  let confirmed = false;
-  for (
-    let pasteAttempt = 0;
-    pasteAttempt < maxPasteAttempts && !confirmed;
-    pasteAttempt += 1
-  ) {
-    if (pasteAttempt > 0) {
-      console.error(
-        `[tmux seed] kickoff marker not confirmed; re-sending paste to target_pane=${targetPane} (attempt ${pasteAttempt + 1} of ${maxPasteAttempts}).`
-      );
-      await sleep(2000);
-    }
-    try {
-      await sendAndSubmitTmuxPaneMessage(runner, targetPane, concreteMessage, {
-        requireSuccess: !isStructuredPairflowEnvelope,
-        maxChunkLength: 1024,
-        // reasonix renders its composer prompt well before its input loop
-        // attaches; the first seed paste waits out the settle so the kickoff
-        // is not dropped (round deliveries gate on their own signals).
-        ...(startupPasteSettleMs > 0 && pasteAttempt === 0
-          ? { settleMs: startupPasteSettleMs }
-          : {}),
-        // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
-        ...resolveTmuxPasteOptions(agentName)
-      });
-    } catch (error) {
-      // Best-effort paste: a failure to deliver the kickoff must not abort the
-      // entire bubble start. The watchdog nudge will steer the agent if the
-      // initial kickoff did not land.
-      console.error(
-        `[tmux seed] kickoff paste failed for target_pane=${targetPane}: ${error instanceof Error ? error.message : String(error)}`
-      );
-      break;
-    }
-    if (marker === undefined) {
-      confirmed = true;
-      continue;
-    }
-    confirmed = await confirmTmuxPaneMarkerSubmission({
-      runner,
-      targetPane,
-      marker
-    }).catch(() => false);
-    if (!confirmed && pasteAttempt < maxPasteAttempts - 1) {
-      const markerStatus = await checkTmuxPaneMarkerStatus(
-        runner,
-        targetPane,
-        marker
-      ).catch(() => "not_found" as const);
-      if (markerStatus === "stuck_in_input") {
-        // The paste is sitting in the composer and the confirm loop already
-        // retries Enter; re-sending the text would duplicate it.
-        break;
-      }
-    }
-  }
+  const confirmed = await pasteKickoffMessage({
+    runner,
+    targetPane,
+    paneAgent,
+    message: concreteMessage,
+    marker,
+    startupPasteSettleMs: paneAgent.startupPasteSettleMs
+  });
   if (marker !== undefined && !confirmed) {
     console.error(
-      `[tmux seed] KICKOFF_DELIVERY_FAILED: target_pane=${targetPane} agent=${agentName ?? "unknown"} marker=${marker} — the initial [pairflow] guidance was not confirmed in the pane after ${maxPasteAttempts} paste attempt(s). The agent may sit uninstructed; check \`pairflow bubble status\` and restart the bubble if the implementer never started.`
+      `[tmux seed] KICKOFF_DELIVERY_FAILED: target_pane=${targetPane} agent=${agentName ?? "unknown"} marker=${marker} — the initial [pairflow] guidance was not confirmed in the pane within the seed paste retry window. The agent may sit uninstructed; check \`pairflow bubble status\` and restart the bubble if the implementer never started.`
     );
   }
 
@@ -351,9 +355,7 @@ export function shouldSkipKickoffAfterStartup(
   if (!submitted) {
     return false;
   }
-  if (agentName !== undefined && isAgentNameRegistered(agentName)) {
-    return getAgentRuntimeProfile(agentName).startupPromptDelivery !== "tmux_paste";
-  }
-  // Unknown/undefined agents keep the historical opencode-default skip.
-  return true;
+  // Unknown/undefined agents resolve to the opencode adapter ("cli_arg") and
+  // therefore keep the historical opencode-default skip.
+  return resolveAgentPaneAdapter(agentName).startupPromptDelivery !== "tmux_paste";
 }

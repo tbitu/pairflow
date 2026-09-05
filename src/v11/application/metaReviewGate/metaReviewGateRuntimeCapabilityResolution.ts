@@ -13,18 +13,16 @@ export function resolveMetaReviewGateNotifyTmuxCapabilities(
   runtime: MetaReviewGateNotifyRuntimeCapabilities | undefined
 ): MetaReviewGateNotifyTmuxCapabilities | undefined {
   const runner = runtime?.tmux?.runner;
-  const maybeAcceptTrustPrompt = runtime?.tmux?.maybeAcceptTrustPrompt;
+  const resolveAgentPaneAdapter = runtime?.tmux?.resolveAgentPaneAdapter;
   const sendSubmissionRequestMessage = runtime?.tmux?.sendSubmissionRequestMessage;
-  const submitPaneInput = runtime?.tmux?.submitPaneInput;
+  const confirmSubmission = runtime?.tmux?.confirmSubmission;
   const resolved = {
     ...(runner !== undefined ? { runner } : {}),
-    ...(maybeAcceptTrustPrompt !== undefined
-      ? { maybeAcceptTrustPrompt }
-      : {}),
+    ...(resolveAgentPaneAdapter !== undefined ? { resolveAgentPaneAdapter } : {}),
     ...(sendSubmissionRequestMessage !== undefined
       ? { sendSubmissionRequestMessage }
       : {}),
-    ...(submitPaneInput !== undefined ? { submitPaneInput } : {})
+    ...(confirmSubmission !== undefined ? { confirmSubmission } : {})
   };
 
   return hasDefinedValues(resolved) ? resolved : undefined;
@@ -34,12 +32,14 @@ export function resolveMetaReviewGatePaneBindingTmuxCapabilities(
   runtime: MetaReviewGatePaneBindingRuntimeCapabilities | undefined
 ): MetaReviewGatePaneBindingTmuxCapabilities | undefined {
   const runner = runtime?.tmux?.runner;
+  const resolveAgentPaneAdapter = runtime?.tmux?.resolveAgentPaneAdapter;
   const respawnPaneCommand = runtime?.tmux?.respawnPaneCommand;
   const deactivateOtherRolePanes = runtime?.tmux?.deactivateOtherRolePanes;
   const waitForPaneReady = runtime?.tmux?.waitForPaneReady;
   const sendSubmissionRequestMessage = runtime?.tmux?.sendSubmissionRequestMessage;
   const resolved = {
     ...(runner !== undefined ? { runner } : {}),
+    ...(resolveAgentPaneAdapter !== undefined ? { resolveAgentPaneAdapter } : {}),
     ...(respawnPaneCommand !== undefined ? { respawnPaneCommand } : {}),
     ...(deactivateOtherRolePanes !== undefined ? { deactivateOtherRolePanes } : {}),
     ...(waitForPaneReady !== undefined ? { waitForPaneReady } : {}),

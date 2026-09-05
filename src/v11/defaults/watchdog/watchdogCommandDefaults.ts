@@ -3,7 +3,7 @@ import {
   emitDeliveryNotificationAck,
   retryStuckAgentInput
 } from "../../infrastructure/channel/tmux/tmuxDelivery.js";
-import { sendAndSubmitTmuxPaneMessage } from "../../infrastructure/channel/tmux/tmuxInput.js";
+import { sendAndSubmitTmuxPaneMessage } from "../../infrastructure/channel/tmux/tmuxPaneWrite.js";
 import { appendWatchdogTrace } from "../../infrastructure/artifact/watchdog/watchdogTraceStore.js";
 import {
   readStateSnapshot,

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { topologySlotPaneIndexCatalog} from "../../../../../src/v11/shared/topology/topologySlotPaneProjection.js";
 import {
   postEmitInterruptAgentPane,
-  postEmitInterruptOpencodePane,
+  postEmitInterruptDoubleEscape,
   resolveSessionsPath
 } from "../../../../../src/v11/infrastructure/channel/tmux/postEmitInterruption.js";
 
@@ -25,7 +25,7 @@ describe("resolveSessionsPath", () => {
   });
 });
 
-describe("postEmitInterruptOpencodePane", () => {
+describe("postEmitInterruptDoubleEscape", () => {
   let savedTmuxPane: string | undefined;
   let savedTmuxSession: string | undefined;
 
@@ -91,7 +91,7 @@ describe("postEmitInterruptOpencodePane", () => {
           return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
         }
 
-        await postEmitInterruptOpencodePane({
+        await postEmitInterruptDoubleEscape({
           sessionsPath,
           bubbleId,
           originatingRole: role,
@@ -127,7 +127,7 @@ describe("postEmitInterruptOpencodePane", () => {
       return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
     }
 
-    await postEmitInterruptOpencodePane({
+    await postEmitInterruptDoubleEscape({
       sessionsPath: "/tmp/nonexistent-sessions.json",
       bubbleId: "test-bubble-1",
       tmuxRunner: mockRunner,
@@ -162,7 +162,7 @@ describe("postEmitInterruptOpencodePane", () => {
         return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
       }
 
-      await postEmitInterruptOpencodePane({
+      await postEmitInterruptDoubleEscape({
         sessionsPath,
         bubbleId: "my-bubble",
         tmuxRunner: mockRunner,
@@ -207,7 +207,7 @@ describe("postEmitInterruptOpencodePane", () => {
         return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
       }
 
-      await postEmitInterruptOpencodePane({
+      await postEmitInterruptDoubleEscape({
         sessionsPath,
         bubbleId,
         tmuxRunner: mockRunner,
@@ -244,7 +244,7 @@ describe("postEmitInterruptOpencodePane", () => {
     }
 
     await expect(
-      postEmitInterruptOpencodePane({
+      postEmitInterruptDoubleEscape({
         sessionsPath: "/tmp/sessions.json",
         bubbleId: "test-bubble",
         tmuxRunner: mockRunner,
@@ -266,7 +266,7 @@ describe("postEmitInterruptOpencodePane", () => {
         return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
       }
 
-      await postEmitInterruptOpencodePane({
+      await postEmitInterruptDoubleEscape({
         sessionsPath,
         bubbleId: "malformed-bubble",
         tmuxRunner: mockRunner,
@@ -311,7 +311,7 @@ describe("postEmitInterruptOpencodePane", () => {
       }
 
       await expect(
-        postEmitInterruptOpencodePane({
+        postEmitInterruptDoubleEscape({
           sessionsPath,
           bubbleId,
           tmuxRunner: mockRunner,
@@ -361,7 +361,7 @@ describe("postEmitInterruptOpencodePane", () => {
         delayCalls.push(delayMs);
       };
 
-      await postEmitInterruptOpencodePane({
+      await postEmitInterruptDoubleEscape({
         sessionsPath,
         bubbleId,
         tmuxRunner: mockRunner,
@@ -410,7 +410,7 @@ describe("postEmitInterruptOpencodePane", () => {
         return Promise.resolve({ stdout: "some other terminal output", stderr: "", exitCode: 0 });
       }
 
-      await postEmitInterruptOpencodePane({
+      await postEmitInterruptDoubleEscape({
         sessionsPath,
         bubbleId,
         tmuxRunner: mockRunner,

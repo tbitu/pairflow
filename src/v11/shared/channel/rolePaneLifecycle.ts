@@ -15,9 +15,9 @@
  * 4. On cleanup: Pane is killed with session termination
  */
 
-import type { AgentName, AgentRole } from "../../../contracts/kernel/agentIdentity.js";
+import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
 import type { TmuxRunner } from "../../ports/tmuxSessions.js";
-import { getAgentRuntimeProfile, isAgentNameRegistered } from "../agent/agentRuntimeProfiles.js";
+import type { AgentPaneAdapter } from "../agent/agentPaneAdapter.js";
 
 /** Roles that share a bubble's pane topology (implementer, reviewer, meta_reviewer). */
 const ALL_ROLE_PANES: readonly AgentRole[] = [
@@ -88,8 +88,8 @@ export interface RolePaneLifecycle {
     command: string;
     cwd: string;
     runner: TmuxRunner;
-    /** Configured agent for the role; selects readiness module and concurrency rules. */
-    expectedPaneAgent?: AgentName;
+    /** Configured agent's pane adapter; supplies readiness + concurrency behavior. */
+    paneAgent?: AgentPaneAdapter;
   }): Promise<PaneLifecycleResult>;
 
   /**
@@ -132,12 +132,12 @@ export function createRolePaneLifecycle(input: {
     targetPane: string;
     attempts?: number;
     retryDelayMs?: number;
-    /** Configured agent for the pane; selects the readiness module. */
-    agentName?: AgentName;
+    /** Configured agent's pane adapter; supplies the readiness check. */
+    paneAgent?: AgentPaneAdapter;
   }) => Promise<boolean>;
   readinessConfig?: PaneReadinessConfig;
-  /** Resolve whether a given role pane runs a non-concurrent agent. */
-  configureRoleAgent?: ((role: AgentRole) => AgentName | undefined) | undefined;
+  /** Resolve the pane adapter for a given role (non-concurrent-agent checks). */
+  configureRoleAgent?: ((role: AgentRole) => AgentPaneAdapter | undefined) | undefined;
 }): RolePaneLifecycle {
   const config = input.readinessConfig ?? DEFAULT_PANE_READINESS_CONFIG;
 
@@ -175,8 +175,8 @@ export function createRolePaneLifecycle(input: {
           targetPane,
           attempts: config.maxRetryAttempts,
           retryDelayMs: config.retryDelayMs,
-          ...(activateInput.expectedPaneAgent !== undefined
-            ? { agentName: activateInput.expectedPaneAgent }
+          ...(activateInput.paneAgent !== undefined
+            ? { paneAgent: activateInput.paneAgent }
             : {})
         });
 
@@ -237,7 +237,7 @@ export async function deactivateOtherRolePanes(input: {
     role: AgentRole;
     cwd: string;
     runner: TmuxRunner;
-    expectedPaneAgent?: AgentName;
+    paneAgent?: AgentPaneAdapter;
   };
   topologyPaneIndexForRole: (role: AgentRole) => number;
   respawnPane: (input: {
@@ -248,20 +248,16 @@ export async function deactivateOtherRolePanes(input: {
     runner: TmuxRunner;
   }) => Promise<void>;
   /**
-   * Resolve whether a given role pane runs a non-concurrent agent. When
-   * provided, only panes running another non-concurrent (reasonix) agent are
-   * deactivated — so activating a non-concurrent implementer does NOT turn the
-   * opencode reviewer/meta-reviewer panes into dead shells. Optional for
-   * backwards compatibility: when omitted, "deactivate all other panes" is
-   * retained.
+   * Resolve the pane adapter for another role. When provided, only panes
+   * running another non-concurrent (reasonix) agent are deactivated — so
+   * activating a non-concurrent implementer does NOT turn the opencode
+   * reviewer/meta-reviewer panes into dead shells. Optional for backwards
+   * compatibility: when omitted, "deactivate all other panes" is retained.
    */
-  configureRoleAgent?: (role: AgentRole) => AgentName | undefined;
+  configureRoleAgent?: (role: AgentRole) => AgentPaneAdapter | undefined;
 }): Promise<void> {
-  const agentName = input.activateInput.expectedPaneAgent;
-  if (agentName === undefined || !isAgentNameRegistered(agentName)) {
-    return;
-  }
-  if (getAgentRuntimeProfile(agentName).supportsConcurrentPanes) {
+  const paneAgent = input.activateInput.paneAgent;
+  if (paneAgent === undefined || paneAgent.supportsConcurrentPanes) {
     return;
   }
   for (const role of ALL_ROLE_PANES) {
@@ -277,8 +273,7 @@ export async function deactivateOtherRolePanes(input: {
       const otherAgent = input.configureRoleAgent(role);
       if (
         otherAgent === undefined
-        || !isAgentNameRegistered(otherAgent)
-        || getAgentRuntimeProfile(otherAgent).supportsConcurrentPanes
+        || otherAgent.supportsConcurrentPanes
       ) {
         continue;
       }

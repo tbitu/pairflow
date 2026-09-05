@@ -1,11 +1,6 @@
 import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
-import {
-  getAgentRuntimeProfile,
-  isAgentNameRegistered,
-  isPaneBusyOutput
-} from "../../../shared/agent/agentRuntimeProfiles.js";
-import { waitForOpencodePaneReady } from "./tmuxOpencodeReadiness.js";
-import { waitForReasonixPaneReady } from "./tmuxReasonixReadiness.js";
+import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
+import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolvePromise) => {
@@ -14,7 +9,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 export interface WaitForAgentPaneReadyInput {
-  runner: Parameters<typeof waitForOpencodePaneReady>[0]["runner"];
+  runner: TmuxRunner;
   targetPane: string;
   sleepForDelayMs?: (delayMs: number) => Promise<void>;
   attempts?: number;
@@ -22,27 +17,31 @@ export interface WaitForAgentPaneReadyInput {
 }
 
 /**
- * Dispatch pane readiness polling to the per-agent readiness module.
- * Undefined/unknown agents fall back to the opencode check (backwards
- * compatible with callers that predate agent-parametric readiness, including
- * legacy test fixtures that still carry pre-reasonix agent names).
+ * Dispatch pane readiness polling to the per-agent adapter. Undefined/unknown
+ * agents fall back to the opencode check (backwards compatible with callers
+ * that predate agent-parametric readiness, including legacy test fixtures).
  */
 export async function waitForAgentPaneReady(
   agentName: AgentName | undefined,
   input: WaitForAgentPaneReadyInput
 ): Promise<boolean> {
-  const profile =
-    agentName !== undefined && isAgentNameRegistered(agentName)
-      ? getAgentRuntimeProfile(agentName)
-      : undefined;
-  if (profile?.readiness === "reasonix") {
-    return waitForReasonixPaneReady(input);
-  }
-  return waitForOpencodePaneReady(input);
+  return resolveAgentPaneAdapter(agentName).waitForReady(
+    input.runner,
+    input.targetPane,
+    {
+      ...(input.attempts !== undefined ? { attempts: input.attempts } : {}),
+      ...(input.retryDelayMs !== undefined
+        ? { retryDelayMs: input.retryDelayMs }
+        : {}),
+      ...(input.sleepForDelayMs !== undefined
+        ? { sleepForDelayMs: input.sleepForDelayMs }
+        : {})
+    }
+  );
 }
 
 export interface WaitForAgentPaneIdleInput {
-  runner: Parameters<typeof waitForOpencodePaneReady>[0]["runner"];
+  runner: TmuxRunner;
   targetPane: string;
   sleepForDelayMs?: (delayMs: number) => Promise<void>;
   attempts?: number;
@@ -72,6 +71,7 @@ export async function waitForAgentPaneIdle(
   const captureStartLine = input.captureStartLine ?? 20;
   const settleDelayMs = input.settleDelayMs ?? 500;
   const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
+  const adapter = resolveAgentPaneAdapter(agentName);
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
     const capture = await input.runner(
@@ -79,7 +79,7 @@ export async function waitForAgentPaneIdle(
       { allowFailure: true }
     );
     const paneOutput = capture.exitCode === 0 ? capture.stdout : "";
-    if (!isPaneBusyOutput({ agentName, paneOutput })) {
+    if (!adapter.isBusy(paneOutput)) {
       if (settleDelayMs > 0 && !process.env.VITEST) {
         await sleepForDelayMs(settleDelayMs);
       }

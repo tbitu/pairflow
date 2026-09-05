@@ -107,12 +107,11 @@ describe("metaReviewGate V11 defaults", () => {
       NotifyMetaReviewerSubmissionRequestDependencies["runtime"]
     > = {
       tmux: {
-        maybeAcceptTrustPrompt: async () => undefined,
         sendSubmissionRequestMessage: async (runner) => {
           observedRunner.push(runner);
           throw new Error("stop after runner capture");
         },
-        submitPaneInput: async () => undefined
+        confirmSubmission: async () => false
       }
     };
     Object.assign(
@@ -187,7 +186,7 @@ describe("metaReviewGate V11 defaults", () => {
       notify?: {
         tmux?: {
           sendSubmissionRequestMessage?: unknown;
-          submitPaneInput?: unknown;
+          confirmSubmission?: unknown;
         };
       };
     }).notify?.tmux?.sendSubmissionRequestMessage).toBe("function");
@@ -195,10 +194,10 @@ describe("metaReviewGate V11 defaults", () => {
       notify?: {
         tmux?: {
           sendSubmissionRequestMessage?: unknown;
-          submitPaneInput?: unknown;
+          confirmSubmission?: unknown;
         };
       };
-    }).notify?.tmux?.submitPaneInput).toBe("function");
+    }).notify?.tmux?.confirmSubmission).toBe("function");
     expect(typeof (observedRuntime[0] as {
       paneBinding?: {
         tmux?: {
@@ -299,7 +298,7 @@ describe("metaReviewGate V11 defaults", () => {
       notify: {
         tmux: {
           sendSubmissionRequestMessage: async () => undefined,
-          submitPaneInput: async () => undefined
+          confirmSubmission: async () => false
         }
       },
       paneBinding: {
@@ -463,7 +462,7 @@ describe("metaReviewGate V11 defaults", () => {
             sendSubmissionRequestMessage: async (_runner, _targetPane, message) => {
               submittedMessages.push(message);
             },
-            submitPaneInput: async () => undefined
+            confirmSubmission: async () => false
           }
         },
         paneBinding: {

@@ -1,4 +1,5 @@
 import type { AgentName, AgentRole } from "../../../contracts/kernel/agentIdentity.js";
+import type { AgentPaneAdapter } from "../agent/agentPaneAdapter.js";
 import type {
   PairflowCommandProfile,
   RoleMcpPolicy
@@ -15,6 +16,7 @@ import type {
   ReadTranscriptEnvelopesPort
 } from "../../ports/transcript.js";
 import type { MetaReviewGateTmuxRunner } from "./metaReviewGateTmuxCapabilities.js";
+import type { SendAndSubmitTmuxPaneMessageOptions } from "../../ports/tmuxDelivery.js";
 
 export interface NotifyMetaReviewerSubmissionRequestInput {
   bubbleId: string;
@@ -25,25 +27,22 @@ export interface NotifyMetaReviewerSubmissionRequestInput {
 
 export interface MetaReviewGateNotifyTmuxCapabilities {
   runner?: MetaReviewGateTmuxRunner;
-  maybeAcceptTrustPrompt?: (
-    runner: MetaReviewGateTmuxRunner,
-    targetPane: string
-  ) => Promise<boolean | void>;
+  resolveAgentPaneAdapter?: (agentName: AgentName) => AgentPaneAdapter;
   sendSubmissionRequestMessage?: (
     runner: MetaReviewGateTmuxRunner,
     targetPane: string,
     message: string,
-    options?: {
-      requireSuccess?: boolean;
-      submitDelayMs?: number;
-      maxChunkLength?: number;
-      interChunkDelayMs?: number;
-    }
+    options?: SendAndSubmitTmuxPaneMessageOptions
   ) => Promise<void>;
-  submitPaneInput?: (
-    runner: MetaReviewGateTmuxRunner,
-    targetPane: string
-  ) => Promise<void>;
+  confirmSubmission?: (input: {
+    runner: MetaReviewGateTmuxRunner;
+    targetPane: string;
+    marker: string;
+    attempts?: number;
+    settleDelayMs?: number;
+    retryDelayMs?: number;
+    sleepForDelayMs?: (delayMs: number) => Promise<void>;
+  }) => Promise<boolean>;
 }
 
 export interface MetaReviewGateNotifyRuntimeCapabilities {
@@ -67,6 +66,7 @@ export type NotifyMetaReviewerSubmissionRequest = (
 
 export interface MetaReviewGatePaneBindingTmuxCapabilities {
   runner?: MetaReviewGateTmuxRunner;
+  resolveAgentPaneAdapter?: (agentName: AgentName) => AgentPaneAdapter;
   respawnPaneCommand?: (input: {
     sessionName: string;
     paneIndex: number;
@@ -80,7 +80,7 @@ export interface MetaReviewGatePaneBindingTmuxCapabilities {
       role: AgentRole;
       cwd: string;
       runner: MetaReviewGateTmuxRunner;
-      expectedPaneAgent?: AgentName;
+      paneAgent?: AgentPaneAdapter;
     };
     topologyPaneIndexForRole: (role: AgentRole) => number;
     respawnPane: (input: {
@@ -90,7 +90,7 @@ export interface MetaReviewGatePaneBindingTmuxCapabilities {
       cwd: string;
       runner: MetaReviewGateTmuxRunner;
     }) => Promise<void>;
-    configureRoleAgent?: (role: AgentRole) => AgentName | undefined;
+    configureRoleAgent?: (role: AgentRole) => AgentPaneAdapter | undefined;
   }) => Promise<void>;
   waitForPaneReady?: (
     agentName: AgentName | undefined,

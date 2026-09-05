@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { TmuxRunner, TmuxRunResult } from "../../../../../src/v11/ports/tmuxSessions.js";
-import { sendAndSubmitTmuxPaneMessage } from "../../../../../src/v11/infrastructure/channel/tmux/tmuxInput.js";
+import { sendAndSubmitTmuxPaneMessage } from "../../../../../src/v11/infrastructure/channel/tmux/tmuxPaneWrite.js";
 
 function captureRunner(): { runner: TmuxRunner; calls: string[][] } {
   const calls: string[][] = [];

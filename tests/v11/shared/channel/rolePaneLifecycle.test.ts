@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { deactivateOtherRolePanes } from "../../../../src/v11/shared/channel/rolePaneLifecycle.js";
+import { resolveAgentPaneAdapter } from "../../../../src/v11/infrastructure/channel/tmux/agentPaneAdapters.js";
 import type { AgentRole } from "../../../../src/contracts/kernel/agentIdentity.js";
 import type { TmuxRunner } from "../../../../src/v11/ports/tmuxSessions.js";
 
@@ -37,12 +38,12 @@ describe("deactivateOtherRolePanes", () => {
         role: "implementer",
         cwd: "/ws",
         runner,
-        expectedPaneAgent: "reasonix"
+        paneAgent: resolveAgentPaneAdapter("reasonix")
       },
       topologyPaneIndexForRole,
       respawnPane,
       configureRoleAgent: (role) =>
-        role === "implementer" ? "reasonix" : "opencode"
+        resolveAgentPaneAdapter(role === "implementer" ? "reasonix" : "opencode")
     });
 
     // opencode reviewer/meta panes must NOT be deactivated.
@@ -57,11 +58,12 @@ describe("deactivateOtherRolePanes", () => {
         role: "reviewer",
         cwd: "/ws",
         runner,
-        expectedPaneAgent: "reasonix"
+        paneAgent: resolveAgentPaneAdapter("reasonix")
       },
       topologyPaneIndexForRole,
       respawnPane,
-      configureRoleAgent: (role) => (role === "reviewer" ? "reasonix" : "reasonix")
+      configureRoleAgent: (role) =>
+        resolveAgentPaneAdapter(role === "reviewer" ? "reasonix" : "reasonix")
     });
 
     const calls = respawnPane.mock.calls.map((c) => c[0].paneIndex);
@@ -78,7 +80,7 @@ describe("deactivateOtherRolePanes", () => {
         role: "implementer",
         cwd: "/ws",
         runner,
-        expectedPaneAgent: "reasonix"
+        paneAgent: resolveAgentPaneAdapter("reasonix")
       },
       topologyPaneIndexForRole,
       respawnPane
@@ -97,7 +99,7 @@ describe("deactivateOtherRolePanes", () => {
         role: "implementer",
         cwd: "/ws",
         runner,
-        expectedPaneAgent: "opencode"
+        paneAgent: resolveAgentPaneAdapter("opencode")
       },
       topologyPaneIndexForRole,
       respawnPane

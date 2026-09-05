@@ -3,6 +3,27 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   notifyMetaReviewerSubmissionRequest
 } from "../../../../src/v11/application/metaReviewGate/metaReviewGateNotify.js";
+import type { AgentPaneAdapter } from "../../../../src/v11/shared/agent/agentPaneAdapter.js";
+
+function mockPaneAgent(overrides: Partial<AgentPaneAdapter> = {}): AgentPaneAdapter {
+  return {
+    name: "opencode",
+    waitForReady: vi.fn(async () => true),
+    findLastPromptIndex: () => -1,
+    hasVisiblePrompt: () => true,
+    acceptTrustPrompt: vi.fn(async () => false),
+    isBusy: () => false,
+    resolvePasteOptions: () => ({}),
+    supportsConcurrentPanes: true,
+    startupPromptDelivery: "cli_arg",
+    trustPromptHandling: "opencode",
+    postEmitInterruption: "opencode_double_escape",
+    startupPasteSettleMs: 0,
+    minimalPastedGuidance: true,
+    planWatchBackend: "opencode",
+    ...overrides
+  };
+}
 
 async function notifyMetaReviewer(input: {
   bubbleId: string;
@@ -27,7 +48,7 @@ describe("metaReviewGateNotify", () => {
       runtime: {
         tmux: {
           sendSubmissionRequestMessage: vi.fn(async () => undefined),
-          submitPaneInput: vi.fn(async () => undefined)
+          confirmSubmission: vi.fn(async () => false)
         }
       }
     },
@@ -36,12 +57,12 @@ describe("metaReviewGateNotify", () => {
       runtime: {
         tmux: {
           runner: vi.fn(),
-          submitPaneInput: vi.fn(async () => undefined)
+          confirmSubmission: vi.fn(async () => false)
         }
       }
     },
     {
-      label: "tmux.submitPaneInput is missing",
+      label: "tmux.confirmSubmission is missing",
       runtime: {
         tmux: {
           runner: vi.fn(),
@@ -65,170 +86,113 @@ describe("metaReviewGateNotify", () => {
     });
   });
 
-  it("does not require trust-prompt helper to confirm delivery", async () => {
-    vi.useFakeTimers();
-
-    const bubbleId = "b_meta_review_notify_optional_trust_prompt";
-    const round = 3;
-    const targetPane = "pf-b_meta_review_notify_optional_trust_prompt:0.3";
-    const marker = `bubble=${bubbleId} meta-review request round=${round}.`;
-    const runTmux = vi.fn(async () => ({
-      stdout: `${marker}\n>`,
-      stderr: "",
-      exitCode: 0
-    }));
+  it("accepts the trust prompt through the resolved agent adapter", async () => {
+    const acceptTrustPrompt = vi.fn(async () => false);
     const sendSubmissionRequestMessage = vi.fn(async () => undefined);
-    const submitPaneInput = vi.fn(async () => undefined);
+    const confirmSubmission = vi.fn(async () => true);
 
-    const resultPromise = notifyMetaReviewer({
-      bubbleId,
-      round,
-      targetPane
+    const result = await notifyMetaReviewer({
+      bubbleId: "b_meta_review_notify_trust_prompt",
+      round: 3,
+      targetPane: "pf-b_meta_review_notify_trust_prompt:0.3"
     }, {
       runtime: {
         tmux: {
-          runner: runTmux,
+          runner: vi.fn(async () => ({ stdout: "", stderr: "", exitCode: 0 })),
+          resolveAgentPaneAdapter: () => mockPaneAgent({ acceptTrustPrompt }),
           sendSubmissionRequestMessage,
-          submitPaneInput
+          confirmSubmission
         }
       }
     });
 
-    await vi.advanceTimersByTimeAsync(800);
+    expect(result.status).toBe("confirmed");
+    expect(acceptTrustPrompt).toHaveBeenCalledTimes(1);
+    expect(sendSubmissionRequestMessage).toHaveBeenCalledTimes(1);
+  });
 
-    await expect(resultPromise).resolves.toEqual({
+  it("confirms delivery when the marker submission is confirmed", async () => {
+    const sendSubmissionRequestMessage = vi.fn(async () => undefined);
+    const confirmSubmission = vi.fn(async () => true);
+
+    const result = await notifyMetaReviewer({
+      bubbleId: "b_meta_review_notify_confirmed",
+      round: 4,
+      targetPane: "pf-b_meta_review_notify_confirmed:0.3"
+    }, {
+      runtime: {
+        tmux: {
+          runner: vi.fn(async () => ({ stdout: "", stderr: "", exitCode: 0 })),
+          sendSubmissionRequestMessage,
+          confirmSubmission
+        }
+      }
+    });
+
+    expect(result).toEqual({
       status: "confirmed",
       reasonCode: null,
       message: "meta-review submit request delivery confirmed from pane scrollback."
     });
     expect(sendSubmissionRequestMessage).toHaveBeenCalledTimes(1);
-    expect(submitPaneInput).not.toHaveBeenCalled();
+    expect(confirmSubmission).toHaveBeenCalledTimes(1);
   });
 
-  it("returns uncertain when pane scrollback never confirms the submitted marker", async () => {
-    vi.useFakeTimers();
-
-    const bubbleId = "b_meta_review_notify_uncertain";
-    const round = 4;
-    const targetPane = "pf-b_meta_review_notify_uncertain:0.3";
-    const runTmux = vi.fn(async () => ({
-      stdout: "still waiting for structured submit to appear",
-      stderr: "",
-      exitCode: 0
-    }));
+  it("returns uncertain when the marker is never confirmed", async () => {
     const sendSubmissionRequestMessage = vi.fn(async () => undefined);
-    const submitPaneInput = vi.fn(async () => undefined);
+    const confirmSubmission = vi.fn(async () => false);
 
-    const resultPromise = notifyMetaReviewer({
-      bubbleId,
-      round,
-      targetPane
+    const result = await notifyMetaReviewer({
+      bubbleId: "b_meta_review_notify_uncertain",
+      round: 5,
+      targetPane: "pf-b_meta_review_notify_uncertain:0.3"
     }, {
       runtime: {
         tmux: {
-          runner: runTmux,
+          runner: vi.fn(async () => ({ stdout: "", stderr: "", exitCode: 0 })),
           sendSubmissionRequestMessage,
-          submitPaneInput
+          confirmSubmission
         }
       }
     });
 
-    await vi.advanceTimersByTimeAsync(5000);
-
-    await expect(resultPromise).resolves.toEqual({
+    expect(result).toEqual({
       status: "uncertain",
       reasonCode: "META_REVIEW_REQUEST_DELIVERY_UNCONFIRMED",
       message: "meta-reviewer pane did not confirm structured submit request delivery."
     });
-    expect(sendSubmissionRequestMessage).toHaveBeenCalledTimes(1);
-    expect(submitPaneInput).toHaveBeenCalledTimes(2);
+    expect(confirmSubmission).toHaveBeenCalledTimes(1);
   });
 
-  it("retries enter when the submitted marker is stuck in pane input before confirmation", async () => {
-    vi.useFakeTimers();
-
-    const bubbleId = "b_meta_review_notify_stuck_in_input";
-    const round = 4;
-    const targetPane = "pf-b_meta_review_notify_stuck_in_input:0.3";
-    const marker = `bubble=${bubbleId} meta-review request round=${round}.`;
-    const runTmux = vi.fn()
-      .mockResolvedValueOnce({
-        stdout: `>\n${marker}`,
-        stderr: "",
-        exitCode: 0
-      })
-      .mockResolvedValueOnce({
-        stdout: `${marker}\n>`,
-        stderr: "",
-        exitCode: 0
-      });
-    const sendSubmissionRequestMessage = vi.fn(async () => undefined);
-    const submitPaneInput = vi.fn(async () => undefined);
-
-    const resultPromise = notifyMetaReviewer({
-      bubbleId,
-      round,
-      targetPane
-    }, {
-      runtime: {
-        tmux: {
-          runner: runTmux,
-          sendSubmissionRequestMessage,
-          submitPaneInput
-        }
-      }
-    });
-
-    await vi.advanceTimersByTimeAsync(2600);
-
-    await expect(resultPromise).resolves.toEqual({
-      status: "confirmed",
-      reasonCode: null,
-      message: "meta-review submit request delivery confirmed from pane scrollback."
-    });
-    expect(sendSubmissionRequestMessage).toHaveBeenCalledTimes(1);
-    expect(submitPaneInput).toHaveBeenCalledTimes(1);
-    expect(runTmux).toHaveBeenCalledTimes(2);
-  });
-
-  it("returns failed when pane scrollback shows the configured meta-reviewer exited before confirmation", async () => {
-    vi.useFakeTimers();
-
-    const bubbleId = "b_meta_review_notify_pane_exited";
-    const round = 5;
-    const targetPane = "pf-b_meta_review_notify_pane_exited:0.3";
+  it("returns failed when pane scrollback shows the configured meta-reviewer exited", async () => {
     const runTmux = vi.fn(async () => ({
       stdout: "opencode exited (code 1). Dropping to interactive shell.",
       stderr: "",
       exitCode: 0
     }));
     const sendSubmissionRequestMessage = vi.fn(async () => undefined);
-    const submitPaneInput = vi.fn(async () => undefined);
+    const confirmSubmission = vi.fn(async () => true);
 
-    const resultPromise = notifyMetaReviewer({
-      bubbleId,
-      round,
-      targetPane,
+    const result = await notifyMetaReviewer({
+      bubbleId: "b_meta_review_notify_pane_exited",
+      round: 6,
+      targetPane: "pf-b_meta_review_notify_pane_exited:0.3",
       metaReviewerAgent: "opencode"
     }, {
       runtime: {
         tmux: {
           runner: runTmux,
           sendSubmissionRequestMessage,
-          submitPaneInput
+          confirmSubmission
         }
       }
     });
 
-    await vi.advanceTimersByTimeAsync(800);
-
-    await expect(resultPromise).resolves.toEqual({
+    expect(result).toEqual({
       status: "failed",
       reasonCode: "META_REVIEWER_PANE_EXITED",
       message: "meta-reviewer pane fell back to interactive shell after opencode exit."
     });
-    expect(sendSubmissionRequestMessage).toHaveBeenCalledTimes(1);
-    expect(submitPaneInput).not.toHaveBeenCalled();
+    expect(confirmSubmission).not.toHaveBeenCalled();
   });
-
 });

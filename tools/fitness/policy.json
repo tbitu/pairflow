@@ -99,6 +99,14 @@
           "reason": "The watchdog pane activity monitor is an application-layer feature whose core responsibility is to detect agent inactivity and nudge the agent via tmux operations. It must import respawnTmuxPaneCommand from infrastructure/channel/tmux; moving this into shared would couple shared code with tmux specifics.",
           "from": "src/v11/application/watchdog/internal/paneActivity/watchdogPaneActivityMonitoring.ts",
           "to": "src/v11/infrastructure/channel/tmux/tmuxManager.ts"
+        },
+        {
+          "id": "watchdog-pane-activity-agent-pane-adapter",
+          "kind": "allow-edge",
+          "owner": "architecture/runtime",
+          "reason": "The watchdog pane activity monitor resolves the active role agent's pane adapter to deactivate conflicting single-session panes and to compute per-agent paste options. The adapter factory lives in infrastructure beside the tmux readiness modules it composes; routing the watchdog through shared would couple shared with tmux specifics.",
+          "from": "src/v11/application/watchdog/internal/paneActivity/watchdogPaneActivityMonitoring.ts",
+          "to": "src/v11/infrastructure/channel/tmux/agentPaneAdapters.ts"
         }
       ]
     },

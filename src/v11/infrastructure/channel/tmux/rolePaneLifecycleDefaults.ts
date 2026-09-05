@@ -10,8 +10,9 @@
 import { createRolePaneLifecycle, type RolePaneLifecycle, DEFAULT_PANE_READINESS_CONFIG } from "../../../shared/channel/rolePaneLifecycle.js";
 import { getSharedTopologySlotPaneIndexForRole } from "../../../shared/topology/topologySlotPaneProjection.js";
 import { respawnTmuxPaneCommand } from "./tmuxManagerRuntime.js";
-import { waitForAgentPaneReady } from "./tmuxPaneReadiness.js";
-import type { AgentName, AgentRole } from "../../../../contracts/kernel/agentIdentity.js";
+import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
+import type { AgentRole } from "../../../../contracts/kernel/agentIdentity.js";
+import type { AgentPaneAdapter } from "../../../shared/agent/agentPaneAdapter.js";
 
 /**
  * Create the default RolePaneLifecycle implementation for a tmux-based bubble session.
@@ -20,7 +21,7 @@ import type { AgentName, AgentRole } from "../../../../contracts/kernel/agentIde
  */
 export function createDefaultRolePaneLifecycle(input?: {
   readinessConfig?: typeof DEFAULT_PANE_READINESS_CONFIG;
-  configureRoleAgent?: ((role: AgentRole) => AgentName | undefined) | undefined;
+  configureRoleAgent?: ((role: AgentRole) => AgentPaneAdapter | undefined) | undefined;
 }): RolePaneLifecycle {
   return createRolePaneLifecycle({
     topologyPaneIndexForRole: getSharedTopologySlotPaneIndexForRole,
@@ -36,16 +37,9 @@ export function createDefaultRolePaneLifecycle(input?: {
         runner: respawnInput.runner ?? (await import("./tmuxRunner.js").then(m => m.runTmux))
       });
     },
-    waitForPaneReady: async (readyInput: {
-      runner: Parameters<typeof waitForAgentPaneReady>[1]["runner"];
-      targetPane: string;
-      attempts?: number;
-      retryDelayMs?: number;
-      agentName?: AgentName;
-    }) => {
-      return waitForAgentPaneReady(readyInput.agentName, {
-        runner: readyInput.runner,
-        targetPane: readyInput.targetPane,
+    waitForPaneReady: async (readyInput) => {
+      const paneAgent = readyInput.paneAgent ?? resolveAgentPaneAdapter(undefined);
+      return paneAgent.waitForReady(readyInput.runner, readyInput.targetPane, {
         attempts: readyInput.attempts ?? 100,
         retryDelayMs: readyInput.retryDelayMs ?? 300
       });

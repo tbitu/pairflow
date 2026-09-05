@@ -1,20 +1,13 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { readRuntimeSessionsRegistry } from "../../executor/sessionRuntime/runtimeSessionsRegistry.js";
 import { createDefaultRolePaneLifecycle } from "./rolePaneLifecycleDefaults.js";
+import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
 import { runTmux } from "./tmuxRunner.js";
-import {
-  sendAndSubmitTmuxPaneMessage, submitTmuxPaneInput
-} from "./tmuxInput.js";
+import { sendAndSubmitTmuxPaneMessage } from "./tmuxPaneWrite.js";
 import { resolve } from "node:path";
 import { buildAgentCommand } from "../../../shared/command/agentCommand.js";
-import {
-  getAgentRuntimeProfile,
-  isAgentNameRegistered,
-  resolveTmuxPasteOptions
-} from "../../../shared/agent/agentRuntimeProfiles.js";
+import type { AgentPaneAdapter } from "../../../shared/agent/agentPaneAdapter.js";
 import { composeRolePrompt } from "../../../shared/role/prompts/roleStartupPromptComposer.js";
 import { reviewerPolicySnapshotFileName } from "../../../shared/reviewer/reviewerPolicySnapshot.js";
-import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../shared/runtimeSessionWorkspaceAuthority.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../config/defaults.js";
@@ -49,7 +42,7 @@ async function submitReviewerStartupPrompt(input: {
   sessionName: string;
   paneIndex: number;
   startupSubmitDelayMs?: number;
-  reviewerAgentName: AgentName;
+  paneAgent: AgentPaneAdapter;
 }): Promise<void> {
   if (!input.startupPrompt?.trim()) {
     return;
@@ -65,9 +58,7 @@ async function submitReviewerStartupPrompt(input: {
     targetPane,
     input.startupPrompt,
     {
-      maxChunkLength: 1024,
-      // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
-      ...resolveTmuxPasteOptions(input.reviewerAgentName),
+      ...input.paneAgent.resolvePasteOptions(),
       ...(input.startupSubmitDelayMs === 0 ? { settleMs: 0, interChunkDelayMs: 0 } : {})
     }
   );
@@ -112,10 +103,8 @@ function resolveReviewerStartupPromptToSubmit(input: {
     return input.reviewerStartupPrompt;
   }
   const reviewerAgent = input.bubbleConfig.agents.reviewer;
-  const reviewerProfile = isAgentNameRegistered(reviewerAgent)
-    ? getAgentRuntimeProfile(reviewerAgent)
-    : undefined;
-  if (reviewerProfile?.startupPromptDelivery !== "tmux_paste") {
+  const reviewerPaneAgent = resolveAgentPaneAdapter(reviewerAgent);
+  if (reviewerPaneAgent.startupPromptDelivery !== "tmux_paste") {
     return undefined;
   }
   return composeRolePrompt({
@@ -158,9 +147,9 @@ export async function refreshReviewerContext(
   // Use unified RolePaneLifecycle to activate reviewer pane
   const paneLifecycle = createDefaultRolePaneLifecycle({
     configureRoleAgent: (role) => {
-      if (role === "implementer") return input.bubbleConfig.agents.implementer;
-      if (role === "reviewer") return input.bubbleConfig.agents.reviewer;
-      if (role === "meta_reviewer") return input.bubbleConfig.agents.meta_reviewer;
+      if (role === "implementer") return resolveAgentPaneAdapter(input.bubbleConfig.agents.implementer);
+      if (role === "reviewer") return resolveAgentPaneAdapter(input.bubbleConfig.agents.reviewer);
+      if (role === "meta_reviewer") return resolveAgentPaneAdapter(input.bubbleConfig.agents.meta_reviewer);
       return undefined;
     }
   });
@@ -194,7 +183,7 @@ export async function refreshReviewerContext(
     command: reviewerCommand,
     cwd: workspacePath,
     runner,
-    expectedPaneAgent: input.bubbleConfig.agents.reviewer
+    paneAgent: resolveAgentPaneAdapter(input.bubbleConfig.agents.reviewer)
   });
 
   if (!activateResult.ok) {
@@ -220,7 +209,7 @@ export async function refreshReviewerContext(
       runner,
       sessionName,
       paneIndex: activateResult.paneIndex,
-      reviewerAgentName: input.bubbleConfig.agents.reviewer,
+      paneAgent: resolveAgentPaneAdapter(input.bubbleConfig.agents.reviewer),
       ...(input.startupSubmitDelayMs !== undefined
         ? { startupSubmitDelayMs: input.startupSubmitDelayMs }
         : {})

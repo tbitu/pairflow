@@ -9,10 +9,9 @@ import { getSharedTopologySlotPaneIndexForRole } from "../../../shared/topology/
 import { deactivateOtherRolePanes } from "../../../shared/channel/rolePaneLifecycle.js";
 import { runTmux, type TmuxRunner } from "./tmuxManager.js";
 import { respawnTmuxPaneCommand } from "./tmuxManager.js";
-import {
-  checkTmuxPaneMarkerStatus,
-  submitTmuxPaneInput
-} from "./tmuxInput.js";
+import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
+import { checkTmuxPaneMarkerStatus } from "./tmuxPaneMarkerConfirmation.js";
+import { submitTmuxPaneInput } from "./tmuxPaneWrite.js";
 import {
   attemptTmuxDelivery,
   createRejectedDeliveryAck,
@@ -351,17 +350,19 @@ async function deactivateNonConcurrentAgentPanes(input: {
       role: input.expectedAgentRole,
       cwd: input.workspacePath,
       runner: input.runner,
-      expectedPaneAgent: input.expectedPaneAgent
+      paneAgent: resolveAgentPaneAdapter(input.expectedPaneAgent)
     },
     topologyPaneIndexForRole: getSharedTopologySlotPaneIndexForRole,
     respawnPane: (respawnInput) => respawnTmuxPaneCommand(respawnInput),
     // Only ever deactivate panes that run another non-concurrent (reasonix)
     // agent. opencode reviewer/meta-reviewer panes must not be turned into
     // placeholders just because the reasonix implementer is active.
-    configureRoleAgent: (role) => resolveConfiguredAgentForRole({
-      agents: input.bubbleConfig.agents,
-      role
-    })
+    configureRoleAgent: (role) => resolveAgentPaneAdapter(
+      resolveConfiguredAgentForRole({
+        agents: input.bubbleConfig.agents,
+        role
+      })
+    )
   });
 }
 

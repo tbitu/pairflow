@@ -21,9 +21,10 @@ import type {
 import { ensureAgentPaneReady } from "../../../../infrastructure/channel/tmux/tmuxDeliveryRuntime.js";
 import { buildAgentCommand } from "../../../../shared/command/agentCommand.js";
 import { respawnTmuxPaneCommand } from "../../../../infrastructure/channel/tmux/tmuxManager.js";
+import { resolveAgentPaneAdapter } from "../../../../infrastructure/channel/tmux/agentPaneAdapters.js";
 import { deactivateOtherRolePanes } from "../../../../shared/channel/rolePaneLifecycle.js";
 import { getSharedTopologySlotPaneIndexForRole } from "../../../../shared/topology/topologySlotPaneProjection.js";
-import { isAgentNameRegistered, resolveTmuxPasteOptions } from "../../../../shared/agent/agentRuntimeProfiles.js";
+import { isAgentNameRegistered } from "../../../../shared/agent/agentRuntimeProfiles.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../../shared/runtimeSessionWorkspaceAuthority.js";
 import {
@@ -104,18 +105,20 @@ async function trySendWatchdogNudge(input: NudgeInput): Promise<"ok" | "pane_not
           role: expectedAgentRole,
           cwd: workspacePath,
           runner: input.runTmux,
-          expectedPaneAgent
+          paneAgent: resolveAgentPaneAdapter(expectedPaneAgent)
         },
         topologyPaneIndexForRole: getSharedTopologySlotPaneIndexForRole,
         respawnPane: (respawnInput) => respawnTmuxPaneCommand(respawnInput),
         configureRoleAgent: (role) =>
-          role === "implementer"
-            ? input.bubbleConfig.agents.implementer
-            : role === "reviewer"
-              ? input.bubbleConfig.agents.reviewer
-              : role === "meta_reviewer"
-                ? input.bubbleConfig.agents.meta_reviewer
-                : undefined
+          resolveAgentPaneAdapter(
+            role === "implementer"
+              ? input.bubbleConfig.agents.implementer
+              : role === "reviewer"
+                ? input.bubbleConfig.agents.reviewer
+                : role === "meta_reviewer"
+                  ? input.bubbleConfig.agents.meta_reviewer
+                  : undefined
+          )
       });
       const respawnCommand = buildAgentCommand({
         agentName: expectedPaneAgent,
@@ -142,8 +145,7 @@ async function trySendWatchdogNudge(input: NudgeInput): Promise<"ok" | "pane_not
   }
 
   await input.sendAndSubmitTmuxPaneMessage(input.runTmux, input.targetPane, input.nudgeMessage, {
-    maxChunkLength: 1024,
-    ...resolveTmuxPasteOptions(expectedPaneAgent)
+    ...resolveAgentPaneAdapter(expectedPaneAgent).resolvePasteOptions()
   });
   return "ok";
 }

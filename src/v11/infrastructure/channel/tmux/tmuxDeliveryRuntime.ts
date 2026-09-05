@@ -7,16 +7,12 @@ import type {
   DeliveryFailureReason,
   DeliveryTargetReasonCode
 } from "../../../shared/delivery/tmuxDeliveryContract.js";
-import {
-  confirmTmuxPaneMarkerSubmission,
-  maybeAcceptOpencodeTrustPrompt,
-  sendAndSubmitTmuxPaneMessage
-} from "./tmuxInput.js";
+import { confirmTmuxPaneMarkerSubmission } from "./tmuxPaneMarkerConfirmation.js";
+import { sendAndSubmitTmuxPaneMessage } from "./tmuxPaneWrite.js";
 import { waitForAgentPaneReady, waitForAgentPaneIdle } from "./tmuxPaneReadiness.js";
+import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
 import {
-  getAgentRuntimeProfile,
-  isAgentNameRegistered,
-  resolveTmuxPasteOptions
+  isAgentNameRegistered
 } from "../../../shared/agent/agentRuntimeProfiles.js";
 import type { TmuxRunner } from "./tmuxManager.js";
 
@@ -166,26 +162,6 @@ export async function ensureAgentPaneReady(input: {
   });
 }
 
-/**
- * Backwards-compatible alias for callers that only ever manage opencode panes.
- */
-export function ensureOpencodePaneReady(input: {
-  runner: TmuxRunner;
-  targetPane: string;
-  respawnExpectedPaneAgent?: (() => Promise<void>) | undefined;
-  sleepForDelayMs?: ((delayMs: number) => Promise<void>) | undefined;
-  forceRespawn?: boolean | undefined;
-}): Promise<boolean> {
-  return ensureAgentPaneReady({
-    runner: input.runner,
-    targetPane: input.targetPane,
-    expectedPaneAgent: "opencode",
-    respawnExpectedPaneAgent: input.respawnExpectedPaneAgent,
-    sleepForDelayMs: input.sleepForDelayMs,
-    forceRespawn: input.forceRespawn
-  });
-}
-
 async function ensureLiveSessionOrRespawn(input: {
   runner: TmuxRunner;
   targetPane: string;
@@ -227,6 +203,57 @@ async function ensureLiveSessionOrRespawn(input: {
   });
 
   return { ok: ready, isLiveSession: false };
+}
+
+/**
+ * Accept any first-run trust prompt, deliver the handoff message via send-keys,
+ * and confirm the marker was submitted. No `/clear` before delivery: opencode
+ * opens a confirmation gate that swallows the handover, and reasonix queues it
+ * as a literal message.
+ */
+async function deliverHandoffMessage(input: {
+  runner: TmuxRunner;
+  targetPane: string;
+  message: string;
+  envelopeId: string;
+  expectedPaneAgent: AgentName | undefined;
+  deliveryAttempts?: number | undefined;
+  timing?: TmuxDeliveryTimingOptions | undefined;
+}): Promise<boolean> {
+  const paneAgent = resolveAgentPaneAdapter(input.expectedPaneAgent);
+  if (paneAgent.trustPromptHandling === "opencode") {
+    await paneAgent.acceptTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
+  }
+
+  await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
+    requireSuccess: true,
+    ...paneAgent.resolvePasteOptions(),
+    ...(input.timing?.submitDelayMs !== undefined
+      ? { submitDelayMs: input.timing.submitDelayMs }
+      : {}),
+    ...(input.timing?.sleepForDelayMs !== undefined
+      ? { sleepForDelayMs: input.timing.sleepForDelayMs }
+      : {})
+  });
+
+  return confirmTmuxPaneMarkerSubmission({
+    runner: input.runner,
+    targetPane: input.targetPane,
+    marker: input.envelopeId,
+    paneAgent,
+    ...(input.deliveryAttempts !== undefined
+      ? { attempts: input.deliveryAttempts }
+      : {}),
+    ...(input.timing?.markerSettleDelayMs !== undefined
+      ? { settleDelayMs: input.timing.markerSettleDelayMs }
+      : {}),
+    ...(input.timing?.markerRetryDelayMs !== undefined
+      ? { retryDelayMs: input.timing.markerRetryDelayMs }
+      : {}),
+    ...(input.timing?.sleepForDelayMs !== undefined
+      ? { sleepForDelayMs: input.timing.sleepForDelayMs }
+      : {})
+  });
 }
 
 export async function attemptTmuxDelivery(input: {
@@ -307,48 +334,16 @@ export async function attemptTmuxDelivery(input: {
       }
     }
 
-    // Accept trust prompt if any (opencode-only; reasonix has no folder-trust prompt)
-    const trustPromptHandling =
-      input.expectedPaneAgent !== undefined
-      && isAgentNameRegistered(input.expectedPaneAgent)
-        ? getAgentRuntimeProfile(input.expectedPaneAgent).trustPromptHandling
-        : "opencode";
-    if (trustPromptHandling === "opencode") {
-      await maybeAcceptOpencodeTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
-    }
-
-    // No `/clear` before delivery: opencode opens a confirmation gate that
-    // swallows the handover, and reasonix queues it as a literal message.
-
-    // Deliver the handoff message via send-keys
-    await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
-      requireSuccess: true,
-      maxChunkLength: 1024,
-      // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
-      ...resolveTmuxPasteOptions(input.expectedPaneAgent),
-      ...(input.timing?.submitDelayMs !== undefined
-        ? { submitDelayMs: input.timing.submitDelayMs }
-        : {}),
-      ...(input.timing?.sleepForDelayMs !== undefined
-        ? { sleepForDelayMs: input.timing.sleepForDelayMs }
-        : {})
-    });
-
-    // Confirm that the command has been processed
-    const confirmed = await confirmTmuxPaneMarkerSubmission({
+    // Accept trust prompt (if any), deliver the handoff via send-keys, and
+    // confirm the marker was submitted. No `/clear` before delivery.
+    const confirmed = await deliverHandoffMessage({
       runner: input.runner,
       targetPane: input.targetPane,
-      marker: input.envelopeId,
-      ...(input.deliveryAttempts !== undefined ? { attempts: input.deliveryAttempts } : {}),
-      ...(input.timing?.markerSettleDelayMs !== undefined
-        ? { settleDelayMs: input.timing.markerSettleDelayMs }
-        : {}),
-      ...(input.timing?.markerRetryDelayMs !== undefined
-        ? { retryDelayMs: input.timing.markerRetryDelayMs }
-        : {}),
-      ...(input.timing?.sleepForDelayMs !== undefined
-        ? { sleepForDelayMs: input.timing.sleepForDelayMs }
-        : {})
+      message: input.message,
+      envelopeId: input.envelopeId,
+      expectedPaneAgent: input.expectedPaneAgent,
+      deliveryAttempts: input.deliveryAttempts,
+      timing: input.timing
     });
 
     if (confirmed) {

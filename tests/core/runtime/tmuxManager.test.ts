@@ -781,8 +781,8 @@ describe("launchBubbleSessionAck orchestration", () => {
         call[3] === "Enter"
     );
     // The direct seed delivery submits with one Enter; the confirm-retry loop
-    // resends Enter for a stuck marker. Without waitForTuiReady the seed pastes
-    // immediately, so confirm-retry Enter(s) occur in addition to the submit.
+    // resends Enter for a stuck marker, so confirm-retry Enter(s) occur in
+    // addition to the submit.
     expect(implementerEnterCalls.length).toBeGreaterThanOrEqual(1);
   });
 

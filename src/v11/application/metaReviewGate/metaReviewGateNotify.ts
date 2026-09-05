@@ -6,38 +6,17 @@ import type {
   NotifyMetaReviewerSubmissionRequestDependencies,
   NotifyMetaReviewerSubmissionRequestInput
 } from "../../shared/metaReviewGate/index.js";
+import type {
+  MetaReviewGateNotifyTmuxCapabilities
+} from "../../shared/metaReviewGate/metaReviewGateRuntimeCapabilities.js";
 import {
   resolveMetaReviewGateNotifyTmuxCapabilities
 } from "./metaReviewGateRuntimeCapabilityResolution.js";
-import {
-  getAgentRuntimeProfile,
-  isAgentNameRegistered,
-  resolveTmuxPasteOptions
-} from "../../shared/agent/agentRuntimeProfiles.js";
+import { resolveTmuxPasteOptions } from "../../shared/agent/agentRuntimeProfiles.js";
 
 const metaReviewerPaneExitedReasonCode = "META_REVIEWER_PANE_EXITED";
 const metaReviewRequestDeliveryUnconfirmedReasonCode =
   "META_REVIEW_REQUEST_DELIVERY_UNCONFIRMED";
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolvePromise) => {
-    setTimeout(resolvePromise, ms);
-  });
-}
-
-function isAgentPromptLine(line: string): boolean {
-  // `›` (U+203A) is reasonix's composer prompt glyph.
-  return /^\s*(?:[|│┃]\s*)*[>❯›]/u.test(line);
-}
-
-function findLastIndex(arr: string[], predicate: (item: string) => boolean): number {
-  for (let index = arr.length - 1; index >= 0; index -= 1) {
-    if (predicate(arr[index]!)) {
-      return index;
-    }
-  }
-  return -1;
-}
 
 function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
@@ -54,94 +33,50 @@ function paneShowsExitedAgentShell(input: {
   return pattern.test(input.text);
 }
 
-type MarkerStatus = "submitted" | "stuck_in_input" | "not_found";
-
-function detectSubmittedMarker(text: string, marker: string): MarkerStatus {
-  if (!text.includes(marker)) {
-    return "not_found";
-  }
-
-  const lines = text.split("\n");
-  let lastPromptIndex = findLastIndex(lines, isAgentPromptLine);
-  if (lastPromptIndex < 0) {
-    // Opencode (Antigravity) fallback: find the bottom boundary of the input box
-    const bottomBarIdx = findLastIndex(lines, (line) => /^\s*╹▀▀▀/u.test(line));
-    if (bottomBarIdx > 0) {
-      let topOfInputIdx = bottomBarIdx - 1;
-      while (topOfInputIdx >= 0 && /^\s*┃/u.test(lines[topOfInputIdx]!)) {
-        topOfInputIdx -= 1;
-      }
-      lastPromptIndex = topOfInputIdx + 1;
-    }
-  }
-
-  if (lastPromptIndex < 0) {
-    return "submitted";
-  }
-
-  const beforePrompt = lines.slice(0, lastPromptIndex).join("\n");
-  if (beforePrompt.includes(marker)) {
-    return "submitted";
-  }
-
-  return "stuck_in_input";
-}
-
+/**
+ * Confirm the structured submit-request marker was submitted, first failing
+ * fast when the meta-reviewer pane dropped back to an interactive shell.
+ */
 async function assertMetaReviewRequestSubmitted(input: {
-  paneRunner: NonNullable<
-    NonNullable<
-      NonNullable<
-        NotifyMetaReviewerSubmissionRequestDependencies["runtime"]
-      >["tmux"]
-    >["runner"]
-  >;
-  submitPaneInput: NonNullable<
-    NonNullable<
-      NonNullable<
-        NotifyMetaReviewerSubmissionRequestDependencies["runtime"]
-      >["tmux"]
-    >["submitPaneInput"]
+  paneRunner: NonNullable<MetaReviewGateNotifyTmuxCapabilities["runner"]>;
+  confirmSubmission: NonNullable<
+    MetaReviewGateNotifyTmuxCapabilities["confirmSubmission"]
   >;
   targetPane: string;
   marker: string;
   metaReviewerAgent: string;
 }): Promise<MetaReviewRuntimeDeliveryObservation> {
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    await sleep(800);
-    const capture = await input.paneRunner(
-      ["capture-pane", "-p", "-t", input.targetPane, "-S", "-"],
-      {
-        allowFailure: true
-      }
-    );
-    if (capture.exitCode === 0) {
-      if (paneShowsExitedAgentShell({
-        text: capture.stdout,
-        metaReviewerAgent: input.metaReviewerAgent
-      })) {
-        return {
-          status: "failed",
-          reasonCode: metaReviewerPaneExitedReasonCode,
-          message:
-            `meta-reviewer pane fell back to interactive shell after ${input.metaReviewerAgent} exit.`
-        };
-      }
+  const capture = await input.paneRunner(
+    ["capture-pane", "-p", "-t", input.targetPane, "-S", "-"],
+    { allowFailure: true }
+  );
+  if (
+    capture.exitCode === 0
+    && paneShowsExitedAgentShell({
+      text: capture.stdout,
+      metaReviewerAgent: input.metaReviewerAgent
+    })
+  ) {
+    return {
+      status: "failed",
+      reasonCode: metaReviewerPaneExitedReasonCode,
+      message:
+        `meta-reviewer pane fell back to interactive shell after ${input.metaReviewerAgent} exit.`
+    };
+  }
 
-      const markerStatus = detectSubmittedMarker(capture.stdout, input.marker);
-      if (markerStatus === "submitted") {
-        return {
-          status: "confirmed",
-          reasonCode: null,
-          message:
-            "meta-review submit request delivery confirmed from pane scrollback."
-        };
-      }
-    }
-
-    if (attempt < 2) {
-      await sleep(900);
-      await input.submitPaneInput(input.paneRunner, input.targetPane);
-    }
+  const confirmed = await input.confirmSubmission({
+    runner: input.paneRunner,
+    targetPane: input.targetPane,
+    marker: input.marker
+  });
+  if (confirmed) {
+    return {
+      status: "confirmed",
+      reasonCode: null,
+      message:
+        "meta-review submit request delivery confirmed from pane scrollback."
+    };
   }
 
   return {
@@ -155,16 +90,15 @@ export async function notifyMetaReviewerSubmissionRequest(
   input: NotifyMetaReviewerSubmissionRequestInput,
   dependencies: NotifyMetaReviewerSubmissionRequestDependencies = {}
 ): Promise<MetaReviewRuntimeDeliveryObservation> {
-  const runtime = dependencies.runtime;
-  const tmux = resolveMetaReviewGateNotifyTmuxCapabilities(runtime);
+  const tmux = resolveMetaReviewGateNotifyTmuxCapabilities(dependencies.runtime);
   const runner = tmux?.runner;
-  const maybeAcceptTrustPrompt = tmux?.maybeAcceptTrustPrompt;
+  const resolveAgentPaneAdapter = tmux?.resolveAgentPaneAdapter;
   const sendSubmissionRequestMessage = tmux?.sendSubmissionRequestMessage;
-  const submitPaneInput = tmux?.submitPaneInput;
+  const confirmSubmission = tmux?.confirmSubmission;
   if (
-    runner === undefined ||
-    sendSubmissionRequestMessage === undefined ||
-    submitPaneInput === undefined
+    runner === undefined
+    || sendSubmissionRequestMessage === undefined
+    || confirmSubmission === undefined
   ) {
     return {
       status: "failed",
@@ -172,6 +106,8 @@ export async function notifyMetaReviewerSubmissionRequest(
       message: "meta-review gate notify runtime capabilities are unavailable."
     };
   }
+
+  const paneAgent = resolveAgentPaneAdapter?.(input.metaReviewerAgent);
   const requestMarker = `bubble=${input.bubbleId} meta-review request round=${input.round}.`;
   const message = buildMetaReviewGateRunPrompt({
     bubbleId: input.bubbleId,
@@ -180,20 +116,16 @@ export async function notifyMetaReviewerSubmissionRequest(
     taskArtifactPath: "artifacts/task.md"
   });
 
-  if (
-    maybeAcceptTrustPrompt !== undefined
-    && isAgentNameRegistered(input.metaReviewerAgent)
-    && getAgentRuntimeProfile(input.metaReviewerAgent).trustPromptHandling === "opencode"
-  ) {
-    await maybeAcceptTrustPrompt(runner, input.targetPane).catch(
+  if (paneAgent !== undefined) {
+    await paneAgent.acceptTrustPrompt(runner, input.targetPane).catch(
       () => undefined
     );
   }
   try {
     await sendSubmissionRequestMessage(runner, input.targetPane, message, {
-      maxChunkLength: 1024,
-      // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
-      ...resolveTmuxPasteOptions(input.metaReviewerAgent)
+      ...(paneAgent !== undefined
+        ? paneAgent.resolvePasteOptions()
+        : { maxChunkLength: 1024, ...resolveTmuxPasteOptions(input.metaReviewerAgent) })
     });
   } catch (error) {
     return {
@@ -204,7 +136,7 @@ export async function notifyMetaReviewerSubmissionRequest(
   }
   return assertMetaReviewRequestSubmitted({
     paneRunner: runner,
-    submitPaneInput,
+    confirmSubmission,
     targetPane: input.targetPane,
     marker: requestMarker,
     metaReviewerAgent: input.metaReviewerAgent

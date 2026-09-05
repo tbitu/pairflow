@@ -128,8 +128,6 @@ export function mapDeliveryResultToDeliveryAck(
  * union. 
  *
  * **Phase 3 Coverage**: Implementer, reviewer, converged delivery paths.
- * **Phase 4 Extension**: For meta-reviewer pane binding, use createPaneBindingOrchestrator()
- * factory which integrates pane respawn, readiness polling, and cleanup operations.
  */
 export function createEmitDeliveryOrchestrator(
   dependencies: CreateUnifiedDeliveryOrchestratorInput = {}

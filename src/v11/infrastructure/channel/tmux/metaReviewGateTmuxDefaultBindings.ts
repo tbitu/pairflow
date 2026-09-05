@@ -1,17 +1,15 @@
 import {
   respawnTmuxPaneCommand
 } from "./tmuxManager.js";
-import {
-  maybeAcceptOpencodeTrustPrompt,
-  sendAndSubmitTmuxPaneMessage,
-  submitTmuxPaneInput
-} from "./tmuxInput.js";
+import { sendAndSubmitTmuxPaneMessage } from "./tmuxPaneWrite.js";
+import { confirmTmuxPaneMarkerSubmission } from "./tmuxPaneMarkerConfirmation.js";
 import { deactivateOtherRolePanes } from "../../../shared/channel/rolePaneLifecycle.js";
 import { waitForAgentPaneReady } from "./tmuxPaneReadiness.js";
+import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
 
-export const acceptMetaReviewTrustPrompt = maybeAcceptOpencodeTrustPrompt;
 export const sendMetaReviewSubmissionRequest = sendAndSubmitTmuxPaneMessage;
-export const submitMetaReviewInput = submitTmuxPaneInput;
+export const confirmMetaReviewSubmission = confirmTmuxPaneMarkerSubmission;
 export const respawnMetaReviewPane = respawnTmuxPaneCommand;
 export const deactivateOtherMetaReviewPanes = deactivateOtherRolePanes;
 export const waitForMetaReviewPaneReady = waitForAgentPaneReady;
+export const resolveMetaReviewAgentPaneAdapter = resolveAgentPaneAdapter;

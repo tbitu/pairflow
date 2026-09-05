@@ -686,7 +686,7 @@ describe("metaReviewGatePaneBinding", () => {
         notify: {
           tmux: {
             sendSubmissionRequestMessage: vi.fn(async () => undefined),
-            submitPaneInput: vi.fn(async () => undefined)
+            confirmSubmission: vi.fn(async () => false)
           }
         },
         paneBinding: {

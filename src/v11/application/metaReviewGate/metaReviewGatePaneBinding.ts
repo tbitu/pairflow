@@ -262,8 +262,9 @@ async function deliverMetaReviewerPromptViaTmuxPaste(input: {
   });
 
   await sendSubmissionRequestMessage(runner, targetPane, startupPrompt, {
-    maxChunkLength: 1024,
-    ...resolveTmuxPasteOptions(input.metaReviewerAgent)
+    ...(input.paneBindingTmux.resolveAgentPaneAdapter !== undefined
+      ? input.paneBindingTmux.resolveAgentPaneAdapter(input.metaReviewerAgent).resolvePasteOptions()
+      : { maxChunkLength: 1024, ...resolveTmuxPasteOptions(input.metaReviewerAgent) })
   });
 
   return {
@@ -286,9 +287,16 @@ async function executeMetaReviewerRespawnAndDelivery(input: {
   respawnPaneCommand: NonNullable<MetaReviewGatePaneBindingTmux["respawnPaneCommand"]>;
   shouldDeactivate: boolean;
 }): Promise<ResolveMetaReviewerPaneWarningResult> {
-  const profile = getAgentRuntimeProfile(input.input.metaReviewerAgent);
+  const resolveAgentPaneAdapter = input.paneBindingTmux.resolveAgentPaneAdapter;
+  const paneAgent = resolveAgentPaneAdapter?.(input.input.metaReviewerAgent);
+  const supportsConcurrentPanes = paneAgent !== undefined
+    ? paneAgent.supportsConcurrentPanes
+    : getAgentRuntimeProfile(input.input.metaReviewerAgent).supportsConcurrentPanes;
+  const startupPromptDelivery = paneAgent !== undefined
+    ? paneAgent.startupPromptDelivery
+    : getAgentRuntimeProfile(input.input.metaReviewerAgent).startupPromptDelivery;
   try {
-    if (!profile.supportsConcurrentPanes) {
+    if (!supportsConcurrentPanes) {
       const runner = input.paneBindingTmux.runner;
       if (runner === undefined) {
         return buildMetaReviewerPaneFailure({
@@ -305,7 +313,7 @@ async function executeMetaReviewerRespawnAndDelivery(input: {
           role: "meta_reviewer",
           cwd: input.workspacePath,
           runner,
-          expectedPaneAgent: input.input.metaReviewerAgent
+          ...(paneAgent !== undefined ? { paneAgent } : {})
         },
         topologyPaneIndexForRole: getSharedTopologySlotPaneIndexForRole,
         respawnPane: (respawnInput: Parameters<typeof input.respawnPaneCommand>[0]) =>
@@ -314,7 +322,14 @@ async function executeMetaReviewerRespawnAndDelivery(input: {
             runner
           }),
         ...(input.input.configureRoleAgent !== undefined
-          ? { configureRoleAgent: input.input.configureRoleAgent }
+          ? {
+              configureRoleAgent: (role) => {
+                const agentName = input.input.configureRoleAgent?.(role);
+                return agentName !== undefined && resolveAgentPaneAdapter !== undefined
+                  ? resolveAgentPaneAdapter(agentName)
+                  : undefined;
+              }
+            }
           : {})
       });
     }
@@ -346,7 +361,7 @@ async function executeMetaReviewerRespawnAndDelivery(input: {
         : {})
     });
 
-    if (profile.startupPromptDelivery === "tmux_paste") {
+    if (startupPromptDelivery === "tmux_paste") {
       return await deliverMetaReviewerPromptViaTmuxPaste({
         paneBindingTmux: input.paneBindingTmux,
         metaReviewerAgent: input.input.metaReviewerAgent,

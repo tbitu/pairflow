@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { seedBubbleTmuxPaneMessages } from "../../src/v11/infrastructure/channel/tmux/tmuxManagerPaneSeed.js";
 import { waitForAgentPaneReady } from "../../src/v11/infrastructure/channel/tmux/tmuxPaneReadiness.js";
-import { checkTmuxPaneMarkerStatus } from "../../src/v11/infrastructure/channel/tmux/tmuxInput.js";
+import { checkTmuxPaneMarkerStatus } from "../../src/v11/infrastructure/channel/tmux/tmuxPaneMarkerConfirmation.js";
 import type { TmuxRunner } from "../../src/v11/ports/tmuxSessions.js";
 
 /**
