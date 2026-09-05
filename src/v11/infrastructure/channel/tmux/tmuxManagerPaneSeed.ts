@@ -2,9 +2,11 @@ import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import {
   getAgentRuntimeProfile,
   isAgentNameRegistered,
+  resolveStartupPasteSettleMs,
   resolveTmuxPasteOptions
 } from "../../../shared/agent/agentRuntimeProfiles.js";
 import {
+  checkTmuxPaneMarkerStatus,
   confirmTmuxPaneMarkerSubmission,
   maybeAcceptOpencodeTrustPrompt,
   sendAndSubmitTmuxPaneMessage,
@@ -46,6 +48,12 @@ export function mergeAndDeduplicateMessages(bootstrap: string | undefined, kicko
   }
 
   return allLines.join("\n");
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolvePromise) => {
+    setTimeout(resolvePromise, ms);
+  });
 }
 
 
@@ -109,12 +117,18 @@ async function submitStartupPrompt(input: {
     console.error(
       `[tmux seed][${input.agentName ?? "unknown"}] startup prompt present (chars=${promptText.length}) for pane=${input.targetPane}.`
     );
+    const startupPasteSettleMs = resolveStartupPasteSettleMs(input.agentName);
     await sendAndSubmitTmuxPaneMessage(
       input.runner,
       input.targetPane,
       promptText,
       {
         maxChunkLength: 1024,
+        // reasonix renders its composer prompt well before its input loop
+        // attaches; a paste in that window is silently dropped. The seed waits
+        // out the settle before its first paste (round deliveries gate on
+        // their own signals and never pay this).
+        ...(startupPasteSettleMs > 0 ? { settleMs: startupPasteSettleMs } : {}),
         // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
         ...resolveTmuxPasteOptions(input.agentName)
       }
@@ -173,28 +187,74 @@ async function sendPaneMessage(
     );
     return;
   }
-  try {
-    await sendAndSubmitTmuxPaneMessage(runner, targetPane, concreteMessage, {
-      requireSuccess: !isStructuredPairflowEnvelope,
-      maxChunkLength: 1024,
-      // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
-      ...resolveTmuxPasteOptions(agentName)
-    });
-  } catch (error) {
-    // Best-effort paste: a failure to deliver the kickoff must not abort the
-    // entire bubble start. The watchdog nudge will steer the agent if the
-    // initial kickoff did not land.
-    console.error(
-      `[tmux seed] kickoff paste failed for target_pane=${targetPane}: ${error instanceof Error ? error.message : String(error)}`
-    );
-    return;
-  }
-  if (marker !== undefined) {
-    await confirmTmuxPaneMarkerSubmission({
+  const startupPasteSettleMs = resolveStartupPasteSettleMs(agentName);
+  // A structured pairflow envelope whose paste drops in the pane is only
+  // re-sent for the agent class documented to swallow early keystrokes
+  // (startupPasteSettleMs > 0, i.e. reasonix). Other agents keep the single
+  // paste: re-sending risks the historical "double input" steering confusion
+  // when the first paste actually landed but only echoed late.
+  const maxPasteAttempts =
+    marker !== undefined && startupPasteSettleMs > 0 ? 2 : 1;
+  let confirmed = false;
+  for (
+    let pasteAttempt = 0;
+    pasteAttempt < maxPasteAttempts && !confirmed;
+    pasteAttempt += 1
+  ) {
+    if (pasteAttempt > 0) {
+      console.error(
+        `[tmux seed] kickoff marker not confirmed; re-sending paste to target_pane=${targetPane} (attempt ${pasteAttempt + 1} of ${maxPasteAttempts}).`
+      );
+      await sleep(2000);
+    }
+    try {
+      await sendAndSubmitTmuxPaneMessage(runner, targetPane, concreteMessage, {
+        requireSuccess: !isStructuredPairflowEnvelope,
+        maxChunkLength: 1024,
+        // reasonix renders its composer prompt well before its input loop
+        // attaches; the first seed paste waits out the settle so the kickoff
+        // is not dropped (round deliveries gate on their own signals).
+        ...(startupPasteSettleMs > 0 && pasteAttempt === 0
+          ? { settleMs: startupPasteSettleMs }
+          : {}),
+        // reasonix drops flooded keystrokes: batch the paste into smaller chunks.
+        ...resolveTmuxPasteOptions(agentName)
+      });
+    } catch (error) {
+      // Best-effort paste: a failure to deliver the kickoff must not abort the
+      // entire bubble start. The watchdog nudge will steer the agent if the
+      // initial kickoff did not land.
+      console.error(
+        `[tmux seed] kickoff paste failed for target_pane=${targetPane}: ${error instanceof Error ? error.message : String(error)}`
+      );
+      break;
+    }
+    if (marker === undefined) {
+      confirmed = true;
+      continue;
+    }
+    confirmed = await confirmTmuxPaneMarkerSubmission({
       runner,
       targetPane,
       marker
-    }).catch(() => undefined);
+    }).catch(() => false);
+    if (!confirmed && pasteAttempt < maxPasteAttempts - 1) {
+      const markerStatus = await checkTmuxPaneMarkerStatus(
+        runner,
+        targetPane,
+        marker
+      ).catch(() => "not_found" as const);
+      if (markerStatus === "stuck_in_input") {
+        // The paste is sitting in the composer and the confirm loop already
+        // retries Enter; re-sending the text would duplicate it.
+        break;
+      }
+    }
+  }
+  if (marker !== undefined && !confirmed) {
+    console.error(
+      `[tmux seed] KICKOFF_DELIVERY_FAILED: target_pane=${targetPane} agent=${agentName ?? "unknown"} marker=${marker} — the initial [pairflow] guidance was not confirmed in the pane after ${maxPasteAttempts} paste attempt(s). The agent may sit uninstructed; check \`pairflow bubble status\` and restart the bubble if the implementer never started.`
+    );
   }
 
   // Note: Watchdog nudges are recovery-only and belong in the watchdog mechanism,

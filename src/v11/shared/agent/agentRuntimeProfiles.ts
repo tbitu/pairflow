@@ -139,13 +139,23 @@ export interface AgentRuntimeProfile {
    */
   tmuxPasteViaBuffer?: boolean;
   /**
-   * Whether pasted messages must be delivered as a single line (newlines
+   * Whether long messages must be delivered as a single line (newlines
    * collapsed to spaces). reasonix's composer switches to multiline mode when
    * the pasted text contains newline bytes; in that mode plain Enter inserts a
    * newline instead of sending, so multiline messages never submit. Collapsing
    * to one line keeps Enter as the send key.
    */
   collapsePastedNewlines?: boolean;
+  /**
+   * Extra quiet time (ms) a freshly launched agent pane needs after its
+   * composer prompt first becomes visible before it accepts keystrokes.
+   * reasonix renders its prompt well before its input loop attaches (~25s);
+   * a paste in that window is silently dropped. Applied ONLY by the pane-seed
+   * path (startup prompt + kickoff paste), never by round deliveries — the
+   * watchdog and delivery orchestration gate on their own idle/readiness
+   * signals and must not pay this settle on every message.
+   */
+  startupPasteSettleMs?: number;
 }
 
 const OPENCODE_PANE_BUSY_PATTERNS: readonly RegExp[] = [
@@ -185,7 +195,12 @@ const profiles: Record<AgentName, AgentRuntimeProfile> = {
     tmuxPasteSubmitPerChunk: true,
     tmuxPasteViaBuffer: false,
     // Collapse newlines so pasted messages stay single-line and Enter sends.
-    collapsePastedNewlines: true
+    collapsePastedNewlines: true,
+    // The composer prompt appears ~25s before reasonix's input loop attaches;
+    // the seed must settle before its first paste or the kickoff is dropped
+    // (verified live: pastes right after readiness land, but the pane's early
+    // keystrokes vanish). Round deliveries gate on their own signals instead.
+    startupPasteSettleMs: 25_000
   }
 };
 
@@ -226,6 +241,20 @@ export function isPaneBusyOutput(input: {
   return resolvePaneBusyPatterns(input.agentName).some((pattern) =>
     pattern.test(input.paneOutput)
   );
+}
+
+/**
+ * Resolve the pane-seed settle window (ms) for an agent's first paste after
+ * readiness. Only the bubble-start seed path applies this; undefined/unknown
+ * agents (and opencode) get 0 and keep today's immediate-paste behavior.
+ */
+export function resolveStartupPasteSettleMs(
+  agentName: AgentName | undefined
+): number {
+  if (agentName === undefined || !isAgentNameRegistered(agentName)) {
+    return 0;
+  }
+  return getAgentRuntimeProfile(agentName).startupPasteSettleMs ?? 0;
 }
 
 /**
