@@ -74,10 +74,12 @@ async function createArtifactDir(): Promise<string> {
 }
 
 describe("buildReasonixRunnerArgs", () => {
-  it("uses headless run with JSONL events pinned to the repo", () => {
+  it("uses headless run with JSONL events pinned to the repo in YOLO mode", () => {
     const args = buildReasonixRunnerArgs({ payload: payload() });
     expect(args[0]).toBe("run");
     expect(args).toContain("--events-jsonl");
+    expect(args).toContain("--permission-mode");
+    expect(args).toContain("danger-full-access");
     expect(args).toContain("--dir");
     expect(args).toContain("/repo");
     expect(args.join(" ")).toContain("ExecutePairflowPlan");
@@ -127,6 +129,8 @@ describe("reasonixPlanWatchRunnerBackendAdapter", () => {
     expect(prepared.config.cwd).toBe("/repo");
     expect(prepared.config.args?.[0]).toBe("run");
     expect(prepared.config.args).toContain("--events-jsonl");
+    expect(prepared.config.args).toContain("--permission-mode");
+    expect(prepared.config.args).toContain("danger-full-access");
   });
 
   it("classifies a settled checkpoint from stdout JSONL + final schema object", async () => {

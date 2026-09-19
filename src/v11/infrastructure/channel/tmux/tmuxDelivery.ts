@@ -213,6 +213,23 @@ function resolveRoleModel(input: {
   }
 }
 
+function resolveConvergencePolicy(
+  input: EmitDeliveryNotificationRuntimeInput,
+  recipientRole: ReturnType<typeof resolveEnvelopeRecipientRole>
+): "respawn" | "assume_running" {
+  if (input.convergencePolicy !== undefined) {
+    return input.convergencePolicy;
+  }
+  if (
+    recipientRole === "reviewer"
+    && input.bubbleConfig.reviewer_context_mode === "persistent"
+    && input.envelope.type === "PASS"
+  ) {
+    return "assume_running";
+  }
+  return "respawn";
+}
+
 export async function emitDeliveryNotificationAck(
   input: EmitDeliveryNotificationRuntimeInput
 ): Promise<DeliveryAck> {
@@ -273,47 +290,26 @@ export async function emitDeliveryNotificationAck(
   const expectedAgentRole = resolveRecipientRoleToAgentRole(
     targetResolution.recipientRole
   );
-  const respawnExpectedPaneAgent = expectedPaneAgent !== undefined
-    && expectedAgentRole !== undefined
-    && isAgentNameRegistered(expectedPaneAgent)
-    ? async (): Promise<void> => {
-        const roleModel = resolveRoleModel({
-          role: expectedAgentRole,
-          bubbleConfig: input.bubbleConfig
-        });
-        const roleMcpPolicy =
-          input.bubbleConfig.role_mcp?.[expectedAgentRole]
-          ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE[expectedAgentRole];
-        const respawnCommand = buildAgentCommand({
-          agentName: expectedPaneAgent,
-          roleName: expectedAgentRole,
-          roleMcpPolicy,
-          ...(roleModel !== undefined ? { model: roleModel } : {}),
-          bubbleId: input.bubbleId,
-          workspacePath,
-          pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile,
-          ...(input.bubbleConfig.executor?.type === "ssh"
-            ? {
-                remoteWorkspaceAuthority: {
-                  workspaceRoot: workspacePath
-                }
-              }
-            : {})
-        });
-        await respawnTmuxPaneCommand({
-          sessionName,
-          paneIndex: targetPaneIndex,
-          cwd: workspacePath,
-          command: respawnCommand,
-          runner
-        });
-      }
-    : undefined;
+  const respawnExpectedPaneAgent = buildRespawnPaneAgentAction({
+    expectedPaneAgent,
+    expectedAgentRole,
+    bubbleConfig: input.bubbleConfig,
+    bubbleId: input.bubbleId,
+    workspacePath,
+    sessionName,
+    targetPaneIndex,
+    runner
+  });
   // Deactivate other role panes for single-session agents (reasonix).
   await deactivateNonConcurrentAgentPanes({
     sessionName, expectedAgentRole, workspacePath, runner, expectedPaneAgent,
     bubbleConfig: input.bubbleConfig
   });
+
+  const convergencePolicy = resolveConvergencePolicy(
+    input,
+    targetResolution.recipientRole
+  );
 
   const deliveryAck = await attemptTmuxDelivery({
     runner,
@@ -325,12 +321,66 @@ export async function emitDeliveryNotificationAck(
     initialDelayMs: input.initialDelayMs,
     deliveryAttempts: input.deliveryAttempts,
     expectedPaneAgent,
-    convergencePolicy: input.convergencePolicy,
+    convergencePolicy,
     respawnExpectedPaneAgent,
     timing: deliveryTiming,
     deliveryTargetReasonCode: targetResolution.deliveryTargetReasonCode
   });
   return deliveryAck;
+}
+
+function buildRespawnPaneAgentAction(input: {
+  expectedPaneAgent: AgentName | undefined;
+  expectedAgentRole: AgentRole | undefined;
+  bubbleConfig: EmitDeliveryNotificationRuntimeInput["bubbleConfig"];
+  bubbleId: string;
+  workspacePath: string;
+  sessionName: string;
+  targetPaneIndex: number;
+  runner: TmuxRunner;
+}): (() => Promise<void>) | undefined {
+  if (
+    input.expectedPaneAgent === undefined ||
+    input.expectedAgentRole === undefined ||
+    !isAgentNameRegistered(input.expectedPaneAgent)
+  ) {
+    return undefined;
+  }
+
+  const roleName = input.expectedAgentRole;
+  const agentName = input.expectedPaneAgent;
+  return async (): Promise<void> => {
+    const roleModel = resolveRoleModel({
+      role: roleName,
+      bubbleConfig: input.bubbleConfig
+    });
+    const roleMcpPolicy =
+      input.bubbleConfig.role_mcp?.[roleName]
+      ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE[roleName];
+    const respawnCommand = buildAgentCommand({
+      agentName,
+      roleName,
+      roleMcpPolicy,
+      ...(roleModel !== undefined ? { model: roleModel } : {}),
+      bubbleId: input.bubbleId,
+      workspacePath: input.workspacePath,
+      pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile,
+      ...(input.bubbleConfig.executor?.type === "ssh"
+        ? {
+            remoteWorkspaceAuthority: {
+              workspaceRoot: input.workspacePath
+            }
+          }
+        : {})
+    });
+    await respawnTmuxPaneCommand({
+      sessionName: input.sessionName,
+      paneIndex: input.targetPaneIndex,
+      cwd: input.workspacePath,
+      command: respawnCommand,
+      runner: input.runner
+    });
+  };
 }
 
 async function deactivateNonConcurrentAgentPanes(input: {

@@ -38,6 +38,17 @@ export interface AgentPaneAdapter {
   ): Promise<boolean>;
 
   /**
+   * Clear the live session for this agent before receiving a new step.
+   * Clears draft input, submits the agent's reset/new-session command,
+   * and verifies the pane is ready for the new instruction.
+   */
+  clearSession(
+    runner: TmuxRunner,
+    targetPane: string,
+    options?: AgentPaneReadinessOptions
+  ): Promise<boolean>;
+
+  /**
    * Index of the last prompt/input-box line in captured pane output, or -1.
    * Used to confirm that a pasted marker was submitted (scrolled above the
    * prompt) versus still sitting in the composer.

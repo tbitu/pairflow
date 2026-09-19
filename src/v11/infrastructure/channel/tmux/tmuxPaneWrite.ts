@@ -186,7 +186,10 @@ export async function sendAndSubmitTmuxPaneMessage(
     }
   }
   await maybeExitTmuxCopyMode(runner, targetPane, options.requireSuccess ?? false);
-  await sendKeystrokes(runner, targetPane, message, options);
+  const sent = await sendKeystrokes(runner, targetPane, message, options);
+  if (!sent) {
+    return;
+  }
   await submitPaneEnter(runner, targetPane, message, options);
 }
 

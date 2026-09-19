@@ -1094,9 +1094,7 @@ describe("emitDeliveryNotificationAck", () => {
     ).toBe(false);
   });
 
-  it("does not send /clear to a live reasonix pane before delivery", async () => {
-    // Regression: reasonix has no confirmation modal, so `/clear` was typed into
-    // its composer and queued as a literal message alongside the handover.
+  it("clears a live reasonix pane with C-u and /clear before delivery", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
@@ -1135,7 +1133,59 @@ describe("emitDeliveryNotificationAck", () => {
     });
 
     expect(
-      calls.some((call) => call.includes("/clear"))
+      calls.some((call) => call[0] === "send-keys" && call.includes("C-u"))
+    ).toBe(true);
+    expect(
+      calls.some((call) => call[0] === "send-keys" && call.includes("/clear"))
+    ).toBe(true);
+  });
+
+  it("clears a live opencode pane with C-u and /new before delivery and never sends /clear", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "Ask anything...",
+            "tab agents  ctrl+p commands",
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS opencode->opencode msg=msg_20260222_101 ref=artifact://handoff.md.")
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      if (args[0] === "display-message") {
+        return Promise.resolve({ stdout: "12345", stderr: "", exitCode: 0 });
+      }
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    };
+
+    await emitDeliveryNotificationAck({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          implementer: "opencode",
+          reviewer: "opencode",
+          meta_reviewer: "opencode"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      envelope: createEnvelope({ recipient: "opencode" }),
+      recipientRole: "implementer",
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry())
+    });
+
+    expect(
+      calls.some((call) => call[0] === "send-keys" && call.includes("C-u"))
+    ).toBe(true);
+    expect(
+      calls.some((call) => call[0] === "send-keys" && call.includes("/new"))
+    ).toBe(true);
+    expect(
+      calls.some((call) => call[0] === "send-keys" && call.includes("/clear"))
     ).toBe(false);
   });
 });

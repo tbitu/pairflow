@@ -135,14 +135,12 @@ export async function ensureAgentPaneReady(input: {
   if (quickProbe) {
     if (input.forceRespawn) {
       // Clear the conversation of the already running session
-      await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, "/clear", {
-        requireSuccess: false,
-        maxChunkLength: 1024,
-        ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
-      }).catch(() => undefined);
-      // Wait briefly for the clear command to be processed
-      const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
-      await sleepForDelayMs(500);
+      const paneAgent = resolveAgentPaneAdapter(input.expectedPaneAgent);
+      await paneAgent.clearSession(input.runner, input.targetPane, {
+        ...(input.sleepForDelayMs !== undefined
+          ? { sleepForDelayMs: input.sleepForDelayMs }
+          : {})
+      });
     }
     return true;
   }
@@ -277,7 +275,7 @@ export async function attemptTmuxDelivery(input: {
       await sleepForDelayMs(input.initialDelayMs as number);
     }
 
-    const { ok: paneReady } = await ensureLiveSessionOrRespawn({
+    const { ok: paneReady, isLiveSession } = await ensureLiveSessionOrRespawn({
       runner: input.runner,
       targetPane: input.targetPane,
       expectedPaneAgent: input.expectedPaneAgent,
@@ -298,13 +296,6 @@ export async function attemptTmuxDelivery(input: {
       });
     }
 
-    // Wait for the agent to finish its in-flight turn before typing the handoff.
-    // "Ready" (TUI chrome visible) is not the same as "idle": a busy opencode
-    // silently drops mid-turn input and a busy reasonix queues it as a literal
-    // message, so a round handover typed early never reaches the agent. If the
-    // pane stays busy past the budget, fail loudly instead of swallowing the
-    // handoff. Reproduced by round-2 handovers delivered at 12:16 while the
-    // reviewer was mid-turn (no step-finish until after 12:19).
     const skipIdleWait =
       process.env.VITEST === "skip-idle-wait"
       || input.timing?.skipIdleWait === true;
@@ -334,8 +325,26 @@ export async function attemptTmuxDelivery(input: {
       }
     }
 
+    const paneAgent = resolveAgentPaneAdapter(input.expectedPaneAgent);
+
+    // If the agent was already running (live session), clear the session so the
+    // new step starts with a clean context, fresh token count, and clean screen.
+    // Skipped only when convergence policy explicitly specifies assume_running.
+    if (isLiveSession && input.convergencePolicy !== "assume_running") {
+      const cleared = await paneAgent.clearSession(input.runner, input.targetPane, {
+        ...(input.timing?.sleepForDelayMs !== undefined
+          ? { sleepForDelayMs: input.timing.sleepForDelayMs }
+          : {})
+      });
+      if (!cleared) {
+        console.warn(
+          `[tmux delivery] clearSession did not confirm prompt readiness for target_pane=${input.targetPane} envelope=${input.envelopeId}; proceeding with delivery.`
+        );
+      }
+    }
+
     // Accept trust prompt (if any), deliver the handoff via send-keys, and
-    // confirm the marker was submitted. No `/clear` before delivery.
+    // confirm the marker was submitted.
     const confirmed = await deliverHandoffMessage({
       runner: input.runner,
       targetPane: input.targetPane,

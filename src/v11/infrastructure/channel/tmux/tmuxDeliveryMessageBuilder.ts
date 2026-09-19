@@ -160,7 +160,114 @@ function buildImplementerDeliveryAction(input: {
     : actionGuidance;
 }
 
-function buildReviewerDeliveryAction(input: {
+function buildOpencodeReviewerDeliveryAction(
+  intro: string,
+  reviewerTestDirective?: ReviewerTestExecutionDirective,
+  isFreshContext?: boolean
+): string {
+  const parts = [intro];
+  if (reviewerTestDirective !== undefined) {
+    parts.push(formatReviewerTestExecutionDirective(reviewerTestDirective));
+  } else {
+    parts.push(
+      [
+        "Run required checks before final judgment. Reason: reviewer test verification directive was unavailable.",
+        ...(isFreshContext ? [buildReviewerDecisionMatrixReminder()] : [])
+      ].join(" ")
+    );
+  }
+  return parts.join(" ");
+}
+
+function buildVerboseReviewerDeliveryAction(input: {
+  intro: string;
+  envelope: ProtocolEnvelope;
+  bubbleConfig: BubbleConfig;
+  reviewerTestDirective?: ReviewerTestExecutionDirective | undefined;
+  reviewerBrief?: string | undefined;
+  reviewerFocus?: ReviewerFocusExtractionResult | undefined;
+}): string {
+  const reviewerPolicySnapshotPath = resolveReviewerPolicySnapshotPath(
+    input.bubbleConfig
+  );
+  const includeFallbackDecisionMatrixReminder =
+    input.bubbleConfig.reviewer_context_mode === "fresh";
+  const testDirective =
+    input.reviewerTestDirective === undefined
+      ? [
+          "Run required checks before final judgment. Reason: reviewer test verification directive was unavailable.",
+          ...(includeFallbackDecisionMatrixReminder
+            ? [buildReviewerDecisionMatrixReminder()]
+            : [])
+        ].join(" ")
+      : formatReviewerTestExecutionDirective(input.reviewerTestDirective);
+  const findings =
+    "findings" in input.envelope.payload && Array.isArray(input.envelope.payload.findings)
+      ? input.envelope.payload.findings
+      : undefined;
+  const projectionVariant: ReviewerCommandGateProjectionVariant =
+    findings !== undefined && findings.length > 0
+      ? "findings"
+      : "clean";
+  const thresholdInput =
+    input.bubbleConfig.review_policy?.reviewer_blocking_min_severity
+      !== undefined
+      ? {
+          reviewerBlockingMinSeverity:
+            input.bubbleConfig.review_policy.reviewer_blocking_min_severity
+        }
+      : {};
+  const convergenceInstruction = buildReviewerRoundCommandGateProjection({
+    round: input.envelope.round,
+    ...thresholdInput,
+    variant: projectionVariant
+  });
+  const findingsDetailInstruction =
+    input.envelope.round <= 1
+      ? "In round 1, use canonical pass emit (`pairflow agent emit --kind pass ...`) and declare findings explicitly (`--finding` when findings exist, `--no-findings` only when truly clean)."
+      : buildReviewerFindingsPassInstruction(
+          input.bubbleConfig.review_artifact_type,
+          thresholdInput
+        );
+  const reviewerFocusReminder =
+    input.reviewerFocus === undefined
+      ? ""
+      : formatReviewerFocusDeliveryReminder(input.reviewerFocus);
+  return [
+    input.intro,
+    buildReviewerAgentSelectionGuidance(input.bubbleConfig.review_artifact_type),
+    buildReviewerSeverityOntologyReminder(),
+    `Reviewer policy file: ${reviewerPolicySnapshotPath}`,
+    "Read this file before first review action.",
+    testDirective,
+    buildReviewerScoutExpansionWorkflowGuidance(),
+    buildReviewerPassOutputContractGuidance(),
+    convergenceInstruction,
+    findingsDetailInstruction,
+    buildResolvedReviewerEmitDirective({
+      round: input.envelope.round,
+      severityGateRound: input.bubbleConfig.severity_gate_round,
+      ...(input.bubbleConfig.review_policy?.reviewer_blocking_min_severity !== undefined
+        ? {
+            reviewerBlockingMinSeverity:
+              input.bubbleConfig.review_policy.reviewer_blocking_min_severity
+          }
+        : {}),
+      reviewArtifactType: input.bubbleConfig.review_artifact_type,
+      repoPath: input.bubbleConfig.repo_path,
+      bubbleId: input.bubbleConfig.id
+    }),
+    input.reviewerBrief !== undefined
+      ? formatReviewerBriefDeliveryReminder(input.reviewerBrief)
+      : "",
+    reviewerFocusReminder,
+    "Execute pairflow commands directly (no confirmation prompt)."
+  ]
+    .filter((part) => part.trim().length > 0)
+    .join(" ");
+}
+
+export function buildReviewerDeliveryAction(input: {
   envelope: ProtocolEnvelope;
   bubbleConfig: BubbleConfig;
   actorLabel: string | null;
@@ -168,107 +275,31 @@ function buildReviewerDeliveryAction(input: {
   reviewerBrief?: string;
   reviewerFocus?: ReviewerFocusExtractionResult;
 }): string {
-  if (input.envelope.type === "PASS") {
+  if (input.envelope.type === "PASS" || input.envelope.type === "TASK") {
     const isOpencodeReviewer = isAgentNameRegistered(input.bubbleConfig.agents.reviewer)
-    ? getAgentRuntimeProfile(input.bubbleConfig.agents.reviewer).minimalPastedGuidance
-    : false;
+      ? getAgentRuntimeProfile(input.bubbleConfig.agents.reviewer).minimalPastedGuidance
+      : false;
 
-    // OVERFLOW_1: For opencode reviewers, return minimal handoff text only.
+    const intro = input.envelope.type === "TASK"
+      ? "Review task received. Run a fresh review now."
+      : "Implementer handoff received. Run a fresh review now.";
+
     if (isOpencodeReviewer) {
-      const parts = [
-        "Implementer handoff received. Run a fresh review now."
-      ];
-      if (input.reviewerTestDirective !== undefined) {
-        parts.push(formatReviewerTestExecutionDirective(input.reviewerTestDirective));
-      } else {
-        const includeFallbackDecisionMatrixReminder =
-          input.bubbleConfig.reviewer_context_mode === "fresh";
-        parts.push(
-          [
-            "Run required checks before final judgment. Reason: reviewer test verification directive was unavailable.",
-            ...(includeFallbackDecisionMatrixReminder
-              ? [buildReviewerDecisionMatrixReminder()]
-              : [])
-          ].join(" ")
-        );
-      }
-      return parts.join(" ");
+      return buildOpencodeReviewerDeliveryAction(
+        intro,
+        input.reviewerTestDirective,
+        input.bubbleConfig.reviewer_context_mode === "fresh"
+      );
     }
 
-    const reviewerPolicySnapshotPath = resolveReviewerPolicySnapshotPath(
-      input.bubbleConfig
-    );
-    const includeFallbackDecisionMatrixReminder =
-      input.bubbleConfig.reviewer_context_mode === "fresh";
-    const testDirective =
-      input.reviewerTestDirective === undefined
-        ? [
-            "Run required checks before final judgment. Reason: reviewer test verification directive was unavailable.",
-            ...(includeFallbackDecisionMatrixReminder
-              ? [buildReviewerDecisionMatrixReminder()]
-              : [])
-          ].join(" ")
-        : formatReviewerTestExecutionDirective(input.reviewerTestDirective);
-    const projectionVariant: ReviewerCommandGateProjectionVariant =
-      Array.isArray(input.envelope.payload.findings) && input.envelope.payload.findings.length > 0
-        ? "findings"
-        : "clean";
-    const thresholdInput =
-      input.bubbleConfig.review_policy?.reviewer_blocking_min_severity
-        !== undefined
-        ? {
-            reviewerBlockingMinSeverity:
-              input.bubbleConfig.review_policy.reviewer_blocking_min_severity
-          }
-        : {};
-    const convergenceInstruction = buildReviewerRoundCommandGateProjection({
-      round: input.envelope.round,
-      ...thresholdInput,
-      variant: projectionVariant
+    return buildVerboseReviewerDeliveryAction({
+      intro,
+      envelope: input.envelope,
+      bubbleConfig: input.bubbleConfig,
+      reviewerTestDirective: input.reviewerTestDirective,
+      reviewerBrief: input.reviewerBrief,
+      reviewerFocus: input.reviewerFocus
     });
-    const findingsDetailInstruction =
-      input.envelope.round <= 1
-        ? "In round 1, use canonical pass emit (`pairflow agent emit --kind pass ...`) and declare findings explicitly (`--finding` when findings exist, `--no-findings` only when truly clean)."
-        : buildReviewerFindingsPassInstruction(
-            input.bubbleConfig.review_artifact_type,
-            thresholdInput
-          );
-    const reviewerFocusReminder =
-      input.reviewerFocus === undefined
-        ? ""
-        : formatReviewerFocusDeliveryReminder(input.reviewerFocus);
-    return [
-      "Implementer handoff received. Run a fresh review now.",
-      buildReviewerAgentSelectionGuidance(input.bubbleConfig.review_artifact_type),
-      buildReviewerSeverityOntologyReminder(),
-      `Reviewer policy file: ${reviewerPolicySnapshotPath}`,
-      "Read this file before first review action.",
-      testDirective,
-      buildReviewerScoutExpansionWorkflowGuidance(),
-      buildReviewerPassOutputContractGuidance(),
-      convergenceInstruction,
-      findingsDetailInstruction,
-      buildResolvedReviewerEmitDirective({
-        round: input.envelope.round,
-        severityGateRound: input.bubbleConfig.severity_gate_round,
-        ...(input.bubbleConfig.review_policy?.reviewer_blocking_min_severity !== undefined
-          ? {
-              reviewerBlockingMinSeverity:
-                input.bubbleConfig.review_policy.reviewer_blocking_min_severity
-            }
-          : {}),
-        reviewArtifactType: input.bubbleConfig.review_artifact_type,
-        repoPath: input.bubbleConfig.repo_path,
-        bubbleId: input.bubbleConfig.id
-      }),
-      input.reviewerBrief !== undefined
-        ? formatReviewerBriefDeliveryReminder(input.reviewerBrief)
-        : "",
-      reviewerFocusReminder,
-      "Execute pairflow commands directly (no confirmation prompt)."
-    ]
-      .filter((part) => part.trim().length > 0)
-      .join(" ");
   }
   if (input.envelope.type === "HUMAN_REPLY") {
     return "Human response received. Continue review workflow from this update.";
@@ -333,9 +364,12 @@ export function buildTmuxDeliveryMessage(input: {
     const isOpencodeRecipient = isAgentNameRegistered(input.bubbleConfig.agents.meta_reviewer)
     ? getAgentRuntimeProfile(input.bubbleConfig.agents.meta_reviewer).minimalPastedGuidance
     : false;
+    const prefix = input.envelope.type === "HUMAN_REPLY"
+      ? "Human response received."
+      : "Meta-review task received.";
     action = isOpencodeRecipient
-      ? "Meta-review task received. Produce autonomous meta-review output."
-      : `Meta-review task received. Produce autonomous meta-review output and return only through structured submit with required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitApproveParityNote()}`;
+      ? `${prefix} Produce autonomous meta-review output.`
+      : `${prefix} Produce autonomous meta-review output and return only through structured submit with required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitApproveParityNote()}`;
   } else if (
     input.recipientRole === "human" ||
     input.recipientRole === "orchestrator" ||

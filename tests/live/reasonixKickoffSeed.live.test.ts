@@ -236,7 +236,7 @@ async function bootReasonixPane(): Promise<LiveReasonixPane> {
 
   const homePrefix = bootHome !== undefined ? `HOME=${JSON.stringify(bootHome)} ` : "";
   const launchLine =
-    `${homePrefix}${REASONIX_COMMAND} code --dir ${JSON.stringify(workspacePath)} --permission-mode bypassPermissions`;
+    `${homePrefix}${REASONIX_COMMAND} code --dir ${JSON.stringify(workspacePath)} --permission-mode danger-full-access`;
   await runner(["send-keys", "-t", targetPane, "-l", launchLine]);
   await runner(["send-keys", "-t", targetPane, "Enter"]);
 

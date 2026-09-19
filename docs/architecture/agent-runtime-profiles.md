@@ -85,8 +85,8 @@ the result has been persisted.
 ## reasonix-specific behavior
 
 - **Launch**: `reasonix code --dir <workspace> [--model <model>]
-  --permission-mode bypassPermissions` (autonomous loop agents run without
-  human prompting, mirroring opencode's `permission: allow`). Missing binary
+  --permission-mode danger-full-access` (autonomous loop agents run in YOLO mode
+  without human prompting, mirroring opencode's `permission: allow`). Missing binary
   falls back to `npx --yes reasonix`.
 - **Startup prompt delivery**: `shouldSubmitStartupPrompt` returns `true` for
   `tmux_paste` agents; the seed pastes the startup prompt text into the pane
@@ -110,7 +110,7 @@ the result has been persisted.
   - The plan-watch runner backend uses headless `reasonix run --events-jsonl`,
     which is NOT blocked by the interactive session lock.
 - **Plan-watch backend** (`src/v11/infrastructure/executor/planWatch/reasonix/**`):
-  `reasonix run --events-jsonl --dir <repo> <prompt>`; the prompt asks the
+  `reasonix run --events-jsonl --permission-mode danger-full-access --dir <repo> <prompt>`; the prompt asks the
   runner to end with exactly one JSON object matching the pairflow
   structured-output schema, recovered from stdout by
   `parseStructuredAgentRunnerOutput`.

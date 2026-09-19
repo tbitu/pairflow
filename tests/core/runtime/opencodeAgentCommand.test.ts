@@ -50,7 +50,7 @@ describe("buildAgentCommand for reasonix", () => {
     expect(cmd).toContain("--dir");
     expect(cmd).toContain("/tmp/worktree/reasonix-test");
     expect(cmd).toContain("--permission-mode");
-    expect(cmd).toContain("bypassPermissions");
+    expect(cmd).toContain("danger-full-access");
     // reasonix has no --agent and no --prompt flags; the startup prompt is
     // delivered through tmux paste instead.
     expect(cmd).not.toContain("--agent");

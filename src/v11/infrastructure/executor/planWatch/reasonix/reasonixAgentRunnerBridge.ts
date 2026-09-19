@@ -24,6 +24,9 @@ export async function prepareReasonixRunnerFiles(
  * Headless plan-watch invocation: `reasonix run --events-jsonl` emits redacted
  * structured events as JSONL on stdout and — unlike the interactive TUI — is
  * NOT blocked by the machine-wide single-active-session lock.
+ *
+ * Runs in YOLO mode (`--permission-mode danger-full-access`) so the agent does
+ * not ask for permissions during headless plan-watch runs.
  */
 export function buildReasonixRunnerArgs(input: {
   payload: AgentRunnerContinuationPayload;
@@ -31,6 +34,8 @@ export function buildReasonixRunnerArgs(input: {
   return [
     "run",
     "--events-jsonl",
+    "--permission-mode",
+    "danger-full-access",
     "--dir",
     input.payload.repo_path,
     buildExecutePairflowPlanPrompt(input.payload)

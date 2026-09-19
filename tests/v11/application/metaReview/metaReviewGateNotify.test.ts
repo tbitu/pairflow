@@ -13,6 +13,7 @@ function mockPaneAgent(overrides: Partial<AgentPaneAdapter> = {}): AgentPaneAdap
     hasVisiblePrompt: () => true,
     acceptTrustPrompt: vi.fn(async () => false),
     isBusy: () => false,
+    clearSession: vi.fn(async () => true),
     resolvePasteOptions: () => ({}),
     supportsConcurrentPanes: true,
     startupPromptDelivery: "cli_arg",

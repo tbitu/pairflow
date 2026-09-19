@@ -75,9 +75,9 @@ function buildAgentLaunchArgs(input: {
       args.push("--model", trimAndStripTrailingSlashes(input.model as string));
     }
 
-    // Autonomous loop agents run without human prompting. This mirrors the
+    // Autonomous loop agents run without human prompting in YOLO mode. This mirrors the
     // opencode profile's `permission: "allow"` config injection.
-    args.push("--permission-mode", "bypassPermissions");
+    args.push("--permission-mode", "danger-full-access");
   }
 
   return args;
@@ -116,7 +116,7 @@ function buildMissingBinaryMessage(agentName: AgentName, bubbleId: string): stri
  * user-level ~/.reasonix/config.toml). The user-level config commonly sets
  * `[permissions] mode = "ask"` and `[sandbox] bash = "enforce"`, which gates
  * pairflow's `agent emit` writes and prompts unattended even with
- * `--permission-mode bypassPermissions`. Mirroring OPENCODE_CONFIG_CONTENT, a
+ * `--permission-mode danger-full-access`. Mirroring OPENCODE_CONFIG_CONTENT, a
  * per-bubble `reasonix.toml` is written into the workspace before launch so
  * bubble agents run pass-through permission-wise and can write under the
  * worktree (including `.pairflow/`) and, for git-worktree bubbles, the shared

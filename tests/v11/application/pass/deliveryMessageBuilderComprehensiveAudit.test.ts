@@ -416,5 +416,70 @@ describe("Delivery Message Builder Comprehensive Audit", () => {
       // They should be different (not the same action)
       expect(reworkMsg).not.toEqual(approveMsg);
     });
+
+    it("delivers full reviewer instructions on TASK envelope to non-opencode reviewer", () => {
+      const msg = buildTmuxDeliveryMessage({
+        envelope: createEnvelope({
+          type: "TASK",
+          recipient: "codex" as never
+        }),
+        messageRef: "artifact://task.md",
+        bubbleConfig: createBubbleConfig({
+          agents: { implementer: "opencode", reviewer: "codex" as never, meta_reviewer: "opencode" }
+        }),
+        recipientRole: "reviewer"
+      });
+
+      expect(msg).toContain("Review task received. Run a fresh review now.");
+      expect(msg).toContain("Reviewer policy file:");
+      expect(msg).toContain("pairflow agent emit");
+    });
+
+    it("delivers minimal reviewer instructions on TASK envelope to opencode reviewer", () => {
+      const msg = buildTmuxDeliveryMessage({
+        envelope: createEnvelope({
+          type: "TASK",
+          recipient: "opencode"
+        }),
+        messageRef: "artifact://task.md",
+        bubbleConfig: createBubbleConfig({
+          agents: { implementer: "opencode", reviewer: "opencode", meta_reviewer: "opencode" }
+        }),
+        recipientRole: "reviewer"
+      });
+
+      expect(msg).toContain("Review task received. Run a fresh review now.");
+      expect(msg).toContain("Run required checks before final judgment.");
+    });
+
+    it("delivers meta-reviewer instructions on HUMAN_REPLY envelope", () => {
+      const opencodeMsg = buildTmuxDeliveryMessage({
+        envelope: createEnvelope({
+          type: "HUMAN_REPLY",
+          recipient: "opencode"
+        }),
+        messageRef: "artifact://reply.md",
+        bubbleConfig: createBubbleConfig({
+          agents: { implementer: "opencode", reviewer: "opencode", meta_reviewer: "opencode" }
+        }),
+        recipientRole: "meta-reviewer"
+      });
+
+      expect(opencodeMsg).toContain("Human response received. Produce autonomous meta-review output.");
+
+      const nonOpencodeMsg = buildTmuxDeliveryMessage({
+        envelope: createEnvelope({
+          type: "HUMAN_REPLY",
+          recipient: "codex" as never
+        }),
+        messageRef: "artifact://reply.md",
+        bubbleConfig: createBubbleConfig({
+          agents: { implementer: "opencode", reviewer: "opencode", meta_reviewer: "codex" as never }
+        }),
+        recipientRole: "meta-reviewer"
+      });
+
+      expect(nonOpencodeMsg).toContain("Human response received. Produce autonomous meta-review output and return only through structured submit");
+    });
   });
 });

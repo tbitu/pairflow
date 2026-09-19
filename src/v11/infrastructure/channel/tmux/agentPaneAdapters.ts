@@ -13,7 +13,11 @@ import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
 import type { SendAndSubmitTmuxPaneMessageOptions } from "../../../ports/tmuxDelivery.js";
 import { waitForOpencodePaneReady } from "./tmuxOpencodeReadiness.js";
 import { waitForReasonixPaneReady } from "./tmuxReasonixReadiness.js";
-import { sendAndSubmitTmuxPaneMessage } from "./tmuxPaneWrite.js";
+import { sendAndSubmitTmuxPaneMessage, sendTmuxPaneKeys } from "./tmuxPaneWrite.js";
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /** Generic agent prompt line (`>` / `❯` / `›`), with optional pane-border glyph prefix. */
 const PROMPT_LINE_PATTERN = /^\s*(?:[|│┃]\s*)*[>❯›]/u;
@@ -140,6 +144,22 @@ const opencodePaneAdapter: AgentPaneAdapter = {
         : {})
     });
   },
+  async clearSession(runner, targetPane, options?: AgentPaneReadinessOptions) {
+    const sleepForDelayMs = options?.sleepForDelayMs ?? sleep;
+    await sendTmuxPaneKeys(runner, targetPane, "C-u");
+    await sleepForDelayMs(process.env.VITEST ? 0 : 50);
+    await sendTmuxPaneKeys(runner, targetPane, "/new");
+    await sleepForDelayMs(process.env.VITEST ? 0 : 100);
+    await sendTmuxPaneKeys(runner, targetPane, "Enter");
+    await sleepForDelayMs(process.env.VITEST ? 0 : 200);
+    return waitForOpencodePaneReady({
+      runner,
+      targetPane,
+      attempts: options?.attempts ?? 15,
+      retryDelayMs: options?.retryDelayMs ?? 200,
+      sleepForDelayMs
+    });
+  },
   findLastPromptIndex(lines) {
     return findOpencodePromptIndex(lines);
   },
@@ -189,6 +209,22 @@ const reasonixPaneAdapter: AgentPaneAdapter = {
       ...(options?.sleepForDelayMs !== undefined
         ? { sleepForDelayMs: options.sleepForDelayMs }
         : {})
+    });
+  },
+  async clearSession(runner, targetPane, options?: AgentPaneReadinessOptions) {
+    const sleepForDelayMs = options?.sleepForDelayMs ?? sleep;
+    await sendTmuxPaneKeys(runner, targetPane, "C-u");
+    await sleepForDelayMs(process.env.VITEST ? 0 : 50);
+    await sendTmuxPaneKeys(runner, targetPane, "/clear");
+    await sleepForDelayMs(process.env.VITEST ? 0 : 100);
+    await sendTmuxPaneKeys(runner, targetPane, "Enter");
+    await sleepForDelayMs(process.env.VITEST ? 0 : 200);
+    return waitForReasonixPaneReady({
+      runner,
+      targetPane,
+      attempts: options?.attempts ?? 15,
+      retryDelayMs: options?.retryDelayMs ?? 200,
+      sleepForDelayMs
     });
   },
   findLastPromptIndex(lines) {
