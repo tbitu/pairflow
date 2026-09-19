@@ -215,7 +215,7 @@ const reasonixPaneAdapter: AgentPaneAdapter = {
     const sleepForDelayMs = options?.sleepForDelayMs ?? sleep;
     await sendTmuxPaneKeys(runner, targetPane, "C-u");
     await sleepForDelayMs(process.env.VITEST ? 0 : 50);
-    await sendTmuxPaneKeys(runner, targetPane, "/clear");
+    await sendTmuxPaneKeys(runner, targetPane, "/new");
     await sleepForDelayMs(process.env.VITEST ? 0 : 100);
     await sendTmuxPaneKeys(runner, targetPane, "Enter");
     await sleepForDelayMs(process.env.VITEST ? 0 : 200);

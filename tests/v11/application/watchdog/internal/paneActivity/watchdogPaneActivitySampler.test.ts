@@ -282,6 +282,37 @@ describe("watchdogPaneActivitySampler", () => {
       });
     });
 
+    it("treats a thinking or tool-executing reasonix pane as busy", async () => {
+      const thinkingPane = [
+        "  ▎ thought for 24s",
+        "────────────────────────────────────────────",
+        " ❯"
+      ].join("\n");
+      const thinkingResult = await sampleWith({
+        config: reasonixBubbleConfig,
+        stdout: thinkingPane
+      });
+      expect(thinkingResult).toMatchObject({
+        status: "sampled",
+        has_esc_interrupt: true
+      });
+
+      const toolPane = [
+        "  ● Bash(dotnet test)",
+        "  ⎿  19 lines",
+        "────────────────────────────────────────────",
+        " ❯"
+      ].join("\n");
+      const toolResult = await sampleWith({
+        config: reasonixBubbleConfig,
+        stdout: toolPane
+      });
+      expect(toolResult).toMatchObject({
+        status: "sampled",
+        has_esc_interrupt: true
+      });
+    });
+
     it("treats an idle reasonix composer as not busy", async () => {
       const result = await sampleWith({
         config: reasonixBubbleConfig,

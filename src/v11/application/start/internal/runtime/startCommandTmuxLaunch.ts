@@ -146,6 +146,9 @@ export async function launchFreshTmuxSession(input: {
     implementerPaneLabel: `[${implementerAgent}/implementer]`,
     reviewerPaneLabel: `[${reviewerAgent}/reviewer]`,
     metaReviewerPaneLabel: `[${metaReviewerAgent}/meta-reviewer]`,
+    implementerAgentName: implementerAgent,
+    reviewerAgentName: reviewerAgent,
+    metaReviewerAgentName: metaReviewerAgent,
     implementerSubmitStartupPrompt: shouldSubmitStartupPrompt(
       implementerAgent,
       implementerStartupPrompt
@@ -236,6 +239,9 @@ export async function launchResumeTmuxSession(input: {
     implementerPaneLabel: `[${input.context.resolved.bubbleConfig.agents.implementer}/implementer]`,
     reviewerPaneLabel: `[${input.context.resolved.bubbleConfig.agents.reviewer}/reviewer]`,
     metaReviewerPaneLabel: `[${metaReviewerAgent}/meta-reviewer]`,
+    implementerAgentName: input.context.resolved.bubbleConfig.agents.implementer,
+    reviewerAgentName: input.context.resolved.bubbleConfig.agents.reviewer,
+    metaReviewerAgentName: metaReviewerAgent,
     implementerSubmitStartupPrompt: shouldSubmitStartupPrompt(
       input.context.resolved.bubbleConfig.agents.implementer,
       implementerStartupPrompt

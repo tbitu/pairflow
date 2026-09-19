@@ -184,15 +184,23 @@ const profiles: Record<AgentName, AgentRuntimeProfile> = {
     minimalPastedGuidance: true,
     postEmitInterruption: "none",
     trustPromptHandling: "none",
-    // reasonix reports progress as `working · 12s` instead of an esc-interrupt hint.
-    paneBusyPatterns: [/\bworking\s*·\s*\d+/i, ...OPENCODE_PANE_BUSY_PATTERNS],
+    // reasonix reports progress via spinner, thinking duration, tool indicators, or cancel hints.
+    paneBusyPatterns: [
+      /\bworking\s*·\s*\d+/i,
+      /\bthought for\b/i,
+      /\bthinking\b/i,
+      /\b(?:esc|ctrl-c)\s+cancels?\b/i,
+      /\b\d+\s+in\s+inbox\b/i,
+      /^[ \t]*[●•]\s*(?:Bash|Read|Write|Edit|Glob|Grep|[a-zA-Z]+)/im,
+      ...OPENCODE_PANE_BUSY_PATTERNS
+    ],
     readiness: "reasonix",
     planWatchBackend: "reasonix",
     supportsConcurrentPanes: false,
     tmuxPasteChunkLengthChars: 200,
     tmuxPasteChunkDelayMs: 250,
     tmuxPasteSubmitDelayMs: 1500,
-    tmuxPasteSubmitPerChunk: true,
+    tmuxPasteSubmitPerChunk: false,
     tmuxPasteViaBuffer: false,
     // Collapse newlines so pasted messages stay single-line and Enter sends.
     collapsePastedNewlines: true,

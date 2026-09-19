@@ -1094,7 +1094,7 @@ describe("emitDeliveryNotificationAck", () => {
     ).toBe(false);
   });
 
-  it("clears a live reasonix pane with C-u and /clear before delivery", async () => {
+  it("clears a live reasonix pane with C-u and /new before delivery", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
       calls.push(args);
@@ -1136,7 +1136,7 @@ describe("emitDeliveryNotificationAck", () => {
       calls.some((call) => call[0] === "send-keys" && call.includes("C-u"))
     ).toBe(true);
     expect(
-      calls.some((call) => call[0] === "send-keys" && call.includes("/clear"))
+      calls.some((call) => call[0] === "send-keys" && call.includes("/new"))
     ).toBe(true);
   });
 
