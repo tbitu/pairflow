@@ -72,7 +72,7 @@ export const roleAgentDefinitions = [
 
 export const roleAgentRecipePointer = [
   "Full recipes and the failure-signature to fix table: load the `UsePairflow` skill and read its `references/agent-emit-recipes.md`, or read that file directly from whichever skill root",
-  "your agent resolves (`~/.config/opencode/skills`, `~/.opencode/skills`, `~/.agents/skills`, or `.opencode/skills` inside the Pairflow checkout).",
+  "your agent resolves (`~/.config/opencode/skills`, `~/.opencode/skills`, `~/.reasonix/skills`, `~/.agents/skills`, or `.opencode/skills` inside the Pairflow checkout).",
   "`pairflow agent emit --help` prints the authority, kind-lock and `--report-json` rules, and every rejected emit records itself in `.pairflow/bubbles/<id>/emit-history.ndjson` (`pairflow bubble emit-log`)."
 ].join(" ");
 

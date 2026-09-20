@@ -30,6 +30,7 @@ describe("role agent standing prompts", () => {
       expect(body).toContain("Role-to-kind lock");
       expect(body).toContain("UsePairflow");
       expect(body).toContain("references/agent-emit-recipes.md");
+      expect(body).toContain("~/.reasonix/skills");
       expect(body).toContain("pairflow bubble emit-log");
       expect(body).toContain("pairflow bubble emit-log");
     }
