@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   getAgentRuntimeProfile,
   isAgentNameRegistered,
+  isPaneBusyOutput,
+  resolvePaneBusyPatterns,
   resolveTmuxPasteOptions
 } from "../../../../src/v11/shared/agent/agentRuntimeProfiles.js";
 
@@ -62,5 +64,65 @@ describe("agentRuntimeProfiles", () => {
   it("keeps the legacy 1024-char / 200ms / dynamic-delay paste for opencode", () => {
     expect(resolveTmuxPasteOptions("opencode")).toEqual({});
     expect(resolveTmuxPasteOptions(undefined)).toEqual({});
+  });
+
+  it("detects reasonix as busy during checking, working, compacting, and tool execution", () => {
+    const samples = [
+      "  ⣯  checking · 283s · ↓25.1K · ✎ 1 in inbox",
+      "  ⣾  checking · 392s · ↓59.2K",
+      "  ⡿  working · 243s · ↓18.6K · ✎ 1 in inbox",
+      "  ⎿  ⠴ working · 5s",
+      "  ⣾  compacting · 12s",
+      "  ⠋  indexing · 2s",
+      "  ● Bash(cd /repo && dotnet build)",
+      "thought for 12s",
+      "thinking",
+      "ctrl-c cancels",
+      "✎ 1 in inbox",
+      "esc interrupt"
+    ];
+
+    for (const sample of samples) {
+      expect(
+        isPaneBusyOutput({ agentName: "reasonix", paneOutput: sample }),
+        `expected sample to be busy: ${sample}`
+      ).toBe(true);
+    }
+  });
+
+  it("distinguishes idle reasonix TUI screen from busy states", () => {
+    const patterns = resolvePaneBusyPatterns("reasonix");
+    expect(patterns.length).toBeGreaterThan(0);
+
+    const idleScreen = [
+      " To-dos 5/5",
+      "   ✔ Task complete",
+      " ❯ ",
+      "   YOLO  · Shift+Tab read-only/workspace/YOLO/plan · Ctrl+Y YOLO    MODEL deepseek-v4-flash",
+      "  5-llm-ui-and-config@bubble/5-llm-ui-and-config  +294 -32 ?4"
+    ].join("\n");
+
+    expect(isPaneBusyOutput({ agentName: "reasonix", paneOutput: idleScreen })).toBe(false);
+  });
+
+  it("falls back to all known busy patterns when agentName is undefined or unregistered", () => {
+    expect(
+      isPaneBusyOutput({
+        agentName: undefined,
+        paneOutput: "  ⣯  checking · 283s · ↓25.1K"
+      })
+    ).toBe(true);
+    expect(
+      isPaneBusyOutput({
+        agentName: undefined,
+        paneOutput: "esc interrupt"
+      })
+    ).toBe(true);
+    expect(
+      isPaneBusyOutput({
+        agentName: undefined,
+        paneOutput: "❯ \nidle prompt"
+      })
+    ).toBe(false);
   });
 });

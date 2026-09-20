@@ -282,6 +282,24 @@ describe("watchdogPaneActivitySampler", () => {
       });
     });
 
+    it("treats a checking reasonix pane as busy so the watchdog does not nudge it during diagnostics", async () => {
+      const reasonixCheckingPane = [
+        "  ⎿  ⠴ working · 5s",
+        "  ⣯  checking · 283s · ↓25.1K · ✎ 1 in inbox",
+        "────────────────────────────────────────────",
+        " ❯"
+      ].join("\n");
+      const result = await sampleWith({
+        config: reasonixBubbleConfig,
+        stdout: reasonixCheckingPane
+      });
+
+      expect(result).toMatchObject({
+        status: "sampled",
+        has_esc_interrupt: true
+      });
+    });
+
     it("treats a thinking or tool-executing reasonix pane as busy", async () => {
       const thinkingPane = [
         "  ▎ thought for 24s",

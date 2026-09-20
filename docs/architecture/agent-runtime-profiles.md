@@ -24,7 +24,7 @@ Supported agents today:
 | `minimalPastedGuidance` | `true` (OVERFLOW rules) | `true` (composer-safe kickoff) |
 | `postEmitInterruption` | `opencode_double_escape` | `none` |
 | `trustPromptHandling` | `opencode` | `none` |
-| `paneBusyPatterns` | `esc interrupt` | `working · <n>` + `esc interrupt` |
+| `paneBusyPatterns` | `esc interrupt` | `(working|checking|...) · <n>` + spinner + `esc interrupt` |
 | `readiness` | `opencode` | `reasonix` |
 | `planWatchBackend` | `opencode` | `reasonix` |
 | `supportsConcurrentPanes` | `true` | `false` |
@@ -72,9 +72,10 @@ multiple agent turns.
 The watchdog nudges only for lazy-agent behavior: a pane that is neither working
 nor handed over. "Working" is detected per agent through `paneBusyPatterns`,
 because the busy indicator is agent-specific — opencode prints an
-`esc interrupt` hint while reasonix prints `working · <seconds>`. Matching only
-opencode's hint made reasonix look idle mid-turn and queued repeated nudges onto
-a busy agent.
+`esc interrupt` hint while reasonix prints `working · <seconds>` or
+`checking · <seconds>` alongside braille spinners. Matching only
+opencode's hint or only `working` made reasonix look idle mid-turn during
+prolonged diagnostic checks and queued repeated nudges onto a busy agent.
 
 After a meta-reviewer emits `meta_review_result`, Pairflow persists and routes
 the authoritative result, then deactivates the meta-reviewer pane. This applies

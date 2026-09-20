@@ -163,6 +163,18 @@ const OPENCODE_PANE_BUSY_PATTERNS: readonly RegExp[] = [
   /\besc\b.*?\binterrupt\b/i
 ];
 
+const REASONIX_PANE_BUSY_PATTERNS: readonly RegExp[] = [
+  /\b(?:working|checking|thinking|compacting|analyzing|[a-z]+ing)\s*[·•]\s*\d+/i,
+  /\b[a-z]+\s*[·•]\s*\d+s?\b/i,
+  /[⠋-⠿]\s*(?:working|checking|thinking|analyzing|[a-z]+)/iu,
+  /\bthought for\b/i,
+  /\bthinking\b/i,
+  /\b(?:esc|ctrl-c)\s+cancels?\b/i,
+  /\b\d+\s+in\s+inbox\b/i,
+  /^[ \t]*[●•]\s*(?:Bash|Read|Write|Edit|Glob|Grep|[a-zA-Z]+)/im,
+  ...OPENCODE_PANE_BUSY_PATTERNS
+];
+
 const profiles: Record<AgentName, AgentRuntimeProfile> = {
   opencode: {
     name: "opencode",
@@ -184,16 +196,9 @@ const profiles: Record<AgentName, AgentRuntimeProfile> = {
     minimalPastedGuidance: true,
     postEmitInterruption: "none",
     trustPromptHandling: "none",
-    // reasonix reports progress via spinner, thinking duration, tool indicators, or cancel hints.
-    paneBusyPatterns: [
-      /\bworking\s*·\s*\d+/i,
-      /\bthought for\b/i,
-      /\bthinking\b/i,
-      /\b(?:esc|ctrl-c)\s+cancels?\b/i,
-      /\b\d+\s+in\s+inbox\b/i,
-      /^[ \t]*[●•]\s*(?:Bash|Read|Write|Edit|Glob|Grep|[a-zA-Z]+)/im,
-      ...OPENCODE_PANE_BUSY_PATTERNS
-    ],
+    // reasonix reports progress via spinner, status verbs (working, checking, etc.),
+    // thinking duration, tool indicators, or cancel hints.
+    paneBusyPatterns: REASONIX_PANE_BUSY_PATTERNS,
     readiness: "reasonix",
     planWatchBackend: "reasonix",
     supportsConcurrentPanes: false,
@@ -226,13 +231,13 @@ export function isAgentNameRegistered(agentName: string): boolean {
 
 /**
  * Resolve the pane patterns that prove an agent is mid-turn. Unknown/undefined
- * agents keep the opencode patterns.
+ * agents fall back to all known busy patterns so watchdog never nudges mid-turn.
  */
 export function resolvePaneBusyPatterns(
   agentName: AgentName | undefined
 ): readonly RegExp[] {
   if (agentName === undefined || !isAgentNameRegistered(agentName)) {
-    return OPENCODE_PANE_BUSY_PATTERNS;
+    return REASONIX_PANE_BUSY_PATTERNS;
   }
   return getAgentRuntimeProfile(agentName).paneBusyPatterns;
 }
