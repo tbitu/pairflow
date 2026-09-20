@@ -8,6 +8,7 @@ const directBubbleCliShimCommands = [] as const;
 const compositionBubbleCliWrappers = [
   "attach",
   "delete",
+  "emitLog",
   "inbox",
   "kickoff",
   "open",
@@ -23,6 +24,7 @@ const intentionalNonShimBubbleCliWrappers = [
   "commit",
   "create",
   "delete",
+  "emitLog",
   "extract",
   "list",
   "merge",

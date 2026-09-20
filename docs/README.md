@@ -19,6 +19,7 @@ Use these as current contract or governance inputs:
 - [site/pages/](./site/pages/) - public onboarding docs source for install, CLI, UI, skills, release, and GitHub Pages activation notes. Build locally with `pnpm docs:build`; generated output goes to ignored `docs/site-dist/`.
 - [reviewer-severity-ontology.md](./reviewer-severity-ontology.md) - canonical reviewer severity policy and source for generated runtime ontology.
 - [reviewer-evidence-governance.md](./reviewer-evidence-governance.md) - active review/evidence trust, skip/run, and docs-only evidence policy.
+- [agent-emit-troubleshooting.md](./agent-emit-troubleshooting.md) - canonical `pairflow agent emit` recipes per role/case, required `--report-json` keys, failure-signature to fix table, and how to read the recorded attempt log.
 - [architecture/architecture-fitness-checks.md](./architecture/architecture-fitness-checks.md) - active architecture fitness policy and CI gate documentation.
 - [architecture/v11-placement-and-extraction-governance.md](./architecture/v11-placement-and-extraction-governance.md) - active placement rules for `src/v11/**`.
 - [architecture/v11-boundary-decisions.md](./architecture/v11-boundary-decisions.md) - retained decisions from the completed v1.1 boundary simplification rollout.

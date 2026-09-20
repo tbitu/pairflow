@@ -94,6 +94,12 @@ import {
   runBubbleRequestReworkCommand
 } from "./commands/bubble/requestRework.js";
 import {
+  getBubbleEmitLogHelpText,
+  parseBubbleEmitLogCommandOptions,
+  renderBubbleEmitLogText,
+  runBubbleEmitLogCommand
+} from "./commands/bubble/emitLog.js";
+import {
   getBubbleStartHelpText,
   runBubbleStartCommand
 } from "./commands/bubble/start.js";
@@ -811,6 +817,27 @@ async function handleBubbleStatusCommand(args: string[]): Promise<number> {
   return 0;
 }
 
+async function handleBubbleEmitLogCommand(args: string[]): Promise<number> {
+  const parsed = parseBubbleEmitLogCommandOptions(args);
+  if (parsed.help) {
+    process.stdout.write(`${getBubbleEmitLogHelpText()}\n`);
+    return 0;
+  }
+
+  const result = await runBubbleEmitLogCommand(parsed);
+  if (result === null) {
+    process.stdout.write(`${getBubbleEmitLogHelpText()}\n`);
+    return 0;
+  }
+
+  if (parsed.json) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  } else {
+    process.stdout.write(`${renderBubbleEmitLogText(result)}\n`);
+  }
+  return 0;
+}
+
 async function handleBubbleWatchdogCommand(args: string[]): Promise<number> {
   const parsed = parseBubbleWatchdogCommandOptions(args);
   if (parsed.help) {
@@ -956,6 +983,7 @@ const bubbleSubcommandHandlers: Readonly<
   resume: handleBubbleResumeCommand,
   restart: handleBubbleRestartCommand,
   status: handleBubbleStatusCommand,
+  "emit-log": handleBubbleEmitLogCommand,
   watchdog: handleBubbleWatchdogCommand,
   inbox: handleBubbleInboxCommand,
   list: handleBubbleListCommand,

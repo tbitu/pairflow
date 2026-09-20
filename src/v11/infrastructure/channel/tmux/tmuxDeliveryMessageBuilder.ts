@@ -38,7 +38,8 @@ import {
 } from "../../../shared/role/prompts/resolvedEmitDirective.js";
 import {
   buildMetaReviewSubmitApproveParityNote,
-  buildMetaReviewSubmitCommandTemplate
+  buildMetaReviewSubmitCommandTemplate,
+  buildMetaReviewSubmitRequiredReportJsonFieldsLine
 } from "../../../shared/metaReview/metaReviewSubmitGuidance.js";
 import { reviewerPolicySnapshotFileName } from "../../../shared/reviewer/reviewerPolicySnapshot.js";
 import type { BubbleConfig } from "../../../shared/config/bubbleConfigTypes.js";
@@ -369,7 +370,7 @@ export function buildTmuxDeliveryMessage(input: {
       : "Meta-review task received.";
     action = isOpencodeRecipient
       ? `${prefix} Produce autonomous meta-review output.`
-      : `${prefix} Produce autonomous meta-review output and return only through structured submit with required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitApproveParityNote()}`;
+      : `${prefix} Produce autonomous meta-review output and return only through structured submit with required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitRequiredReportJsonFieldsLine()} ${buildMetaReviewSubmitApproveParityNote()}`;
   } else if (
     input.recipientRole === "human" ||
     input.recipientRole === "orchestrator" ||

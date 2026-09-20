@@ -10,6 +10,10 @@ import {
   buildTranscriptContextLine,
   type ResumePromptConcernBuildInput
 } from "../../../../src/v11/shared/role/prompts/rolePromptConcerns.js";
+import {
+  FINDING_OWNERSHIP_AND_INTENT_RULE,
+  ROLE_KIND_LOCK_RULE
+} from "../../../../src/v11/shared/role/prompts/sharedPromptDirectives.js";
 import type {
   buildReviewerPolicySnapshotContractLines
 } from "../../../../src/v11/shared/role/prompts/rolePromptConcerns.js";
@@ -80,12 +84,8 @@ describe("startCommandImplementerPrompts", () => {
     expect(kickoffMessage).toContain(
       "include explicit `--repo`, `--bubble-id`, `--handoff-id`, and `--execution-id`; never leave authority flags empty or guessed"
     );
-    expect(kickoffMessage).toContain(
-      "role-to-kind lock -> implementer: `pass|human_question`; reviewer: `pass|human_question|convergence`; meta-reviewer: `meta_review_result` only"
-    );
-    expect(kickoffMessage).toContain(
-      "`--no-findings` is a bare flag only (never `--no-findings=false`)"
-    );
+    expect(kickoffMessage).toContain(ROLE_KIND_LOCK_RULE);
+    expect(kickoffMessage).toContain(FINDING_OWNERSHIP_AND_INTENT_RULE);
   });
 
   it("renders document-scope kickoff as docs refinement instead of code implementation", () => {

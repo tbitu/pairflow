@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   buildMetaReviewSubmitAuthorityGuardLine,
   buildMetaReviewSubmitAdvisoryOnlyCorrectionNote,
+  buildMetaReviewSubmitCommandTemplate,
+  buildMetaReviewSubmitCorrectedReportJson,
   buildMetaReviewSubmitFailureRecoveryChecklist,
+  buildMetaReviewSubmitRequiredReportJsonFieldsLine,
   buildMetaReviewSubmitUsageLine
 } from "../../../src/v11/shared/metaReview/metaReviewSubmitGuidance.js";
 import { getAgentEmitHelpText } from "../../../src/cli/commands/agent/emit.js";
@@ -55,6 +58,66 @@ describe("metaReviewSubmitGuidance", () => {
     expect(checklist).toContain("CLAIM_SOURCE_INVALID");
     expect(checklist).toContain("findings_count required/invalid");
     expect(checklist).toContain("META_REVIEW_GATE_REVIEWER_CONVERGENCE_CONFLICT");
+  });
+
+  it("states the raw --report-json required keys and the wrong shape explicitly", () => {
+    const line = buildMetaReviewSubmitRequiredReportJsonFieldsLine();
+
+    expect(line).toContain("findings_claim_state");
+    expect(line).toContain("findings_claim_source");
+    expect(line).toContain("findings_count");
+    expect(line).toContain("top-level keys");
+    expect(line).toContain("Never nest");
+    expect(line).toContain("never a file path");
+  });
+
+  it("keeps the meta-review command template and required-fields line in agreement", () => {
+    const template = buildMetaReviewSubmitCommandTemplate({ bubbleId: "b-1", round: 3 });
+    const requiredLine = buildMetaReviewSubmitRequiredReportJsonFieldsLine();
+
+    for (const key of [
+      "findings_claim_state",
+      "findings_claim_source",
+      "findings_count"
+    ]) {
+      expect(template).toContain(key);
+      expect(requiredLine).toContain(key);
+    }
+    expect(template).toContain("--handoff-id <handoff-id>");
+  });
+
+  it("advertises a corrected report-json payload per recommendation", () => {
+    const approve = JSON.parse(
+      buildMetaReviewSubmitCorrectedReportJson({ recommendation: "approve" })
+    ) as Record<string, unknown>;
+    expect(approve).toMatchObject({
+      findings_claim_state: "clean",
+      findings_claim_source: "meta_review_artifact",
+      findings_count: 0,
+      findings_claimed_open_total: 0,
+      findings_blocking_open_total: 0,
+      findings_advisory_open_total: 0
+    });
+
+    const rework = JSON.parse(
+      buildMetaReviewSubmitCorrectedReportJson({
+        recommendation: "rework"
+      }).replaceAll("<open-count>", "2").replaceAll("<blocking-count>", "2").replaceAll("<advisory-count>", "0")
+    ) as Record<string, unknown>;
+    expect(rework).toMatchObject({
+      findings_claim_state: "open_findings",
+      findings_count: 2,
+      findings_claimed_open_total: 2
+    });
+
+    const inconclusive = JSON.parse(
+      buildMetaReviewSubmitCorrectedReportJson({ recommendation: "inconclusive" })
+    ) as Record<string, unknown>;
+    expect(inconclusive).toMatchObject({
+      findings_claim_state: "unknown",
+      findings_claim_source: "meta_review_artifact",
+      findings_count: 0
+    });
   });
 
   it("returns full prompt for all agents including opencode", () => {

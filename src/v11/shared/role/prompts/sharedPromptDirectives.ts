@@ -6,6 +6,17 @@
  */
 
 /**
+ * Small "use the recipe when emitting" instruction.
+ *
+ * Appended to every emit/submit directive so the instruction arrives at the emit
+ * moment, not only in a startup block the agent may never re-read. It names the
+ * `UsePairflow` skill (loadable through each agent's skill tool) AND the concrete
+ * recipe file, so it works whether or not the agent triggers the skill.
+ */
+export const EMIT_RECIPE_USE_INSTRUCTION =
+  "Before emitting - and again after any rejected emit - load the `UsePairflow` skill and follow `references/agent-emit-recipes.md` for your role and case instead of guessing flags.";
+
+/**
  * Emit directive for implementers and reviewers.
  *
  * Lifecycle contract (role-agnostic): the emit directive applies at the conclusion
@@ -13,7 +24,8 @@
  * or a review, but never while idle, waiting for orchestration signals, or in a passive state.
  */
 export const AGENT_EMIT_DIRECTIVE =
-  "Always execute the canonical actor emit command (`pairflow agent emit`) as the mandatory final step before stopping work or ending your turn. Do not stop work without emitting first. This directive applies at the end of an active implementation or review session — do not emit while idle or waiting for orchestration signals.";
+  "Always execute the canonical actor emit command (`pairflow agent emit`) as the mandatory final step before stopping work or ending your turn. Do not stop work without emitting first. This directive applies at the end of an active implementation or review session — do not emit while idle or waiting for orchestration signals. " +
+  EMIT_RECIPE_USE_INSTRUCTION;
 
 /**
  * Submit directive for meta-reviewers.
@@ -22,7 +34,8 @@ export const AGENT_EMIT_DIRECTIVE =
  * of a meta-review session, but never while idle or waiting for orchestration signals.
  */
 export const META_REVIEWER_SUBMIT_DIRECTIVE =
-  "Always execute the final structured submit/decision command before finishing your turn. Do not stop work without emitting first. This directive applies at the end of an active meta-review session — do not emit while idle or waiting for signals.";
+  "Always execute the final structured submit/decision command before finishing your turn. Do not stop work without emitting first. This directive applies at the end of an active meta-review session — do not emit while idle or waiting for signals. " +
+  EMIT_RECIPE_USE_INSTRUCTION;
 
 /**
  * Generic idle-contract directive used in meta-reviewer startup/resume prompts.
@@ -32,7 +45,8 @@ export const META_REVIEWER_SUBMIT_DIRECTIVE =
  * always submit before stopping.
  */
 export const META_REVIEWER_IDLE_EMIT_DIRECTIVE =
-  "Always execute the final structured submit/decision command before finishing your turn. Do not stop work or wait for human intervention to emit. This directive applies at the end of an active session — do not emit while idle or waiting for signals.";
+  "Always execute the final structured submit/decision command before finishing your turn. Do not stop work or wait for human intervention to emit. This directive applies at the end of an active session — do not emit while idle or waiting for signals. " +
+  EMIT_RECIPE_USE_INSTRUCTION;
 
 /**
  * Enter-execute directive for reviewers.
@@ -80,3 +94,41 @@ export const DOC_BUBBLE_MODE_A_SKIP_CLAIM =
  */
 export const DOC_BUBBLE_MODE_B_CHECKS_SUFFIX =
   "attach refs only for commands you actually ran, and do not claim checks were intentionally not executed.";
+
+/**
+ * Authority rule, role-level (no bubble id / no resolved command).
+ *
+ * Shared verbatim by the per-handoff lookup guidance and the standing role-agent
+ * prompts (opencode `PF-*` agent definitions, reasonix subagent profiles) so the
+ * two surfaces cannot drift.
+ */
+export const AUTHORITY_MACHINE_MINTED_RULE =
+  "Authority values are machine-minted: copy them verbatim from `executionContext`. Never reconstruct them, never reuse a previous round's values, and never substitute a transcript message id (`msg_*`), a round label (`r6`), or any other hand-written token - that is rejected as a handoff/execution mismatch.";
+
+/**
+ * Rule for states that carry no active authority snapshot. Shared by the
+ * per-handoff guidance and the standing role prompts.
+ */
+export const AUTHORITY_UNAVAILABLE_RULE =
+  "If the status JSON has no active `executionContext` (for example state `WAITING_HUMAN`, `READY_FOR_HUMAN_APPROVAL`, or an exhausted attempt), there is no valid authority to emit against: stop and wait for the next handoff instead of emitting with a stale or absent snapshot.";
+
+/**
+ * Role to output-kind lock. Shared by the per-handoff guidance and the standing
+ * role prompts.
+ */
+export const ROLE_KIND_LOCK_RULE =
+  "Role-to-kind lock: implementer -> `pass` or `human_question`; reviewer -> `pass`, `convergence` or `human_question`; meta-reviewer -> `meta_review_result` only.";
+
+/**
+ * Finding-flag ownership plus reviewer intent rules. Shared by the per-handoff
+ * guidance and the standing role prompts.
+ */
+export const FINDING_OWNERSHIP_AND_INTENT_RULE =
+  "Finding flags are reviewer-only -> an implementer `pass` must never carry `--finding`. Reviewer intent follows the findings declaration -> findings require `--intent fix_request`, a clean `--no-findings` review uses `--intent review` (omitting `--intent` lets the CLI infer it), and `--intent task` is implementer-only. `--no-findings` is a bare flag only (never `--no-findings=false`), and `--finding` and `--no-findings` are mutually exclusive.";
+
+/**
+ * Literal-argument rule: no file paths for JSON, repeated flags are separate
+ * pairs. Shared by the per-handoff guidance and the standing role prompts.
+ */
+export const LITERAL_ARGUMENT_RULE =
+  "Argument values are literal: `--report-json` takes inline JSON text (never a file path), and repeated flag values (`--ref`, `--finding`) must each be passed as their own `--flag <value>` pair.";

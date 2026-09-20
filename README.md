@@ -197,12 +197,13 @@ pairflow skills install --skills all --target-dir .claude
 Useful options:
 
 - `--skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan`
-- `--target-dir .claude|.codex|.opencode|.reasonix`
+- `--target-dir .opencode|.reasonix`
+- `--role-agents` to also sync the repo-owned `PF-implementer|PF-reviewer|PF-meta-reviewer` role definitions
 - `--link-other` for optional cross-agent per-skill symlinks
 - `--dry-run --json` to preview without writes
 - `--force` to replace unsafe existing selected managed paths
 
-This installs or refreshes selected skills under `~/.claude/skills/`, `~/.codex/skills/`, `~/.opencode/skills/`, or `~/.reasonix/skills/` (reasonix's skill root). Source files come from the Pairflow checkout or installed package `.claude/skills/**`; global skill directories are derived targets, not source.
+This installs or refreshes selected skills under `~/.opencode/skills/` (default) or `~/.reasonix/skills/`. Source files come from the Pairflow checkout or installed package `.claude/skills/**` (the repo-local `.opencode/skills/**` pointer tree mirrors the same source for opencode's project-local discovery); global skill directories are derived targets, not source. opencode also auto-loads the `~/.claude/skills` and `~/.agents/skills` convention roots, and reasonix its `~/.reasonix/skills` root, so `~/.agents/skills` is the one location both agents read. Add `--role-agents` to also sync the repo-owned `PF-*` role definitions.
 
 The policy reference and fallback manual workflow live at `.claude/skills/INSTALL.md`.
 
@@ -1115,6 +1116,7 @@ Unsupported pairs such as `(P2, 2)` must display as custom/unsupported rather th
 | `bubble merge --id <id> [--repo <path>] [--push] [--delete-remote] [--json]` | Merge bubble branch and clean up. `--push` / `--delete-remote` stay local-route only; started-remote merge completes the durable merge in the local repo and rejects those flags. |
 | `bubble reconcile [--repo <path>] [--dry-run] [--json]` | Clean up stale sessions |
 | `bubble watchdog --id <id> [--repo <path>] [--json]` | Check for stuck agents |
+| `bubble emit-log --id <id> [--repo <path>] [--json]` (or `--log <path>`, or no `--id` for the repo runtime log) | Group recorded `agent emit` rejections by error signature with counts, time window and an example flag skeleton |
 Autonomous meta-review results are submitted through the canonical actor channel: `pairflow agent emit --kind meta_review_result ...`. Operator inspection uses `bubble status` / `bubble restart`; there is no public `bubble meta-review` subcommand family.
 
 #### Repo registry
@@ -1154,7 +1156,7 @@ The registry is stored at `~/.pairflow/repos.json` (override with `PAIRFLOW_REPO
 #### Agent-facing commands
 
 Canonical actor emission uses explicit authority (`--repo`, `--bubble-id`, `--handoff-id`, `--execution-id`). Resolve the active snapshot first with `pairflow bubble status --id <id> --repo <path> --json`, then copy both `executionContext.handoffId` and `executionContext.executionId` from the JSON output.
-For common emit mistakes (`ACTOR_EMIT_OPTIONS_INVALID`, role/kind mismatches, malformed `--report-json`), see `docs/agent-emit-troubleshooting.md`.
+For per-case emit recipes (role/kind/intent locks, reviewer round gate, required `--report-json` keys) and the failure-signature to fix table, see `docs/agent-emit-troubleshooting.md` and the skill card `.claude/skills/UsePairflow/references/agent-emit-recipes.md`. Every emit attempt is recorded in `.pairflow/bubbles/<id>/emit-history.ndjson`; summarize the recorded rejections with `pairflow bubble emit-log`.
 
 | Command | Description |
 |---------|-------------|

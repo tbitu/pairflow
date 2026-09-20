@@ -25,7 +25,7 @@ TASK_FILE: extracted from `--task-file` argument (optional; for ideation kickoff
 - Re-verify after each fix attempt.
 - If diagnosis is inconclusive, stop with a concrete escalation path.
 - For remote started-pointer runtime loss, stay fail-closed: do not imply that `bubble start` or `bubble restart` is already the supported recovery contract on top of preserved remote state.
-- For repeated `pairflow agent emit` failures, classify by error signature and apply the mapped correction once (do not keep mutating flags blindly).
+- For repeated `pairflow agent emit` failures, classify by error signature and apply the mapped correction once (do not keep mutating flags blindly); use `references/agent-emit-recipes.md` for the per-case command and `pairflow bubble emit-log` to confirm the dominant signature.
 
 ## Agent Emit Failure Playbook
 
@@ -51,6 +51,9 @@ Then copy fresh `executionContext.handoffId` and `executionContext.executionId`.
 - `Invalid --report-json value`:
   - Rebuild `--report-json` as a valid JSON object string (double-quoted keys/strings).
   - Single-quote the full shell argument.
+- `... is missing the required top-level claim keys findings_claim_state and findings_claim_source`:
+  - Add both keys to the top level of the `--report-json` object (never inside a `findings` entry).
+  - The error message prints the corrected payload for the active recommendation; copy it.
 - `CLAIM_SOURCE_INVALID`:
   - If `findings_claim_state` is present, set `findings_claim_source=meta_review_artifact`.
 - `report_json.findings_count is required and must be a non-negative integer`:
@@ -64,8 +67,16 @@ Then copy fresh `executionContext.handoffId` and `executionContext.executionId`.
 - Retry exactly once after applying mapped correction.
 - If it fails again, stop and report the exact error plus the corrected command variant.
 
-5. Reference:
-- See `docs/agent-emit-troubleshooting.md` for canonical examples.
+5. Recorded attempt log:
+```bash
+pairflow bubble emit-log --id <BUBBLE_ID> [--repo <REPO_PATH>]
+pairflow bubble emit-log --log <path-to-emit-history.ndjson>
+```
+Groups rejections by signature with counts and a time window; use `--log` when the bubble no longer resolves.
+
+6. Reference:
+- Per-case commands: `references/agent-emit-recipes.md`.
+- Canonical long form: `docs/agent-emit-troubleshooting.md`.
 
 ## Error Messages
 

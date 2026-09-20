@@ -1,6 +1,6 @@
 ---
 name: UsePairflow
-description: Manage pairflow bubble lifecycle with strict state-aware routing and optional evidence bootstrap planning. USE WHEN create/start bubble OR intervene/troubleshoot active bubbles OR review for approval OR close/approve/rework/commit/merge OR cleanup/recovery OR bootstrap evidence.
+description: Manage pairflow bubble lifecycle with strict state-aware routing, per-case `pairflow agent emit` recipes, and optional evidence bootstrap planning. USE WHEN create/start bubble OR intervene/troubleshoot active bubbles OR an agent emit fails/is rejected or the emit command is unclear (`--kind pass|convergence|human_question|meta_review_result`, handoff/execution authority, `--intent`, `--finding`, `--report-json`) OR check what an agent emitted (emit-history / emit-log) OR review for approval OR close/approve/rework/commit/merge OR cleanup/recovery OR bootstrap evidence.
 ---
 
 # UsePairflow
@@ -65,14 +65,14 @@ This skill exists to avoid lifecycle mistakes (wrong command in wrong state, los
   - state whether it is blocking now or only future hardening debt.
 24. For started remote bubbles, the laptop/local repo remains the operator control plane. Run lifecycle commands from the local repo so Pairflow can use the retained pointer/cache state and SSH routing; do not SSH into the remote clone and run `approve`, `reply`, `commit`, `merge`, or `delete` there manually.
 25. The only bounded remote-clone local-parity exception in this design slice is `request-rework`, and only when Pairflow can prove the verified remote clone workspace context and no retained clone-local `remote.json` pointer artifacts are present. Default to the laptop-routed path unless that exception is explicitly known to apply.
-26. For recurring actor emit failures, use the error-signature mapping in `Workflows/TroubleshootBubble.md` and the canonical examples in `docs/agent-emit-troubleshooting.md` instead of ad-hoc flag mutation.
+26. For recurring actor emit failures, use the per-case emit recipe card (`references/agent-emit-recipes.md`) and the error-signature mapping in `docs/agent-emit-troubleshooting.md` (long form) instead of ad-hoc flag mutation. Rejections are recorded in `.pairflow/bubbles/<id>/emit-history.ndjson`; summarize them with `pairflow bubble emit-log --id <id>` (add `--log <path>` for a log whose bubble no longer resolves).
 
 ## Command Ownership & Role Separation
 
 Pairflow CLI commands are strictly divided by role and execution plane:
 
 1. **Operator / Chatbot Commands (`pairflow bubble ...`) [Human / Chatbot Plane]**:
-   - Commands: `pairflow bubble <status|create|start|kickoff|reply|approve|request-rework|restart|stop|commit|merge|delete>`
+   - Commands: `pairflow bubble <status|create|start|kickoff|reply|approve|request-rework|restart|stop|commit|merge|delete|emit-log|watchdog|list|inbox|reconcile>`
    - Who runs them: Human operators, or Chatbot Assistants (like Antigravity/Codex in this chat interface) acting on behalf of the human.
    - Purpose: Manage bubble orchestration, approvals, replies, state transitions, and workspace lifecycle.
    - Constraints: NEVER run these commands inside the autonomous loop agent panes or bubble worktrees.

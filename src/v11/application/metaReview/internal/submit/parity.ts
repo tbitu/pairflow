@@ -14,9 +14,13 @@ import {
   hasGlobalNoFindingsSummaryAssertion
 } from "../../../../domain/convergence/policy.js";
 import type { MetaReviewRecommendation } from "../../../../shared/metaReview/metaReviewTypes.js";
+import {
+  buildMetaReviewSubmitCorrectedReportJson
+} from "../../../../shared/metaReview/metaReviewSubmitGuidance.js";
 
 function requireStructuredMetaReviewClaim(
-  reportJson: Record<string, unknown>
+  reportJson: Record<string, unknown>,
+  recommendation: MetaReviewRecommendation
 ): {
   state: "clean" | "open_findings" | "unknown";
   source: "meta_review_artifact";
@@ -36,7 +40,10 @@ function requireStructuredMetaReviewClaim(
     throw new MetaReviewError({
       reasonCode: "META_REVIEW_SCHEMA_INVALID",
       message:
-        "meta-review submit report_json requires findings_claim_state and findings_claim_source fields",
+        "meta-review submit report_json is missing the required top-level claim keys findings_claim_state and findings_claim_source (they belong directly on the --report-json object, never nested inside a `findings` entry). " +
+        `Corrected --report-json for recommendation=${recommendation}: '${buildMetaReviewSubmitCorrectedReportJson({
+          recommendation
+        })}'. Pass that JSON text inline; --report-json does not accept a file path.`,
       context: {
         source: "meta_review_command_submit_parity",
         reason: "structured_claim_fields_missing"
@@ -46,12 +53,18 @@ function requireStructuredMetaReviewClaim(
   return parsed.claim;
 }
 
-function requireStructuredFindingsCount(reportJson: Record<string, unknown>): number {
+function requireStructuredFindingsCount(
+  reportJson: Record<string, unknown>,
+  recommendation: MetaReviewRecommendation
+): number {
+  const correctedSnippet = buildMetaReviewSubmitCorrectedReportJson({
+    recommendation
+  });
   if (!Object.hasOwn(reportJson, "findings_count")) {
     throw new MetaReviewError({
       reasonCode: "META_REVIEW_SCHEMA_INVALID",
       message:
-        "meta-review submit report_json.findings_count is required and must be a non-negative integer",
+        `meta-review submit report_json.findings_count is required (top-level key, integer >= 0). Corrected --report-json for recommendation=${recommendation}: '${correctedSnippet}'.`,
       context: {
         source: "meta_review_command_submit_parity",
         reason: "findings_count_missing"
@@ -63,7 +76,7 @@ function requireStructuredFindingsCount(reportJson: Record<string, unknown>): nu
     throw new MetaReviewError({
       reasonCode: "META_REVIEW_SCHEMA_INVALID",
       message:
-        "meta-review submit report_json.findings_count is required and must be a non-negative integer",
+        `meta-review submit report_json.findings_count must be a non-negative integer (found ${JSON.stringify(explicitCount)}). Corrected --report-json for recommendation=${recommendation}: '${correctedSnippet}'.`,
       context: {
         source: "meta_review_command_submit_parity",
         reason: "findings_count_invalid"
@@ -84,8 +97,14 @@ export function assertSummaryStructuredParity(input: {
   summary: string;
   reportJson: Record<string, unknown>;
 }): void {
-  const structuredClaim = requireStructuredMetaReviewClaim(input.reportJson);
-  const structuredCount = requireStructuredFindingsCount(input.reportJson);
+  const structuredClaim = requireStructuredMetaReviewClaim(
+    input.reportJson,
+    input.recommendation
+  );
+  const structuredCount = requireStructuredFindingsCount(
+    input.reportJson,
+    input.recommendation
+  );
   if (
     (structuredClaim.state === "open_findings" && structuredCount === 0) ||
     (structuredClaim.state === "clean" && structuredCount > 0)

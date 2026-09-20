@@ -1,6 +1,7 @@
 import {
   buildMetaReviewSubmitApproveParityNote,
-  buildMetaReviewSubmitCommandTemplate
+  buildMetaReviewSubmitCommandTemplate,
+  buildMetaReviewSubmitRequiredReportJsonFieldsLine
 } from "../../../../shared/metaReview/metaReviewSubmitGuidance.js";
 import { META_REVIEWER_SUBMIT_DIRECTIVE } from "../../../../shared/role/prompts/sharedPromptDirectives.js";
 
@@ -30,6 +31,7 @@ export function buildMetaReviewGateRunPrompt(input: {
     `Task: ${input.taskArtifactPath}.`,
     "Before emit, fetch fresh actor authority with `pairflow bubble status --json` and use the current `executionContext.handoffId` and `executionContext.executionId`.",
     `Required command (include --report-json parity fields): ${buildMetaReviewSubmitCommandTemplate({ bubbleId: input.bubbleId, round: input.round })}.`,
+    buildMetaReviewSubmitRequiredReportJsonFieldsLine(),
     buildMetaReviewSubmitApproveParityNote(),
     "Tool-call safety: never invoke terminal/bash tools with an empty command or missing required arguments.",
     "Do not modify transcript, inbox, or state files manually."
