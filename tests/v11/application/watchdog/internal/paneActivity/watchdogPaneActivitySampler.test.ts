@@ -263,6 +263,10 @@ describe("watchdogPaneActivitySampler", () => {
     ].join("\n");
 
     const reasonixIdlePane = [
+      "  • dotnet run --project Tools/SahkkuBench -- --games 2 — exit 0",
+      "  ● Bash(dotnet test)",
+      "  ⎿  19 lines",
+      "  ▎ thought for 24s",
       "◆ reasonix  · deepseek-v4-flash",
       "  Context is kept across turns. Type 'exit' or Ctrl-D to quit.",
       "────────────────────────────────────────────",
@@ -300,9 +304,9 @@ describe("watchdogPaneActivitySampler", () => {
       });
     });
 
-    it("treats a thinking or tool-executing reasonix pane as busy", async () => {
+    it("treats an actively thinking or tool-executing reasonix pane as busy", async () => {
       const thinkingPane = [
-        "  ▎ thought for 24s",
+        "  ⣾  thinking · 24s",
         "────────────────────────────────────────────",
         " ❯"
       ].join("\n");
@@ -317,7 +321,7 @@ describe("watchdogPaneActivitySampler", () => {
 
       const toolPane = [
         "  ● Bash(dotnet test)",
-        "  ⎿  19 lines",
+        "  ⎿  ⠴ working · 5s",
         "────────────────────────────────────────────",
         " ❯"
       ].join("\n");

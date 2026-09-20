@@ -74,9 +74,6 @@ describe("agentRuntimeProfiles", () => {
       "  ⎿  ⠴ working · 5s",
       "  ⣾  compacting · 12s",
       "  ⠋  indexing · 2s",
-      "  ● Bash(cd /repo && dotnet build)",
-      "thought for 12s",
-      "thinking",
       "ctrl-c cancels",
       "✎ 1 in inbox",
       "esc interrupt"
@@ -95,6 +92,11 @@ describe("agentRuntimeProfiles", () => {
     expect(patterns.length).toBeGreaterThan(0);
 
     const idleScreen = [
+      "  • dotnet run --project Tools/SahkkuBench -- --games 2 — exit 0, 0 rule violations, 0 failures",
+      "  • Localization consistency check (.pairflow/evidence/localization-tables.log)",
+      "  ● Bash(dotnet build)",
+      "  ⎿  64 lines",
+      "  ▎ thought for 24s",
       " To-dos 5/5",
       "   ✔ Task complete",
       " ❯ ",

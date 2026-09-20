@@ -167,11 +167,9 @@ const REASONIX_PANE_BUSY_PATTERNS: readonly RegExp[] = [
   /\b(?:working|checking|thinking|compacting|analyzing|[a-z]+ing)\s*[·•]\s*\d+/i,
   /\b[a-z]+\s*[·•]\s*\d+s?\b/i,
   /[⠋-⠿]\s*(?:working|checking|thinking|analyzing|[a-z]+)/iu,
-  /\bthought for\b/i,
-  /\bthinking\b/i,
   /\b(?:esc|ctrl-c)\s+cancels?\b/i,
   /\b\d+\s+in\s+inbox\b/i,
-  /^[ \t]*[●•]\s*(?:Bash|Read|Write|Edit|Glob|Grep|[a-zA-Z]+)/im,
+  /^[ \t]*⎿\s*[⠋-⠿]/im,
   ...OPENCODE_PANE_BUSY_PATTERNS
 ];
 

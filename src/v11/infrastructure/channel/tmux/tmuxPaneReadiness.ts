@@ -66,8 +66,8 @@ export async function waitForAgentPaneIdle(
   agentName: AgentName | undefined,
   input: WaitForAgentPaneIdleInput
 ): Promise<boolean> {
-  const attempts = Math.max(1, input.attempts ?? 120);
-  const retryDelayMs = input.retryDelayMs ?? 5000;
+  const attempts = Math.max(1, input.attempts ?? 15);
+  const retryDelayMs = input.retryDelayMs ?? 1000;
   const captureStartLine = input.captureStartLine ?? 20;
   const settleDelayMs = input.settleDelayMs ?? 500;
   const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
