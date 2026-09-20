@@ -778,8 +778,7 @@ describe("metaReviewGatePaneBinding", () => {
       "pf-b_meta_review_gate_reasonix_01:0.3",
       expect.stringContaining("[pairflow] bubble=b_meta_review_gate_reasonix_01 meta-review request round=2."),
       expect.objectContaining({
-        collapseNewlines: true,
-        submitPerChunk: true
+        collapseNewlines: true
       })
     );
     expect(result).toEqual({

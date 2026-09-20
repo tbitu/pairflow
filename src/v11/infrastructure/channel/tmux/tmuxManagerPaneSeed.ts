@@ -10,6 +10,7 @@ import {
   submitTmuxPaneInput
 } from "./tmuxPaneWrite.js";
 import { waitForAgentPaneReady } from "./tmuxPaneReadiness.js";
+import { deliverHandoffMessage } from "./tmuxDeliveryRuntime.js";
 import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
 
 /**
@@ -98,7 +99,9 @@ async function submitStartupPrompt(input: {
 
   const ready = await waitForAgentPaneReady(input.agentName, {
     runner: input.runner,
-    targetPane: input.targetPane
+    targetPane: input.targetPane,
+    attempts: 90,
+    retryDelayMs: 300
   });
   if (!ready) {
     console.error(
@@ -175,34 +178,37 @@ async function pasteKickoffMessage(input: {
       await sleep(2000);
     }
     try {
-      await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
-        requireSuccess: !isStructuredPairflowEnvelope,
-        ...input.paneAgent.resolvePasteOptions(),
-        ...(input.startupPasteSettleMs > 0 && pasteAttempt === 0
-          ? { settleMs: input.startupPasteSettleMs }
-          : {})
-      });
+      if (isStructuredPairflowEnvelope) {
+        confirmed = await deliverHandoffMessage({
+          runner: input.runner,
+          targetPane: input.targetPane,
+          message: input.message,
+          envelopeId: input.marker as string,
+          expectedPaneAgent: input.paneAgent.name,
+          startupPasteSettleMs: pasteAttempt === 0 ? input.startupPasteSettleMs : 0,
+          requireSuccess: false
+        });
+      } else {
+        await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
+          requireSuccess: false,
+          ...input.paneAgent.resolvePasteOptions(),
+          ...(input.startupPasteSettleMs > 0 && pasteAttempt === 0
+            ? { settleMs: input.startupPasteSettleMs }
+            : {})
+        });
+        confirmed = true;
+      }
     } catch (error) {
       console.error(
         `[tmux seed] kickoff paste failed for target_pane=${input.targetPane}: ${error instanceof Error ? error.message : String(error)}`
       );
       break;
     }
-    if (input.marker === undefined) {
-      confirmed = true;
-      continue;
-    }
-    confirmed = await confirmTmuxPaneMarkerSubmission({
-      runner: input.runner,
-      targetPane: input.targetPane,
-      marker: input.marker,
-      paneAgent: input.paneAgent
-    }).catch(() => false);
     if (!confirmed && pasteAttempt < maxPasteAttempts - 1) {
       const markerStatus = await checkTmuxPaneMarkerStatus(
         input.runner,
         input.targetPane,
-        input.marker,
+        input.marker!,
         input.paneAgent
       ).catch(() => "not_found" as const);
       if (markerStatus === "stuck_in_input") {
@@ -239,7 +245,9 @@ async function sendPaneMessage(
   const marker = resolvePairflowPaneMessageMarker(concreteMessage);
   const ready = await waitForAgentPaneReady(agentName, {
     runner,
-    targetPane
+    targetPane,
+    attempts: 90,
+    retryDelayMs: 300
   });
   if (!ready) {
     console.error(

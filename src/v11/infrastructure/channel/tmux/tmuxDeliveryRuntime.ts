@@ -209,7 +209,7 @@ async function ensureLiveSessionOrRespawn(input: {
  * opens a confirmation gate that swallows the handover, and reasonix queues it
  * as a literal message.
  */
-async function deliverHandoffMessage(input: {
+export async function deliverHandoffMessage(input: {
   runner: TmuxRunner;
   targetPane: string;
   message: string;
@@ -217,6 +217,8 @@ async function deliverHandoffMessage(input: {
   expectedPaneAgent: AgentName | undefined;
   deliveryAttempts?: number | undefined;
   timing?: TmuxDeliveryTimingOptions | undefined;
+  startupPasteSettleMs?: number | undefined;
+  requireSuccess?: boolean | undefined;
 }): Promise<boolean> {
   const paneAgent = resolveAgentPaneAdapter(input.expectedPaneAgent);
   if (paneAgent.trustPromptHandling === "opencode") {
@@ -224,13 +226,16 @@ async function deliverHandoffMessage(input: {
   }
 
   await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
-    requireSuccess: true,
+    requireSuccess: input.requireSuccess ?? true,
     ...paneAgent.resolvePasteOptions(),
     ...(input.timing?.submitDelayMs !== undefined
       ? { submitDelayMs: input.timing.submitDelayMs }
       : {}),
     ...(input.timing?.sleepForDelayMs !== undefined
       ? { sleepForDelayMs: input.timing.sleepForDelayMs }
+      : {}),
+    ...(input.startupPasteSettleMs !== undefined && input.startupPasteSettleMs > 0
+      ? { settleMs: input.startupPasteSettleMs }
       : {})
   });
 

@@ -69,7 +69,7 @@ function buildAgentLaunchArgs(input: {
     // reasonix: code-mode TUI pinned to the workspace. There is no --agent or
     // --prompt flag; role identity and startup prompt are delivered through
     // tmux paste by the delivery layer.
-    args.push("--dir", input.workspacePath);
+    args.push("code", "--dir", input.workspacePath);
 
     if ((input.model?.trim().length ?? 0) > 0) {
       args.push("--model", trimAndStripTrailingSlashes(input.model as string));
@@ -78,7 +78,6 @@ function buildAgentLaunchArgs(input: {
     // Autonomous loop agents run without human prompting in YOLO mode. This mirrors the
     // opencode profile's `permission: "allow"` config injection.
     args.push("--permission-mode", "danger-full-access");
-    args.push("code");
   }
 
   return args;

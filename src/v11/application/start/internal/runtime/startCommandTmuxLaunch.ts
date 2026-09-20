@@ -155,6 +155,7 @@ export async function launchFreshTmuxSession(input: {
     ),
     reviewerSubmitStartupPrompt: shouldSubmitStartupPrompt(reviewerAgent, undefined),
     metaReviewerSubmitStartupPrompt: shouldSubmitStartupPrompt(metaReviewerAgent, undefined),
+    implementerStartupPrompt,
     launchReviewerAgent: getAgentRuntimeProfile(reviewerAgent).supportsConcurrentPanes,
     launchMetaReviewerAgent: getAgentRuntimeProfile(metaReviewerAgent).supportsConcurrentPanes,
     implementerCommand: buildRoleAgentLaunchCommand({
