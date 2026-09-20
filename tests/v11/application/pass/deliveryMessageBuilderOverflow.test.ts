@@ -85,6 +85,8 @@ describe("buildTmuxDeliveryMessage OVERFLOW_2 minimal formatting for opencode re
           meta_reviewer: "opencode"
         },
         commands: {
+          test: "dotnet test",
+          typecheck: "dotnet build",
           validation_required: ["build"],
           build: "dotnet build"
         }

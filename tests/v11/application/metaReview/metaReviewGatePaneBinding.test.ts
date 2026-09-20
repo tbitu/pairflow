@@ -781,6 +781,13 @@ describe("metaReviewGatePaneBinding", () => {
         collapseNewlines: true
       })
     );
+    expect(sendSubmissionRequestMessage).toHaveBeenNthCalledWith(
+      1,
+      paneRunner,
+      "pf-b_meta_review_gate_reasonix_01:0.3",
+      expect.stringContaining("Read role instructions now: /repo/.pairflow/bubbles/b_meta_review_gate_reasonix_01/artifacts/role-meta-reviewer.md."),
+      expect.anything()
+    );
     expect(result).toEqual({
       delivery: {
         status: "confirmed",

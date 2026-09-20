@@ -139,11 +139,14 @@ function buildMetaReviewerCommand(input: {
     input.metaReviewerMcpPolicy
     ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer;
 
+  const roleArtifactPath = input.taskArtifactPath.replace(/task\.md$/, "role-meta-reviewer.md");
+
   const startupPrompt = buildMetaReviewGateRunPrompt({
     bubbleId: input.bubbleId,
     round: input.round,
     repoPath: input.repoPath,
-    taskArtifactPath: input.taskArtifactPath
+    taskArtifactPath: input.taskArtifactPath,
+    roleArtifactPath
   });
 
   return input.buildAgentCommand({
@@ -254,11 +257,14 @@ async function deliverMetaReviewerPromptViaTmuxPaste(input: {
     });
   }
 
+  const roleArtifactPath = input.taskArtifactPath.replace(/task\.md$/, "role-meta-reviewer.md");
+
   const startupPrompt = buildMetaReviewGateRunPrompt({
     bubbleId: input.bubbleId,
     round: input.round,
     repoPath: input.repoPath,
-    taskArtifactPath: input.taskArtifactPath
+    taskArtifactPath: input.taskArtifactPath,
+    roleArtifactPath
   });
 
   await sendSubmissionRequestMessage(runner, targetPane, startupPrompt, {

@@ -136,6 +136,12 @@ describe("metaReviewGateNotify", () => {
       message: "meta-review submit request delivery confirmed from pane scrollback."
     });
     expect(sendSubmissionRequestMessage).toHaveBeenCalledTimes(1);
+    expect(sendSubmissionRequestMessage).toHaveBeenCalledWith(
+      expect.anything(),
+      "pf-b_meta_review_notify_confirmed:0.3",
+      expect.stringContaining("Read role instructions now: artifacts/role-meta-reviewer.md."),
+      expect.anything()
+    );
     expect(confirmSubmission).toHaveBeenCalledTimes(1);
   });
 

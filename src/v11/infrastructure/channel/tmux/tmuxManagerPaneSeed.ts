@@ -2,8 +2,7 @@ import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
 import type { AgentPaneAdapter } from "../../../shared/agent/agentPaneAdapter.js";
 import {
-  checkTmuxPaneMarkerStatus,
-  confirmTmuxPaneMarkerSubmission
+  checkTmuxPaneMarkerStatus
 } from "./tmuxPaneMarkerConfirmation.js";
 import {
   sendAndSubmitTmuxPaneMessage,

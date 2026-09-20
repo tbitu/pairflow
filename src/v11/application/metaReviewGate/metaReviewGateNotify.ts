@@ -113,7 +113,8 @@ export async function notifyMetaReviewerSubmissionRequest(
     bubbleId: input.bubbleId,
     round: input.round,
     repoPath: "<repo>",
-    taskArtifactPath: "artifacts/task.md"
+    taskArtifactPath: "artifacts/task.md",
+    roleArtifactPath: "artifacts/role-meta-reviewer.md"
   });
 
   if (paneAgent !== undefined) {
