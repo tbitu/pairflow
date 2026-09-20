@@ -14,7 +14,7 @@ export const supportedPairflowSkillNames = [
 
 export type PairflowSkillName = (typeof supportedPairflowSkillNames)[number];
 
-export type SkillInstallTargetDir = ".opencode" | ".reasonix";
+export type SkillInstallTargetDir = ".opencode" | ".reasonix" | ".gemini";
 
 /**
  * Role-agent definition dialect.

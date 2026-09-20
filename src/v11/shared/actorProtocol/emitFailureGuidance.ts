@@ -134,7 +134,7 @@ export const emitFailureFixTable: readonly EmitFailureFixRow[] = [
  * skills installer never writes - only `PF-*` role definitions land there).
  */
 export const emitRecipeLocationLine =
-  "load the `UsePairflow` skill and read `references/agent-emit-recipes.md`, or read that file from an installed skill root (`~/.reasonix/skills/UsePairflow/references/agent-emit-recipes.md`, `~/.config/opencode/skills/UsePairflow/references/agent-emit-recipes.md`, `~/.opencode/skills/UsePairflow/references/agent-emit-recipes.md`, `~/.claude/skills/UsePairflow/references/agent-emit-recipes.md`)";
+  "load the `UsePairflow` skill and read `references/agent-emit-recipes.md`, or read that file from an installed skill root (`~/.reasonix/skills/UsePairflow/references/agent-emit-recipes.md`, `~/.config/opencode/skills/UsePairflow/references/agent-emit-recipes.md`, `~/.opencode/skills/UsePairflow/references/agent-emit-recipes.md`, `~/.claude/skills/UsePairflow/references/agent-emit-recipes.md`, `~/.gemini/config/skills/UsePairflow/references/agent-emit-recipes.md`)";
 
 export function buildEmitFailureFix(message: string): string | undefined {
   for (const row of emitFailureFixTable) {

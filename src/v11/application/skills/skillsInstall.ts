@@ -27,7 +27,18 @@ interface ManagedPathPreflight {
   unsafe: boolean;
 }
 
-const OTHER_AGENT_DIRS = [".claude", ".codex", ".copilot", ".gemini", ".reasonix"] as const;
+export const OTHER_AGENT_DIRS = [".claude", ".codex", ".copilot", ".gemini", ".reasonix"] as const;
+
+export function resolveAgentSkillsRoot(homeDir: string, agentDir: string): string {
+  if (agentDir === ".gemini") {
+    return join(homeDir, ".gemini", "config", "skills");
+  }
+  return join(homeDir, agentDir, "skills");
+}
+
+export function resolveAgentRoot(homeDir: string, agentDir: string): string {
+  return join(homeDir, agentDir);
+}
 
 async function preflightManagedPaths(input: {
   operations: SkillsInstallOperation[];
@@ -97,25 +108,6 @@ async function assertLinkOtherRootsDoNotAlias(input: {
     );
   }
 
-  const [targetStatus, otherStatus, targetSkillsStatus, otherSkillsStatus] = await Promise.all([
-    input.fs.pathStatus(input.targetAgentRoot),
-    input.fs.pathStatus(input.otherAgentRoot),
-    input.fs.pathStatus(input.targetRoot),
-    input.fs.pathStatus(input.otherRoot)
-  ]);
-  const symlinkRoot = [
-    { path: input.targetAgentRoot, status: targetStatus },
-    { path: input.otherAgentRoot, status: otherStatus },
-    { path: input.targetRoot, status: targetSkillsStatus },
-    { path: input.otherRoot, status: otherSkillsStatus }
-  ].find((root) => root.status.exists && root.status.type === "symlink");
-
-  if (symlinkRoot !== undefined) {
-    throw new SkillsInstallError(
-      `Cannot use --link-other when an agent or skills root is a symlink that may alias the selected target root: ${symlinkRoot.path}`
-    );
-  }
-
   const [
     realTargetAgentRoot,
     realOtherAgentRoot,
@@ -127,6 +119,33 @@ async function assertLinkOtherRootsDoNotAlias(input: {
     input.fs.realPathIfExists(input.targetRoot),
     input.fs.realPathIfExists(input.otherRoot)
   ]);
+  const [targetStatus, otherStatus, targetSkillsStatus, otherSkillsStatus] = await Promise.all([
+    input.fs.pathStatus(input.targetAgentRoot),
+    input.fs.pathStatus(input.otherAgentRoot),
+    input.fs.pathStatus(input.targetRoot),
+    input.fs.pathStatus(input.otherRoot)
+  ]);
+  const symlinkRoot = [
+    { path: input.targetAgentRoot, status: targetStatus, realPath: realTargetAgentRoot },
+    { path: input.otherAgentRoot, status: otherStatus, realPath: realOtherAgentRoot },
+    { path: input.targetRoot, status: targetSkillsStatus, realPath: realTargetRoot },
+    { path: input.otherRoot, status: otherSkillsStatus, realPath: realOtherRoot }
+  ].find((root) => {
+    if (!root.status.exists || root.status.type !== "symlink") {
+      return false;
+    }
+    return (
+      (realTargetAgentRoot !== null && root.realPath === realTargetAgentRoot) ||
+      (realTargetRoot !== null && root.realPath === realTargetRoot)
+    );
+  });
+
+  if (symlinkRoot !== undefined) {
+    throw new SkillsInstallError(
+      `Cannot use --link-other when an agent or skills root is a symlink that may alias the selected target root: ${symlinkRoot.path}`
+    );
+  }
+
   if (
     realTargetAgentRoot !== null
     && realOtherAgentRoot !== null
@@ -357,12 +376,12 @@ export async function installPairflowSkills(
     options.skills,
     runtime.fs
   );
-  const targetRoot = join(runtime.homeDir, options.targetDir, "skills");
-  const targetAgentRoot = join(runtime.homeDir, options.targetDir);
+  const targetRoot = resolveAgentSkillsRoot(runtime.homeDir, options.targetDir);
+  const targetAgentRoot = resolveAgentRoot(runtime.homeDir, options.targetDir);
   const otherRoots = options.linkOther
     ? OTHER_AGENT_DIRS
         .filter((dir) => dir !== options.targetDir)
-        .map((dir) => join(runtime.homeDir, dir, "skills"))
+        .map((dir) => resolveAgentSkillsRoot(runtime.homeDir, dir))
     : [];
   const otherRoot = options.linkOther
     ? otherRoots.join(", ")
@@ -415,8 +434,11 @@ export async function installPairflowSkills(
 
   if (options.linkOther) {
     for (const otherDir of OTHER_AGENT_DIRS) {
-      const otherAgentRoot = join(runtime.homeDir, otherDir);
-      const otherRoot = join(otherAgentRoot, "skills");
+      if (otherDir === options.targetDir) {
+        continue;
+      }
+      const otherAgentRoot = resolveAgentRoot(runtime.homeDir, otherDir);
+      const otherRoot = resolveAgentSkillsRoot(runtime.homeDir, otherDir);
       await assertLinkOtherRootsDoNotAlias({
         targetAgentRoot,
         otherAgentRoot,

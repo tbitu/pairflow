@@ -91,11 +91,11 @@ function parseSkills(value: string): PairflowSkillName[] {
 }
 
 function parseTargetDir(value: string): SkillInstallTargetDir {
-  if (value === ".opencode" || value === ".reasonix") {
+  if (value === ".opencode" || value === ".reasonix" || value === ".gemini") {
     return value;
   }
   throw new SkillsInstallError(
-    `Unsupported target dir: ${value}. Supported target dirs: .opencode, .reasonix`
+    `Unsupported target dir: ${value}. Supported target dirs: .opencode, .reasonix, .gemini`
   );
 }
 
@@ -234,9 +234,9 @@ export function getSkillsInstallHelpText(): string {
     "Options:",
     "  --skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan[,<name>...]",
     "      Skills to install. Default: all",
-    "  --target-dir .opencode|.reasonix",
+    "  --target-dir .opencode|.reasonix|.gemini",
     "      Global agent directory under $HOME. Default: .opencode",
-    "      (.reasonix maps to $HOME/.reasonix/skills, reasonix's skill root)",
+    "      (.reasonix maps to $HOME/.reasonix/skills; .gemini maps to $HOME/.gemini/config/skills)",
     "  --link-other [true|false]",
     "      Link selected skills into all other agent directories (.claude, .codex, .copilot, .gemini, .reasonix). Default: false",
     "  --force",

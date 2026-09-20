@@ -305,12 +305,32 @@ describe("skills install command execution", () => {
 
     // Check other links
     for (const dir of [".claude", ".codex", ".copilot", ".gemini", ".reasonix"]) {
-      const linkPath = join(homeDir, dir, "skills", "UsePairflow");
+      const linkPath = dir === ".gemini"
+        ? join(homeDir, ".gemini", "config", "skills", "UsePairflow")
+        : join(homeDir, dir, "skills", "UsePairflow");
       const statResult = await lstat(linkPath);
       expect(statResult.isSymbolicLink()).toBe(true);
       const linkTarget = await readlink(linkPath);
       expect(linkTarget).toBe(join(homeDir, ".opencode", "skills", "UsePairflow"));
     }
+  });
+
+  it("supports installing skills to .gemini target dir directly", async () => {
+    const { sourceRoot, homeDir } = await setupSourceAndHome();
+
+    const result = await runSkillsInstallCommand(
+      ["--skills", "UsePairflow", "--target-dir", ".gemini"],
+      {
+        homeDir,
+        sourceRootCandidates: [sourceRoot]
+      }
+    );
+
+    expect(result?.status).toBe("fresh_install");
+    expect(result?.targetRoot).toBe(join(homeDir, ".gemini", "config", "skills"));
+    await expect(
+      readFile(join(homeDir, ".gemini", "config", "skills", "UsePairflow", "SKILL.md"), "utf8")
+    ).resolves.toContain("UsePairflow");
   });
 
   it("fails unsafe managed paths before later writes without force", async () => {
