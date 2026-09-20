@@ -5,7 +5,13 @@ import {
   sleep
 } from "./tmuxProcessProbe.js";
 
-const OPENCODE_PROCESS_COMM_MATCHERS = ["opencode", "node", "mainthread"];
+const OPENCODE_PROCESS_COMM_MATCHERS = [
+  "opencode",
+  "node",
+  "mainthread",
+  "npm",
+  "sh"
+];
 
 const READY_TEXT_PATTERNS = [
   /ask anything/i,
@@ -67,6 +73,17 @@ export async function waitForOpencodePaneReady(input: {
   const settleDelayMs = input.settleDelayMs ?? 500;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
+    // 1. Primary ground truth: check the screen first so readiness is detected
+    // immediately without being blocked by wrapper process hierarchies.
+    const screenReady = await isOpencodePaneScreenReady(input.runner, input.targetPane);
+    if (screenReady) {
+      if (settleDelayMs > 0 && !process.env.VITEST) {
+        await sleepForDelayMs(settleDelayMs);
+      }
+      return true;
+    }
+
+    // 2. Fallback check: ensure pane process is alive and descendant of target pane.
     const processStatus = await checkPaneProcessAlive(
       input.runner,
       input.targetPane,
@@ -82,14 +99,6 @@ export async function waitForOpencodePaneReady(input: {
       continue;
     }
 
-    const screenReady = await isOpencodePaneScreenReady(input.runner, input.targetPane);
-    if (screenReady) {
-      if (settleDelayMs > 0 && !process.env.VITEST) {
-        await sleepForDelayMs(settleDelayMs);
-      }
-      return true;
-    }
-
     if (attempt < attempts - 1 && retryDelayMs > 0) {
       await sleepForDelayMs(retryDelayMs);
     }
@@ -97,4 +106,6 @@ export async function waitForOpencodePaneReady(input: {
 
   return false;
 }
+
+
 
