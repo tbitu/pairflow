@@ -245,7 +245,7 @@ const reasonixPaneAdapter: AgentPaneAdapter = {
     return resolvePasteOptions("reasonix");
   },
   supportsConcurrentPanes: false,
-  startupPromptDelivery: "tmux_paste",
+  startupPromptDelivery: "none",
   trustPromptHandling: "none",
   postEmitInterruption: "none",
   startupPasteSettleMs: resolveStartupPasteSettleMs("reasonix"),

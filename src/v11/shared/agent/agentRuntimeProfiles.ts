@@ -34,13 +34,13 @@ import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
  * This policy eliminates duplicate inputs and keeps agent activation idempotent.
  */
 
-export type StartupPromptDeliveryMode = "cli_arg" | "tmux_paste";
+export type StartupPromptDeliveryMode = "cli_arg" | "tmux_paste" | "none";
 
-/** opencode receives its startup prompt through CLI args; reasonix has no
- * `--prompt` flag, so the startup prompt must be pasted into the TUI. */
+/** opencode receives its startup prompt through CLI args; reasonix uses standing instructions and receives only kickoff via tmux paste. */
 export const startupPromptDeliveryModes: readonly StartupPromptDeliveryMode[] = [
   "cli_arg",
-  "tmux_paste"
+  "tmux_paste",
+  "none"
 ];
 
 export type PostEmitInterruptionMode =
@@ -177,7 +177,7 @@ const profiles: Record<AgentName, AgentRuntimeProfile> = {
   },
   reasonix: {
     name: "reasonix",
-    startupPromptDelivery: "tmux_paste",
+    startupPromptDelivery: "none",
     // reasonix's composer overflows on long pasted guidance; give it the same
     // short kickoff opencode gets (bubble id + state + task path) and let it
     // read the task artifact itself. Keystroke delivery is proven to work.
@@ -204,11 +204,7 @@ const profiles: Record<AgentName, AgentRuntimeProfile> = {
     tmuxPasteViaBuffer: false,
     // Collapse newlines so pasted messages stay single-line and Enter sends.
     collapsePastedNewlines: true,
-    // The composer prompt appears ~25s before reasonix's input loop attaches;
-    // the seed must settle before its first paste or the kickoff is dropped
-    // (verified live: pastes right after readiness land, but the pane's early
-    // keystrokes vanish). Round deliveries gate on their own signals instead.
-    startupPasteSettleMs: 25_000
+    startupPasteSettleMs: 0
   }
 };
 
