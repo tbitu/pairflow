@@ -96,4 +96,33 @@ describe("startCommandResumeKickoffMessages", () => {
     );
     expect(resolved.kickoffDiagnostic).toBeUndefined();
   });
+
+  it("includes role instructions in resume kickoff when role artifact paths are provided", () => {
+    const implementerResolved = resolveResumeKickoffMessages({
+      ...createBaseInput(createRunningMetaReviewerState("reasonix", "implementer")),
+      implementerAgent: "reasonix" as const,
+      roleImplementerArtifactPath: ".pairflow/bubbles/b1/artifacts/role-implementer.md"
+    });
+    expect(implementerResolved.implementerKickoffMessage).toContain(
+      "Read role instructions now: .pairflow/bubbles/b1/artifacts/role-implementer.md."
+    );
+
+    const reviewerResolved = resolveResumeKickoffMessages({
+      ...createBaseInput(createRunningMetaReviewerState("reasonix", "reviewer")),
+      reviewerAgent: "reasonix" as const,
+      roleReviewerArtifactPath: ".pairflow/bubbles/b1/artifacts/role-reviewer.md"
+    });
+    expect(reviewerResolved.reviewerKickoffMessage).toContain(
+      "Read role instructions now: .pairflow/bubbles/b1/artifacts/role-reviewer.md."
+    );
+
+    const metaReviewerResolved = resolveResumeKickoffMessages({
+      ...createBaseInput(createRunningMetaReviewerState("reasonix")),
+      metaReviewerAgent: "reasonix" as const,
+      roleMetaReviewerArtifactPath: ".pairflow/bubbles/b1/artifacts/role-meta-reviewer.md"
+    });
+    expect(metaReviewerResolved.metaReviewerKickoffMessage).toContain(
+      "Read role instructions now: .pairflow/bubbles/b1/artifacts/role-meta-reviewer.md."
+    );
+  });
 });

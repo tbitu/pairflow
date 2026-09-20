@@ -8,11 +8,8 @@ describe("shouldSubmitStartupPrompt", () => {
     expect(shouldSubmitStartupPrompt("opencode", undefined)).toBe(false);
   });
 
-  it("submits a non-empty startup prompt for reasonix (tmux-paste delivery)", () => {
-    expect(shouldSubmitStartupPrompt("reasonix", "resume implementer")).toBe(true);
-  });
-
-  it("does not submit empty/whitespace prompts for reasonix", () => {
+  it("never submits via tmux paste for reasonix (uses file-based role instructions)", () => {
+    expect(shouldSubmitStartupPrompt("reasonix", "resume implementer")).toBe(false);
     expect(shouldSubmitStartupPrompt("reasonix", undefined)).toBe(false);
     expect(shouldSubmitStartupPrompt("reasonix", "   ")).toBe(false);
     expect(shouldSubmitStartupPrompt("reasonix", "")).toBe(false);

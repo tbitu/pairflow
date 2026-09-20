@@ -610,9 +610,8 @@ describe("refreshReviewerContext", () => {
     const script = extractBashLcScript(reviewerCommand as string);
     expect(script).toContain("'reasonix' 'code'");
 
+    // reasonix uses file-based role instructions, so no startup prompt is pasted via tmux
     const sendKeysCalls = calls.filter((call) => call[0] === "send-keys");
-    expect(sendKeysCalls.length).toBeGreaterThan(0);
-    const sentText = sendKeysCalls.map((call) => call[4]).filter(Boolean).join("");
-    expect(sentText).toContain("Pairflow reviewer start for bubble b_reviewer_ctx_reasonix.");
+    expect(sendKeysCalls).toHaveLength(0);
   });
 });

@@ -252,3 +252,23 @@ export function renderReasonixRoleAgentProfileFile(input: {
     body: buildRoleAgentStandingPromptBody(input.name)
   });
 }
+
+export function renderRoleInstructionMarkdown(role: AgentRole): string {
+  const definition = roleAgentDefinitions.find((entry) => entry.role === role);
+  if (definition === undefined) {
+    throw new Error(
+      `ROLE_AGENT_UNKNOWN: context=role_instruction_markdown role=${role}.`
+    );
+  }
+  const title =
+    role === "meta_reviewer"
+      ? "Meta-Reviewer"
+      : role === "reviewer"
+        ? "Reviewer"
+        : "Implementer";
+  return [
+    `# Pairflow ${title} Instructions`,
+    "",
+    buildRoleAgentStandingPromptBody(definition.name)
+  ].join("\n");
+}

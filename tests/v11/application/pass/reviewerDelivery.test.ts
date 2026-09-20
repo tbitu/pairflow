@@ -824,7 +824,7 @@ describe("executePassDelivery", () => {
     expect(result.retried).toBe(false);
   });
 
-  it("composes and passes reviewer startup prompt when reviewer is reasonix on implementer handoff", async () => {
+  it("omits pasted reviewer startup prompt when reviewer is reasonix (uses file-based role instructions)", async () => {
     const briefPath = "/tmp/repo/.pairflow/bubbles/b_delivery_v11_reasonix/artifacts/reviewer-brief.md";
     const focusPath = "/tmp/repo/.pairflow/bubbles/b_delivery_v11_reasonix/artifacts/reviewer-focus.md";
     const refreshCalls: unknown[] = [];
@@ -874,10 +874,7 @@ describe("executePassDelivery", () => {
 
     expect(refreshCalls).toHaveLength(1);
     const passedPrompt = (refreshCalls[0] as { reviewerStartupPrompt?: string }).reviewerStartupPrompt;
-    expect(typeof passedPrompt).toBe("string");
-    expect(passedPrompt).toContain("Pairflow reviewer start for bubble b_delivery_v11_reasonix.");
-    expect(passedPrompt).toContain("Reviewer policy file:");
-    expect(passedPrompt).toContain("Severity Ontology v1 reminder");
+    expect(passedPrompt).toBeUndefined();
     expect(emitCalls).toHaveLength(1);
     expect(result.retried).toBe(false);
   });

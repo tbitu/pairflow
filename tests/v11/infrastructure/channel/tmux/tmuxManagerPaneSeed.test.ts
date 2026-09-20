@@ -9,15 +9,12 @@ describe("shouldSkipKickoffAfterStartup (two-paste model)", () => {
     expect(shouldSkipKickoffAfterStartup(undefined, false)).toBe(false);
   });
 
-  it("keeps delivering the kickoff for reasonix (tmux_paste) after a role startup prompt", () => {
-    // reasonix: role-identity startup paste + per-task kickoff paste are both
-    // intended ("two paste" model), so the kickoff must NOT be skipped.
-    expect(shouldSkipKickoffAfterStartup("reasonix", true)).toBe(false);
+  it("keeps delivering the kickoff for reasonix when no startup prompt was submitted", () => {
+    expect(shouldSkipKickoffAfterStartup("reasonix", false)).toBe(false);
   });
 
-  it("skips the kickoff for opencode after its CLI --agent role prompt", () => {
-    // opencode receives the role via `--agent PF-*`; a duplicate kickoff paste
-    // would be "double input" steering confusion.
+  it("skips the kickoff after startup prompt submission for non-tmux_paste agents", () => {
+    expect(shouldSkipKickoffAfterStartup("reasonix", true)).toBe(true);
     expect(shouldSkipKickoffAfterStartup("opencode", true)).toBe(true);
   });
 
@@ -123,7 +120,7 @@ describe("seed kickoff paste: settle window, drop recovery, loud failure", () =>
     await promise;
   }
 
-  it("reasonix: the first seed paste waits out the startup settle window before any keystroke is sent", async () => {
+  it("reasonix: the first seed paste sends keystrokes once the pane is ready without artificial settle delay", async () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const fixture = createSeedRunner({
       readyText: "❯",
@@ -131,13 +128,7 @@ describe("seed kickoff paste: settle window, drop recovery, loud failure", () =>
     });
     const promise = seedBubbleTmuxPaneMessages(seedInput(fixture, "reasonix"));
 
-    // reasonix renders its composer ~25s before its input loop attaches; the
-    // seed must not type during that window or the kickoff is silently dropped.
-    await vi.advanceTimersByTimeAsync(24_000);
-    await Promise.resolve();
-    expect(textSendCalls(fixture.calls)).toHaveLength(0);
-
-    await vi.advanceTimersByTimeAsync(3_000);
+    await vi.advanceTimersByTimeAsync(1_000);
     await Promise.resolve();
     expect(textSendCalls(fixture.calls).length).toBeGreaterThanOrEqual(1);
 

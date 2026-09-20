@@ -22,10 +22,15 @@ import {
 function buildOpencodeImplementerKickoff(input: {
   bubbleId: string;
   taskArtifactPath: string;
+  roleArtifactPath?: string | undefined;
 }): string {
+  const roleInstruction =
+    input.roleArtifactPath !== undefined
+      ? `Read role instructions now: ${input.roleArtifactPath}. `
+      : "";
   return [
     `[pairflow] bubble=${input.bubbleId} resume kickoff (implementer).`,
-    `Read task file now: ${input.taskArtifactPath}.`
+    `${roleInstruction}Read task file now: ${input.taskArtifactPath}.`
   ].join(" ");
 }
 
@@ -33,10 +38,14 @@ function buildOpencodeImplementerKickoff(input: {
 function buildOpencodeReviewerKickoff(input: {
   bubbleId: string;
   round: number;
-  reviewerTestDirectiveLine?: string;
+  roleArtifactPath?: string | undefined;
+  reviewerTestDirectiveLine?: string | undefined;
 }): string {
   const lines = [
     `[pairflow] bubble=${input.bubbleId} resume kickoff (reviewer).`,
+    ...(input.roleArtifactPath !== undefined
+      ? [`Read role instructions now: ${input.roleArtifactPath}.`]
+      : []),
     `State is RUNNING at round ${input.round}.`
   ];
   if (input.reviewerTestDirectiveLine !== undefined) {
@@ -48,8 +57,13 @@ function buildOpencodeReviewerKickoff(input: {
 /** Build a minimal opencode meta-reviewer kickoff message. */
 function buildOpencodeMetaReviewerKickoff(input: {
   bubbleId: string;
+  roleArtifactPath?: string | undefined;
 }): string {
-  return `[pairflow] bubble=${input.bubbleId} resume kickoff (meta-reviewer).`;
+  const roleInstruction =
+    input.roleArtifactPath !== undefined
+      ? ` Read role instructions now: ${input.roleArtifactPath}.`
+      : "";
+  return `[pairflow] bubble=${input.bubbleId} resume kickoff (meta-reviewer).${roleInstruction}`;
 }
 
 export function resolveResumeKickoffMessages(input: {
@@ -57,6 +71,9 @@ export function resolveResumeKickoffMessages(input: {
   repoPath: string;
   workspacePath: string;
   taskArtifactPath: string;
+  roleImplementerArtifactPath?: string;
+  roleReviewerArtifactPath?: string;
+  roleMetaReviewerArtifactPath?: string;
   reviewArtifactType: ReviewArtifactType;
   pairflowCommandProfile: PairflowCommandProfile;
   state: RolePromptStateSnapshot;
@@ -80,7 +97,10 @@ export function resolveResumeKickoffMessages(input: {
       const minimalGuidance = getAgentRuntimeProfile(input.metaReviewerAgent).minimalPastedGuidance;
       return {
         metaReviewerKickoffMessage: minimalGuidance
-          ? buildOpencodeMetaReviewerKickoff({ bubbleId: input.bubbleId })
+          ? buildOpencodeMetaReviewerKickoff({
+              bubbleId: input.bubbleId,
+              roleArtifactPath: input.roleMetaReviewerArtifactPath
+            })
           : buildResumeMetaReviewerKickoffMessage({
               bubbleId: input.bubbleId,
               repoPath: input.repoPath,
@@ -116,7 +136,8 @@ export function resolveResumeKickoffMessages(input: {
       return {
         implementerKickoffMessage: buildOpencodeImplementerKickoff({
           bubbleId: input.bubbleId,
-          taskArtifactPath: input.taskArtifactPath
+          taskArtifactPath: input.taskArtifactPath,
+          roleArtifactPath: input.roleImplementerArtifactPath
         })
       };
     }
@@ -146,6 +167,7 @@ export function resolveResumeKickoffMessages(input: {
         reviewerKickoffMessage: buildOpencodeReviewerKickoff({
           bubbleId: input.bubbleId,
           round: input.state.round,
+          roleArtifactPath: input.roleReviewerArtifactPath,
           ...(input.reviewerTestDirectiveLine !== undefined
             ? { reviewerTestDirectiveLine: input.reviewerTestDirectiveLine }
             : {})

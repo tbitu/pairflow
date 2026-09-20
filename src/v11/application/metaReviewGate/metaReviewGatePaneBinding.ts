@@ -361,7 +361,7 @@ async function executeMetaReviewerRespawnAndDelivery(input: {
         : {})
     });
 
-    if (startupPromptDelivery === "tmux_paste") {
+    if (startupPromptDelivery !== "cli_arg") {
       return await deliverMetaReviewerPromptViaTmuxPaste({
         paneBindingTmux: input.paneBindingTmux,
         metaReviewerAgent: input.input.metaReviewerAgent,

@@ -1,3 +1,5 @@
+import { relative } from "node:path";
+
 import { buildResumeTranscriptSummaryFallback } from "./startCommandResumeSummary.js";
 import {
   formatReviewerTestExecutionDirective,
@@ -55,6 +57,18 @@ export async function prepareResumeLaunchInput(input: {
     repoPath: input.context.resolved.repoPath,
     workspacePath: input.launchWorkspacePath,
     taskArtifactPath: input.context.resolved.bubblePaths.taskArtifactPath,
+    roleImplementerArtifactPath: relative(
+      input.launchWorkspacePath,
+      input.context.resolved.bubblePaths.roleImplementerArtifactPath
+    ),
+    roleReviewerArtifactPath: relative(
+      input.launchWorkspacePath,
+      input.context.resolved.bubblePaths.roleReviewerArtifactPath
+    ),
+    roleMetaReviewerArtifactPath: relative(
+      input.launchWorkspacePath,
+      input.context.resolved.bubblePaths.roleMetaReviewerArtifactPath
+    ),
     reviewArtifactType: input.context.resolved.bubbleConfig.review_artifact_type,
     pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
     state: input.context.loadedState.state,

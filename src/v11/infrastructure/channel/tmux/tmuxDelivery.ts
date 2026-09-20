@@ -1,4 +1,7 @@
+import { relative } from "node:path";
+
 import { readRuntimeSessionsRegistry } from "../../executor/sessionRuntime/runtimeSessionsRegistry.js";
+import { getBubblePaths } from "../../../shared/bubble/bubblePaths.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../config/defaults.js";
 import { buildAgentCommand } from "../../../shared/command/agentCommand.js";
 import type { AgentRole } from "../../../../contracts/kernel/agentIdentity.js";
@@ -138,12 +141,27 @@ function createDeliveryMessage(input: {
     runtimeInput.bubbleConfig,
     runtimeInput.recipientRole
   );
+  let roleArtifactPath: string | undefined;
+  if (workspacePath !== undefined) {
+    const bubblePaths = getBubblePaths(
+      runtimeInput.bubbleConfig.repo_path,
+      runtimeInput.bubbleId
+    );
+    if (targetResolution.recipientRole === "implementer") {
+      roleArtifactPath = relative(workspacePath, bubblePaths.roleImplementerArtifactPath);
+    } else if (targetResolution.recipientRole === "reviewer") {
+      roleArtifactPath = relative(workspacePath, bubblePaths.roleReviewerArtifactPath);
+    } else if (targetResolution.recipientRole === "meta-reviewer") {
+      roleArtifactPath = relative(workspacePath, bubblePaths.roleMetaReviewerArtifactPath);
+    }
+  }
   return {
     message: buildTmuxDeliveryMessage({
       envelope: runtimeInput.envelope,
       messageRef,
       bubbleConfig: runtimeInput.bubbleConfig,
       ...(workspacePath !== undefined ? { workspacePath } : {}),
+      ...(roleArtifactPath !== undefined ? { roleArtifactPath } : {}),
       ...(runtimeInput.reviewerTestDirective !== undefined
         ? { reviewerTestDirective: runtimeInput.reviewerTestDirective }
         : {}),

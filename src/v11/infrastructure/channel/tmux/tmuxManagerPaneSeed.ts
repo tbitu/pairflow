@@ -164,7 +164,7 @@ async function pasteKickoffMessage(input: {
 }): Promise<boolean> {
   const isStructuredPairflowEnvelope = input.marker !== undefined;
   const maxPasteAttempts =
-    input.marker !== undefined && input.startupPasteSettleMs > 0 ? 2 : 1;
+    input.marker !== undefined && (input.paneAgent.name === "reasonix" || input.startupPasteSettleMs > 0) ? 2 : 1;
   let confirmed = false;
   for (
     let pasteAttempt = 0;

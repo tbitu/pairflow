@@ -5,6 +5,7 @@ import {
   createDocContractGateArtifact,
   isDocContractGateScopeActive
 } from "../../../../shared/gates/docContractGates.js";
+import { ensureRoleInstructionArtifacts } from "../../../../shared/bubble/roleInstructionArtifacts.js";
 import { appendInitialTaskEnvelope } from "./createInitialTaskEnvelopeAppend.js";
 import { renderBubbleConfigToml } from "../../../../../config/bubbleConfig.js";
 import type {
@@ -148,6 +149,7 @@ export async function persistCreatedBubbleArtifacts(
     encoding: "utf8",
     flag: "wx"
   });
+  await ensureRoleInstructionArtifacts(input.paths.artifactsDir);
 
   let reviewerFocusArtifactWriteStatus: "written" | "write_failed" = "written";
   let reviewerFocusArtifactWriteErrorCode: string | undefined;

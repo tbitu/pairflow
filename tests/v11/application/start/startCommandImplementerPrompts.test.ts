@@ -109,6 +109,26 @@ describe("startCommandImplementerPrompts", () => {
     expect(kickoffMessage).not.toContain("Start implementation immediately");
   });
 
+  it("includes role instructions reference in kickoff message when roleArtifactPath is provided", () => {
+    const kickoffMessage = buildImplementerKickoffMessage({
+      bubbleId: "bubble_prompt_role_01",
+      workspacePath: "/tmp/worktree",
+      taskArtifactPath: ".pairflow/bubbles/bubble_prompt_role_01/artifacts/task.md",
+      roleArtifactPath: ".pairflow/bubbles/bubble_prompt_role_01/artifacts/role-implementer.md",
+      reviewArtifactType: "code",
+      pairflowCommandProfile: "external",
+      agentName: "reasonix"
+    });
+
+    expect(kickoffMessage).toContain(
+      "Read role instructions now: .pairflow/bubbles/bubble_prompt_role_01/artifacts/role-implementer.md."
+    );
+    expect(kickoffMessage).toContain(
+      "Read task file now: .pairflow/bubbles/bubble_prompt_role_01/artifacts/task.md."
+    );
+    expect(kickoffMessage).toContain("Implement it in this workspace.");
+  });
+
   it("keeps document-scope startup and resume prompts out of code implementation mode", () => {
     const state: PersistedBubbleStateSnapshot = {
       bubble_id: "bubble_prompt_doc_resume_01",

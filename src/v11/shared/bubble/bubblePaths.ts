@@ -1,5 +1,12 @@
 import { basename, dirname, join, resolve } from "node:path";
 
+import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
+import {
+  roleImplementerArtifactFileName,
+  roleMetaReviewerArtifactFileName,
+  roleReviewerArtifactFileName
+} from "./roleInstructionArtifacts.js";
+
 export interface BubblePaths {
   repoPath: string;
   pairflowRoot: string;
@@ -14,6 +21,9 @@ export interface BubblePaths {
   artifactsDir: string;
   messageArtifactsDir: string;
   taskArtifactPath: string;
+  roleImplementerArtifactPath: string;
+  roleReviewerArtifactPath: string;
+  roleMetaReviewerArtifactPath: string;
   reviewerBriefArtifactPath: string;
   reviewerFocusArtifactPath: string;
   reviewVerificationArtifactPath: string;
@@ -56,6 +66,9 @@ export function getBubblePaths(repoPathInput: string, bubbleId: string): BubbleP
     artifactsDir,
     messageArtifactsDir,
     taskArtifactPath: join(artifactsDir, "task.md"),
+    roleImplementerArtifactPath: join(artifactsDir, roleImplementerArtifactFileName),
+    roleReviewerArtifactPath: join(artifactsDir, roleReviewerArtifactFileName),
+    roleMetaReviewerArtifactPath: join(artifactsDir, roleMetaReviewerArtifactFileName),
     reviewerBriefArtifactPath: join(artifactsDir, "reviewer-brief.md"),
     reviewerFocusArtifactPath: join(artifactsDir, "reviewer-focus.json"),
     reviewVerificationArtifactPath: join(artifactsDir, "review-verification.json"),
@@ -64,4 +77,18 @@ export function getBubblePaths(repoPathInput: string, bubbleId: string): BubbleP
     sessionsPath: join(runtimeDir, "sessions.json"),
     worktreePath
   };
+}
+
+export function getRoleInstructionArtifactPath(
+  paths: BubblePaths,
+  role: AgentRole
+): string {
+  switch (role) {
+    case "implementer":
+      return paths.roleImplementerArtifactPath;
+    case "reviewer":
+      return paths.roleReviewerArtifactPath;
+    case "meta_reviewer":
+      return paths.roleMetaReviewerArtifactPath;
+  }
 }

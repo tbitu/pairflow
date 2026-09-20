@@ -18,9 +18,9 @@ describe("agentRuntimeProfiles", () => {
     expect(profile.supportsConcurrentPanes).toBe(true);
   });
 
-  it("declares the reasonix profile for tmux-paste, non-concurrent operation", () => {
+  it("declares the reasonix profile for non-concurrent operation with file-based role instructions", () => {
     const profile = getAgentRuntimeProfile("reasonix");
-    expect(profile.startupPromptDelivery).toBe("tmux_paste");
+    expect(profile.startupPromptDelivery).toBe("none");
     // Short kickoff (minimal guidance) so the pasted message stays tiny and
     // reasonix reads the task artifact itself; keystroke delivery (not buffer).
     expect(profile.minimalPastedGuidance).toBe(true);

@@ -4,6 +4,7 @@ import {
   buildRoleAgentStandingPromptBody,
   renderOpencodeRoleAgentFile,
   renderReasonixRoleAgentProfileFile,
+  renderRoleInstructionMarkdown,
   roleAgentDefinitions,
   roleAgentNames
 } from "../../../../src/v11/shared/agent/roleAgentStandingPrompts.js";
@@ -106,5 +107,22 @@ describe("role agent standing prompts", () => {
 
     expect(rendered.split("---\n")).toHaveLength(3);
     expect(rendered).toContain("Pairflow Implementer");
+  });
+
+  it("renders role instruction markdown for each role with heading and standing instructions", () => {
+    const implementerMd = renderRoleInstructionMarkdown("implementer");
+    expect(implementerMd).toContain("# Pairflow Implementer Instructions");
+    expect(implementerMd).toContain("You are the Pairflow Implementer for this bubble.");
+    expect(implementerMd).toContain("--kind pass");
+
+    const reviewerMd = renderRoleInstructionMarkdown("reviewer");
+    expect(reviewerMd).toContain("# Pairflow Reviewer Instructions");
+    expect(reviewerMd).toContain("You are the Pairflow Reviewer for this bubble.");
+    expect(reviewerMd).toContain("Reviewer decision gate");
+
+    const metaReviewerMd = renderRoleInstructionMarkdown("meta_reviewer");
+    expect(metaReviewerMd).toContain("# Pairflow Meta-Reviewer Instructions");
+    expect(metaReviewerMd).toContain("You are the Pairflow Meta-Reviewer for this bubble.");
+    expect(metaReviewerMd).toContain("Minimal clean approve payload");
   });
 });

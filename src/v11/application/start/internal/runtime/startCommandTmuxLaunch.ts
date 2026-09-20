@@ -15,6 +15,7 @@ import {
 import {
   resolveCommandStartupPrompt
 } from "./startCommandStartupPromptRouting.js";
+import { ensureRoleInstructionArtifacts } from "../../../../shared/bubble/roleInstructionArtifacts.js";
 import { shouldSubmitStartupPrompt } from "../../../../shared/command/startupPromptGate.js";
 import { getAgentRuntimeProfile } from "../../../../shared/agent/agentRuntimeProfiles.js";
 import type { resolveResumeKickoffMessages } from "../prompts/startCommandResumePrompts.js";
@@ -128,6 +129,9 @@ export async function launchFreshTmuxSession(input: {
       launchWorkspacePath: input.launchWorkspacePath,
       implementerAgent
     });
+  await ensureRoleInstructionArtifacts(
+    input.context.resolved.bubblePaths.artifactsDir
+  );
   // Agents that cannot run concurrent panes (reasonix enforces a machine-wide
   // single active interactive session) launch only the initially active
   // implementer pane; reviewer/meta-reviewer panes are respawned lazily by
@@ -189,6 +193,10 @@ export async function launchFreshTmuxSession(input: {
             input.launchWorkspacePath,
             input.context.resolved.bubblePaths.taskArtifactPath
           ),
+          roleArtifactPath: relative(
+            input.launchWorkspacePath,
+            input.context.resolved.bubblePaths.roleImplementerArtifactPath
+          ),
           reviewArtifactType: input.context.resolved.bubbleConfig.review_artifact_type,
           pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
           validationCommands: input.context.resolved.bubbleConfig.commands,
@@ -216,6 +224,9 @@ export async function launchResumeTmuxSession(input: {
 }): Promise<{ sessionName: string }> {
   const externalPairflowCommand =
     input.context.remoteStartContext?.externalPairflowCommand;
+  await ensureRoleInstructionArtifacts(
+    input.context.resolved.bubblePaths.artifactsDir
+  );
   const remoteWorkspaceAuthority = resolveRemoteWorkspaceAuthority(input.context);
   const metaReviewerAgent = input.context.resolved.bubbleConfig.agents.meta_reviewer;
   const {

@@ -13,8 +13,8 @@ const baseContext = {
   pairflowCommandProfile: profile
 };
 
-describe("composeRolePrompt (reasonix role-identity startup prompt)", () => {
-  it("returns role concern lines for the implementer on a tmux_paste agent", () => {
+describe("composeRolePrompt (non-tmux_paste agents return undefined)", () => {
+  it("returns undefined for reasonix on startup (role delivered via artifact file, not paste)", () => {
     const prompt = composeRolePrompt({
       agentName: "reasonix",
       role: "implementer",
@@ -22,13 +22,10 @@ describe("composeRolePrompt (reasonix role-identity startup prompt)", () => {
       context: baseContext
     });
 
-    expect(prompt).toBeDefined();
-    expect(prompt!.length).toBeGreaterThan(0);
-    // Role-specific implementer guidance should be present.
-    expect(prompt!).toContain("pairflow agent emit --kind pass");
+    expect(prompt).toBeUndefined();
   });
 
-  it("returns undefined for opencode (no tmux-paste role delivery)", () => {
+  it("returns undefined for opencode on startup (role delivered via --agent CLI arg)", () => {
     const prompt = composeRolePrompt({
       agentName: "opencode",
       role: "implementer",
@@ -39,7 +36,7 @@ describe("composeRolePrompt (reasonix role-identity startup prompt)", () => {
     expect(prompt).toBeUndefined();
   });
 
-  it("produces reviewer role guidance including the severity ontology reminder", () => {
+  it("returns undefined for reasonix reviewer on startup", () => {
     const prompt = composeRolePrompt({
       agentName: "reasonix",
       role: "reviewer",
@@ -50,11 +47,10 @@ describe("composeRolePrompt (reasonix role-identity startup prompt)", () => {
       }
     });
 
-    expect(prompt).toBeDefined();
-    expect(prompt!.length).toBeGreaterThan(0);
+    expect(prompt).toBeUndefined();
   });
 
-  it("produces meta-reviewer role guidance", () => {
+  it("returns undefined for reasonix meta-reviewer on startup", () => {
     const prompt = composeRolePrompt({
       agentName: "reasonix",
       role: "meta_reviewer",
@@ -62,11 +58,10 @@ describe("composeRolePrompt (reasonix role-identity startup prompt)", () => {
       context: baseContext
     });
 
-    expect(prompt).toBeDefined();
-    expect(prompt!.length).toBeGreaterThan(0);
+    expect(prompt).toBeUndefined();
   });
 
-  it("returns implementer role guidance on resume for reasonix", () => {
+  it("returns undefined for reasonix on resume", () => {
     const prompt = composeRolePrompt({
       agentName: "reasonix",
       role: "implementer",
@@ -78,26 +73,7 @@ describe("composeRolePrompt (reasonix role-identity startup prompt)", () => {
       }
     });
 
-    expect(prompt).toBeDefined();
-    expect(prompt!.length).toBeGreaterThan(0);
-    expect(prompt!).toContain("pairflow agent emit --kind pass");
-  });
-
-  it("returns reviewer role guidance on resume for reasonix", () => {
-    const prompt = composeRolePrompt({
-      agentName: "reasonix",
-      role: "reviewer",
-      phase: "resume",
-      context: {
-        ...baseContext,
-        policySnapshotPathAbs: "/tmp/bubble/policy.md",
-        state: { state: "RUNNING", round: 2, active_agent: "reasonix", active_role: "reviewer", active_since: null },
-        transcriptSummary: "reviews implementation"
-      }
-    });
-
-    expect(prompt).toBeDefined();
-    expect(prompt!.length).toBeGreaterThan(0);
+    expect(prompt).toBeUndefined();
   });
 
   it("returns undefined for opencode on resume (role delivered via --agent, not paste)", () => {

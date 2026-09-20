@@ -35,26 +35,32 @@ export function buildImplementerKickoffMessage(input: {
   bubbleId: string;
   workspacePath: string;
   taskArtifactPath: string;
+  roleArtifactPath?: string;
   reviewArtifactType: ReviewArtifactType;
   pairflowCommandProfile: PairflowCommandProfile;
   agentName?: AgentName;
   validationCommands?: BubbleCommandsConfig;
 }): string {
-  // Minimal-guidance agents (reasonix) get a short kickoff so the pasted
-  // message stays tiny; they read the task file for the details.
+  const roleInstruction =
+    input.roleArtifactPath !== undefined
+      ? `Read role instructions now: ${input.roleArtifactPath}. `
+      : "";
+  // Minimal-guidance agents (reasonix, opencode) get a short kickoff so the pasted
+  // message stays tiny; they read the role instructions and task file for the details.
   if (
     input.agentName !== undefined
     && getAgentRuntimeProfile(input.agentName).minimalPastedGuidance
   ) {
     return [
       `[pairflow] bubble=${input.bubbleId} kickoff.`,
-      `Read task file now: ${input.taskArtifactPath}.`,
+      `${roleInstruction}Read task file now: ${input.taskArtifactPath}.`,
       "Implement it in this workspace.",
       "When done, hand off with `pairflow agent emit --kind pass --repo <repo> --bubble-id <id> --handoff-id <handoff-id> --execution-id <execution-id> --summary '<what changed + validation>'`."
     ].join(" ");
   }
   return [
     `[pairflow] bubble=${input.bubbleId} kickoff.`,
+    ...(roleInstruction.trim().length > 0 ? [roleInstruction.trim()] : []),
     `Read task file now: ${input.taskArtifactPath}.`,
     buildImplementerKickoffScopeInstruction(input.reviewArtifactType),
     buildPairflowCommandGuidance(

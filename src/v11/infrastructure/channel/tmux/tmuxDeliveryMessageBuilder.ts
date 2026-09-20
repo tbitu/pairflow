@@ -164,9 +164,13 @@ function buildImplementerDeliveryAction(input: {
 function buildOpencodeReviewerDeliveryAction(
   intro: string,
   reviewerTestDirective?: ReviewerTestExecutionDirective,
-  isFreshContext?: boolean
+  isFreshContext?: boolean,
+  roleArtifactPath?: string
 ): string {
   const parts = [intro];
+  if (roleArtifactPath !== undefined) {
+    parts.push(`Read role instructions now: ${roleArtifactPath}.`);
+  }
   if (reviewerTestDirective !== undefined) {
     parts.push(formatReviewerTestExecutionDirective(reviewerTestDirective));
   } else {
@@ -275,6 +279,7 @@ export function buildReviewerDeliveryAction(input: {
   reviewerTestDirective?: ReviewerTestExecutionDirective;
   reviewerBrief?: string;
   reviewerFocus?: ReviewerFocusExtractionResult;
+  roleArtifactPath?: string;
 }): string {
   if (input.envelope.type === "PASS" || input.envelope.type === "TASK") {
     const isOpencodeReviewer = isAgentNameRegistered(input.bubbleConfig.agents.reviewer)
@@ -289,7 +294,8 @@ export function buildReviewerDeliveryAction(input: {
       return buildOpencodeReviewerDeliveryAction(
         intro,
         input.reviewerTestDirective,
-        input.bubbleConfig.reviewer_context_mode === "fresh"
+        input.bubbleConfig.reviewer_context_mode === "fresh",
+        input.roleArtifactPath
       );
     }
 
@@ -321,6 +327,7 @@ export function buildTmuxDeliveryMessage(input: {
   reviewerTestDirective?: ReviewerTestExecutionDirective;
   reviewerBrief?: string;
   reviewerFocus?: ReviewerFocusExtractionResult;
+  roleArtifactPath?: string;
   recipientRole: DeliveryMessageRecipientRole;
 }): string {
   const actorLabel = resolvePayloadActor(input.envelope);
@@ -351,6 +358,9 @@ export function buildTmuxDeliveryMessage(input: {
       envelope: input.envelope,
       bubbleConfig: input.bubbleConfig,
       actorLabel,
+      ...(input.roleArtifactPath !== undefined
+        ? { roleArtifactPath: input.roleArtifactPath }
+        : {}),
       ...(input.reviewerTestDirective !== undefined
         ? { reviewerTestDirective: input.reviewerTestDirective }
         : {}),
@@ -368,8 +378,12 @@ export function buildTmuxDeliveryMessage(input: {
     const prefix = input.envelope.type === "HUMAN_REPLY"
       ? "Human response received."
       : "Meta-review task received.";
+    const roleInstruction =
+      input.roleArtifactPath !== undefined
+        ? ` Read role instructions now: ${input.roleArtifactPath}.`
+        : "";
     action = isOpencodeRecipient
-      ? `${prefix} Produce autonomous meta-review output.`
+      ? `${prefix}${roleInstruction} Produce autonomous meta-review output.`
       : `${prefix} Produce autonomous meta-review output and return only through structured submit with required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitRequiredReportJsonFieldsLine()} ${buildMetaReviewSubmitApproveParityNote()}`;
   } else if (
     input.recipientRole === "human" ||
