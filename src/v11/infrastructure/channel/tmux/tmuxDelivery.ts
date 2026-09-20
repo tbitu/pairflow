@@ -21,6 +21,7 @@ import {
   readDeliverySessionContext,
   type TmuxDeliveryTimingOptions
 } from "./tmuxDeliveryRuntime.js";
+import { ensureRoleInstructionArtifacts } from "../../../shared/bubble/roleInstructionArtifacts.js";
 import {
   buildTmuxDeliveryMessage,
 } from "./tmuxDeliveryMessageBuilder.js";
@@ -269,6 +270,14 @@ export async function emitDeliveryNotificationAck(
       message: buildRegistryReadFailedMessage(input),
       deliveryTargetReasonCode: "DELIVERY_TARGET_REGISTRY_READ_FAILED"
     });
+  }
+
+  if (workspacePath !== undefined) {
+    const bubblePaths = getBubblePaths(
+      input.bubbleConfig.repo_path,
+      input.bubbleId
+    );
+    await ensureRoleInstructionArtifacts(bubblePaths.artifactsDir);
   }
 
   const { message: workspaceMessage, targetResolution } = createDeliveryMessage({
