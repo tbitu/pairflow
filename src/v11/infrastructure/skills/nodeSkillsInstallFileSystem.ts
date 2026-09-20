@@ -1,5 +1,15 @@
 import { randomUUID } from "node:crypto";
-import { cp, lstat, mkdir, realpath, rename, rm, symlink } from "node:fs/promises";
+import {
+  cp,
+  lstat,
+  mkdir,
+  readFile,
+  realpath,
+  rename,
+  rm,
+  symlink,
+  writeFile
+} from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 
 import type {
@@ -122,6 +132,23 @@ export const nodeSkillsInstallFileSystem: SkillsInstallFileSystem = {
     });
   },
 
+  async readFileIfExists(path) {
+    try {
+      return await readFile(path, "utf8");
+    } catch (error) {
+      const missing = mapPathStatus(error);
+      if (missing !== undefined) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  async writeFile(path, content) {
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, content, "utf8");
+  },
+
   async removePath(path) {
     await rm(path, {
       recursive: true,
@@ -130,10 +157,13 @@ export const nodeSkillsInstallFileSystem: SkillsInstallFileSystem = {
   },
 
   async copyDirectory(source, destination) {
+    // dereference: a thin pointer source tree (symlinked skill directories)
+    // must install real content, never a dangling link into the source repo.
     await cp(source, destination, {
       recursive: true,
       force: true,
-      errorOnExist: false
+      errorOnExist: false,
+      dereference: true
     });
   },
 
@@ -144,10 +174,13 @@ export const nodeSkillsInstallFileSystem: SkillsInstallFileSystem = {
   async replaceDirectoryFromSource(input) {
     const stagingPath = replacementStagingPath(input.destination);
     try {
+      // dereference: a thin pointer source tree (symlinked skill directories)
+      // must install real content, never a link back into the source repo.
       await cp(input.source, stagingPath, {
         recursive: true,
         force: true,
-        errorOnExist: false
+        errorOnExist: false,
+        dereference: true
       });
       assertPathStatusMatchesExpected({
         path: input.destination,

@@ -1,7 +1,17 @@
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
+import {
+  buildRoleAgentSyncPlan
+} from "./internal/roleAgents/roleAgentSyncPlan.js";
+export { SkillsInstallError } from "./skillsInstallErrors.js";
+import { SkillsInstallError } from "./skillsInstallErrors.js";
+import {
+  resolveSourceRoot
+} from "./internal/source/sourceRootResolution.js";
 import type {
   PairflowSkillName,
+  RoleAgentConflict,
+  RoleAgentSyncOperation,
   SkillsInstallFileSystem,
   SkillsInstallOperation,
   SkillsInstallOptions,
@@ -11,13 +21,6 @@ import type {
   SkillsInstallStatus
 } from "./skillsInstallContract.js";
 
-export class SkillsInstallError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "SkillsInstallError";
-  }
-}
-
 interface ManagedPathPreflight {
   path: string;
   status: SkillsInstallPathStatus;
@@ -25,40 +28,6 @@ interface ManagedPathPreflight {
 }
 
 const OTHER_AGENT_DIRS = [".claude", ".codex", ".copilot", ".gemini", ".reasonix"] as const;
-
-function isDirectory(status: SkillsInstallPathStatus): boolean {
-  return status.exists && status.type === "directory";
-}
-
-async function resolveSourceRoot(
-  sourceRootCandidates: string[],
-  selectedSkills: PairflowSkillName[],
-  fs: SkillsInstallFileSystem
-): Promise<string> {
-  for (const sourceRoot of sourceRootCandidates) {
-    const rootStatus = await fs.pathStatus(sourceRoot);
-    if (!isDirectory(rootStatus)) {
-      continue;
-    }
-
-    let containsAllSelectedSkills = true;
-    for (const skill of selectedSkills) {
-      const skillStatus = await fs.pathStatus(join(sourceRoot, skill));
-      if (!isDirectory(skillStatus)) {
-        containsAllSelectedSkills = false;
-        break;
-      }
-    }
-
-    if (containsAllSelectedSkills) {
-      return sourceRoot;
-    }
-  }
-
-  throw new SkillsInstallError(
-    `Pairflow skill source files were not found. Expected all selected skills under one package or checkout source root: ${sourceRootCandidates.join(", ")}`
-  );
-}
 
 async function preflightManagedPaths(input: {
   operations: SkillsInstallOperation[];
@@ -186,6 +155,9 @@ async function assertManagedPathsDoNotOverlapSourceRoot(input: {
   const sourceRoot = resolve(input.sourceRoot);
   const realSourceRoot = await input.fs.realPathIfExists(sourceRoot);
   for (const operation of input.operations) {
+    if (operation.kind === "sync_role_agent") {
+      continue;
+    }
     const managedPath =
       operation.kind === "sync_skill" ? operation.destination : operation.linkPath;
     if (isSameOrInside(sourceRoot, managedPath)) {
@@ -311,6 +283,10 @@ async function executeInstall(input: {
   );
 
   for (const operation of input.plan.operations) {
+    if (operation.kind === "sync_role_agent") {
+      await input.fs.writeFile(operation.destination, operation.content);
+      continue;
+    }
     if (operation.kind === "sync_skill") {
       const expectedDestination = targetPreflights.get(operation.destination);
       if (expectedDestination === undefined) {
@@ -343,6 +319,35 @@ async function executeInstall(input: {
   }
 }
 
+function buildSkillSyncOperations(input: {
+  skills: PairflowSkillName[];
+  sourceRoot: string;
+  targetRoot: string;
+  otherRoots: string[];
+  linkOther: boolean;
+}): SkillsInstallOperation[] {
+  return input.skills.flatMap((skill) => {
+    const source = join(input.sourceRoot, skill);
+    const destination = join(input.targetRoot, skill);
+    const syncOperation: SkillsInstallOperation = {
+      kind: "sync_skill",
+      skill,
+      source,
+      destination
+    };
+    if (!input.linkOther) {
+      return [syncOperation];
+    }
+    const linkOps: SkillsInstallOperation[] = input.otherRoots.map((root) => ({
+      kind: "link_other",
+      skill,
+      linkPath: join(root, skill),
+      target: destination
+    }));
+    return [syncOperation, ...linkOps];
+  });
+}
+
 export async function installPairflowSkills(
   options: SkillsInstallOptions,
   runtime: SkillsInstallRuntime
@@ -363,32 +368,33 @@ export async function installPairflowSkills(
     ? otherRoots.join(", ")
     : undefined;
 
-  const operations: SkillsInstallOperation[] = options.skills.flatMap((skill) => {
-    const source = join(sourceRoot, skill);
-    const destination = join(targetRoot, skill);
-    const syncOperation: SkillsInstallOperation = {
-      kind: "sync_skill",
-      skill,
-      source,
-      destination
-    };
-    if (!options.linkOther) {
-      return [syncOperation];
-    }
-    const linkOps: SkillsInstallOperation[] = otherRoots.map((root) => ({
-      kind: "link_other",
-      skill,
-      linkPath: join(root, skill),
-      target: destination
-    }));
-    return [syncOperation, ...linkOps];
+  const skillOperations = buildSkillSyncOperations({
+    skills: options.skills,
+    sourceRoot,
+    targetRoot,
+    otherRoots,
+    linkOther: options.linkOther
   });
 
   await assertManagedPathsDoNotOverlapSourceRoot({
     sourceRoot,
-    operations,
+    operations: skillOperations,
     fs: runtime.fs
   });
+
+  const roleAgents = options.roleAgents
+    ? await buildRoleAgentSyncPlan({
+        homeDir: runtime.homeDir,
+        fs: runtime.fs
+      })
+    : {
+        operations: [] as RoleAgentSyncOperation[],
+        conflicts: [] as RoleAgentConflict[]
+      };
+  const operations: SkillsInstallOperation[] = [
+    ...skillOperations,
+    ...roleAgents.operations
+  ];
 
   if (options.dryRun) {
     return {
@@ -400,6 +406,8 @@ export async function installPairflowSkills(
       force: options.force,
       linkOther: options.linkOther,
       ...(otherRoot === undefined ? {} : { otherRoot, otherRoots }),
+      roleAgents: options.roleAgents,
+      roleAgentConflicts: roleAgents.conflicts,
       status: "planned",
       operations
     };
@@ -439,6 +447,8 @@ export async function installPairflowSkills(
     force: options.force,
     linkOther: options.linkOther,
     ...(otherRoot === undefined ? {} : { otherRoot, otherRoots }),
+    roleAgents: options.roleAgents,
+    roleAgentConflicts: roleAgents.conflicts,
     status,
     operations
   };

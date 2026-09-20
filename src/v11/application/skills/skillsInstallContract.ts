@@ -1,4 +1,5 @@
 import type { SkillsInstallFileSystem } from "../../ports/skillsInstallFileSystem.js";
+import type { RoleAgentName } from "../../shared/agent/roleAgentStandingPrompts.js";
 
 export type {
   SkillsInstallFileSystem,
@@ -14,6 +15,33 @@ export const supportedPairflowSkillNames = [
 export type PairflowSkillName = (typeof supportedPairflowSkillNames)[number];
 
 export type SkillInstallTargetDir = ".opencode" | ".reasonix";
+
+/**
+ * Role-agent definition dialect.
+ *
+ * - `opencode` -> `$HOME/.config/opencode/agent/PF-<role>.md` (global agent file)
+ * - `reasonix` -> `$HOME/.agents/skills/PF-<role>/SKILL.md` (shared convention root
+ *   that both opencode and reasonix auto-load)
+ */
+export type RoleAgentDialect = "opencode" | "reasonix";
+
+export interface RoleAgentSyncOperation {
+  kind: "sync_role_agent";
+  name: RoleAgentName;
+  dialect: RoleAgentDialect;
+  destination: string;
+  content: string;
+}
+
+/**
+ * A location that already defines the same role agent outside Pairflow's managed
+ * files, so the deployed definition may be shadowed. Reported, never rewritten.
+ */
+export interface RoleAgentConflict {
+  name: RoleAgentName;
+  path: string;
+  reason: "inline_agent_prompt";
+}
 
 export type SkillsInstallStatus =
   | "planned"
@@ -33,7 +61,8 @@ export type SkillsInstallOperation =
       skill: PairflowSkillName;
       linkPath: string;
       target: string;
-    };
+    }
+  | RoleAgentSyncOperation;
 
 export interface SkillsInstallPlan {
   sourceRoot: string;
@@ -45,6 +74,8 @@ export interface SkillsInstallPlan {
   linkOther: boolean;
   otherRoot?: string;
   otherRoots?: string[];
+  roleAgents: boolean;
+  roleAgentConflicts: RoleAgentConflict[];
   status: SkillsInstallStatus;
   operations: SkillsInstallOperation[];
 }
@@ -55,6 +86,7 @@ export interface SkillsInstallOptions {
   linkOther: boolean;
   force: boolean;
   dryRun: boolean;
+  roleAgents: boolean;
 }
 
 export interface SkillsInstallRuntime {

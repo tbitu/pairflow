@@ -34,9 +34,28 @@ SUPPORTED_SKILLS:
 - Allowed target directory values:
    1. `.opencode` (install destination `$HOME/.opencode/skills`)
    2. `.reasonix` (install destination `$HOME/.reasonix/skills`, reasonix's skill root)
+- Agent skill discovery (this repo runs opencode and reasonix; there is no Claude/Codex agent):
+   - opencode reads project `.opencode/skills/<name>/SKILL.md`, global
+     `~/.config/opencode/skills` (canonical) and `~/.opencode/skills`, and the
+     external auto-load roots `~/.claude/skills` and `~/.agents/skills`.
+   - reasonix reads project `.reasonix/skills`, global `~/.reasonix/skills`, and
+     convention roots including `~/.agents/skills`.
+   - `~/.agents/skills` is the one root both agents load: use it (or
+     `--link-other`) when one install must cover both agents.
+- **Availability is not usage.** Both agents surface only name + description and
+  load the body on demand, so a missing/stale `description` silently disables a
+  skill. Verify with `opencode debug skill` (resolved list + source paths),
+  `opencode debug agent PF-<role>`, and `reasonix subagent list`.
+- `--role-agents` also syncs the repo-owned `PF-implementer|PF-reviewer|PF-meta-reviewer`
+  definitions to `$HOME/.config/opencode/agent/PF-<role>.md` and
+  `$HOME/.agents/skills/PF-<role>/SKILL.md`. Frontmatter keys Pairflow does not own
+  (for example `model`) are preserved. An inline `agent.PF-*` prompt in
+  `~/.config/opencode/opencode.jsonc` is reported as a conflict and never rewritten.
+- In-repo, `.opencode/skills/**` is a thin pointer tree (relative symlinks to
+  `../../.claude/skills/<name>`); the installer follows those links and installs real content.
 - Install destination format:
   - `TARGET_ROOT="$HOME/<TARGET_DIR_NAME>/skills"`
-- `--link-other` also links into `$HOME/.reasonix/skills` when the primary target is not `.reasonix` (and excludes the primary target directory itself).
+- `--link-other` also links the selected skills into every other agent directory listed by the installer (`.claude`, `.codex`, `.copilot`, `.gemini`, `.reasonix`), excluding the primary target directory itself. Note that `.opencode` is not in that list today: use `$HOME/.agents/skills` (or a second install with `--target-dir .opencode`) to cover opencode globally.
 - Never modify source files in the repo; copy one-way from `SOURCE_ROOT` to global target.
 - Use deletion-preserving sync semantics so deleted source files are removed from destination too.
 - Existing selected target skill directories may be refreshed.
@@ -49,7 +68,7 @@ SUPPORTED_SKILLS:
    SKILLS_ARG="${SKILLS_ARG:-all}"
    TARGET_DIR_NAME="${TARGET_DIR_NAME:-.opencode}"
    ```
-2. Validate `TARGET_DIR_NAME` is `.opencode`.
+2. Validate `TARGET_DIR_NAME` is `.opencode` or `.reasonix` (the CLI rejects any other value).
 3. Resolve `INSTALL_SKILLS`:
    - if `SKILLS_ARG=all`, use all supported skills
    - otherwise parse comma-separated values and validate each against `SUPPORTED_SKILLS`

@@ -8,6 +8,8 @@ export interface SkillsInstallFileSystem {
   pathStatus(path: string): Promise<SkillsInstallPathStatus>;
   realPathIfExists(path: string): Promise<string | null>;
   ensureDirectory(path: string): Promise<void>;
+  readFileIfExists(path: string): Promise<string | null>;
+  writeFile(path: string, content: string): Promise<void>;
   removePath(path: string): Promise<void>;
   copyDirectory(source: string, destination: string): Promise<void>;
   createSymlink(target: string, linkPath: string): Promise<void>;
