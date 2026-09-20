@@ -192,7 +192,11 @@ When modifying `UsePairflow`, `CreatePairflowSpec`, `ExecutePairflowPlan` or `Cr
      `~/.claude/skills/<name>/SKILL.md` and `~/.agents/skills/<name>/SKILL.md`.
    - reasonix: project `.reasonix/skills`; global `~/.reasonix/skills`; convention
      roots include `~/.agents/skills`.
-   - `~/.agents/skills` is the one root both agents load.
+   - `~/.agents/skills` is the one root both agents auto-load, but Pairflow's
+     skill installer cannot target it: `--target-dir` accepts only `.opencode`
+     and `.reasonix`, and `--link-other` links only into `.claude`, `.codex`,
+     `.copilot`, `.gemini`, and `.reasonix`. The only writer of
+     `~/.agents/skills` is `--role-agents` (the `PF-*` role definitions).
    - Verify availability, do not assume it: `opencode debug skill` lists every
      resolved skill with its source path; `opencode debug agent PF-<role>` shows
      the resolved agent definition; `reasonix subagent list` lists the `PF-*`
@@ -203,10 +207,16 @@ When modifying `UsePairflow`, `CreatePairflowSpec`, `ExecutePairflowPlan` or `Cr
    `.claude/skills/**`; never edit through the pointer.
 5. **Commit the repo-local skill changes** in this repository first.
 6. **Run the install/sync workflow** documented in `.claude/skills/INSTALL.md`:
-   - `pairflow skills install --skills all --target-dir .opencode` (default), or
-     `--target-dir .reasonix` for reasonix's own root. For a single install that
-     both agents load, target the shared root: sync `~/.agents/skills` (or use
-     `--link-other`).
+   - One install covers both agents:
+     `pairflow skills install --skills all --target-dir .opencode --link-other`.
+     `.opencode` must be the target because it is the one destination
+     `--link-other` cannot reach; the links land in `.reasonix` (reasonix's own
+     global root) plus `.claude`, `.codex`, `.copilot`, and `.gemini`. Each agent
+     then reads a root it declares itself: opencode `~/.opencode/skills`,
+     reasonix `~/.reasonix/skills`.
+   - `--target-dir .reasonix --link-other` also reaches both, but opencode only
+     through its external `~/.claude/skills` root, so prefer the `.opencode`
+     target. Bare `--target-dir .opencode` (the default) covers opencode only.
    - Add `--role-agents` to also refresh the repo-owned `PF-*` role definitions
      (`~/.config/opencode/agent/PF-*.md` and `~/.agents/skills/PF-*/SKILL.md`).
      Existing frontmatter Pairflow does not own (for example `model`) is preserved.

@@ -1,6 +1,6 @@
 ---
 description: Install or update Pairflow skills into global ~/.opencode/skills
-argument-hint: [--skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan[,<name>...]] [--target-dir .opencode|.reasonix] [--force] [--dry-run] [--json]
+argument-hint: [--skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan[,<name>...]] [--target-dir .opencode|.reasonix] [--link-other] [--role-agents] [--force] [--dry-run] [--json]
 allowed-tools: Bash
 ---
 
@@ -20,6 +20,8 @@ Use this workflow document as the source-policy reference and fallback manual pr
 
 SKILLS_ARG: extracted from `--skills`, default `all`
 TARGET_DIR_NAME: extracted from `--target-dir`, default `.opencode`
+LINK_OTHER: extracted from `--link-other`, default `false`
+ROLE_AGENTS: extracted from `--role-agents`, default `false`
 FORCE: extracted from `--force`, default `false`
 DRY_RUN: extracted from `--dry-run`, default `false`
 JSON: extracted from `--json`, default `false`
@@ -40,8 +42,10 @@ SUPPORTED_SKILLS:
      external auto-load roots `~/.claude/skills` and `~/.agents/skills`.
    - reasonix reads project `.reasonix/skills`, global `~/.reasonix/skills`, and
      convention roots including `~/.agents/skills`.
-   - `~/.agents/skills` is the one root both agents load: use it (or
-     `--link-other`) when one install must cover both agents.
+   - `~/.agents/skills` is the one root both agents auto-load, but it is NOT an
+     install destination: `--target-dir` accepts only `.opencode` and
+     `.reasonix`, and `--link-other` does not link into `.agents`. Only
+     `--role-agents` writes there (the `PF-*` role definitions).
 - **Availability is not usage.** Both agents surface only name + description and
   load the body on demand, so a missing/stale `description` silently disables a
   skill. Verify with `opencode debug skill` (resolved list + source paths),
@@ -55,7 +59,7 @@ SUPPORTED_SKILLS:
   `../../.claude/skills/<name>`); the installer follows those links and installs real content.
 - Install destination format:
   - `TARGET_ROOT="$HOME/<TARGET_DIR_NAME>/skills"`
-- `--link-other` also links the selected skills into every other agent directory listed by the installer (`.claude`, `.codex`, `.copilot`, `.gemini`, `.reasonix`), excluding the primary target directory itself. Note that `.opencode` is not in that list today: use `$HOME/.agents/skills` (or a second install with `--target-dir .opencode`) to cover opencode globally.
+- `--link-other` also links the selected skills into every other agent directory listed by the installer (`.claude`, `.codex`, `.copilot`, `.gemini`, `.reasonix`), excluding the primary target directory itself. `.opencode` is not in that list, so it must be the primary target to be covered: `--target-dir .opencode --link-other` covers opencode (`~/.opencode/skills`) and reasonix (`~/.reasonix/skills`) in one command, whereas `--target-dir .reasonix --link-other` reaches opencode only through its external `~/.claude/skills` root.
 - Never modify source files in the repo; copy one-way from `SOURCE_ROOT` to global target.
 - Use deletion-preserving sync semantics so deleted source files are removed from destination too.
 - Existing selected target skill directories may be refreshed.
@@ -99,6 +103,8 @@ SUPPORTED_SKILLS:
    - `pairflow skills install --skills ExecutePairflowPlan --target-dir .opencode`
 4. Preview all default operations without writes:
    - `pairflow skills install --dry-run --json`
+5. Install for both opencode and reasonix in one command:
+   - `pairflow skills install --skills all --target-dir .opencode --link-other`
 
 ## Report
 

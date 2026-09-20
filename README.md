@@ -191,7 +191,7 @@ After installation, you can configure both:
 Recommended if you operate Pairflow via Claude Code, Codex, opencode, or reasonix:
 
 ```bash
-pairflow skills install --skills all --target-dir .claude
+pairflow skills install --skills all --target-dir .opencode --link-other
 ```
 
 Useful options:
@@ -203,7 +203,7 @@ Useful options:
 - `--dry-run --json` to preview without writes
 - `--force` to replace unsafe existing selected managed paths
 
-This installs or refreshes selected skills under `~/.opencode/skills/` (default) or `~/.reasonix/skills/`. Source files come from the Pairflow checkout or installed package `.claude/skills/**` (the repo-local `.opencode/skills/**` pointer tree mirrors the same source for opencode's project-local discovery); global skill directories are derived targets, not source. opencode also auto-loads the `~/.claude/skills` and `~/.agents/skills` convention roots, and reasonix its `~/.reasonix/skills` root, so `~/.agents/skills` is the one location both agents read. Add `--role-agents` to also sync the repo-owned `PF-*` role definitions.
+This installs or refreshes selected skills under `~/.opencode/skills/` (default) or `~/.reasonix/skills/`. Source files come from the Pairflow checkout or installed package `.claude/skills/**` (the repo-local `.opencode/skills/**` pointer tree mirrors the same source for opencode's project-local discovery); global skill directories are derived targets, not source. opencode also auto-loads the `~/.claude/skills` and `~/.agents/skills` convention roots, and reasonix its `~/.reasonix/skills` root. `--link-other` symlinks into every other agent directory it knows (`.claude`, `.codex`, `.copilot`, `.gemini`, `.reasonix`) but not into `.opencode`, so use `.opencode` as the `--target-dir` when opencode itself needs global coverage; `~/.agents/skills` is written only by `--role-agents`.
 
 The policy reference and fallback manual workflow live at `.claude/skills/INSTALL.md`.
 
