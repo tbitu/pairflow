@@ -168,6 +168,51 @@ describe("runCli", () => {
     expect(stdoutSpy).toHaveBeenCalled();
   });
 
+  it("prints top-level help for the bare invocation, --help, -h and help", async () => {
+    for (const argv of [[], ["--help"], ["-h"], ["help"]]) {
+      stdoutSpy.mockClear();
+      stderrSpy.mockClear();
+      const exitCode = await runCli(argv);
+
+      expect(exitCode).toBe(0);
+      const output = stdoutSpy.mock.calls.map((call) => String(call[0])).join("");
+      expect(output).toContain("pairflow agent emit --help");
+      expect(output).toContain("bubble status");
+      expect(stderrSpy).not.toHaveBeenCalled();
+    }
+  });
+
+  it("prints the agent namespace help for `agent` and its help flags", async () => {
+    for (const argv of [["agent"], ["agent", "--help"], ["agent", "-h"]]) {
+      stdoutSpy.mockClear();
+      const exitCode = await runCli(argv);
+
+      expect(exitCode).toBe(0);
+      const output = stdoutSpy.mock.calls.map((call) => String(call[0])).join("");
+      expect(output).toContain("pairflow agent emit --help");
+    }
+  });
+
+  it("prints the emit recipe help for bare `agent emit`", async () => {
+    const exitCode = await runCli(["agent", "emit"]);
+
+    expect(exitCode).toBe(0);
+    const output = stdoutSpy.mock.calls.map((call) => String(call[0])).join("");
+    expect(output).toContain("Do I owe an emit?");
+    expect(output).toContain("Failure to fix");
+    expect(output).toContain("pairflow bubble emit-log");
+  });
+
+  it("points at help and the emit recipe on an unknown command", async () => {
+    const exitCode = await runCli(["frobnicate"]);
+
+    expect(exitCode).toBe(1);
+    const errorText = stderrSpy.mock.calls.map((call) => String(call[0])).join("");
+    expect(errorText).toContain("Unknown command. Supported:");
+    expect(errorText).toContain("pairflow help");
+    expect(errorText).toContain("pairflow agent emit --help");
+  });
+
   it("supports skills install help", async () => {
     const exitCode = await runCli(["skills", "install", "--help"]);
 

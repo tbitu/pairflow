@@ -9,10 +9,14 @@ import {
 } from "../reviewer/reviewerCommandGateGuidance.js";
 import { buildReviewerSeverityOntologyReminder } from "../reviewer/reviewerSeverityOntology.js";
 import {
+  emitRecipeLocationLine
+} from "../actorProtocol/emitFailureGuidance.js";
+import {
   AGENT_EMIT_DIRECTIVE,
   AUTHORITY_MACHINE_MINTED_RULE,
   AUTHORITY_UNAVAILABLE_RULE,
   EVIDENCE_REF_INSTRUCTION,
+  EMIT_OWED_RULE,
   FINDING_OWNERSHIP_AND_INTENT_RULE,
   LITERAL_ARGUMENT_RULE,
   META_REVIEWER_SUBMIT_DIRECTIVE,
@@ -71,9 +75,10 @@ export const roleAgentDefinitions = [
 ] as const satisfies readonly RoleAgentDefinition[];
 
 export const roleAgentRecipePointer = [
-  "Full recipes and the failure-signature to fix table: load the `UsePairflow` skill and read its `references/agent-emit-recipes.md`, or read that file directly from whichever skill root",
-  "your agent resolves (`~/.config/opencode/skills`, `~/.opencode/skills`, `~/.reasonix/skills`, `~/.agents/skills`, or `.opencode/skills` inside the Pairflow checkout).",
-  "`pairflow agent emit --help` prints the authority, kind-lock and `--report-json` rules, and every rejected emit records itself in `.pairflow/bubbles/<id>/emit-history.ndjson` (`pairflow bubble emit-log`)."
+  `Full recipes and the failure-signature to fix table: ${emitRecipeLocationLine}.`,
+  "`pairflow agent emit --help` prints the authority rule, the role-to-kind lock, the per-case commands and the failure->fix table;",
+  "every rejected emit records itself in `.pairflow/bubbles/<id>/emit-history.ndjson` (`pairflow bubble emit-log`).",
+  "A rejected emit's own message carries the mapped fix, so correct the command and retry once instead of exploring the source tree."
 ].join(" ");
 
 function buildImplementerStandingLines(): string[] {
@@ -125,6 +130,7 @@ function buildCommonStandingLines(role: AgentRole): string[] {
     submitDirective,
     AUTHORITY_MACHINE_MINTED_RULE,
     AUTHORITY_UNAVAILABLE_RULE,
+    EMIT_OWED_RULE,
     ROLE_KIND_LOCK_RULE,
     ...(role === "meta_reviewer" ? [] : [FINDING_OWNERSHIP_AND_INTENT_RULE]),
     LITERAL_ARGUMENT_RULE,

@@ -113,6 +113,19 @@ export const AUTHORITY_UNAVAILABLE_RULE =
   "If the status JSON has no active `executionContext` (for example state `WAITING_HUMAN`, `READY_FOR_HUMAN_APPROVAL`, or an exhausted attempt), there is no valid authority to emit against: stop and wait for the next handoff instead of emitting with a stale or absent snapshot.";
 
 /**
+ * "Do I even owe an emit?" rule. Shared by the per-handoff guidance and the
+ * standing role prompts.
+ *
+ * Recorded in the agent session logs: a re-delivered or stale resume snapshot
+ * (`active_role=<me>`) once sent the implementer chasing an emit while the live
+ * state had already handed off to the reviewer; the agent burned many turns
+ * reasoning about whether to emit. The read-only check below settles it without
+ * any probe emit.
+ */
+export const EMIT_OWED_RULE =
+  "Before emitting, confirm you are the active role: read `pairflow bubble status --id <id> --repo <path> --json` and emit only when `executionContext.active_role` is your role. If another role is active, or the status shows no active `executionContext`, you do not owe an emit - stop and wait for the next handoff. A re-delivered or stale resume snapshot (`active_role=<you>` in the prompt preamble) is not authority; the status JSON is.";
+
+/**
  * Role to output-kind lock. Shared by the per-handoff guidance and the standing
  * role prompts.
  */

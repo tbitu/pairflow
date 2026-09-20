@@ -25,6 +25,11 @@ import {
   isConvergedStructuredFindingSeverity
 } from "../../../v11/shared/converged/convergedCommandTypes.js";
 import {
+  buildEmitFailureHint,
+  emitFailureFixTable,
+  emitRecipeLocationLine
+} from "../../../v11/shared/actorProtocol/emitFailureGuidance.js";
+import {
   parseOptionalReworkTarget,
   parseRequiredSubmitReportJson,
   parseSubmitRecommendation,
@@ -348,23 +353,51 @@ export function getAgentEmitHelpText(): string {
     "  --expected-state-fingerprint <value>  Optional guard: active state fingerprint",
     "  -h, --help                     Show this help",
     "",
-    "Authority:",
+    "Authority (every emit, no exceptions):",
     "  Copy --handoff-id and --execution-id verbatim from `pairflow bubble status --id <id> --repo <path> --json`",
     "  (executionContext.handoffId / executionContext.executionId) immediately before every emit. Never construct,",
-    "  guess, or reuse these tokens; if the status JSON shows no active executionContext, wait for the next handoff.",
+    "  guess, or reuse these tokens; they rotate on every round transition, convergence, meta-review transition and",
+    "  human reply.",
+    "",
+    "Do I owe an emit? (read `pairflow bubble status --id <id> --repo <path> --json` first)",
+    "  - No active `executionContext` (state WAITING_HUMAN, READY_FOR_HUMAN_APPROVAL, or an exhausted attempt)",
+    "    -> there is nothing to emit; stop and wait for the next handoff.",
+    "  - `active_role`/`executionContext.active_role` is not your role -> do not emit; the loop is waiting on the",
+    "    other agent. A re-delivered or stale resume snapshot is not authority.",
     "",
     "Role to kind lock:",
     "  implementer -> pass | human_question        (findings flags are reviewer-only)",
     "  reviewer    -> pass | convergence | human_question",
     "  meta-reviewer -> meta_review_result only",
     "",
-    "Meta-review --report-json:",
-    "  Required top-level keys: findings_claim_state, findings_claim_source, findings_count.",
-    "  Never nest them inside a `findings` entry, and pass inline JSON text - not a file path.",
+    "Implementer:",
+    '  pairflow agent emit --kind pass --repo <repo> --bubble-id <id> --handoff-id <executionContext.handoffId> \\',
+    '    --execution-id <executionContext.executionId> --summary "<what changed + validation ran>" \\',
+    "    --ref .pairflow/evidence/lint.log --ref .pairflow/evidence/test.log",
+    '  Blocked instead of a handoff: --kind human_question --question "<blocker>" (same authority flags).',
+    "",
+    "Reviewer (round >= severity_gate_round is post-gate):",
+    '  finding at/above threshold  -> --kind pass --intent fix_request --finding "<P0|P1|P2|P3:Title|ref>"',
+    "  findings, pre-gate          -> --kind pass --intent fix_request --finding ... (repeatable)",
+    "  clean, pre-gate             -> --kind pass --intent review --no-findings   (bare flag)",
+    '  clean, post-gate            -> --kind convergence --summary "<verdict>"',
+    '  advisory-only, post-gate    -> --kind convergence --finding "<P2|P3:Title>"',
+    "  clean/advisory, post-gate   -> --no-findings is forbidden; use --kind convergence",
+    "  --finding and --no-findings are mutually exclusive; --intent task is implementer-only.",
+    "",
+    "Meta-review:",
+    "  --report-json takes inline JSON text, never a file path. Required top-level keys: findings_claim_state,",
+    "  findings_claim_source, findings_count - never nest them inside a `findings` entry. For recommendation=approve",
+    "  add the split triplet findings_claimed_open_total / findings_blocking_open_total (0) / findings_advisory_open_total.",
+    "",
+    "Failure to fix (every rejected emit also prints the matching fix inline):",
+    ...emitFailureFixTable.map(
+      (row) => `  ${row.signature} -> ${row.fix}`
+    ),
     "",
     "Recorded attempts and recipes:",
     "  Every attempt is logged to .pairflow/bubbles/<id>/emit-history.ndjson; summarize with `pairflow bubble emit-log`.",
-    "  Per-case recipes and corrections: the `UsePairflow` skill (references/agent-emit-recipes.md),",
+    `  Per-case recipes and the full failure table: run \`pairflow agent emit --help\`, or ${emitRecipeLocationLine}.`,
     "",
     "Phase 5 note:",
     "  `pairflow pass`, `pairflow ask-human`, `pairflow converged`, and `orchestra` actor aliases were removed. Use `pairflow agent emit` only."
@@ -752,6 +785,14 @@ export async function runAgentEmitCommand(
         duration_ms: Date.now() - startTime
       }
     });
+    // Self-teaching: the recorded `error_reason` above stays the raw signature (so
+    // `pairflow bubble emit-log` keeps grouping by the same key), but the message the
+    // agent actually sees carries the mapped fix plus the recipe pointer. This is the
+    // difference between the agent retrying correctly and reverse-engineering the
+    // contract from the source tree.
+    if (error instanceof Error && !error.message.includes("Fix: ")) {
+      error.message = `${error.message}${buildEmitFailureHint(errorMessage)}`;
+    }
     throw error;
   }
 }

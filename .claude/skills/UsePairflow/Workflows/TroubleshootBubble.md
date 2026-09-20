@@ -25,7 +25,7 @@ TASK_FILE: extracted from `--task-file` argument (optional; for ideation kickoff
 - Re-verify after each fix attempt.
 - If diagnosis is inconclusive, stop with a concrete escalation path.
 - For remote started-pointer runtime loss, stay fail-closed: do not imply that `bubble start` or `bubble restart` is already the supported recovery contract on top of preserved remote state.
-- For repeated `pairflow agent emit` failures, classify by error signature and apply the mapped correction once (do not keep mutating flags blindly); use `references/agent-emit-recipes.md` for the per-case command and `pairflow bubble emit-log` to confirm the dominant signature.
+- For repeated `pairflow agent emit` failures, classify by error signature and apply the mapped correction once (do not keep mutating flags blindly); use `references/agent-emit-recipes.md` for the per-case command and `pairflow bubble emit-log` to confirm the dominant signature. `pairflow agent emit --help` is self-contained (authority rule, role templates, failure->fix table) and every rejected emit prints its mapped fix inline, so an agent should never need to read the Pairflow source tree to recover.
 
 ## Agent Emit Failure Playbook
 
@@ -36,21 +36,44 @@ Use this when pane output shows repeated emit failures.
 pairflow bubble status --id <BUBBLE_ID> --repo <REPO_PATH> --json
 ```
 Then copy fresh `executionContext.handoffId` and `executionContext.executionId`.
+If the JSON shows no active `executionContext`, or `active_role` is not the
+failing agent's role, there is no emit owed - stop (see step 2).
 
-2. Role-to-kind lock:
+2. Do I owe an emit? (before correcting any flags)
+- No active `executionContext` (state `WAITING_HUMAN`, `READY_FOR_HUMAN_APPROVAL`, exhausted attempt) -> nothing to emit; wait for the next handoff.
+- `executionContext.active_role` (or `active_role`) is not the agent's role -> do not emit; the loop waits on the other agent.
+- A stale or re-delivered resume snapshot in the pane prompt (`active_role=<you>`, old `attempt:<n>`) is not authority; the status JSON is.
+
+3. Role-to-kind lock:
 - implementer: `pass|human_question`
 - reviewer: `pass|convergence|human_question`
 - meta-reviewer: `meta_review_result` only
 
-3. Error signature -> correction:
+4. Error signature -> correction (`pairflow agent emit --help` prints the full table;
+the failing emit itself prints its own mapped fix inline):
+- `Missing required option: --<flag>`:
+  - Refresh authority first, then rebuild the whole command from the role template.
+  - Required every time: `--repo --bubble-id --handoff-id --execution-id`; note `--execution-id` must come from `executionContext.executionId` and never from `--handoff-id`.
 - `ACTOR_EMIT_OPTIONS_INVALID`:
-  - Rebuild command from canonical template.
+  - Rebuild command from canonical template (`pairflow agent emit --help`).
   - Ensure `--repo`, `--bubble-id`, `--handoff-id`, `--execution-id` are all present and non-empty.
 - `ACTOR_EMIT_CONTEXT_INVALID`:
   - Kind/authority mismatch. Switch to the allowed kind for current active role/authority.
+- `Active actor authority is unavailable for state ...`:
+  - No active `executionContext`; no emit is owed. Stop and wait for the next handoff.
+- `Canonical actor emit handoff/execution/role/round mismatch`:
+  - Stale or constructed authority. Re-read `bubble status --json` and copy both tokens verbatim; never reuse a previous round's token.
+- `Implementer PASS does not accept findings flags`:
+  - Drop `--finding`; findings are reviewer-only. Move the note into `--summary`.
+- `REVIEWER_INTENT_OVERRIDE_INVALID`:
+  - Findings => `--intent fix_request`; clean `--no-findings` => `--intent review`; `--intent task` is implementer-only.
+- `FINDINGS_PAYLOAD_INVALID` (post-gate round):
+  - Clean/advisory reviewer outcome must use `--kind convergence`, not `--kind pass`.
+- `CONVERGED_SUMMARY_FINDINGS_CONTRADICTION`:
+  - Add `--finding` entries or state explicitly that the outcome is clean.
 - `Invalid --report-json value`:
   - Rebuild `--report-json` as a valid JSON object string (double-quoted keys/strings).
-  - Single-quote the full shell argument.
+  - Single-quote the full shell argument; a file path is not accepted.
 - `... is missing the required top-level claim keys findings_claim_state and findings_claim_source`:
   - Add both keys to the top level of the `--report-json` object (never inside a `findings` entry).
   - The error message prints the corrected payload for the active recommendation; copy it.
@@ -59,22 +82,29 @@ Then copy fresh `executionContext.handoffId` and `executionContext.executionId`.
 - `report_json.findings_count is required and must be a non-negative integer`:
   - Set integer `findings_count>=0`.
   - Keep tuple consistent: `open_findings => findings_count>0`, `clean => findings_count=0`.
+- `META_REVIEW_APPROVE_ADVISORY_SPLIT_REQUIRED`:
+  - Add `findings_claimed_open_total`, `findings_blocking_open_total=0`, `findings_advisory_open_total`.
 - `META_REVIEW_GATE_REVIEWER_CONVERGENCE_CONFLICT` with snapshot totals:
   - Copy snapshot totals into `findings_count`, `findings_claimed_open_total`, `findings_advisory_open_total`.
   - Keep `findings_blocking_open_total=0` for advisory-only approve.
+- `META_REVIEW_FINDINGS_PARITY_GUARD`:
+  - Do not embed a digest inside the findings file; hash the finalized file and pass it as `findings_digest_sha256`.
+- `spawn git ENOENT`:
+  - `git` is not on the agent shell `PATH`; fix `PATH` and re-run the same command.
 
-4. Retry policy:
+5. Retry policy:
 - Retry exactly once after applying mapped correction.
 - If it fails again, stop and report the exact error plus the corrected command variant.
 
-5. Recorded attempt log:
+6. Recorded attempt log:
 ```bash
 pairflow bubble emit-log --id <BUBBLE_ID> [--repo <REPO_PATH>]
 pairflow bubble emit-log --log <path-to-emit-history.ndjson>
 ```
 Groups rejections by signature with counts and a time window; use `--log` when the bubble no longer resolves.
 
-6. Reference:
+7. Reference:
+- Self-contained CLI help: `pairflow agent emit --help` (also `pairflow help`, `pairflow agent --help`).
 - Per-case commands: `references/agent-emit-recipes.md`.
 - Canonical long form: `docs/agent-emit-troubleshooting.md`.
 

@@ -7,6 +7,26 @@ This file is the canonical emit recipe. The repo-local skill card
 the same content. Both are derived from the recorded emit attempt log — see
 [Reading the struggle log](#reading-the-struggle-log) at the end.
 
+## Finding the command (do this before guessing)
+
+The CLI is now self-teaching, so an agent never needs to read the source tree:
+
+- `pairflow help` / `pairflow --help` / `pairflow -h` / bare `pairflow` print the
+  top-level usage and point at the emit recipe (previously these printed
+  `Unknown command`).
+- `pairflow agent --help` explains that `emit` is the only actor command and
+  that `pass`/`ask-human`/`converged` were removed.
+- `pairflow agent emit --help` is the authoritative, self-contained recipe:
+  authority rule, the "do I owe an emit?" check, the role-to-kind lock, per-case
+  commands and the full failure->fix table.
+- Every rejected emit appends its own mapped fix plus the recipe pointer to the
+  error message. The recorded `error_reason` in the emit log stays the raw
+  signature, so `pairflow bubble emit-log` grouping is unaffected.
+
+If two attempts with the same signature fail, stop guessing and re-run
+`pairflow agent emit --help`; do not open `src/cli/commands/agent/emit.ts` or the
+pass-validation modules to reconstruct the contract.
+
 ## The one rule that prevents most failures
 
 **Authority is machine-minted and must be copied, never constructed.**
@@ -26,6 +46,26 @@ transition, convergence, meta-review transition and human reply).
 - If the status JSON has no active `executionContext` (for example state
   `WAITING_HUMAN`, `READY_FOR_HUMAN_APPROVAL`, or an exhausted attempt), there is
   no valid authority to emit against. Stop and wait for the next handoff.
+
+## Do I even owe an emit?
+
+Read the status JSON before emitting, and emit only when the active role is
+yours:
+
+- `executionContext.active_role` (or `active_role`) is **not** your role -> you
+  do not owe an emit; the loop is waiting on the other agent.
+- No active `executionContext` (state `WAITING_HUMAN`,
+  `READY_FOR_HUMAN_APPROVAL`, or an exhausted attempt) -> nothing to emit; stop
+  and wait for the next handoff.
+- A re-delivered or stale resume snapshot in your prompt preamble
+  (`active_role=<you>`, an old `attempt:<n>`) is **not** authority. The status
+  JSON is. Do not probe with a throwaway emit: a rejected emit is noise, and the
+  guard already protects against double-emitting.
+
+This is the single biggest token sink on record: a resumed implementer spent
+many turns deciding whether it owed an emit, against a stale prompt snapshot
+that named an already-consumed `attempt`. One `bubble status --json` read settles
+it.
 
 ## Role to kind lock
 
@@ -172,6 +212,10 @@ file on disk:
 
 ## Failure to fix
 
+`pairflow agent emit --help` prints this same table. Every rejected emit also
+appends its mapped fix to the error message (the recorded `error_reason` stays
+the raw signature, so `pairflow bubble emit-log` grouping is unaffected).
+
 | Error signature (exact prefix) | Cause | Fix |
 |---|---|---|
 | `... is missing the required top-level claim keys findings_claim_state and findings_claim_source` | claim pair nested inside a `findings` entry, or omitted | put both keys directly on the `--report-json` object; the error message prints the corrected payload for your recommendation |
@@ -179,14 +223,22 @@ file on disk:
 | `Invalid --report-json value. Must be valid JSON object` (often naming `/tmp/...`) | a file path was passed, or malformed JSON | pass inline JSON text with double-quoted keys/strings, single-quoted as a shell argument |
 | `CLAIM_SOURCE_INVALID` | claim state without `meta_review_artifact` source | set `findings_claim_source=meta_review_artifact` whenever `findings_claim_state` is present |
 | `META_REVIEW_APPROVE_ADVISORY_SPLIT_REQUIRED` | `approve` without the split triplet | add `findings_claimed_open_total`/`findings_blocking_open_total`/`findings_advisory_open_total` (blocking `0`, claimed = advisory for advisory-only) |
+| `META_REVIEW_GATE_REVIEWER_CONVERGENCE_CONFLICT` | below-threshold snapshot contradicting the approve payload | keep `recommendation=approve`; re-emit advisory-only metadata with blocking total `0` and the snapshot totals copied into claimed/advisory |
 | `META_REVIEW_FINDINGS_PARITY_GUARD` | digest mismatch | re-hash the finalized findings file (see above) |
 | `Canonical actor emit handoff mismatch` / `execution mismatch` | stale or constructed authority | re-read `bubble status --json` and copy both tokens verbatim |
-| `Active actor authority is unavailable for state ...` | emitted after the round moved on | stop; wait for the next handoff instead of emitting |
+| `Canonical actor emit role mismatch` | emitted while another role is active | you do not owe an emit; wait for the handoff to come back to you |
+| `Canonical actor emit round mismatch` | emitted for a previous round | re-read `bubble status --json` and emit for the active round |
+| `Active actor authority is unavailable for state ...` | emitted after the round moved on (often `WAITING_HUMAN`) | stop; wait for the next handoff instead of emitting |
 | `Implementer PASS does not accept findings flags` | `--finding` on an implementer pass | findings are reviewer-only; move them into the summary |
 | `REVIEWER_INTENT_OVERRIDE_INVALID` | reviewer findings with `--intent review`, clean with `--intent fix_request`, or `--intent task` | findings ⇒ `fix_request`; clean ⇒ `review`; `task` is implementer-only |
 | `FINDINGS_PAYLOAD_INVALID` (`... requires explicit structured findings in post-gate rounds`) | reviewer `pass` in a post-gate round without a threshold-meeting finding | use `--kind convergence` for clean/advisory outcomes |
+| `FINDINGS_PAYLOAD_INVALID` (`Reviewer PASS requires explicit findings declaration`) | reviewer `pass` with neither `--finding` nor `--no-findings` | add `--finding` entries or the bare `--no-findings` flag (mutually exclusive) |
 | `CONVERGED_SUMMARY_FINDINGS_CONTRADICTION` | convergence summary claims open findings without structured flags | add `--finding` entries or state the outcome is clean |
+| `ACTOR_EMIT_INPUT_EXECUTION_ID_MISSING` / `ACTOR_EMIT_FORBIDDEN_EXECUTION_ID_DERIVATION` | `--execution-id` omitted, empty, or derived from `--handoff-id` | copy `executionContext.executionId` verbatim from `bubble status --json` |
+| `Missing required option: --<flag>` | a required flag was omitted | add it; required every time: `--repo --bubble-id --handoff-id --execution-id`, plus `--summary`/`--question`/`--round --recommendation --report-json` per kind |
+| `Invalid --intent value` / `Invalid --kind value` / `Invalid --expected-role value` | malformed enum value | rebuild from `pairflow agent emit --help` and the role-to-kind lock |
 | `ACTOR_EMIT_OPTIONS_INVALID` / `ACTOR_EMIT_CONTEXT_INVALID` | malformed flags or wrong authority context | re-fetch `bubble status --json`, rebuild from the recipe above, retry **once** |
+| `spawn git ENOENT` | the emit process could not exec `git` (not on the agent shell `PATH`) | fix `PATH` so `git` resolves, then re-run the same command |
 
 ## Anti-loop rule for repeated emit failures
 
@@ -195,9 +247,10 @@ meta-review submit was retried 211 times over ~5 hours on one signature.
 
 1. Retry a corrected command **once**.
 2. If the same error signature comes back, stop guessing. Re-read the recipe for
-   your case on this page and rebuild the command from it.
+   your case: `pairflow agent emit --help` (self-contained) or this page, and
+   rebuild the command from it. Do not read the Pairflow source tree.
 3. Never re-emit against stale authority, and never emit while the state shows no
-   active `executionContext`.
+   active `executionContext` or another role is active.
 
 ## How these recipes reach the agents
 

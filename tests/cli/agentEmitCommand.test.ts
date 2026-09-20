@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -11,6 +11,7 @@ import {
   runAgentEmitCommand
 } from "../../src/cli/commands/agent/emit.js";
 import { readStateSnapshot } from "../../src/v11/infrastructure/state/stateStore.js";
+import { getBubbleEmitHistoryPath } from "../../src/v11/infrastructure/artifact/actorProtocol/emitHistoryStore.js";
 import { setupRunningBubbleFixture } from "../helpers/bubble.js";
 import { initGitRepository } from "../helpers/git.js";
 import {
@@ -443,6 +444,73 @@ describe("runAgentEmitCommand", () => {
       reviewerHandoffId
     );
     expect(afterDuplicateReject.state.active_role).toBe("reviewer");
+  });
+
+  it("appends the self-teaching fix hint to a rejected emit while recording the raw signature", async () => {
+    const repoPath = await createTempRepo();
+    const bubble = await setupRunningBubbleFixture({
+      repoPath,
+      bubbleId: "b_agent_emit_hint_01",
+      task: "Self-teaching emit failure hint"
+    });
+    const loadedState = await readStateSnapshot(bubble.paths.statePath);
+    const handoffId = loadedState.state.execution_context?.handoff_id;
+    const executionId = loadedState.state.execution_context?.execution_id;
+
+    await runAgentEmitCommand([
+      "--kind",
+      "pass",
+      "--repo",
+      repoPath,
+      "--bubble-id",
+      bubble.bubbleId,
+      "--handoff-id",
+      String(handoffId),
+      "--execution-id",
+      String(executionId),
+      "--summary",
+      "First canonical pass"
+    ]);
+
+    let rejectedMessage = "";
+    try {
+      await runAgentEmitCommand([
+        "--kind",
+        "pass",
+        "--repo",
+        repoPath,
+        "--bubble-id",
+        bubble.bubbleId,
+        "--handoff-id",
+        String(handoffId),
+        "--execution-id",
+        String(executionId),
+        "--summary",
+        "Stale duplicate pass"
+      ]);
+      throw new Error("Expected the duplicate emit to be rejected");
+    } catch (error) {
+      rejectedMessage = error instanceof Error ? error.message : String(error);
+    }
+
+    expect(rejectedMessage).toContain("Canonical actor emit handoff mismatch");
+    expect(rejectedMessage).toContain("Fix: ");
+    expect(rejectedMessage).toContain("pairflow agent emit --help");
+
+    const historyPath = getBubbleEmitHistoryPath(
+      bubble.paths.bubbleDir
+    );
+    const historyLines = (await readFile(historyPath, "utf8"))
+      .split("\n")
+      .filter((line) => line.trim().length > 0);
+    const lastEntry = JSON.parse(
+      historyLines[historyLines.length - 1] ?? "{}"
+    ) as { status?: string; error_reason?: string | null };
+    expect(lastEntry.status).toBe("rejected");
+    expect(lastEntry.error_reason).toContain(
+      "Canonical actor emit handoff mismatch"
+    );
+    expect(lastEntry.error_reason).not.toContain("Fix: ");
   });
 
   it("rejects duplicate reviewer pass emits after authority already advanced", async () => {

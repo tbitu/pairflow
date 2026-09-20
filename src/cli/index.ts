@@ -281,7 +281,7 @@ function writeConvergedResult(
 }
 
 async function handleAgentEmitCommand(args: string[]): Promise<number> {
-  const result = await runAgentEmitCommand(args);
+  const result = args.length === 0 ? null : await runAgentEmitCommand(args);
   if (result === null) {
     process.stdout.write(`${getAgentEmitHelpText()}\n`);
     return 0;
@@ -1048,6 +1048,54 @@ function buildSupportedCommandsText(): string {
   ].join(", ");
 }
 
+/**
+ * Top-level help. Previously `pairflow --help`, `pairflow -h`, `pairflow help`
+ * and bare `pairflow` all printed "Unknown command", so loop agents could not
+ * discover `pairflow agent emit --help` and fell back to reading the source
+ * tree. This is the entry point that points them at the emit recipe.
+ */
+export function buildTopLevelHelpText(): string {
+  return [
+    "Pairflow CLI",
+    "",
+    "Usage:",
+    "  pairflow <command> [options]",
+    "  pairflow --version",
+    "  pairflow help",
+    "",
+    "Loop agents emit through one command:",
+    "  pairflow agent emit --help        # authority rule, role templates, failure->fix table",
+    "",
+    "Commands:",
+    `  ${buildSupportedCommandsText()}`,
+    "",
+    "Recipes and troubleshooting: `pairflow agent emit --help`, then the `UsePairflow` skill",
+    "reference `references/agent-emit-recipes.md` (docs/agent-emit-troubleshooting.md in the checkout)."
+  ].join("\n");
+}
+
+/**
+ * Namespace help for `pairflow agent` / `pairflow agent --help`. The only actor
+ * command is `emit`; the wording exists so the agent lands on the emit recipe
+ * instead of guessing at removed aliases.
+ */
+export function buildAgentNamespaceHelpText(): string {
+  return [
+    "pairflow agent - canonical actor protocol commands",
+    "",
+    "Usage:",
+    "  pairflow agent emit --help        # the only actor command (pass/ask-human/converged are gone)",
+    "",
+    "`pairflow pass`, `pairflow ask-human`, `pairflow converged`, and `orchestra` were removed;",
+    "every actor handoff is a single `pairflow agent emit` call.",
+    "",
+    "Authority, role-to-kind lock, per-case recipes and the failure->fix table:",
+    "  pairflow agent emit --help"
+  ].join("\n");
+}
+
+const helpAliases = new Set(["--help", "-h", "help"]);
+
 export async function runCli(argv: string[]): Promise<number> {
   const [command, subcommand, ...rest] = argv;
 
@@ -1061,6 +1109,19 @@ export async function runCli(argv: string[]): Promise<number> {
       process.stderr.write(`${message}\n`);
       return 1;
     }
+  }
+
+  if (command === undefined || helpAliases.has(command)) {
+    process.stdout.write(`${buildTopLevelHelpText()}\n`);
+    return 0;
+  }
+
+  if (
+    command === "agent"
+    && (subcommand === undefined || helpAliases.has(subcommand))
+  ) {
+    process.stdout.write(`${buildAgentNamespaceHelpText()}\n`);
+    return 0;
   }
 
   const passArgs = resolveAgentCommandArgs(command, subcommand, rest, "pass");
@@ -1133,7 +1194,7 @@ export async function runCli(argv: string[]): Promise<number> {
   }
 
   process.stderr.write(
-    `Unknown command. Supported: ${buildSupportedCommandsText()}\n`
+    `Unknown command. Supported: ${buildSupportedCommandsText()}\nRun \`pairflow help\` for usage, or \`pairflow agent emit --help\` for emit recipes.\n`
   );
   return 1;
 }

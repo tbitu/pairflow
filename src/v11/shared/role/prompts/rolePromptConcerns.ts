@@ -54,12 +54,14 @@ import {
 import {
   AUTHORITY_MACHINE_MINTED_RULE,
   AUTHORITY_UNAVAILABLE_RULE,
+  EMIT_OWED_RULE,
   FINDING_OWNERSHIP_AND_INTENT_RULE,
   LITERAL_ARGUMENT_RULE,
   META_REVIEWER_IDLE_EMIT_DIRECTIVE,
   REVIEWER_ENTER_DIRECTIVE,
   ROLE_KIND_LOCK_RULE
 } from "./sharedPromptDirectives.js";
+import { emitRecipeLocationLine } from "../../actorProtocol/emitFailureGuidance.js";
 import type {
   NonReviewerRole,
   PromptConcernBuildInput,
@@ -127,9 +129,10 @@ export function buildCanonicalActorEmitLookupGuidance(input: {
     `Before direct canonical emit, fetch fresh actor authority via \`pairflow bubble status --id ${input.bubbleId} --repo ${input.repoPath} --json\` and copy both \`executionContext.handoffId\` and \`executionContext.executionId\` (plus optional guards) from the JSON output.`,
     AUTHORITY_MACHINE_MINTED_RULE,
     AUTHORITY_UNAVAILABLE_RULE,
+    EMIT_OWED_RULE,
     `Emit preflight checklist: (1) include explicit \`--repo\`, \`--bubble-id\`, \`--handoff-id\`, and \`--execution-id\`; never leave authority flags empty or guessed. (2) ${ROLE_KIND_LOCK_RULE} (3) ${FINDING_OWNERSHIP_AND_INTENT_RULE}`,
     LITERAL_ARGUMENT_RULE,
-    "If emit returns `ACTOR_EMIT_OPTIONS_INVALID` or `ACTOR_EMIT_CONTEXT_INVALID`, do not keep mutating flags blindly: re-fetch `bubble status --json`, rebuild the command from the role template, and retry once with fresh authority. If the same signature is rejected twice, stop guessing and re-read the emit recipe for your case (the `UsePairflow` skill reference `references/agent-emit-recipes.md`, or `~/.agents/skills/UsePairflow/references/agent-emit-recipes.md`).",
+    "If emit returns `ACTOR_EMIT_OPTIONS_INVALID` or `ACTOR_EMIT_CONTEXT_INVALID`, do not keep mutating flags blindly: re-fetch `bubble status --json`, rebuild the command from `pairflow agent emit --help` for your role, and retry once with fresh authority. If the same signature is rejected twice, stop guessing and re-read the emit recipe for your case: " + emitRecipeLocationLine + ".",
     "Repeat this before each emit because authority can change after every successful handoff, convergence, meta-review transition, or human reply. If no explicit authority snapshot is available yet, refresh status and wait for a current handoff instead of falling back to removed aliases."
   ].join(" ");
 }
