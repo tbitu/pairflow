@@ -98,37 +98,82 @@ function buildImplementerDeliveryAction(input: {
   envelope: ProtocolEnvelope;
   bubbleConfig: BubbleConfig;
   actorLabel: string | null;
+  roleArtifactPath?: string;
   isOpencodeRecipient?: boolean;
 }): string {
-  // OVERFLOW_2: For opencode recipients, return minimal action text only.
+  // OVERFLOW_2: For minimal-guidance recipients (e.g. reasonix, opencode), return concise action text
+  // with role instructions pointer, validation guidance, and emit command without large prompt dumps.
   if (input.isOpencodeRecipient) {
+    const roleInstruction =
+      input.roleArtifactPath !== undefined
+        ? `Read role instructions now: ${input.roleArtifactPath}.`
+        : "";
     const event = toImplementerDeliveryEvent(input.envelope.type);
+    let intro = "Continue protocol from this event.";
+    let terminal = false;
     switch (event) {
       case "TASK":
-        return "Implementation task received. Continue implementation.";
+        intro = "Implementation task received. Continue implementation.";
+        break;
       case "PASS":
-        return "Reviewer feedback received. Implement fixes.";
+        intro = "Reviewer feedback received. Implement fixes.";
+        break;
       case "HUMAN_REPLY":
-        return "Human response received. Continue implementation using this input.";
+        intro = "Human response received. Continue implementation using this input.";
+        break;
       case "APPROVAL_DECISION": {
         if (input.envelope.type === "APPROVAL_DECISION" && input.envelope.payload.decision === "rework") {
           const origin = resolveImplementerReworkOrigin(input.envelope);
-          if (origin === "meta_review_auto_rework") {
-            return "Meta-review auto-rework received. Implement fixes.";
-          }
-          return "Rework received. Implement fixes.";
+          intro = origin === "meta_review_auto_rework"
+            ? "Meta-review auto-rework received. Implement fixes."
+            : "Rework received. Implement fixes.";
+          break;
         }
-        return "Human approved this bubble. Wait for commit/merge flow and do not continue new implementation in this round.";
+        intro = "Human approved this bubble. Wait for commit/merge flow and do not continue new implementation in this round.";
+        terminal = true;
+        break;
       }
       case "APPROVAL_REQUEST": {
-        if (input.actorLabel === "meta-reviewer") {
-          return "Meta-reviewer requested human gate decision. Stop coding and wait for human decision (`bubble approve` or `bubble request-rework`). Do not run canonical pass emit now.";
-        }
-        return "Bubble is READY_FOR_HUMAN_APPROVAL. Stop coding and wait for human decision (`bubble approve` or `bubble request-rework`). Do not run canonical pass emit now.";
+        intro = input.actorLabel === "meta-reviewer"
+          ? "Meta-reviewer requested human gate decision. Stop coding and wait for human decision (`bubble approve` or `bubble request-rework`). Do not run canonical pass emit now."
+          : "Bubble is READY_FOR_HUMAN_APPROVAL. Stop coding and wait for human decision (`bubble approve` or `bubble request-rework`). Do not run canonical pass emit now.";
+        terminal = true;
+        break;
       }
       default:
-        return "Continue protocol from this event.";
+        intro = "Continue protocol from this event.";
+        break;
     }
+
+    if (terminal) {
+      return intro;
+    }
+
+    const validationGuidance = buildImplementerDeliveryValidationGuidance(
+      input.bubbleConfig.commands
+    );
+    const emitsPass =
+      event === "TASK"
+      || event === "PASS"
+      || event === "HUMAN_REPLY"
+      || (event === "APPROVAL_DECISION"
+        && input.envelope.type === "APPROVAL_DECISION"
+        && input.envelope.payload.decision === "rework");
+
+    const parts = [
+      intro,
+      ...(roleInstruction.length > 0 ? [roleInstruction] : []),
+      validationGuidance,
+      ...(emitsPass
+        ? [
+            buildResolvedImplementerEmitCommand({
+              repoPath: input.bubbleConfig.repo_path,
+              bubbleId: input.bubbleConfig.id
+            })
+          ]
+        : [])
+    ];
+    return parts.filter(p => p.length > 0).join(" ");
   }
 
   const event = toImplementerDeliveryEvent(input.envelope.type);
@@ -351,6 +396,9 @@ export function buildTmuxDeliveryMessage(input: {
       envelope: input.envelope,
       bubbleConfig: input.bubbleConfig,
       actorLabel,
+      ...(input.roleArtifactPath !== undefined
+        ? { roleArtifactPath: input.roleArtifactPath }
+        : {}),
       ...(isOpencodeRecipient ? { isOpencodeRecipient } : {})
     });
   } else if (input.recipientRole === "reviewer") {
