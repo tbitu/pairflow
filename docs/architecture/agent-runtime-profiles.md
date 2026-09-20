@@ -91,10 +91,12 @@ the result has been persisted.
 - **Startup prompt delivery**: `shouldSubmitStartupPrompt` returns `true` for
   `tmux_paste` agents; the seed pastes the startup prompt text into the pane
   (instead of a bare Enter).
-- **Readiness** (`tmuxReasonixReadiness.ts`): process-alive descendant check
-  (`comm` matches `reasonix`) plus generic composer prompt-line heuristic
-  (`> ` / `❯`), and fail-closed on known startup errors ("session is in use by
-  another Reasonix", missing provider API key, "not a terminal").
+- **Readiness** (`tmuxReasonixReadiness.ts`): screen inspection is the primary ground
+  truth (generic composer prompt-line heuristic `> ` / `❯` / `›` rendered within ~1-2 seconds)
+  so readiness is never blocked by intermediate process wrappers (`npx reasonix code` wraps
+  through `npm exec reason` -> `sh` -> `node/MainThread` -> `reasonix`). Process-alive checks
+  match `reasonix`, `node`, `mainthread`, `npm`, `sh`. Fail-closed on known startup errors
+  ("session is in use by another Reasonix", missing provider API key, "not a terminal").
 - **Single-active-session constraint**: the reasonix interactive TUI refuses to
   start while another reasonix session is active machine-wide
   ("this session is in use by another Reasonix window or process"),

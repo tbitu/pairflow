@@ -5,7 +5,13 @@ import {
   sleep
 } from "./tmuxProcessProbe.js";
 
-const REASONIX_PROCESS_COMM_MATCHERS = ["reasonix"];
+const REASONIX_PROCESS_COMM_MATCHERS = [
+  "reasonix",
+  "node",
+  "mainthread",
+  "npm",
+  "sh"
+];
 
 /**
  * Known reasonix startup failures that should make readiness FAIL CLOSED
@@ -100,6 +106,19 @@ export async function waitForReasonixPaneReady(input: {
   const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
+    // 1. Primary ground truth: check the screen. If the TUI has rendered
+    // its prompt ('> ' or '❯') without a startup failure, the agent IS READY.
+    // This avoids blocking on process-tree descendant heuristics when reasonix
+    // is executed via npx/npm/node wrapper scripts.
+    const screenStatus = await checkReasonixPaneScreenReady(input.runner, input.targetPane);
+    if (screenStatus === "failed_startup") {
+      return false;
+    }
+    if (screenStatus === true) {
+      return true;
+    }
+
+    // 2. Fallback check: ensure pane process is alive and descendant of target pane.
     const processStatus = await checkPaneProcessAlive(
       input.runner,
       input.targetPane,
@@ -115,14 +134,6 @@ export async function waitForReasonixPaneReady(input: {
       continue;
     }
 
-    const screenStatus = await checkReasonixPaneScreenReady(input.runner, input.targetPane);
-    if (screenStatus === "failed_startup") {
-      return false;
-    }
-    if (screenStatus === true) {
-      return true;
-    }
-
     if (attempt < attempts - 1 && retryDelayMs > 0) {
       await sleepForDelayMs(retryDelayMs);
     }
@@ -130,3 +141,4 @@ export async function waitForReasonixPaneReady(input: {
 
   return false;
 }
+
