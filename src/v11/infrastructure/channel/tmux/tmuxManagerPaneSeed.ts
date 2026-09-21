@@ -99,7 +99,7 @@ async function submitStartupPrompt(input: {
   const ready = await waitForAgentPaneReady(input.agentName, {
     runner: input.runner,
     targetPane: input.targetPane,
-    attempts: 180,
+    attempts: 400,
     retryDelayMs: 300
   });
   if (!ready) {
@@ -245,7 +245,7 @@ async function sendPaneMessage(
   const ready = await waitForAgentPaneReady(agentName, {
     runner,
     targetPane,
-    attempts: 180,
+    attempts: 400,
     retryDelayMs: 300
   });
   if (!ready) {

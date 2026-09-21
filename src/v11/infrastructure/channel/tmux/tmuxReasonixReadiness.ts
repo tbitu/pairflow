@@ -40,6 +40,7 @@ const READY_TEXT_PATTERNS = [
   /^\s*>\s+\S/m,
   /^\s*❯/m,
   /^\s*›/m, // reasonix composer prompt (U+203A)
+  /context is kept across turns/i,
   /allow once/i,
   /ask question/i,
   /command palette/i,
@@ -79,7 +80,7 @@ async function checkReasonixPaneScreenReady(
   targetPane: string
 ): Promise<boolean | "failed_startup"> {
   const captureResult = await runner(
-    ["capture-pane", "-p", "-t", targetPane],
+    ["capture-pane", "-p", "-t", targetPane, "-S", "-50"],
     { allowFailure: true }
   );
   if (captureResult.exitCode === 0) {
@@ -101,7 +102,7 @@ export async function waitForReasonixPaneReady(input: {
   attempts?: number;
   retryDelayMs?: number;
 }): Promise<boolean> {
-  const attempts = Math.max(1, input.attempts ?? 100);
+  const attempts = Math.max(1, input.attempts ?? 400);
   const retryDelayMs = input.retryDelayMs ?? 300;
   const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
 

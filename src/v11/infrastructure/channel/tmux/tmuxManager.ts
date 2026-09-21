@@ -255,6 +255,9 @@ async function resolveHasSessionAckFailure(
   });
 }
 
+const DEFAULT_DETACHED_WINDOW_WIDTH = 150;
+const DEFAULT_DETACHED_WINDOW_HEIGHT = 72;
+
 async function launchAndSeedBubbleSession(
   config: LaunchBubbleSessionRuntimeConfig,
   input: LaunchBubbleSessionRuntimeInput
@@ -264,6 +267,10 @@ async function launchAndSeedBubbleSession(
     "-d",
     "-s",
     config.sessionName,
+    "-x",
+    String(DEFAULT_DETACHED_WINDOW_WIDTH),
+    "-y",
+    String(DEFAULT_DETACHED_WINDOW_HEIGHT),
     "-c",
     config.workspacePath,
     input.statusCommand
