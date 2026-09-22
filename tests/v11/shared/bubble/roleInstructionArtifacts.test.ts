@@ -11,6 +11,7 @@ import {
   roleReviewerArtifactFileName
 } from "../../../../src/v11/shared/bubble/roleInstructionArtifacts.js";
 import { getBubblePaths, getRoleInstructionArtifactPath } from "../../../../src/v11/shared/bubble/bubblePaths.js";
+import type { BubbleConfig } from "../../../../src/v11/shared/config/bubbleConfigTypes.js";
 
 describe("roleInstructionArtifacts", () => {
   it("resolves correct artifact file names for each role", () => {
@@ -85,6 +86,36 @@ describe("roleInstructionArtifacts", () => {
       );
       expect(metaReviewerContent).toContain("# Pairflow Meta-Reviewer Instructions");
       expect(metaReviewerContent).toContain("Minimal clean approve payload");
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("writes bubble-specific validation commands and resolved emit command when context is provided", async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), "pf-role-artifacts-ctx-test-"));
+    const artifactsDir = join(tempDir, "artifacts");
+
+    try {
+      const result = await ensureRoleInstructionArtifacts(artifactsDir, {
+        repoPath: "/repo/test",
+        bubbleId: "b_ctx_01",
+        bubbleConfig: {
+          commands: {
+            build: "dotnet build",
+            test: "dotnet test",
+            validation_required: ["build"]
+          }
+        } as unknown as BubbleConfig
+      });
+
+      const implementerContent = await readFile(
+        result.roleImplementerArtifactPath,
+        "utf8"
+      );
+      expect(implementerContent).toContain("## Configured Validation Commands");
+      expect(implementerContent).toContain("Required PASS validation commands: build: `dotnet build`.");
+      expect(implementerContent).toContain("## Resolved Handoff Command Template");
+      expect(implementerContent).toContain("pairflow agent emit --kind pass --repo /repo/test --bubble-id b_ctx_01");
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }

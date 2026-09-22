@@ -14,7 +14,7 @@ import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
 import {
   isAgentNameRegistered
 } from "../../../shared/agent/agentRuntimeProfiles.js";
-import type { TmuxRunner } from "./tmuxManager.js";
+import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
 
 export interface DeliverySessionContext {
   sessionName?: string;

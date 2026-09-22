@@ -22,6 +22,9 @@ import {
   META_REVIEWER_SUBMIT_DIRECTIVE,
   ROLE_KIND_LOCK_RULE
 } from "../role/prompts/sharedPromptDirectives.js";
+import { buildImplementerDeliveryValidationGuidance } from "../role/prompts/roleActionGuidance.js";
+import { buildResolvedImplementerEmitCommand } from "../role/prompts/resolvedEmitDirective.js";
+import type { BubbleConfig } from "../config/bubbleConfigTypes.js";
 
 /**
  * Repo-owned standing instructions for the per-role coding-agent definitions.
@@ -253,7 +256,39 @@ export function renderReasonixRoleAgentProfileFile(input: {
   });
 }
 
-export function renderRoleInstructionMarkdown(role: AgentRole): string {
+export interface RoleInstructionContext {
+  bubbleConfig?: BubbleConfig;
+  repoPath?: string;
+  bubbleId?: string;
+}
+
+function buildImplementerBubbleContextSection(context?: RoleInstructionContext): string[] {
+  if (context === undefined) {
+    return [];
+  }
+  const parts: string[] = [];
+  if (context.bubbleConfig?.commands !== undefined) {
+    const validationGuidance = buildImplementerDeliveryValidationGuidance(
+      context.bubbleConfig.commands
+    );
+    parts.push(`## Configured Validation Commands\n\n${validationGuidance}`);
+  }
+  const repoPath = context.repoPath ?? context.bubbleConfig?.repo_path;
+  const bubbleId = context.bubbleId ?? context.bubbleConfig?.id;
+  if (repoPath !== undefined && bubbleId !== undefined) {
+    const emitCommand = buildResolvedImplementerEmitCommand({
+      repoPath,
+      bubbleId
+    });
+    parts.push(`## Resolved Handoff Command Template\n\n${emitCommand}`);
+  }
+  return parts;
+}
+
+export function renderRoleInstructionMarkdown(
+  role: AgentRole,
+  context?: RoleInstructionContext
+): string {
   const definition = roleAgentDefinitions.find((entry) => entry.role === role);
   if (definition === undefined) {
     throw new Error(
@@ -266,9 +301,16 @@ export function renderRoleInstructionMarkdown(role: AgentRole): string {
       : role === "reviewer"
         ? "Reviewer"
         : "Implementer";
-  return [
+  const sections = [
     `# Pairflow ${title} Instructions`,
     "",
     buildRoleAgentStandingPromptBody(definition.name)
-  ].join("\n");
+  ];
+  if (role === "implementer") {
+    const contextLines = buildImplementerBubbleContextSection(context);
+    if (contextLines.length > 0) {
+      sections.push("", ...contextLines);
+    }
+  }
+  return sections.join("\n");
 }

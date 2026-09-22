@@ -74,7 +74,7 @@ describe("buildTmuxDeliveryMessage OVERFLOW_2 minimal formatting for opencode re
     expect(message).toContain("Action: Reviewer feedback received. Implement fixes.");
   });
 
-  it("includes role instructions pointer, validation guidance, and emit command when roleArtifactPath is provided", () => {
+  it("includes role instructions pointer without validation guidance or emit command when roleArtifactPath is provided", () => {
     const message = buildTmuxDeliveryMessage({
       envelope: createEnvelope(),
       messageRef: "artifact://handoff.md",
@@ -97,8 +97,8 @@ describe("buildTmuxDeliveryMessage OVERFLOW_2 minimal formatting for opencode re
 
     expect(message).toContain("Action: Reviewer feedback received. Implement fixes.");
     expect(message).toContain("Read role instructions now: artifacts/role-implementer.md.");
-    expect(message).toContain("Required PASS validation commands: build: `dotnet build`.");
-    expect(message).toContain("Resolved handoff command: `pairflow agent emit --kind pass");
+    expect(message).not.toContain("Required PASS validation commands:");
+    expect(message).not.toContain("Resolved handoff command:");
   });
 
   it("returns minimal implementer delivery action for opencode implementer recipient (TASK event)", () => {

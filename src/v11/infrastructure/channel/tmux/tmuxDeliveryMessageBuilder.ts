@@ -94,6 +94,42 @@ function toImplementerDeliveryEvent(
   }
 }
 
+function resolveImplementerMinimalIntro(
+  envelope: ProtocolEnvelope,
+  actorLabel: string | null
+): { text: string; terminal: boolean } {
+  const event = toImplementerDeliveryEvent(envelope.type);
+  switch (event) {
+    case "TASK":
+      return { text: "Implementation task received. Continue implementation.", terminal: false };
+    case "PASS":
+      return { text: "Reviewer feedback received. Implement fixes.", terminal: false };
+    case "HUMAN_REPLY":
+      return { text: "Human response received. Continue implementation using this input.", terminal: false };
+    case "APPROVAL_DECISION": {
+      if (envelope.type === "APPROVAL_DECISION" && envelope.payload.decision === "rework") {
+        const origin = resolveImplementerReworkOrigin(envelope);
+        const text = origin === "meta_review_auto_rework"
+          ? "Meta-review auto-rework received. Implement fixes."
+          : "Rework received. Implement fixes.";
+        return { text, terminal: false };
+      }
+      return {
+        text: "Human approved this bubble. Wait for commit/merge flow and do not continue new implementation in this round.",
+        terminal: true
+      };
+    }
+    case "APPROVAL_REQUEST": {
+      const text = actorLabel === "meta-reviewer"
+        ? "Meta-reviewer requested human gate decision. Stop coding and wait for human decision (`bubble approve` or `bubble request-rework`). Do not run canonical pass emit now."
+        : "Bubble is READY_FOR_HUMAN_APPROVAL. Stop coding and wait for human decision (`bubble approve` or `bubble request-rework`). Do not run canonical pass emit now.";
+      return { text, terminal: true };
+    }
+    default:
+      return { text: "Continue protocol from this event.", terminal: false };
+  }
+}
+
 function buildImplementerDeliveryAction(input: {
   envelope: ProtocolEnvelope;
   bubbleConfig: BubbleConfig;
@@ -102,78 +138,17 @@ function buildImplementerDeliveryAction(input: {
   isOpencodeRecipient?: boolean;
 }): string {
   // OVERFLOW_2: For minimal-guidance recipients (e.g. reasonix, opencode), return concise action text
-  // with role instructions pointer, validation guidance, and emit command without large prompt dumps.
+  // with role instructions pointer without large prompt dumps.
   if (input.isOpencodeRecipient) {
     const roleInstruction =
       input.roleArtifactPath !== undefined
         ? `Read role instructions now: ${input.roleArtifactPath}.`
         : "";
-    const event = toImplementerDeliveryEvent(input.envelope.type);
-    let intro = "Continue protocol from this event.";
-    let terminal = false;
-    switch (event) {
-      case "TASK":
-        intro = "Implementation task received. Continue implementation.";
-        break;
-      case "PASS":
-        intro = "Reviewer feedback received. Implement fixes.";
-        break;
-      case "HUMAN_REPLY":
-        intro = "Human response received. Continue implementation using this input.";
-        break;
-      case "APPROVAL_DECISION": {
-        if (input.envelope.type === "APPROVAL_DECISION" && input.envelope.payload.decision === "rework") {
-          const origin = resolveImplementerReworkOrigin(input.envelope);
-          intro = origin === "meta_review_auto_rework"
-            ? "Meta-review auto-rework received. Implement fixes."
-            : "Rework received. Implement fixes.";
-          break;
-        }
-        intro = "Human approved this bubble. Wait for commit/merge flow and do not continue new implementation in this round.";
-        terminal = true;
-        break;
-      }
-      case "APPROVAL_REQUEST": {
-        intro = input.actorLabel === "meta-reviewer"
-          ? "Meta-reviewer requested human gate decision. Stop coding and wait for human decision (`bubble approve` or `bubble request-rework`). Do not run canonical pass emit now."
-          : "Bubble is READY_FOR_HUMAN_APPROVAL. Stop coding and wait for human decision (`bubble approve` or `bubble request-rework`). Do not run canonical pass emit now.";
-        terminal = true;
-        break;
-      }
-      default:
-        intro = "Continue protocol from this event.";
-        break;
+    const intro = resolveImplementerMinimalIntro(input.envelope, input.actorLabel);
+    if (intro.terminal) {
+      return intro.text;
     }
-
-    if (terminal) {
-      return intro;
-    }
-
-    const validationGuidance = buildImplementerDeliveryValidationGuidance(
-      input.bubbleConfig.commands
-    );
-    const emitsPass =
-      event === "TASK"
-      || event === "PASS"
-      || event === "HUMAN_REPLY"
-      || (event === "APPROVAL_DECISION"
-        && input.envelope.type === "APPROVAL_DECISION"
-        && input.envelope.payload.decision === "rework");
-
-    const parts = [
-      intro,
-      ...(roleInstruction.length > 0 ? [roleInstruction] : []),
-      validationGuidance,
-      ...(emitsPass
-        ? [
-            buildResolvedImplementerEmitCommand({
-              repoPath: input.bubbleConfig.repo_path,
-              bubbleId: input.bubbleConfig.id
-            })
-          ]
-        : [])
-    ];
-    return parts.filter(p => p.length > 0).join(" ");
+    return [intro.text, roleInstruction].filter((p) => p.length > 0).join(" ");
   }
 
   const event = toImplementerDeliveryEvent(input.envelope.type);

@@ -2,11 +2,16 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
-import { renderRoleInstructionMarkdown } from "../agent/roleAgentStandingPrompts.js";
+import {
+  renderRoleInstructionMarkdown,
+  type RoleInstructionContext
+} from "../agent/roleAgentStandingPrompts.js";
 
 export const roleImplementerArtifactFileName = "role-implementer.md";
 export const roleReviewerArtifactFileName = "role-reviewer.md";
 export const roleMetaReviewerArtifactFileName = "role-meta-reviewer.md";
+
+export type RoleInstructionArtifactContext = RoleInstructionContext;
 
 export function getRoleInstructionArtifactFileName(role: AgentRole): string {
   switch (role) {
@@ -19,7 +24,10 @@ export function getRoleInstructionArtifactFileName(role: AgentRole): string {
   }
 }
 
-export async function ensureRoleInstructionArtifacts(artifactsDir: string): Promise<{
+export async function ensureRoleInstructionArtifacts(
+  artifactsDir: string,
+  context?: RoleInstructionArtifactContext
+): Promise<{
   roleImplementerArtifactPath: string;
   roleReviewerArtifactPath: string;
   roleMetaReviewerArtifactPath: string;
@@ -30,9 +38,9 @@ export async function ensureRoleInstructionArtifacts(artifactsDir: string): Prom
   const metaReviewerPath = join(artifactsDir, roleMetaReviewerArtifactFileName);
 
   await Promise.all([
-    writeFile(implementerPath, `${renderRoleInstructionMarkdown("implementer")}\n`, "utf8"),
-    writeFile(reviewerPath, `${renderRoleInstructionMarkdown("reviewer")}\n`, "utf8"),
-    writeFile(metaReviewerPath, `${renderRoleInstructionMarkdown("meta_reviewer")}\n`, "utf8")
+    writeFile(implementerPath, `${renderRoleInstructionMarkdown("implementer", context)}\n`, "utf8"),
+    writeFile(reviewerPath, `${renderRoleInstructionMarkdown("reviewer", context)}\n`, "utf8"),
+    writeFile(metaReviewerPath, `${renderRoleInstructionMarkdown("meta_reviewer", context)}\n`, "utf8")
   ]);
 
   return {

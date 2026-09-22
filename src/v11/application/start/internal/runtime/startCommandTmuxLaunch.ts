@@ -130,7 +130,12 @@ export async function launchFreshTmuxSession(input: {
       implementerAgent
     });
   await ensureRoleInstructionArtifacts(
-    input.context.resolved.bubblePaths.artifactsDir
+    input.context.resolved.bubblePaths.artifactsDir,
+    {
+      bubbleConfig: input.context.resolved.bubbleConfig,
+      repoPath: input.context.resolved.bubbleConfig.repo_path,
+      bubbleId: input.context.resolved.bubbleId
+    }
   );
   // Agents that cannot run concurrent panes (reasonix enforces a machine-wide
   // single active interactive session) launch only the initially active
@@ -193,10 +198,8 @@ export async function launchFreshTmuxSession(input: {
             input.launchWorkspacePath,
             input.context.resolved.bubblePaths.taskArtifactPath
           ),
-          roleArtifactPath: relative(
-            input.launchWorkspacePath,
-            input.context.resolved.bubblePaths.roleImplementerArtifactPath
-          ),
+          roleArtifactPath:
+            input.context.resolved.bubblePaths.roleImplementerArtifactPath,
           reviewArtifactType: input.context.resolved.bubbleConfig.review_artifact_type,
           pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
           validationCommands: input.context.resolved.bubbleConfig.commands,
@@ -225,7 +228,12 @@ export async function launchResumeTmuxSession(input: {
   const externalPairflowCommand =
     input.context.remoteStartContext?.externalPairflowCommand;
   await ensureRoleInstructionArtifacts(
-    input.context.resolved.bubblePaths.artifactsDir
+    input.context.resolved.bubblePaths.artifactsDir,
+    {
+      bubbleConfig: input.context.resolved.bubbleConfig,
+      repoPath: input.context.resolved.bubbleConfig.repo_path,
+      bubbleId: input.context.resolved.bubbleId
+    }
   );
   const remoteWorkspaceAuthority = resolveRemoteWorkspaceAuthority(input.context);
   const metaReviewerAgent = input.context.resolved.bubbleConfig.agents.meta_reviewer;

@@ -149,7 +149,11 @@ export async function persistCreatedBubbleArtifacts(
     encoding: "utf8",
     flag: "wx"
   });
-  await ensureRoleInstructionArtifacts(input.paths.artifactsDir);
+  await ensureRoleInstructionArtifacts(input.paths.artifactsDir, {
+    bubbleConfig: input.config,
+    repoPath: input.paths.repoPath,
+    bubbleId: input.bubbleId
+  });
 
   let reviewerFocusArtifactWriteStatus: "written" | "write_failed" = "written";
   let reviewerFocusArtifactWriteErrorCode: string | undefined;

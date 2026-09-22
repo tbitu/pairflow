@@ -1,5 +1,3 @@
-import { relative } from "node:path";
-
 import { readRuntimeSessionsRegistry } from "../../executor/sessionRuntime/runtimeSessionsRegistry.js";
 import { getBubblePaths } from "../../../shared/bubble/bubblePaths.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../config/defaults.js";
@@ -149,11 +147,11 @@ function createDeliveryMessage(input: {
       runtimeInput.bubbleId
     );
     if (targetResolution.recipientRole === "implementer") {
-      roleArtifactPath = relative(workspacePath, bubblePaths.roleImplementerArtifactPath);
+      roleArtifactPath = bubblePaths.roleImplementerArtifactPath;
     } else if (targetResolution.recipientRole === "reviewer") {
-      roleArtifactPath = relative(workspacePath, bubblePaths.roleReviewerArtifactPath);
+      roleArtifactPath = bubblePaths.roleReviewerArtifactPath;
     } else if (targetResolution.recipientRole === "meta-reviewer") {
-      roleArtifactPath = relative(workspacePath, bubblePaths.roleMetaReviewerArtifactPath);
+      roleArtifactPath = bubblePaths.roleMetaReviewerArtifactPath;
     }
   }
   return {
@@ -182,25 +180,13 @@ function resolveExpectedPaneAgentForRecipient(input: {
   recipientRole: ReturnType<typeof resolveEnvelopeRecipientRole>;
   bubbleConfig: EmitDeliveryNotificationRuntimeInput["bubbleConfig"];
 }): AgentName | undefined {
-  switch (input.recipientRole) {
-    case "implementer":
-      return resolveConfiguredAgentForRole({
+  const role = resolveRecipientRoleToAgentRole(input.recipientRole);
+  return role !== undefined
+    ? resolveConfiguredAgentForRole({
         agents: input.bubbleConfig.agents,
-        role: "implementer"
-      });
-    case "reviewer":
-      return resolveConfiguredAgentForRole({
-        agents: input.bubbleConfig.agents,
-        role: "reviewer"
-      });
-    case "meta-reviewer":
-      return resolveConfiguredAgentForRole({
-        agents: input.bubbleConfig.agents,
-        role: "meta_reviewer"
-      });
-    default:
-      return undefined;
-  }
+        role
+      })
+    : undefined;
 }
 
 function resolveRecipientRoleToAgentRole(
@@ -277,7 +263,11 @@ export async function emitDeliveryNotificationAck(
       input.bubbleConfig.repo_path,
       input.bubbleId
     );
-    await ensureRoleInstructionArtifacts(bubblePaths.artifactsDir);
+    await ensureRoleInstructionArtifacts(bubblePaths.artifactsDir, {
+      bubbleConfig: input.bubbleConfig,
+      repoPath: input.bubbleConfig.repo_path,
+      bubbleId: input.bubbleId
+    });
   }
 
   const { message: workspaceMessage, targetResolution } = createDeliveryMessage({
