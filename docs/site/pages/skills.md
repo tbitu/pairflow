@@ -23,13 +23,12 @@ Supported parameters include:
 - `--target-dir .opencode` (default)
 - `--target-dir .reasonix`
 - `--link-other`
-- `--role-agents`
 - `--dry-run --json`
 - `--force`
 
 The command copies from repo-local `.opencode/skills/**` (a thin pointer tree mirroring the editable `.claude/skills/**` source) or from package-local `.claude/skills/**` into global `~/.opencode/skills` or `~/.reasonix/skills`. Global copies are derived artifacts, not editable source.
 
-`--link-other` additionally symlinks the selected skills into every other agent directory the installer knows (`.claude`, `.codex`, `.copilot`, `.gemini`, `.reasonix`), excluding the primary target. `.opencode` is not one of those link destinations, so it must be the `--target-dir` when opencode needs global coverage: `--target-dir .opencode --link-other` covers both opencode (`~/.opencode/skills`) and reasonix (`~/.reasonix/skills`) in one command. `~/.agents/skills` is not an install destination at all — it is only written by `--role-agents`, which deploys the repo-owned `PF-*` role definitions.
+`--link-other` additionally symlinks the selected skills into every other agent directory the installer knows (`.claude`, `.codex`, `.copilot`, `.gemini`, `.reasonix`), excluding the primary target. `.opencode` is not one of those link destinations, so it must be the `--target-dir` when opencode needs global coverage: `--target-dir .opencode --link-other` covers both opencode (`~/.opencode/skills`) and reasonix (`~/.reasonix/skills`) in one command.
 
 ## Policy reference
 

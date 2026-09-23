@@ -46,14 +46,8 @@ function isReviewerRole(role: AgentRole): role is "reviewer" {
 
 /**
  * Compose the role-identity prompt for agents that receive their role context
- * through the TUI (startupPromptDelivery === "tmux_paste", i.e. reasonix)
- * rather than via a CLI `--agent <profile>` flag (opencode).
- *
- * opencode's `--agent PF-implementer|PF-reviewer|PF-meta-reviewer` injects the
- * role's standing instructions at launch. reasonix has no such flag, so the
- * same role concern lines are delivered as the startup prompt pasted into the
- * TUI. This keeps the role text (constant, role-only) separate from per-task
- * guidance, which pairflow continues to deliver as a later kickoff paste.
+ * through the TUI (startupPromptDelivery === "tmux_paste") rather than via
+ * file-based role instructions.
  *
  * Returns undefined when there is nothing to paste (not a tmux_paste agent, or
  * no role lines were produced).

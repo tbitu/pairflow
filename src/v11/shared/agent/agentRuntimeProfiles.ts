@@ -15,16 +15,11 @@ import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
  *
  * All agents follow a two-message delivery model:
  *
- * 1. **Standing Instructions (Role Context)** — Delivered once per actual process activation:
- *    - opencode: via CLI `--agent PF-<role>` flag at process launch
- *    - reasonix (tmux_paste): exactly one startup prompt paste (only when a startup
- *      prompt exists), then the pane awaits work guidance
- *    - Effect: Sets the agent's role identity and standing behavioral rules
+ * 1. **Standing Instructions (Role Context)** — Delivered via file-based role
+ *    instruction artifacts (`role-<role>.md`) in the bubble workspace.
  *
- * 2. **Work Guidance (Task/Run Context)** — Delivered once per role activation, separately:
- *    - opencode: as a tmux paste after launch (skipped if no guidance needed)
- *    - reasonix: as a separate second tmux paste after the role startup prompt
- *    - Effect: Provides task artifact path, state context, and per-run instructions
+ * 2. **Work Guidance (Task/Run Context)** — Delivered once per role activation, via tmux paste.
+ *    Effect: Provides task artifact path, state context, and per-run instructions.
  *
  * **Watchdog Nudges** — Recovery-only, not part of normal delivery:
  *    - Delivered only by the watchdog mechanism after grace/readiness criteria
@@ -76,8 +71,9 @@ export interface AgentRuntimeProfile {
    * How standing instructions (role identity + behavioral rules) reach the agent
    * at process activation or role resume.
    *
-   * - "cli_arg": delivered via CLI launch flags (opencode `--agent PF-<role>`)
-   * - "tmux_paste": delivered as a single pasted message into the active TUI (reasonix)
+   * - "cli_arg": delivered via CLI launch flags (opencode `--prompt`)
+   * - "none": standing instructions are delivered via file-based role instruction artifacts
+   * - "tmux_paste": delivered as a single pasted message into the active TUI
    *
    * Note: this EXCLUDES work guidance, which is delivered separately after activation.
    */
@@ -85,10 +81,6 @@ export interface AgentRuntimeProfile {
   /**
    * Whether work guidance (task artifact path, bubble state, per-run instructions)
    * can be delivered in full detail, or must be kept minimal to avoid overflow.
-   *
-   * opencode receives standing instructions via CLI args, so a long pasted work
-   * guidance would be redundant/overwhelming; reasonix has no CLI args and needs
-   * the work guidance via tmux paste. Both receive short per-task kickoffs.
    */
   minimalPastedGuidance: boolean;
   /** How the CLI interrupts the agent's turn after `pairflow agent emit`. */

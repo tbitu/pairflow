@@ -1,6 +1,6 @@
 ---
 description: Install or update Pairflow skills into global ~/.opencode/skills
-argument-hint: [--skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan[,<name>...]] [--target-dir .opencode|.reasonix] [--link-other] [--role-agents] [--force] [--dry-run] [--json]
+argument-hint: [--skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan[,<name>...]] [--target-dir .opencode|.reasonix] [--link-other] [--force] [--dry-run] [--json]
 allowed-tools: Bash
 ---
 
@@ -21,7 +21,6 @@ Use this workflow document as the source-policy reference and fallback manual pr
 SKILLS_ARG: extracted from `--skills`, default `all`
 TARGET_DIR_NAME: extracted from `--target-dir`, default `.opencode`
 LINK_OTHER: extracted from `--link-other`, default `false`
-ROLE_AGENTS: extracted from `--role-agents`, default `false`
 FORCE: extracted from `--force`, default `false`
 DRY_RUN: extracted from `--dry-run`, default `false`
 JSON: extracted from `--json`, default `false`
@@ -42,19 +41,10 @@ SUPPORTED_SKILLS:
      external auto-load roots `~/.claude/skills` and `~/.agents/skills`.
    - reasonix reads project `.reasonix/skills`, global `~/.reasonix/skills`, and
      convention roots including `~/.agents/skills`.
-   - `~/.agents/skills` is the one root both agents auto-load, but it is NOT an
-     install destination: `--target-dir` accepts only `.opencode` and
-     `.reasonix`, and `--link-other` does not link into `.agents`. Only
-     `--role-agents` writes there (the `PF-*` role definitions).
 - **Availability is not usage.** Both agents surface only name + description and
   load the body on demand, so a missing/stale `description` silently disables a
-  skill. Verify with `opencode debug skill` (resolved list + source paths),
-  `opencode debug agent PF-<role>`, and `reasonix subagent list`.
-- `--role-agents` also syncs the repo-owned `PF-implementer|PF-reviewer|PF-meta-reviewer`
-  definitions to `$HOME/.config/opencode/agent/PF-<role>.md` and
-  `$HOME/.agents/skills/PF-<role>/SKILL.md`. Frontmatter keys Pairflow does not own
-  (for example `model`) are preserved. An inline `agent.PF-*` prompt in
-  `~/.config/opencode/opencode.jsonc` is reported as a conflict and never rewritten.
+  skill. Verify with `opencode debug skill` (resolved list + source paths) and
+  `reasonix subagent list`.
 - In-repo, `.opencode/skills/**` is a thin pointer tree (relative symlinks to
   `../../.claude/skills/<name>`); the installer follows those links and installs real content.
 - Install destination format:

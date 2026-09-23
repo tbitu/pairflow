@@ -27,55 +27,9 @@ import { buildResolvedImplementerEmitCommand } from "../role/prompts/resolvedEmi
 import type { BubbleConfig } from "../config/bubbleConfigTypes.js";
 
 /**
- * Repo-owned standing instructions for the per-role coding-agent definitions.
- *
- * The loop agents receive role identity from their own agent runtime, not from
- * Pairflow's pasted prompts:
- *
- * - opencode resolves `--agent PF-<role>` from its `agent` config block or from
- *   `<config>/agent(s)/PF-<role>.md` files;
- * - reasonix reads `PF-<role>` profiles from its skill/subagent roots.
- *
- * Those definitions previously lived only outside this repository, so Pairflow's
- * runtime guidance and the agents' standing instructions could drift apart (the
- * opencode meta-reviewer prompt did not mention `--report-json` at all). These
- * builders compose the SAME shared rule constants that the pasted prompts use,
- * so one edit updates every surface.
+ * Role instruction generator for file-based role instruction artifacts
+ * (`role-implementer.md`, `role-reviewer.md`, `role-meta-reviewer.md`).
  */
-export const roleAgentNames = [
-  "PF-implementer",
-  "PF-reviewer",
-  "PF-meta-reviewer"
-] as const;
-
-export type RoleAgentName = (typeof roleAgentNames)[number];
-
-export interface RoleAgentDefinition {
-  name: RoleAgentName;
-  role: AgentRole;
-  description: string;
-}
-
-export const roleAgentDefinitions = [
-  {
-    name: "PF-implementer",
-    role: "implementer",
-    description:
-      "Pairflow Implementer: implement the requested changes in small verifiable increments and emit the canonical handoff."
-  },
-  {
-    name: "PF-reviewer",
-    role: "reviewer",
-    description:
-      "Pairflow Reviewer: review the implementation against the Pairflow severity ontology and emit the canonical handoff or convergence."
-  },
-  {
-    name: "PF-meta-reviewer",
-    role: "meta_reviewer",
-    description:
-      "Pairflow Meta-Reviewer: meta-review converged changes and submit rework, approve, or inconclusive via --kind meta_review_result."
-  }
-] as const satisfies readonly RoleAgentDefinition[];
 
 export const roleAgentRecipePointer = [
   `Full recipes and the failure-signature to fix table: ${emitRecipeLocationLine}.`,
@@ -152,108 +106,11 @@ function buildRoleSpecificStandingLines(role: AgentRole): string[] {
   }
 }
 
-export function buildRoleAgentStandingPromptBody(name: RoleAgentName): string {
-  const definition = roleAgentDefinitions.find((entry) => entry.name === name);
-  if (definition === undefined) {
-    throw new Error(
-      `ROLE_AGENT_UNKNOWN: context=role_agent_standing_prompt name=${name}.`
-    );
-  }
+export function buildRoleStandingPromptBody(role: AgentRole): string {
   return [
-    ...buildCommonStandingLines(definition.role),
-    ...buildRoleSpecificStandingLines(definition.role)
+    ...buildCommonStandingLines(role),
+    ...buildRoleSpecificStandingLines(role)
   ].join("\n\n");
-}
-
-function parseFrontmatter(content: string | null): {
-  frontmatter: Record<string, string>;
-  body: string;
-} {
-  if (content === null || !content.startsWith("---\n")) {
-    return { frontmatter: {}, body: content ?? "" };
-  }
-  const endIndex = content.indexOf("\n---\n", 3);
-  if (endIndex === -1) {
-    return { frontmatter: {}, body: content };
-  }
-  const frontmatter: Record<string, string> = {};
-  for (const line of content.slice(4, endIndex).split("\n")) {
-    const separator = line.indexOf(":");
-    if (separator <= 0) {
-      continue;
-    }
-    const key = line.slice(0, separator).trim();
-    const rawValue = line.slice(separator + 1).trim();
-    if (key.length > 0) {
-      frontmatter[key] = rawValue.replace(/^'(.*)'$/u, "$1").replace(/^"(.*)"$/u, "$1");
-    }
-  }
-  return { frontmatter, body: content.slice(endIndex + 5) };
-}
-
-function formatFrontmatterValue(value: string): string {
-  return /^[A-Za-z0-9_.\-/]+$/u.test(value) ? value : `'${value.replaceAll("'", "''")}'`;
-}
-
-/**
- * Render a managed agent definition, preserving frontmatter keys that Pairflow
- * does not own (notably the operator's `model` selection) so a refresh cannot
- * silently drop local runtime configuration.
- */
-function renderManagedAgentFile(input: {
-  existingContent: string | null;
-  managedFrontmatter: Record<string, string>;
-  body: string;
-}): string {
-  const existing = parseFrontmatter(input.existingContent);
-  const preservedEntries = Object.entries(existing.frontmatter).filter(
-    ([key]) => !(key in input.managedFrontmatter)
-  );
-  const frontmatterLines = [
-    ...Object.entries(input.managedFrontmatter),
-    ...preservedEntries
-  ].map(([key, value]) => `${key}: ${formatFrontmatterValue(value)}`);
-  return `---\n${frontmatterLines.join("\n")}\n---\n${input.body}\n`;
-}
-
-export function renderOpencodeRoleAgentFile(input: {
-  name: RoleAgentName;
-  existingContent?: string | null;
-}): string {
-  const definition = roleAgentDefinitions.find((entry) => entry.name === input.name);
-  if (definition === undefined) {
-    throw new Error(
-      `ROLE_AGENT_UNKNOWN: context=opencode_role_agent_file name=${input.name}.`
-    );
-  }
-  return renderManagedAgentFile({
-    existingContent: input.existingContent ?? null,
-    managedFrontmatter: { description: definition.description },
-    body: buildRoleAgentStandingPromptBody(input.name)
-  });
-}
-
-export function renderReasonixRoleAgentProfileFile(input: {
-  name: RoleAgentName;
-  existingContent?: string | null;
-}): string {
-  const definition = roleAgentDefinitions.find((entry) => entry.name === input.name);
-  if (definition === undefined) {
-    throw new Error(
-      `ROLE_AGENT_UNKNOWN: context=reasonix_role_agent_file name=${input.name}.`
-    );
-  }
-  return renderManagedAgentFile({
-    existingContent: input.existingContent ?? null,
-    managedFrontmatter: {
-      name: definition.name,
-      description: definition.description,
-      invocation: "manual",
-      runAs: "subagent",
-      todos: "false"
-    },
-    body: buildRoleAgentStandingPromptBody(input.name)
-  });
 }
 
 export interface RoleInstructionContext {
@@ -289,12 +146,6 @@ export function renderRoleInstructionMarkdown(
   role: AgentRole,
   context?: RoleInstructionContext
 ): string {
-  const definition = roleAgentDefinitions.find((entry) => entry.role === role);
-  if (definition === undefined) {
-    throw new Error(
-      `ROLE_AGENT_UNKNOWN: context=role_instruction_markdown role=${role}.`
-    );
-  }
   const title =
     role === "meta_reviewer"
       ? "Meta-Reviewer"
@@ -304,7 +155,7 @@ export function renderRoleInstructionMarkdown(
   const sections = [
     `# Pairflow ${title} Instructions`,
     "",
-    buildRoleAgentStandingPromptBody(definition.name)
+    buildRoleStandingPromptBody(role)
   ];
   if (role === "implementer") {
     const contextLines = buildImplementerBubbleContextSection(context);

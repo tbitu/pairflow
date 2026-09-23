@@ -94,7 +94,7 @@ describe("emitFailureGuidance", () => {
     expect(emitRecipeLocationLine).toContain("~/.opencode/skills");
     expect(emitRecipeLocationLine).toContain("~/.claude/skills");
     expect(emitRecipeLocationLine).toContain("~/.gemini/config/skills");
-    // `~/.agents/skills` only ever receives `PF-*` role definitions, so the
+    // `~/.agents/skills` is not an install destination, so the
     // recipe is not resolvable from there.
     expect(emitRecipeLocationLine).not.toContain("~/.agents/skills");
   });

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildAgentCommand } from "../../../src/v11/shared/command/agentCommand.js";
 
 describe("buildAgentCommand for opencode", () => {
-  it("includes startup prompt with --prompt option for opencode", () => {
+  it("includes startup prompt with --prompt option for opencode without --agent PF-* flags", () => {
     const cmd = buildAgentCommand({
       agentName: "opencode",
       roleName: "meta_reviewer",
@@ -12,26 +12,26 @@ describe("buildAgentCommand for opencode", () => {
     });
 
     expect(cmd).toContain("opencode");
-    expect(cmd).toContain("--agent");
-    expect(cmd).toContain("PF-meta-reviewer");
+    expect(cmd).not.toContain("--agent");
+    expect(cmd).not.toContain("PF-meta-reviewer");
     expect(cmd).toContain("--prompt");
     expect(cmd).toContain("Test startup prompt");
   });
 
-  it("includes startup prompt with --prompt option for implementer role as well", () => {
+  it("passes model through with --model option without --agent PF-* flags", () => {
     const cmd = buildAgentCommand({
       agentName: "opencode",
       roleName: "implementer",
       bubbleId: "b_opencode_test_02",
       workspacePath: "/tmp/worktree/opencode-test",
-      startupPrompt: "Implement task details"
+      model: "lmstudio/pairflow-reviewer"
     });
 
     expect(cmd).toContain("opencode");
-    expect(cmd).toContain("--agent");
-    expect(cmd).toContain("PF-implementer");
-    expect(cmd).toContain("--prompt");
-    expect(cmd).toContain("Implement task details");
+    expect(cmd).not.toContain("--agent");
+    expect(cmd).not.toContain("PF-implementer");
+    expect(cmd).toContain("--model");
+    expect(cmd).toContain("lmstudio/pairflow-reviewer");
   });
 });
 

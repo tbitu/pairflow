@@ -198,12 +198,11 @@ Useful options:
 
 - `--skills all|UsePairflow|CreatePairflowSpec|ExecutePairflowPlan`
 - `--target-dir .opencode|.reasonix`
-- `--role-agents` to also sync the repo-owned `PF-implementer|PF-reviewer|PF-meta-reviewer` role definitions
 - `--link-other` for optional cross-agent per-skill symlinks
 - `--dry-run --json` to preview without writes
 - `--force` to replace unsafe existing selected managed paths
 
-This installs or refreshes selected skills under `~/.opencode/skills/` (default) or `~/.reasonix/skills/`. Source files come from the Pairflow checkout or installed package `.claude/skills/**` (the repo-local `.opencode/skills/**` pointer tree mirrors the same source for opencode's project-local discovery); global skill directories are derived targets, not source. opencode also auto-loads the `~/.claude/skills` and `~/.agents/skills` convention roots, and reasonix its `~/.reasonix/skills` root. `--link-other` symlinks into every other agent directory it knows (`.claude`, `.codex`, `.copilot`, `.gemini`, `.reasonix`) but not into `.opencode`, so use `.opencode` as the `--target-dir` when opencode itself needs global coverage; `~/.agents/skills` is written only by `--role-agents`.
+This installs or refreshes selected skills under `~/.opencode/skills/` (default) or `~/.reasonix/skills/`. Source files come from the Pairflow checkout or installed package `.claude/skills/**` (the repo-local `.opencode/skills/**` pointer tree mirrors the same source for opencode's project-local discovery); global skill directories are derived targets, not source. opencode also auto-loads the `~/.claude/skills` and `~/.agents/skills` convention roots, and reasonix its `~/.reasonix/skills` root. `--link-other` symlinks into every other agent directory it knows (`.claude`, `.codex`, `.copilot`, `.gemini`, `.reasonix`) but not into `.opencode`, so use `.opencode` as the `--target-dir` when opencode itself needs global coverage.
 
 The policy reference and fallback manual workflow live at `.claude/skills/INSTALL.md`.
 

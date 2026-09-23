@@ -49,15 +49,6 @@ function buildAgentLaunchArgs(input: {
   const hasStartupPrompt = (input.startupPrompt?.trim().length ?? 0) > 0;
 
   if (profile.startupPromptDelivery === "cli_arg") {
-    // AC1: Map opencode to PF-implementer, PF-reviewer, or PF-meta-reviewer agent identity.
-    if (input.roleName === "implementer") {
-      args.push("--agent", "PF-implementer");
-    } else if (input.roleName === "reviewer") {
-      args.push("--agent", "PF-reviewer");
-    } else if (input.roleName === "meta_reviewer") {
-      args.push("--agent", "PF-meta-reviewer");
-    }
-
     if ((input.model?.trim().length ?? 0) > 0) {
       args.push("--model", trimAndStripTrailingSlashes(input.model as string));
     }
@@ -66,9 +57,8 @@ function buildAgentLaunchArgs(input: {
       args.push("--prompt", input.startupPrompt as string);
     }
   } else {
-    // reasonix: code-mode TUI pinned to the workspace. There is no --agent or
-    // --prompt flag; role identity and startup prompt are delivered through
-    // tmux paste by the delivery layer.
+    // reasonix: code-mode TUI pinned to the workspace. Role identity is
+    // delivered via file-based role instructions in the workspace artifacts.
     args.push("code", "--dir", input.workspacePath);
 
     if ((input.model?.trim().length ?? 0) > 0) {

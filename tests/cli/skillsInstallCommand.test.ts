@@ -644,8 +644,7 @@ describe("skills install command execution", () => {
           targetDir: ".opencode",
           linkOther: false,
           force: true,
-          dryRun: false,
-          roleAgents: false
+          dryRun: false
         },
         {
           homeDir,
@@ -676,86 +675,6 @@ describe("skills install command execution", () => {
         sourceRootCandidates: [sourceRoot]
       })
     ).rejects.toThrow("source files were not found");
-  });
-
-  it("plans role-agent sync for both agent dialects without writing on --dry-run", async () => {
-    const { sourceRoot, homeDir } = await setupSourceAndHome();
-    await mkdir(join(homeDir, ".config", "opencode"), { recursive: true });
-    await writeFile(
-      join(homeDir, ".config", "opencode", "opencode.jsonc"),
-      '{ "agent": { "PF-reviewer": { "prompt": "inline" } } }\n',
-      "utf8"
-    );
-
-    const plan = await runSkillsInstallCommand(
-      ["--skills", "UsePairflow", "--role-agents", "--dry-run", "--json"],
-      { homeDir, sourceRootCandidates: [sourceRoot] }
-    );
-
-    expect(plan?.roleAgents).toBe(true);
-    const roleAgentOps = plan!.operations.filter(
-      (operation) => operation.kind === "sync_role_agent"
-    );
-    expect(roleAgentOps).toHaveLength(6);
-    const destinations = roleAgentOps.map((operation) =>
-      operation.kind === "sync_role_agent" ? operation.destination : ""
-    );
-    expect(destinations).toContain(
-      join(homeDir, ".config", "opencode", "agent", "PF-implementer.md")
-    );
-    expect(destinations).toContain(
-      join(homeDir, ".agents", "skills", "PF-meta-reviewer", "SKILL.md")
-    );
-    expect(plan?.roleAgentConflicts).toEqual([
-      {
-        name: "PF-reviewer",
-        path: join(homeDir, ".config", "opencode", "opencode.jsonc"),
-        reason: "inline_agent_prompt"
-      }
-    ]);
-    // Dry run must not create the agent homes.
-    await expect(
-      lstat(join(homeDir, ".config", "opencode", "agent"))
-    ).rejects.toMatchObject({ code: "ENOENT" });
-    await expect(lstat(join(homeDir, ".agents"))).rejects.toMatchObject({
-      code: "ENOENT"
-    });
-  });
-
-  it("writes role-agent definitions and preserves unmanaged frontmatter keys", async () => {
-    const { sourceRoot, homeDir } = await setupSourceAndHome();
-    const opencodeAgentPath = join(
-      homeDir,
-      ".config",
-      "opencode",
-      "agent",
-      "PF-reviewer.md"
-    );
-    await mkdir(join(homeDir, ".config", "opencode", "agent"), {
-      recursive: true
-    });
-    await writeFile(
-      opencodeAgentPath,
-      "---\ndescription: SENTINEL_OLD\nmodel: lmstudio/pairflow-reviewer\n---\nOLD BODY\n",
-      "utf8"
-    );
-
-    await runSkillsInstallCommand(
-      ["--skills", "UsePairflow", "--role-agents"],
-      { homeDir, sourceRootCandidates: [sourceRoot] }
-    );
-
-    const opencodeAgent = await readFile(opencodeAgentPath, "utf8");
-    expect(opencodeAgent).toContain("model: lmstudio/pairflow-reviewer");
-    expect(opencodeAgent).not.toContain("SENTINEL_OLD");
-    expect(opencodeAgent).toContain("Authority values are machine-minted");
-
-    const reasonixProfile = await readFile(
-      join(homeDir, ".agents", "skills", "PF-meta-reviewer", "SKILL.md"),
-      "utf8"
-    );
-    expect(reasonixProfile).toContain("runAs: subagent");
-    expect(reasonixProfile).toContain("findings_claim_state");
   });
 
   it("installs from a symlinked skill source root with real content", async () => {

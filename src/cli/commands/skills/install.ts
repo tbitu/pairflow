@@ -105,7 +105,6 @@ export function parseSkillsInstallCommandOptions(
   let skills: PairflowSkillName[] = [...supportedPairflowSkillNames];
   let targetDir: SkillInstallTargetDir = ".opencode";
   let linkOther = false;
-  let roleAgents = false;
   let dryRun = false;
   let force = false;
   let json = false;
@@ -153,24 +152,6 @@ export function parseSkillsInstallCommandOptions(
       linkOther = value === "true";
       continue;
     }
-    if (arg === "--role-agents") {
-      const parsed = readBooleanOption(args, index, "--role-agents");
-      roleAgents = parsed.value;
-      if (parsed.consumedValue) {
-        index += 1;
-      }
-      continue;
-    }
-    if (arg?.startsWith("--role-agents=")) {
-      const value = arg.slice("--role-agents=".length);
-      if (value !== "true" && value !== "false") {
-        throw new SkillsInstallError(
-          `Invalid boolean value for --role-agents: ${value}`
-        );
-      }
-      roleAgents = value === "true";
-      continue;
-    }
     if (arg === "--dry-run") {
       dryRun = true;
       continue;
@@ -191,7 +172,6 @@ export function parseSkillsInstallCommandOptions(
     skills,
     targetDir,
     linkOther,
-    roleAgents,
     dryRun,
     force,
     json
@@ -241,11 +221,6 @@ export function getSkillsInstallHelpText(): string {
     "      Link selected skills into all other agent directories (.claude, .codex, .copilot, .gemini, .reasonix). Default: false",
     "  --force",
     "      Replace unsafe existing selected managed paths.",
-    "  --role-agents [true|false]",
-    "      Also sync the repo-owned PF-implementer/PF-reviewer/PF-meta-reviewer role",
-    "      definitions ($HOME/.config/opencode/agent/PF-*.md and",
-    "      $HOME/.agents/skills/PF-*/SKILL.md). Existing frontmatter keys that",
-    "      Pairflow does not own (for example model) are preserved. Default: false",
     "  --dry-run",
     "      Plan operations without writing files.",
     "  --json",
@@ -272,14 +247,6 @@ export function renderSkillsInstallText(plan: SkillsInstallPlan): string {
     `- Force: ${String(plan.force)}`,
     `- Link to other agent dir: ${String(plan.linkOther)}`,
     `- Other root: ${plan.otherRoot ?? "n/a"}`,
-    `- Role agents: ${String(plan.roleAgents)}`,
-    ...(plan.roleAgentConflicts.length === 0
-      ? []
-      : [
-          `- Role agent conflicts (reported, never rewritten): ${plan.roleAgentConflicts
-            .map((conflict) => `${conflict.name} inline in ${conflict.path}`)
-            .join(", ")}`
-        ]),
     `- Status: ${formatStatus(plan.status)}`
   ].join("\n");
 }

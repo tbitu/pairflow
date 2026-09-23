@@ -98,9 +98,8 @@ export const DOC_BUBBLE_MODE_B_CHECKS_SUFFIX =
 /**
  * Authority rule, role-level (no bubble id / no resolved command).
  *
- * Shared verbatim by the per-handoff lookup guidance and the standing role-agent
- * prompts (opencode `PF-*` agent definitions, reasonix subagent profiles) so the
- * two surfaces cannot drift.
+ * Shared verbatim by the per-handoff lookup guidance and the standing role-instruction
+ * artifacts (`role-*.md`) so the two surfaces cannot drift.
  */
 export const AUTHORITY_MACHINE_MINTED_RULE =
   "Authority values are machine-minted: copy them verbatim from `executionContext`. Never reconstruct them, never reuse a previous round's values, and never substitute a transcript message id (`msg_*`), a round label (`r6`), or any other hand-written token - that is rejected as a handoff/execution mismatch.";

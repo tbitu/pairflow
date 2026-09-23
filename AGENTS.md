@@ -192,15 +192,11 @@ When modifying `UsePairflow`, `CreatePairflowSpec`, `ExecutePairflowPlan` or `Cr
      `~/.claude/skills/<name>/SKILL.md` and `~/.agents/skills/<name>/SKILL.md`.
    - reasonix: project `.reasonix/skills`; global `~/.reasonix/skills`; convention
      roots include `~/.agents/skills`.
-   - `~/.agents/skills` is the one root both agents auto-load, but Pairflow's
-     skill installer cannot target it: `--target-dir` accepts only `.opencode`
-     and `.reasonix`, and `--link-other` links only into `.claude`, `.codex`,
-     `.copilot`, `.gemini`, and `.reasonix`. The only writer of
-     `~/.agents/skills` is `--role-agents` (the `PF-*` role definitions).
+   - `~/.agents/skills` is an auto-loaded convention root, but Pairflow's
+     skill installer targets `.opencode` and `.reasonix` directly.
    - Verify availability, do not assume it: `opencode debug skill` lists every
-     resolved skill with its source path; `opencode debug agent PF-<role>` shows
-     the resolved agent definition; `reasonix subagent list` lists the `PF-*`
-     profiles.
+     resolved skill with its source path; `reasonix subagent list` lists available
+     subagents.
 4. **`.opencode/skills/**` is a thin pointer tree** (relative symlinks to
    `../../.claude/skills/<name>`) so opencode resolves the same source
    project-locally, including inside bubble worktrees. Edit the real files under
@@ -217,13 +213,7 @@ When modifying `UsePairflow`, `CreatePairflowSpec`, `ExecutePairflowPlan` or `Cr
    - `--target-dir .reasonix --link-other` also reaches both, but opencode only
      through its external `~/.claude/skills` root, so prefer the `.opencode`
      target. Bare `--target-dir .opencode` (the default) covers opencode only.
-   - Add `--role-agents` to also refresh the repo-owned `PF-*` role definitions
-     (`~/.config/opencode/agent/PF-*.md` and `~/.agents/skills/PF-*/SKILL.md`).
-     Existing frontmatter Pairflow does not own (for example `model`) is preserved.
    - Global skill directories are derived artifacts, never source.
-7. **`--role-agents` reports, never rewrites, an inline `agent.PF-*` prompt in
-   `~/.config/opencode/opencode.jsonc`.** When that conflict is reported, remove
-   the inline block once so the managed definition is authoritative.
 
 ## Session Close
 

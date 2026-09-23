@@ -34,9 +34,6 @@ Supported agents today:
 The following were written specifically for opencode and remain opencode-only;
 reasonix either has an equivalent or explicitly does not need them:
 
-- **CLI-arg startup prompt**: opencode receives `--prompt <startup>` and
-  `--agent PF-<role>` on launch; `shouldSubmitStartupPrompt` returns `false`
-  for it (no tmux paste of the startup prompt).
 - **Double-Escape-with-delay post-emit interruption**
   (`postEmitInterruptOpencodePane`): after `pairflow agent emit`, two Escape
   presses (with delay and "esc again to interrupt" detection) stop the opencode
@@ -159,7 +156,7 @@ standing role instructions of opencode live outside this repository by default.
 
 | Surface | opencode | reasonix |
 |---|---|---|
-| Role standing instructions | `--agent PF-<role>` resolved from the `agent` block in `~/.config/opencode/opencode.jsonc` or from `<config>/agent(s)/PF-<role>.md` | pasted startup/resume prompt composed from `rolePromptConcerns.ts` |
+| Role standing instructions | file-based role instruction artifacts (`role-<role>.md`) in the bubble workspace | same |
 | Meta-review run request (command template, required `--report-json` keys) | `buildMetaReviewGateRunPrompt` delivered to the pane | same |
 | Per-handoff delivery | minimal action line (`minimalPastedGuidance: true`) | minimal action line (`minimalPastedGuidance: true`) |
 | Skill docs (recipes) | project `.opencode/skills/<name>/SKILL.md`; global `~/.config/opencode/skills`, `~/.opencode/skills`, `~/.claude/skills`, `~/.agents/skills` | project `.reasonix/skills`; global `~/.reasonix/skills`; convention roots incl. `~/.agents/skills` |
@@ -169,17 +166,15 @@ Notes:
 
 - `minimalPastedGuidance` is `true` for both registered agents, so the per-handoff
   delivery is intentionally a one-liner for both; the emit rules arrive through
-  the standing instructions, the meta-review run request, the CLI help and the
+  the file-based role instructions, the meta-review run request, the CLI help and the
   guard error messages.
 - opencode global roots: `~/.config/opencode/skills` (canonical) and
   `~/.opencode/skills`, plus the external auto-load roots `~/.claude/skills` and
   `~/.agents/skills`. reasonix: `~/.reasonix/skills` plus convention roots
   including `~/.agents/skills`. `~/.agents/skills` is the one root both load.
 - Verify availability instead of assuming it: `opencode debug skill` prints the
-  resolved skill list with source paths, `opencode debug agent PF-<role>` prints
-  the resolved agent definition, `reasonix subagent list` lists the `PF-*`
-  profiles. `PF-<role>/SKILL.md` reaches opencode as a skill and reasonix as a
-  `manual` subagent profile.
+  resolved skill list with source paths, and `reasonix subagent list` lists available
+  profiles.
 - The repo keeps `.claude/skills/**` as the editable source and `.opencode/skills/**`
   as a thin pointer tree (relative symlinks) so opencode resolves the same source
   project-locally, including inside bubble worktrees (`opencode debug skill` in
@@ -189,11 +184,3 @@ Notes:
   the body on demand through their `skill` tool; opencode drops skills without a
   description and drops the whole block when the `skill` tool is permission-disabled,
   and reasonix honours `[skills] disable_implicit_invocation` / `disabled_skills`.
-  `PF-*` profiles are `manual` for reasonix. Deterministic delivery therefore uses
-  the standing prompt (which carries the rules directly) rather than relying on a
-  skill read.
-- `pairflow skills install --role-agents` deploys the repo-owned `PF-*` role
-  definitions (`src/v11/shared/agent/roleAgentStandingPrompts.ts`) to both agent
-  homes, preserving frontmatter keys Pairflow does not own (for example `model`).
-  An inline `agent.PF-*` prompt in `opencode.jsonc` is reported as a conflict and
-  never rewritten.

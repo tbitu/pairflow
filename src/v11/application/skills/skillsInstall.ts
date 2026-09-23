@@ -1,8 +1,5 @@
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
-import {
-  buildRoleAgentSyncPlan
-} from "./internal/roleAgents/roleAgentSyncPlan.js";
 export { SkillsInstallError } from "./skillsInstallErrors.js";
 import { SkillsInstallError } from "./skillsInstallErrors.js";
 import {
@@ -10,8 +7,6 @@ import {
 } from "./internal/source/sourceRootResolution.js";
 import type {
   PairflowSkillName,
-  RoleAgentConflict,
-  RoleAgentSyncOperation,
   SkillsInstallFileSystem,
   SkillsInstallOperation,
   SkillsInstallOptions,
@@ -174,9 +169,6 @@ async function assertManagedPathsDoNotOverlapSourceRoot(input: {
   const sourceRoot = resolve(input.sourceRoot);
   const realSourceRoot = await input.fs.realPathIfExists(sourceRoot);
   for (const operation of input.operations) {
-    if (operation.kind === "sync_role_agent") {
-      continue;
-    }
     const managedPath =
       operation.kind === "sync_skill" ? operation.destination : operation.linkPath;
     if (isSameOrInside(sourceRoot, managedPath)) {
@@ -302,10 +294,6 @@ async function executeInstall(input: {
   );
 
   for (const operation of input.plan.operations) {
-    if (operation.kind === "sync_role_agent") {
-      await input.fs.writeFile(operation.destination, operation.content);
-      continue;
-    }
     if (operation.kind === "sync_skill") {
       const expectedDestination = targetPreflights.get(operation.destination);
       if (expectedDestination === undefined) {
@@ -401,18 +389,8 @@ export async function installPairflowSkills(
     fs: runtime.fs
   });
 
-  const roleAgents = options.roleAgents
-    ? await buildRoleAgentSyncPlan({
-        homeDir: runtime.homeDir,
-        fs: runtime.fs
-      })
-    : {
-        operations: [] as RoleAgentSyncOperation[],
-        conflicts: [] as RoleAgentConflict[]
-      };
   const operations: SkillsInstallOperation[] = [
-    ...skillOperations,
-    ...roleAgents.operations
+    ...skillOperations
   ];
 
   if (options.dryRun) {
@@ -425,8 +403,6 @@ export async function installPairflowSkills(
       force: options.force,
       linkOther: options.linkOther,
       ...(otherRoot === undefined ? {} : { otherRoot, otherRoots }),
-      roleAgents: options.roleAgents,
-      roleAgentConflicts: roleAgents.conflicts,
       status: "planned",
       operations
     };
@@ -469,8 +445,6 @@ export async function installPairflowSkills(
     force: options.force,
     linkOther: options.linkOther,
     ...(otherRoot === undefined ? {} : { otherRoot, otherRoots }),
-    roleAgents: options.roleAgents,
-    roleAgentConflicts: roleAgents.conflicts,
     status,
     operations
   };

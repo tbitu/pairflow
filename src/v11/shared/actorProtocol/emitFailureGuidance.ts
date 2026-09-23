@@ -131,7 +131,7 @@ export const emitFailureFixTable: readonly EmitFailureFixRow[] = [
  * The recipe locations an agent can resolve. Shared by the CLI help, the role
  * prompts and the skill so the pointer cannot drift to a path that does not
  * exist (an earlier pointer named `~/.agents/skills/UsePairflow`, which the
- * skills installer never writes - only `PF-*` role definitions land there).
+ * skills installer never writes).
  */
 export const emitRecipeLocationLine =
   "load the `UsePairflow` skill and read `references/agent-emit-recipes.md`, or read that file from an installed skill root (`~/.reasonix/skills/UsePairflow/references/agent-emit-recipes.md`, `~/.config/opencode/skills/UsePairflow/references/agent-emit-recipes.md`, `~/.opencode/skills/UsePairflow/references/agent-emit-recipes.md`, `~/.claude/skills/UsePairflow/references/agent-emit-recipes.md`, `~/.gemini/config/skills/UsePairflow/references/agent-emit-recipes.md`)";

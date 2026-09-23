@@ -254,15 +254,7 @@ meta-review submit was retried 211 times over ~5 hours on one signature.
 
 ## How these recipes reach the agents
 
-Loop agents do not read this repository's skill tree as source. Per agent:
-
-- **reasonix** receives role identity and the emit rules as a pasted prompt (the
-  startup/resume prompt concerns and the meta-review run request), plus
-  `pairflow agent emit --help` and the guard error messages.
-- **opencode** receives role identity from its own `PF-*` agent definition and the
-  emit rules from the meta-review run request, the CLI help and the guard error
-  messages. The repo-owned `PF-*` definitions are synced with
-  `pairflow skills install --role-agents`.
+Both agents receive role identity and standing emit rules from file-based role instruction artifacts (`role-<role>.md`) in the bubble workspace, plus `pairflow agent emit --help` and the guard error messages.
 
 `minimalPastedGuidance` is `true` for both, so per-handoff deliveries stay short on
 purpose. The runtime channel matrix lives in
