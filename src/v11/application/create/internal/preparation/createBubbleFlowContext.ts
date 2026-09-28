@@ -2,8 +2,15 @@ import { resolve } from "node:path";
 
 import {
   loadPairflowRepoConfig,
+  mergeRepoDefaults,
   type PairflowRepoConfig
 } from "../../../../../config/repoConfig.js";
+import {
+  loadPairflowGlobalConfig,
+  PAIRFLOW_REMOTE_CONFIG_INVALID,
+  type PairflowGlobalConfig
+} from "../../../../../config/pairflowConfig.js";
+import { SchemaValidationError } from "../../../../shared/validation/primitives.js";
 import { getBubblePaths, type BubblePaths } from "../../../../shared/bubble/bubblePaths.js";
 import type { ReviewerFocusExtractionResult } from "../../../../shared/reviewer/reviewerBrief.js";
 import { createInitialBubbleState } from "../../../../domain/state/initialState.js";
@@ -68,9 +75,52 @@ async function resolveTaskForCreateCommand(
   });
 }
 
+async function resolveGlobalConfigForCreateCommand(input: {
+  command: BubbleCreateInput;
+  dependencies: BubbleCreateDependencies;
+}): Promise<PairflowGlobalConfig | undefined> {
+  const loadFn =
+    input.dependencies.loadPairflowGlobalConfig ?? loadPairflowGlobalConfig;
+  try {
+    return await loadFn();
+  } catch (error) {
+    if (input.command.remote !== undefined) {
+      if (error instanceof SchemaValidationError) {
+        const configErrorMessage = error.message.startsWith(
+          `${PAIRFLOW_REMOTE_CONFIG_INVALID}:`
+        )
+          ? error.message
+          : `${PAIRFLOW_REMOTE_CONFIG_INVALID}: ${error.message}`;
+        throw toBubbleCreateError({
+          message: configErrorMessage,
+          context: {
+            remote: input.command.remote,
+            reason: "invalid_global_config"
+          }
+        });
+      }
+      const reason = error instanceof Error ? error.message : String(error);
+      throw toBubbleCreateError({
+        message:
+          `Failed to load global Pairflow config for remote bubble create: ${reason}`,
+        context: {
+          remote: input.command.remote,
+          reason: "load_global_config_failed"
+        }
+      });
+    }
+
+    if (error instanceof SchemaValidationError) {
+      throw error;
+    }
+    return undefined;
+  }
+}
+
 async function resolveRemoteExecutionForCreateCommand(input: {
   command: BubbleCreateInput;
   dependencies: BubbleCreateDependencies;
+  globalConfig: PairflowGlobalConfig | undefined;
 }): Promise<Awaited<ReturnType<typeof resolveCreateBubbleRemoteExecution>> | undefined> {
   if (input.command.remote === undefined) {
     return undefined;
@@ -88,7 +138,7 @@ async function resolveRemoteExecutionForCreateCommand(input: {
   }
   return resolveCreateBubbleRemoteExecution({
     remote: input.command.remote,
-    loadPairflowGlobalConfig: input.dependencies.loadPairflowGlobalConfig
+    loadPairflowGlobalConfig: () => Promise.resolve(input.globalConfig ?? {})
   });
 }
 
@@ -152,17 +202,25 @@ export async function prepareCreateBubbleFlowContext(input: {
     input.dependencies.assertGitRepository
   );
 
+  const globalConfig = await resolveGlobalConfigForCreateCommand({
+    command: input.command,
+    dependencies: input.dependencies
+  });
   const repoConfig = await loadPairflowRepoConfig(repoPath);
+  const mergedDefaults = mergeRepoDefaults(
+    globalConfig?.defaults,
+    repoConfig.defaults
+  );
   const baseBranch = resolveBaseBranch({
     command: input.command,
-    ...(repoConfig.defaults !== undefined
-      ? { repoDefaults: repoConfig.defaults }
+    ...(mergedDefaults !== undefined
+      ? { repoDefaults: mergedDefaults }
       : {})
   });
   const resolvedCommand = resolveRepoDefaultedCreateInput({
     command: input.command,
-    ...(repoConfig.defaults !== undefined
-      ? { repoDefaults: repoConfig.defaults }
+    ...(mergedDefaults !== undefined
+      ? { repoDefaults: mergedDefaults }
       : {}),
     baseBranch
   });
@@ -181,10 +239,11 @@ export async function prepareCreateBubbleFlowContext(input: {
       : {}),
     accuracyCritical: resolvedCommand.accuracyCritical === true,
     cwd: resolvedCommand.cwd ?? process.cwd()
-      });
+  });
   const remoteExecution = await resolveRemoteExecutionForCreateCommand({
     command: resolvedCommand,
-    dependencies: input.dependencies
+    dependencies: input.dependencies,
+    globalConfig
   });
 
   const prepared = prepareCreateBubbleInput({

@@ -69,4 +69,31 @@ describe("create CLI run helpers", () => {
 
     expect(built.input.baseBranch).toBe("main");
   });
+
+  it("forwards role agent and model options into create input", () => {
+    const built = buildCreateBubbleInput(
+      {
+        id: "b_create_models",
+        repo: "/tmp/repo",
+        base: "main",
+        reviewArtifactType: "code",
+        task: "Model options",
+        implementer: "opencode",
+        implementerModel: "impl-model",
+        reviewer: "opencode",
+        reviewerModel: "rev-model",
+        metaReviewer: "opencode",
+        metaReviewerModel: "meta-model"
+      },
+      "/tmp"
+    );
+
+    expect(built.input.implementer).toBe("opencode");
+    expect(built.input.implementerModel).toBe("impl-model");
+    expect(built.input.reviewer).toBe("opencode");
+    expect(built.input.reviewerModel).toBe("rev-model");
+    expect(built.input.metaReviewer).toBe("opencode");
+    expect(built.input.metaReviewerModel).toBe("meta-model");
+  });
 });
+

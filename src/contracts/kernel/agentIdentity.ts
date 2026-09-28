@@ -43,3 +43,19 @@ export function isAgentRole(value: unknown): value is AgentRole {
 export function describeAgentNames(): string {
   return agentNames.join(", ");
 }
+
+export function resolveRoleAgent(
+  agents: BubbleAgentsConfig,
+  role: AgentRole
+): AgentName {
+  return agents[role];
+}
+
+export function resolveRoleModel(
+  agents: BubbleAgentsConfig,
+  role: AgentRole
+): string | undefined {
+  const modelKey = `${role}_model` as const;
+  return agents[modelKey];
+}
+

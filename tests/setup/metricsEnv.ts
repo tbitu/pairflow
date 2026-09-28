@@ -9,11 +9,16 @@ import "../../src/v11/defaults/pass/passValidationCommandDefaults.js";
 import "../../src/v11/defaults/start/startBubbleDefaults.js";
 
 const previousMetricsRoot = process.env.PAIRFLOW_METRICS_EVENTS_ROOT;
+const previousGlobalConfigPath = process.env.PAIRFLOW_GLOBAL_CONFIG_PATH;
 const workerMetricsRoot = mkdtempSync(
   join(tmpdir(), "pairflow-metrics-events-vitest-")
 );
 
 process.env.PAIRFLOW_METRICS_EVENTS_ROOT = workerMetricsRoot;
+process.env.PAIRFLOW_GLOBAL_CONFIG_PATH = join(
+  workerMetricsRoot,
+  "isolated-pairflow-global-config.toml"
+);
 
 beforeEach(async () => {
   await import("../../src/v11/defaults/converged/convergedDependencyDefaults.js");
@@ -26,8 +31,13 @@ process.on("exit", () => {
 
   if (previousMetricsRoot === undefined) {
     delete process.env.PAIRFLOW_METRICS_EVENTS_ROOT;
-    return;
+  } else {
+    process.env.PAIRFLOW_METRICS_EVENTS_ROOT = previousMetricsRoot;
   }
 
-  process.env.PAIRFLOW_METRICS_EVENTS_ROOT = previousMetricsRoot;
+  if (previousGlobalConfigPath === undefined) {
+    delete process.env.PAIRFLOW_GLOBAL_CONFIG_PATH;
+  } else {
+    process.env.PAIRFLOW_GLOBAL_CONFIG_PATH = previousGlobalConfigPath;
+  }
 });

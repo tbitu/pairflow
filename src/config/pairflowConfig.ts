@@ -22,12 +22,17 @@ import type {
 import {
   isAttachLauncher
 } from "../v11/shared/bubbleAttachment/attachLauncherTypes.js";
+import {
+  validateRepoDefaultsConfig,
+  type RepoDefaultsConfig
+} from "./repoConfig.js";
 
 export interface PairflowGlobalConfig {
   attach_launcher?: AttachLauncher;
   open_command?: string;
   open_remote_command?: string;
   remotes?: Record<string, PairflowRemoteHostConfig>;
+  defaults?: RepoDefaultsConfig;
 }
 
 export const PAIRFLOW_REMOTE_CONFIG_INVALID = "PAIRFLOW_REMOTE_CONFIG_INVALID";
@@ -217,7 +222,8 @@ function parseTomlValue(rawValue: string, lineNumber: number): unknown {
 function parsePairflowGlobalToml(input: string): Record<string, unknown> {
   const parsed: Record<string, unknown> = {};
   let activeRemoteName: string | undefined;
-  const seenRemoteSections = new Set<string>();
+  let activeTarget: Record<string, unknown> | undefined;
+  const seenSections = new Set<string>();
   const lines = input.split(/\r?\n/u);
   lines.forEach((line, index) => {
     const lineNumber = index + 1;
@@ -239,41 +245,75 @@ function parsePairflowGlobalToml(input: string): Record<string, unknown> {
 
       const sectionName = cleaned.slice(1, -1).trim();
       const segments = sectionName.split(".").map((segment) => segment.trim());
-      if (
-        segments.length !== 2
-        || segments[0] !== "remotes"
-        || !/^[A-Za-z0-9_-]+$/u.test(segments[1] ?? "")
-      ) {
+      const isRemoteSection =
+        segments.length === 2
+        && segments[0] === "remotes"
+        && /^[A-Za-z0-9_-]+$/u.test(segments[1] ?? "");
+      const isDefaultsSection =
+        (segments.length === 1 && segments[0] === "defaults")
+        || (segments.length === 2
+          && segments[0] === "defaults"
+          && /^[A-Za-z0-9_-]+$/u.test(segments[1] ?? ""));
+
+      if (!isRemoteSection && !isDefaultsSection) {
         throw buildGlobalConfigParseError(
-          `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Unsupported global config section [${sectionName}] at line ${lineNumber}; only [remotes.<name>] is supported`
+          `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Unsupported global config section [${sectionName}] at line ${lineNumber}; only [remotes.<name>] and [defaults] sections are supported`
         );
       }
 
-      const remoteName = segments[1] as string;
-      if (seenRemoteSections.has(remoteName)) {
+      if (seenSections.has(sectionName)) {
         throw buildGlobalConfigParseError(
-          `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Duplicate TOML section [remotes.${remoteName}] at line ${lineNumber}`
+          `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Duplicate TOML section [${sectionName}] at line ${lineNumber}`
         );
       }
-      seenRemoteSections.add(remoteName);
-      const remotes = parsed.remotes;
-      if (remotes !== undefined && !isRecord(remotes)) {
-        throw buildGlobalConfigParseError(
-          `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Section path conflict at [remotes.${remoteName}]`
-        );
+      seenSections.add(sectionName);
+
+      if (isRemoteSection) {
+        const remoteName = segments[1] as string;
+        const remotes = parsed.remotes;
+        if (remotes !== undefined && !isRecord(remotes)) {
+          throw buildGlobalConfigParseError(
+            `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Section path conflict at [remotes.${remoteName}]`
+          );
+        }
+
+        const remotesRecord =
+          remotes === undefined ? {} : remotes;
+        const existingRemote = remotesRecord[remoteName];
+        if (existingRemote !== undefined && !isRecord(existingRemote)) {
+          throw buildGlobalConfigParseError(
+            `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Section path conflict at [remotes.${remoteName}]`
+          );
+        }
+        remotesRecord[remoteName] = existingRemote ?? {};
+        parsed.remotes = remotesRecord;
+        activeRemoteName = remoteName;
+        activeTarget = remotesRecord[remoteName] as Record<string, unknown>;
+        return;
       }
 
-      const remotesRecord =
-        remotes === undefined ? {} : remotes;
-      const existingRemote = remotesRecord[remoteName];
-      if (existingRemote !== undefined && !isRecord(existingRemote)) {
+      activeRemoteName = undefined;
+      const defaults = parsed.defaults;
+      if (defaults !== undefined && !isRecord(defaults)) {
         throw buildGlobalConfigParseError(
-          `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Section path conflict at [remotes.${remoteName}]`
+          `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Section path conflict at [${sectionName}]`
         );
       }
-      remotesRecord[remoteName] = existingRemote ?? {};
-      parsed.remotes = remotesRecord;
-      activeRemoteName = remoteName;
+      const defaultsRecord = defaults === undefined ? {} : defaults;
+      parsed.defaults = defaultsRecord;
+      if (segments.length === 1) {
+        activeTarget = defaultsRecord;
+      } else {
+        const subSection = segments[1] as string;
+        const existingSub = defaultsRecord[subSection];
+        if (existingSub !== undefined && !isRecord(existingSub)) {
+          throw buildGlobalConfigParseError(
+            `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Section path conflict at [defaults.${subSection}]`
+          );
+        }
+        defaultsRecord[subSection] = existingSub ?? {};
+        activeTarget = defaultsRecord[subSection] as Record<string, unknown>;
+      }
       return;
     }
 
@@ -297,27 +337,20 @@ function parsePairflowGlobalToml(input: string): Record<string, unknown> {
     }
 
     const target = (() => {
-      if (activeRemoteName === undefined) {
-        return parsed;
+      if (activeRemoteName !== undefined) {
+        if (!REMOTE_CONFIG_KEYS.has(key)) {
+          throw buildGlobalConfigParseError(
+            `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Key "${key}" at line ${lineNumber} is not valid inside [remotes.${activeRemoteName}]`
+          );
+        }
+        return activeTarget as Record<string, unknown>;
       }
 
-      // This bounded parser keeps the most recent [remotes.<name>] table active
-      // until another section header appears; bare keys do not jump back to root.
-      if (!REMOTE_CONFIG_KEYS.has(key)) {
-        throw buildGlobalConfigParseError(
-          `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Key "${key}" at line ${lineNumber} is not valid inside [remotes.${activeRemoteName}]`
-        );
+      if (activeTarget !== undefined) {
+        return activeTarget;
       }
 
-      const remotesRecord = parsed.remotes as Record<string, Record<string, unknown>>;
-      const remoteTarget = remotesRecord[activeRemoteName];
-      if (remoteTarget === undefined) {
-        throw buildGlobalConfigParseError(
-          `${PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR}: Section path conflict at [remotes.${activeRemoteName}]`
-        );
-      }
-
-      return remoteTarget;
+      return parsed;
     })();
 
     if (Object.prototype.hasOwnProperty.call(target, key)) {
@@ -333,6 +366,10 @@ function parsePairflowGlobalToml(input: string): Record<string, unknown> {
 }
 
 export function resolvePairflowGlobalConfigPath(): string {
+  const envPath = process.env.PAIRFLOW_GLOBAL_CONFIG_PATH?.trim();
+  if (envPath !== undefined && envPath.length > 0) {
+    return envPath;
+  }
   return join(homedir(), ".pairflow", "config.toml");
 }
 
@@ -521,6 +558,8 @@ export function validatePairflowGlobalConfig(
     }
   }
 
+  const defaults = validateRepoDefaultsConfig(input.defaults, errors);
+
   if (errors.length > 0) {
     return validationFail(errors);
   }
@@ -537,7 +576,8 @@ export function validatePairflowGlobalConfig(
       : {}),
     ...(Object.keys(validatedRemotes).length > 0
       ? { remotes: validatedRemotes }
-      : {})
+      : {}),
+    ...(defaults !== undefined ? { defaults } : {})
   });
 }
 

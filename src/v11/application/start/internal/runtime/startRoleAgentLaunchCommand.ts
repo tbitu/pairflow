@@ -1,5 +1,9 @@
 import { buildAgentCommand } from "../../startCommandPromptRuntime.js";
-import type { AgentRole } from "../../../../../contracts/kernel/agentIdentity.js";
+import {
+  resolveRoleAgent,
+  resolveRoleModel,
+  type AgentRole
+} from "../../../../../contracts/kernel/agentIdentity.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
 import type { PairflowRemoteWorkspaceAuthority } from "../../../../shared/command/pairflowCommandBootstrap.js";
 import type { BubbleConfig } from "../../../../shared/config/bubbleConfigTypes.js";
@@ -24,12 +28,9 @@ export function buildRoleAgentLaunchCommand(input: {
   const roleMcpPolicy =
     input.config.role_mcp?.[role]
     ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE[role];
-  const agent = input.config.agents[role];
-  const model = role === "implementer"
-    ? input.config.agents.implementer_model
-    : role === "reviewer"
-      ? input.config.agents.reviewer_model
-      : input.config.agents.meta_reviewer_model;
+  const agent = resolveRoleAgent(input.config.agents, role);
+  const model = resolveRoleModel(input.config.agents, role);
+
   return buildAgentCommand({
     agentName: agent,
     roleName: role,

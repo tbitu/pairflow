@@ -21,7 +21,10 @@ import type {
 import type { MetaReviewGateResult } from "../../../../shared/metaReviewGate/metaReviewGateResultContract.js";
 import { MetaReviewGateError } from "../../../../shared/metaReviewGate/metaReviewGateRouteContract.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
-import { resolveConfiguredAgentForRole } from "../../../../domain/agentIdentity/agentIdentity.js";
+import {
+  resolveConfiguredAgentForRole,
+  resolveConfiguredModelForRole
+} from "../../../../domain/agentIdentity/agentIdentity.js";
 import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
 
 export async function applyMetaReviewGateOnConvergence(
@@ -68,6 +71,10 @@ export async function applyMetaReviewGateOnConvergence(
     return kickoffResult;
   }
 
+  const metaReviewerModel = resolveConfiguredModelForRole({
+    agents: context.resolved.bubbleConfig.agents,
+    role: "meta_reviewer"
+  });
   const paneBinding = await context.resolvePaneWarning({
     setMetaReviewerPane: context.setMetaReviewerPane,
     ...(context.notifySubmissionRequest !== undefined
@@ -80,12 +87,15 @@ export async function applyMetaReviewGateOnConvergence(
     now: context.now,
     taskArtifactPath: context.resolved.bubblePaths.taskArtifactPath,
     pairflowCommandProfile: context.resolved.bubbleConfig.pairflow_command_profile,
-    metaReviewerAgent: context.resolved.bubbleConfig.agents.meta_reviewer,
+    metaReviewerAgent: resolveConfiguredAgentForRole({
+      agents: context.resolved.bubbleConfig.agents,
+      role: "meta_reviewer"
+    }),
     metaReviewerMcpPolicy:
       context.resolved.bubbleConfig.role_mcp?.meta_reviewer
       ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer,
-    ...(context.resolved.bubbleConfig.agents.meta_reviewer_model !== undefined
-      ? { metaReviewerModel: context.resolved.bubbleConfig.agents.meta_reviewer_model }
+    ...(metaReviewerModel !== undefined
+      ? { metaReviewerModel }
       : {}),
     configureRoleAgent: (role) =>
       resolveConfiguredAgentForRole({

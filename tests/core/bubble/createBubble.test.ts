@@ -865,6 +865,100 @@ describe("createBubble", () => {
     });
   });
 
+  it("materializes global config defaults into bubble config when repo defaults are absent", async () => {
+    const repoPath = await createTempRepo();
+    const globalConfig = {
+      defaults: {
+        agents: {
+          implementer: "opencode" as const,
+          implementer_model: "lmstudio/pairflow-implementer",
+          reviewer: "opencode" as const,
+          reviewer_model: "lmstudio/pairflow-reviewer",
+          meta_reviewer: "opencode" as const,
+          meta_reviewer_model: "lmstudio/pairflow-meta-reviewer"
+        }
+      }
+    };
+
+    const result = await createBubble(
+      {
+        id: "b_create_global_defaults",
+        repoPath,
+        baseBranch: "main",
+        reviewArtifactType: "code",
+        task: "Global defaults test",
+        cwd: repoPath
+      },
+      {
+        loadPairflowGlobalConfig: async () => globalConfig
+      }
+    );
+
+    expect(result.config.agents).toEqual({
+      implementer: "opencode",
+      implementer_model: "lmstudio/pairflow-implementer",
+      reviewer: "opencode",
+      reviewer_model: "lmstudio/pairflow-reviewer",
+      meta_reviewer: "opencode",
+      meta_reviewer_model: "lmstudio/pairflow-meta-reviewer"
+    });
+
+    const bubbleToml = await readFile(result.paths.bubbleTomlPath, "utf8");
+    expect(bubbleToml).toContain('implementer_model = "lmstudio/pairflow-implementer"');
+    expect(bubbleToml).toContain('reviewer_model = "lmstudio/pairflow-reviewer"');
+    expect(bubbleToml).toContain('meta_reviewer_model = "lmstudio/pairflow-meta-reviewer"');
+  });
+
+  it("allows repo defaults to override global config defaults and explicit flags to override repo defaults", async () => {
+    const repoPath = await createTempRepo();
+    await writeFile(
+      join(repoPath, "pairflow.toml"),
+      [
+        "[defaults.agents]",
+        'implementer_model = "repo-implementer-model"',
+        'reviewer_model = "repo-reviewer-model"'
+      ].join("\n"),
+      "utf8"
+    );
+
+    const globalConfig = {
+      defaults: {
+        agents: {
+          implementer: "opencode" as const,
+          implementer_model: "global-implementer-model",
+          reviewer: "opencode" as const,
+          reviewer_model: "global-reviewer-model",
+          meta_reviewer: "opencode" as const,
+          meta_reviewer_model: "global-meta-model"
+        }
+      }
+    };
+
+    const result = await createBubble(
+      {
+        id: "b_create_defaults_precedence",
+        repoPath,
+        baseBranch: "main",
+        reviewArtifactType: "code",
+        task: "Defaults precedence test",
+        cwd: repoPath,
+        implementerModel: "explicit-implementer-model"
+      },
+      {
+        loadPairflowGlobalConfig: async () => globalConfig
+      }
+    );
+
+    expect(result.config.agents).toEqual({
+      implementer: "opencode",
+      implementer_model: "explicit-implementer-model",
+      reviewer: "opencode",
+      reviewer_model: "repo-reviewer-model",
+      meta_reviewer: "opencode",
+      meta_reviewer_model: "global-meta-model"
+    });
+  });
+
   it("merges explicit partial review policy field-by-field over repo defaults", async () => {
     const repoPath = await createTempRepo();
     await writeFile(

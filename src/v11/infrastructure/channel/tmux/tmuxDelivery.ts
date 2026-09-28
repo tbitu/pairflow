@@ -31,7 +31,10 @@ import {
   resolveEnvelopeRecipientRole,
   resolveEnvelopeTargetPane
 } from "./tmuxDeliveryTargeting.js";
-import { resolveConfiguredAgentForRole } from "../../../domain/agentIdentity/agentIdentity.js";
+import {
+  resolveConfiguredAgentForRole,
+  resolveConfiguredModelForRole
+} from "../../../domain/agentIdentity/agentIdentity.js";
 import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import {
   resolveWatchdogTargetPaneIndex
@@ -208,14 +211,10 @@ function resolveRoleModel(input: {
   role: AgentRole;
   bubbleConfig: EmitDeliveryNotificationRuntimeInput["bubbleConfig"];
 }): string | undefined {
-  switch (input.role) {
-    case "implementer":
-      return input.bubbleConfig.agents.implementer_model;
-    case "reviewer":
-      return input.bubbleConfig.agents.reviewer_model;
-    case "meta_reviewer":
-      return input.bubbleConfig.agents.meta_reviewer_model;
-  }
+  return resolveConfiguredModelForRole({
+    agents: input.bubbleConfig.agents,
+    role: input.role
+  });
 }
 
 function resolveConvergencePolicy(

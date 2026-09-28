@@ -15,6 +15,10 @@ import {
   MISSING_REVIEW_ARTIFACT_TYPE_OPTION
 } from "../../../config/bubbleConfig.js";
 import { isValidationTargetId } from "../../../v11/shared/validation/validationTargetId.js";
+import {
+  describeAgentNames,
+  isAgentName
+} from "../../../contracts/kernel/agentIdentity.js";
 
 export const CREATE_REMOTE_ALIAS_INVALID = "CREATE_REMOTE_ALIAS_INVALID" as const;
 
@@ -34,6 +38,12 @@ export interface BubbleCreateParsedValues {
   "pairflow-command-profile"?: string;
   "accuracy-critical"?: boolean;
   remote?: string;
+  implementer?: string;
+  "implementer-model"?: string;
+  reviewer?: string;
+  "reviewer-model"?: string;
+  "meta-reviewer"?: string;
+  "meta-reviewer-model"?: string;
 }
 
 export interface CreateValidationState {
@@ -43,6 +53,7 @@ export interface CreateValidationState {
   pairflowCommandProfileValidationError: string | undefined;
   remoteValidationError: string | undefined;
   validationTargetValidationError: string | undefined;
+  agentValidationError: string | undefined;
 }
 
 function parseRemoteAlias(
@@ -109,6 +120,53 @@ export function collectCreateValidationState(
     }
   }
 
+  let agentValidationError: string | undefined;
+  if (values.implementer !== undefined) {
+    if (!isAgentName(values.implementer)) {
+      agentValidationError = `CREATE_AGENT_INVALID: --implementer must be one of: ${describeAgentNames()}`;
+    } else {
+      options.implementer = values.implementer;
+    }
+  }
+  if (values["implementer-model"] !== undefined) {
+    const model = values["implementer-model"].trim();
+    if (model.length === 0) {
+      agentValidationError = agentValidationError ?? "CREATE_AGENT_INVALID: --implementer-model must be a non-empty string";
+    } else {
+      options.implementerModel = model;
+    }
+  }
+  if (values.reviewer !== undefined) {
+    if (!isAgentName(values.reviewer)) {
+      agentValidationError = agentValidationError ?? `CREATE_AGENT_INVALID: --reviewer must be one of: ${describeAgentNames()}`;
+    } else {
+      options.reviewer = values.reviewer;
+    }
+  }
+  if (values["reviewer-model"] !== undefined) {
+    const model = values["reviewer-model"].trim();
+    if (model.length === 0) {
+      agentValidationError = agentValidationError ?? "CREATE_AGENT_INVALID: --reviewer-model must be a non-empty string";
+    } else {
+      options.reviewerModel = model;
+    }
+  }
+  if (values["meta-reviewer"] !== undefined) {
+    if (!isAgentName(values["meta-reviewer"])) {
+      agentValidationError = agentValidationError ?? `CREATE_AGENT_INVALID: --meta-reviewer must be one of: ${describeAgentNames()}`;
+    } else {
+      options.metaReviewer = values["meta-reviewer"];
+    }
+  }
+  if (values["meta-reviewer-model"] !== undefined) {
+    const model = values["meta-reviewer-model"].trim();
+    if (model.length === 0) {
+      agentValidationError = agentValidationError ?? "CREATE_AGENT_INVALID: --meta-reviewer-model must be a non-empty string";
+    } else {
+      options.metaReviewerModel = model;
+    }
+  }
+
   const {
     isReviewArtifactTypeMissing,
     reviewArtifactType,
@@ -126,7 +184,8 @@ export function collectCreateValidationState(
     reviewArtifactTypeValidationError,
     pairflowCommandProfileValidationError,
     remoteValidationError,
-    validationTargetValidationError
+    validationTargetValidationError,
+    agentValidationError
   };
 }
 
@@ -207,6 +266,12 @@ export function throwMissingCreateOptionsError(state: CreateValidationState): ne
       "VALIDATION_TARGET_ID_INVALID"
     );
   }
+  if (state.agentValidationError !== undefined) {
+    throw toCreateCommandReasonCodeError(
+      `${state.agentValidationError}${formatAlsoMissingOptions(state.missing)}`,
+      "CREATE_AGENT_INVALID"
+    );
+  }
   throw toCreateCommandError(
     `CREATE_REQUIRED_OPTIONS_MISSING: Missing required options: ${state.missing.join(", ")}`
   );
@@ -235,6 +300,12 @@ export function throwCreateValidationErrors(state: CreateValidationState): void 
     throw toCreateCommandReasonCodeError(
       state.validationTargetValidationError,
       "VALIDATION_TARGET_ID_INVALID"
+    );
+  }
+  if (state.agentValidationError !== undefined) {
+    throw toCreateCommandReasonCodeError(
+      state.agentValidationError,
+      "CREATE_AGENT_INVALID"
     );
   }
 }

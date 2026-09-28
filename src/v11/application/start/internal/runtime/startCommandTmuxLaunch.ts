@@ -1,6 +1,5 @@
 import { relative } from "node:path";
 
-import { buildAgentCommand } from "../../startCommandPromptRuntime.js";
 import { createStartBubbleError } from "./startCommandRuntime.js";
 import { buildRoleAgentLaunchCommand } from "./startRoleAgentLaunchCommand.js";
 import {
@@ -12,20 +11,13 @@ import {
   buildImplementerKickoffMessage,
   buildStatusPaneCommand
 } from "../prompts/startCommandPrompts.js";
-import {
-  resolveCommandStartupPrompt
-} from "./startCommandStartupPromptRouting.js";
 import { ensureRoleInstructionArtifacts } from "../../../../shared/bubble/roleInstructionArtifacts.js";
 import { shouldSubmitStartupPrompt } from "../../../../shared/command/startupPromptGate.js";
 import { getAgentRuntimeProfile } from "../../../../shared/agent/agentRuntimeProfiles.js";
 import type { resolveResumeKickoffMessages } from "../prompts/startCommandResumePrompts.js";
 import type { ResolvedStartBubbleDependencies } from "../../startCommandOrchestration.js";
 import type { StartExecutionContext } from "./startCommandContext.js";
-import type { AgentName } from "../../../../../contracts/kernel/agentIdentity.js";
-import type { AgentRole } from "../../../../../contracts/kernel/agentIdentity.js";
-import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../../config/defaults.js";
 import type { PairflowRemoteWorkspaceAuthority } from "../../../../shared/command/pairflowCommandBootstrap.js";
-import type { RoleMcpPolicy } from "../../../../shared/config/bubbleConfigVocabulary.js";
 
 function buildStatusPaneLabel(bubbleId: string): string {
   return `[orchestrator/status]-[${bubbleId}]`;
@@ -47,38 +39,6 @@ function resolveRemoteWorkspaceAuthority(
   };
 }
 
-function buildAgentLaunchCommand(input: {
-  agentName: AgentName;
-  roleName: AgentRole;
-  roleMcpPolicy: RoleMcpPolicy;
-  model?: string;
-  bubbleId: string;
-  workspacePath: string;
-  pairflowCommandProfile: StartExecutionContext["resolved"]["bubbleConfig"]["pairflow_command_profile"];
-  startupPrompt?: string | undefined;
-  externalPairflowCommand?: string;
-  remoteWorkspaceAuthority?: PairflowRemoteWorkspaceAuthority;
-}): string {
-  return buildAgentCommand({
-    agentName: input.agentName,
-    roleName: input.roleName,
-    roleMcpPolicy: input.roleMcpPolicy,
-    ...(input.model !== undefined ? { model: input.model } : {}),
-    bubbleId: input.bubbleId,
-    workspacePath: input.workspacePath,
-    pairflowCommandProfile: input.pairflowCommandProfile,
-    ...(input.externalPairflowCommand !== undefined
-      ? { externalPairflowCommand: input.externalPairflowCommand }
-      : {}),
-    ...(input.remoteWorkspaceAuthority !== undefined
-      ? { remoteWorkspaceAuthority: input.remoteWorkspaceAuthority }
-      : {}),
-    startupPrompt: resolveCommandStartupPrompt(
-      input.agentName,
-      input.startupPrompt
-    )
-  });
-}
 
 function assertRunningLaunchAck(input: {
   bubbleId: string;
@@ -245,6 +205,14 @@ export async function launchResumeTmuxSession(input: {
     launchReviewerAgent = reviewerStartupPrompt !== undefined,
     launchMetaReviewerAgent = metaReviewerStartupPrompt !== undefined
   } = buildActiveResumeStartupPrompts(input);
+  const launchInput = {
+    bubbleId: input.context.resolved.bubbleId,
+    config: input.context.resolved.bubbleConfig,
+    workspacePath: input.launchWorkspacePath,
+    repoPath: input.context.resolved.repoPath,
+    externalPairflowCommand,
+    authority: remoteWorkspaceAuthority
+  };
   const ack = await input.deps.launchSessionAck({
     bubbleId: input.context.resolved.bubbleId,
     workspacePath: input.launchWorkspacePath,
@@ -280,52 +248,19 @@ export async function launchResumeTmuxSession(input: {
     launchImplementerAgent,
     launchReviewerAgent,
     launchMetaReviewerAgent,
-    implementerCommand: buildAgentLaunchCommand({
-      agentName: input.context.resolved.bubbleConfig.agents.implementer,
+    implementerCommand: buildRoleAgentLaunchCommand({
+      ...launchInput,
       roleName: "implementer",
-      roleMcpPolicy:
-        input.context.resolved.bubbleConfig.role_mcp?.implementer
-        ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.implementer,
-      ...(input.context.resolved.bubbleConfig.agents.implementer_model !== undefined
-        ? { model: input.context.resolved.bubbleConfig.agents.implementer_model }
-        : {}),
-      bubbleId: input.context.resolved.bubbleId,
-      workspacePath: input.launchWorkspacePath,
-      pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
-      ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
-      ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
       startupPrompt: implementerStartupPrompt
     }),
-    reviewerCommand: buildAgentLaunchCommand({
-      agentName: input.context.resolved.bubbleConfig.agents.reviewer,
+    reviewerCommand: buildRoleAgentLaunchCommand({
+      ...launchInput,
       roleName: "reviewer",
-      roleMcpPolicy:
-        input.context.resolved.bubbleConfig.role_mcp?.reviewer
-        ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.reviewer,
-      ...(input.context.resolved.bubbleConfig.agents.reviewer_model !== undefined
-        ? { model: input.context.resolved.bubbleConfig.agents.reviewer_model }
-        : {}),
-      bubbleId: input.context.resolved.bubbleId,
-      workspacePath: input.launchWorkspacePath,
-      pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
-      ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
-      ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
       startupPrompt: reviewerStartupPrompt
     }),
-    metaReviewerCommand: buildAgentLaunchCommand({
-      agentName: metaReviewerAgent,
+    metaReviewerCommand: buildRoleAgentLaunchCommand({
+      ...launchInput,
       roleName: "meta_reviewer",
-      roleMcpPolicy:
-        input.context.resolved.bubbleConfig.role_mcp?.meta_reviewer
-        ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.meta_reviewer,
-      ...(input.context.resolved.bubbleConfig.agents.meta_reviewer_model !== undefined
-        ? { model: input.context.resolved.bubbleConfig.agents.meta_reviewer_model }
-        : {}),
-      bubbleId: input.context.resolved.bubbleId,
-      workspacePath: input.launchWorkspacePath,
-      pairflowCommandProfile: input.context.resolved.bubbleConfig.pairflow_command_profile,
-      ...(externalPairflowCommand !== undefined ? { externalPairflowCommand } : {}),
-      ...(remoteWorkspaceAuthority !== undefined ? { remoteWorkspaceAuthority } : {}),
       startupPrompt: metaReviewerStartupPrompt
     }),
     ...input.resumeKickoffMessages

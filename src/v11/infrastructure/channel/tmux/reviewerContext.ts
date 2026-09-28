@@ -10,6 +10,10 @@ import { composeRolePrompt } from "../../../shared/role/prompts/roleStartupPromp
 import { reviewerPolicySnapshotFileName } from "../../../shared/reviewer/reviewerPolicySnapshot.js";
 
 import { resolveRuntimeSessionWorkspaceAuthority } from "../../../shared/runtimeSessionWorkspaceAuthority.js";
+import {
+  resolveConfiguredAgentForRole,
+  resolveConfiguredModelForRole
+} from "../../../domain/agentIdentity/agentIdentity.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../config/defaults.js";
 import type {
   RefreshReviewerContextInput,
@@ -146,25 +150,31 @@ export async function refreshReviewerContext(
 
   // Use unified RolePaneLifecycle to activate reviewer pane
   const paneLifecycle = createDefaultRolePaneLifecycle({
-    configureRoleAgent: (role) => {
-      if (role === "implementer") return resolveAgentPaneAdapter(input.bubbleConfig.agents.implementer);
-      if (role === "reviewer") return resolveAgentPaneAdapter(input.bubbleConfig.agents.reviewer);
-      if (role === "meta_reviewer") return resolveAgentPaneAdapter(input.bubbleConfig.agents.meta_reviewer);
-      return undefined;
-    }
+    configureRoleAgent: (role) =>
+      resolveAgentPaneAdapter(
+        resolveConfiguredAgentForRole({
+          agents: input.bubbleConfig.agents,
+          role
+        })
+      )
   });
   const runner = input.runner ?? runTmux;
 
   const roleMcpPolicy =
     input.bubbleConfig.role_mcp?.reviewer
     ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE.reviewer;
+  const reviewerModel = resolveConfiguredModelForRole({
+    agents: input.bubbleConfig.agents,
+    role: "reviewer"
+  });
   const reviewerCommand = buildAgentCommand({
-    agentName: input.bubbleConfig.agents.reviewer,
+    agentName: resolveConfiguredAgentForRole({
+      agents: input.bubbleConfig.agents,
+      role: "reviewer"
+    }),
     roleName: "reviewer",
     roleMcpPolicy,
-    ...(input.bubbleConfig.agents.reviewer_model !== undefined
-      ? { model: input.bubbleConfig.agents.reviewer_model }
-      : {}),
+    ...(reviewerModel !== undefined ? { model: reviewerModel } : {}),
     bubbleId: input.bubbleId,
     workspacePath,
     pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile,

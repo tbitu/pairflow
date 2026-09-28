@@ -5,6 +5,10 @@ import type {
 } from "../../watchdogCommandContract.js";
 import type { RestartBubbleResult } from "../../../restart/restartCommandContract.js";
 import type { AgentRole } from "../../../../../contracts/kernel/agentIdentity.js";
+import {
+  resolveConfiguredAgentForRole,
+  resolveConfiguredModelForRole
+} from "../../../../domain/agentIdentity/agentIdentity.js";
 import { BubbleWatchdogError } from "../error/watchdogCommandRuntime.js";
 import { type WatchdogRuntimeContext } from "../flow/watchdogCommandFlow.js";
 import {
@@ -57,26 +61,20 @@ interface NudgeInput {
 }
 
 async function trySendWatchdogNudge(input: NudgeInput): Promise<"ok" | "pane_not_ready"> {
-  const expectedPaneAgent = input.activeRole === "implementer"
-    ? input.bubbleConfig.agents.implementer
-    : input.activeRole === "reviewer"
-    ? input.bubbleConfig.agents.reviewer
-    : input.activeRole === "meta_reviewer"
-    ? input.bubbleConfig.agents.meta_reviewer
-    : undefined;
+  const expectedPaneAgent = resolveConfiguredAgentForRole({
+    agents: input.bubbleConfig.agents,
+    role: input.activeRole
+  });
 
-  if (expectedPaneAgent === undefined || !isAgentNameRegistered(expectedPaneAgent)) {
+  if (!isAgentNameRegistered(expectedPaneAgent)) {
     return "ok";
   }
 
   const expectedAgentRole = input.activeRole;
-  const roleModel = input.activeRole === "implementer"
-    ? input.bubbleConfig.agents.implementer_model
-    : input.activeRole === "reviewer"
-    ? input.bubbleConfig.agents.reviewer_model
-    : input.activeRole === "meta_reviewer"
-    ? input.bubbleConfig.agents.meta_reviewer_model
-    : undefined;
+  const roleModel = resolveConfiguredModelForRole({
+    agents: input.bubbleConfig.agents,
+    role: input.activeRole
+  });
 
   const roleMcpPolicy =
     input.bubbleConfig.role_mcp?.[expectedAgentRole]
@@ -111,13 +109,10 @@ async function trySendWatchdogNudge(input: NudgeInput): Promise<"ok" | "pane_not
         respawnPane: (respawnInput) => respawnTmuxPaneCommand(respawnInput),
         configureRoleAgent: (role) =>
           resolveAgentPaneAdapter(
-            role === "implementer"
-              ? input.bubbleConfig.agents.implementer
-              : role === "reviewer"
-                ? input.bubbleConfig.agents.reviewer
-                : role === "meta_reviewer"
-                  ? input.bubbleConfig.agents.meta_reviewer
-                  : undefined
+            resolveConfiguredAgentForRole({
+              agents: input.bubbleConfig.agents,
+              role
+            })
           )
       });
       const respawnCommand = buildAgentCommand({

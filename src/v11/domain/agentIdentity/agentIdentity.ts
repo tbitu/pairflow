@@ -1,5 +1,7 @@
 import {
   agentRoles,
+  resolveRoleAgent,
+  resolveRoleModel,
   type AgentName,
   type AgentRole,
   type BubbleAgentsConfig
@@ -9,14 +11,14 @@ export function resolveConfiguredAgentForRole(input: {
   agents: BubbleAgentsConfig;
   role: AgentRole;
 }): AgentName {
-  switch (input.role) {
-    case "implementer":
-      return input.agents.implementer;
-    case "reviewer":
-      return input.agents.reviewer;
-    case "meta_reviewer":
-      return input.agents.meta_reviewer;
-  }
+  return resolveRoleAgent(input.agents, input.role);
+}
+
+export function resolveConfiguredModelForRole(input: {
+  agents: BubbleAgentsConfig;
+  role: AgentRole;
+}): string | undefined {
+  return resolveRoleModel(input.agents, input.role);
 }
 
 export function resolveUniquelyConfiguredRoleForAgent(input: {

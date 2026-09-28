@@ -57,6 +57,24 @@ function parseBubbleCreateArgs(args: string[]) {
       "accuracy-critical": {
         type: "boolean"
       },
+      implementer: {
+        type: "string"
+      },
+      "implementer-model": {
+        type: "string"
+      },
+      reviewer: {
+        type: "string"
+      },
+      "reviewer-model": {
+        type: "string"
+      },
+      "meta-reviewer": {
+        type: "string"
+      },
+      "meta-reviewer-model": {
+        type: "string"
+      },
       help: {
         type: "boolean",
         short: "h"
@@ -108,6 +126,36 @@ function buildCreateOptions(values: BubbleCreateParsedValues): BubbleCreateComma
     options,
     "accuracyCritical",
     values["accuracy-critical"]
+  );
+  assignIfDefined(
+    options,
+    "implementer",
+    values.implementer as BubbleCreateCommandOptions["implementer"]
+  );
+  assignIfDefined(
+    options,
+    "implementerModel",
+    values["implementer-model"]
+  );
+  assignIfDefined(
+    options,
+    "reviewer",
+    values.reviewer as BubbleCreateCommandOptions["reviewer"]
+  );
+  assignIfDefined(
+    options,
+    "reviewerModel",
+    values["reviewer-model"]
+  );
+  assignIfDefined(
+    options,
+    "metaReviewer",
+    values["meta-reviewer"] as BubbleCreateCommandOptions["metaReviewer"]
+  );
+  assignIfDefined(
+    options,
+    "metaReviewerModel",
+    values["meta-reviewer-model"]
   );
 
   return options;

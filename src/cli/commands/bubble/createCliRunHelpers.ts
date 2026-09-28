@@ -9,6 +9,8 @@ import type {
 } from "../../../v11/application/create/createBubble.js";
 import type { RegisterRepoInRegistryPort } from "../../../v11/ports/repoRegistry.js";
 
+import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
+
 export interface BubbleCreateCommandRuntimeOptions {
   id?: string;
   repo?: string;
@@ -24,6 +26,12 @@ export interface BubbleCreateCommandRuntimeOptions {
   pairflowCommandProfile?: BubbleCreateInput["pairflowCommandProfile"];
   accuracyCritical?: boolean;
   remote?: string;
+  implementer?: AgentName;
+  implementerModel?: string;
+  reviewer?: AgentName;
+  reviewerModel?: string;
+  metaReviewer?: AgentName;
+  metaReviewerModel?: string;
 }
 
 export interface BubbleCreateCommandRuntimeDependencies {
@@ -88,6 +96,24 @@ export function buildCreateBubbleInput(
       : {}),
     ...(options.accuracyCritical === true ? { accuracyCritical: true } : {}),
     ...(options.remote !== undefined ? { remote: options.remote } : {}),
+    ...(options.implementer !== undefined
+      ? { implementer: options.implementer }
+      : {}),
+    ...(options.implementerModel !== undefined
+      ? { implementerModel: options.implementerModel }
+      : {}),
+    ...(options.reviewer !== undefined
+      ? { reviewer: options.reviewer }
+      : {}),
+    ...(options.reviewerModel !== undefined
+      ? { reviewerModel: options.reviewerModel }
+      : {}),
+    ...(options.metaReviewer !== undefined
+      ? { metaReviewer: options.metaReviewer }
+      : {}),
+    ...(options.metaReviewerModel !== undefined
+      ? { metaReviewerModel: options.metaReviewerModel }
+      : {}),
     cwd
   };
   return {

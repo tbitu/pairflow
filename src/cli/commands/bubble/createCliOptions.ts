@@ -20,6 +20,12 @@ export function getBubbleCreateHelpText(): string {
     "  --reviewer-brief <text>      Optional inline reviewer brief",
     "  --reviewer-brief-file <path> Optional reviewer brief from file",
     "  --accuracy-critical          Enforce reviewer verification payload gate",
+    "  --implementer <agent>        Implementer agent name (opencode, reasonix)",
+    "  --implementer-model <model>  Model override for implementer agent",
+    "  --reviewer <agent>           Reviewer agent name (opencode, reasonix)",
+    "  --reviewer-model <model>     Model override for reviewer agent",
+    "  --meta-reviewer <agent>      Meta-reviewer agent name (opencode, reasonix)",
+    "  --meta-reviewer-model <model> Model override for meta-reviewer agent",
     "  -h, --help            Show this help"
   ].join("\n");
 }

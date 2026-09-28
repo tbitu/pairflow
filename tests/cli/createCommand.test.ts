@@ -233,6 +233,40 @@ describe("parseBubbleCreateCommandOptions", () => {
     expect(parsed.remote).toBe("homelab");
   });
 
+  it("parses role agent and model options", () => {
+    const parsed = parseBubbleCreateCommandOptions([
+      "--id",
+      "b_create_models_01",
+      "--repo",
+      "/tmp/repo",
+      "--base",
+      "main",
+      "--review-artifact-type",
+      "code",
+      "--task",
+      "Implement X",
+      "--implementer",
+      "opencode",
+      "--implementer-model",
+      "lmstudio/pairflow-implementer",
+      "--reviewer",
+      "opencode",
+      "--reviewer-model",
+      "lmstudio/pairflow-reviewer",
+      "--meta-reviewer",
+      "opencode",
+      "--meta-reviewer-model",
+      "lmstudio/pairflow-meta-reviewer"
+    ]);
+
+    expect(parsed.implementer).toBe("opencode");
+    expect(parsed.implementerModel).toBe("lmstudio/pairflow-implementer");
+    expect(parsed.reviewer).toBe("opencode");
+    expect(parsed.reviewerModel).toBe("lmstudio/pairflow-reviewer");
+    expect(parsed.metaReviewer).toBe("opencode");
+    expect(parsed.metaReviewerModel).toBe("lmstudio/pairflow-meta-reviewer");
+  });
+
   it("normalizes surrounding whitespace for remote alias at the CLI boundary", () => {
     const parsed = parseBubbleCreateCommandOptions([
       "--id",

@@ -300,7 +300,7 @@ open_command = "code --reuse-window {{worktree_path}}"
     } catch (error) {
       expect(error).toBeInstanceOf(SchemaValidationError);
       expect((error as SchemaValidationError).errors[0]?.message).toMatch(
-        /PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR.*only \[remotes\.<name>\] is supported/u
+        /PAIRFLOW_REMOTE_CONFIG_PARSE_ERROR.*only \[remotes\.<name>\] and \[defaults\] sections are supported/u
       );
     }
   });
@@ -636,7 +636,73 @@ open_command = "cursor {{worktree_path}}"
   });
 
   it("resolves default global config path under ~/.pairflow/config.toml", () => {
-    const resolved = resolvePairflowGlobalConfigPath();
-    expect(resolved).toMatch(/\.pairflow\/config\.toml$/u);
+    const originalEnv = process.env.PAIRFLOW_GLOBAL_CONFIG_PATH;
+    delete process.env.PAIRFLOW_GLOBAL_CONFIG_PATH;
+    try {
+      const resolved = resolvePairflowGlobalConfigPath();
+      expect(resolved).toMatch(/\.pairflow\/config\.toml$/u);
+    } finally {
+      if (originalEnv !== undefined) {
+        process.env.PAIRFLOW_GLOBAL_CONFIG_PATH = originalEnv;
+      }
+    }
+  });
+
+  it("respects PAIRFLOW_GLOBAL_CONFIG_PATH environment variable override", () => {
+    const originalEnv = process.env.PAIRFLOW_GLOBAL_CONFIG_PATH;
+    process.env.PAIRFLOW_GLOBAL_CONFIG_PATH = "/custom/pairflow/config.toml";
+    try {
+      const resolved = resolvePairflowGlobalConfigPath();
+      expect(resolved).toBe("/custom/pairflow/config.toml");
+    } finally {
+      if (originalEnv !== undefined) {
+        process.env.PAIRFLOW_GLOBAL_CONFIG_PATH = originalEnv;
+      } else {
+        delete process.env.PAIRFLOW_GLOBAL_CONFIG_PATH;
+      }
+    }
+  });
+
+  it("parses [defaults] and [defaults.agents] when provided in global config", () => {
+    const parsed = parsePairflowGlobalConfigToml(`
+attach_launcher = "ghostty"
+
+[defaults]
+base_branch = "main"
+
+[defaults.agents]
+implementer = "opencode"
+implementer_model = "lmstudio/pairflow-implementer"
+reviewer = "opencode"
+reviewer_model = "lmstudio/pairflow-reviewer"
+meta_reviewer = "opencode"
+meta_reviewer_model = "lmstudio/pairflow-meta-reviewer"
+`);
+
+    expect(parsed.attach_launcher).toBe("ghostty");
+    expect(parsed.defaults).toEqual({
+      base_branch: "main",
+      agents: {
+        implementer: "opencode",
+        implementer_model: "lmstudio/pairflow-implementer",
+        reviewer: "opencode",
+        reviewer_model: "lmstudio/pairflow-reviewer",
+        meta_reviewer: "opencode",
+        meta_reviewer_model: "lmstudio/pairflow-meta-reviewer"
+      }
+    });
+  });
+
+  it("rejects invalid agents in global defaults", () => {
+    try {
+      parsePairflowGlobalConfigToml(`
+[defaults.agents]
+implementer = "nonexistent_agent"
+`);
+      throw new Error("Expected parsePairflowGlobalConfigToml to throw.");
+    } catch (error) {
+      expect(error).toBeInstanceOf(SchemaValidationError);
+      expect((error as SchemaValidationError).errors[0]?.path).toBe("defaults.agents.implementer");
+    }
   });
 });

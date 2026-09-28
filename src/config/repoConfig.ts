@@ -222,7 +222,7 @@ function collectValidationTargetCommandIds(targets: unknown): Set<string> {
   return commandIds;
 }
 
-function validateRepoDefaultsConfig(
+export function validateRepoDefaultsConfig(
   defaults: unknown,
   errors: ValidationError[]
 ): RepoDefaultsConfig | undefined {
@@ -544,6 +544,69 @@ function validateRepoDefaultsConfig(
   }
 
   return validated;
+}
+
+export function mergeRepoDefaults(
+  globalDefaults?: RepoDefaultsConfig,
+  repoDefaults?: RepoDefaultsConfig
+): RepoDefaultsConfig | undefined {
+  if (globalDefaults === undefined && repoDefaults === undefined) {
+    return undefined;
+  }
+  if (globalDefaults === undefined) {
+    return repoDefaults;
+  }
+  if (repoDefaults === undefined) {
+    return globalDefaults;
+  }
+
+  return {
+    ...globalDefaults,
+    ...repoDefaults,
+    ...(globalDefaults.watchdog_timeout_minutes_by_agent !== undefined
+      || repoDefaults.watchdog_timeout_minutes_by_agent !== undefined
+      ? {
+          watchdog_timeout_minutes_by_agent: {
+            ...globalDefaults.watchdog_timeout_minutes_by_agent,
+            ...repoDefaults.watchdog_timeout_minutes_by_agent
+          }
+        }
+      : {}),
+    ...(globalDefaults.agents !== undefined || repoDefaults.agents !== undefined
+      ? {
+          agents: {
+            ...globalDefaults.agents,
+            ...repoDefaults.agents
+          }
+        }
+      : {}),
+    ...(globalDefaults.role_mcp !== undefined || repoDefaults.role_mcp !== undefined
+      ? {
+          role_mcp: {
+            ...globalDefaults.role_mcp,
+            ...repoDefaults.role_mcp
+          }
+        }
+      : {}),
+    ...(globalDefaults.review_policy !== undefined
+      || repoDefaults.review_policy !== undefined
+      ? {
+          review_policy: {
+            ...globalDefaults.review_policy,
+            ...repoDefaults.review_policy
+          }
+        }
+      : {}),
+    ...(globalDefaults.doc_contract_gates !== undefined
+      || repoDefaults.doc_contract_gates !== undefined
+      ? {
+          doc_contract_gates: {
+            ...globalDefaults.doc_contract_gates,
+            ...repoDefaults.doc_contract_gates
+          }
+        }
+      : {})
+  };
 }
 
 function validateRepoPlanWatchConfig(

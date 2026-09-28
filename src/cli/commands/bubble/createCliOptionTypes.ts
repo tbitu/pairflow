@@ -1,3 +1,4 @@
+import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
 import type {
   CreateReviewArtifactType,
   PairflowCommandProfile
@@ -18,5 +19,11 @@ export interface BubbleCreateCommandOptions {
   pairflowCommandProfile?: PairflowCommandProfile;
   accuracyCritical?: boolean;
   remote?: string;
+  implementer?: AgentName;
+  implementerModel?: string;
+  reviewer?: AgentName;
+  reviewerModel?: string;
+  metaReviewer?: AgentName;
+  metaReviewerModel?: string;
   help: boolean;
 }
