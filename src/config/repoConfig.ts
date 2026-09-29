@@ -546,6 +546,43 @@ export function validateRepoDefaultsConfig(
   return validated;
 }
 
+function mergeAgentsDefaults(
+  globalAgents?: RepoDefaultsAgentsConfig,
+  repoAgents?: RepoDefaultsAgentsConfig
+): RepoDefaultsAgentsConfig | undefined {
+  if (globalAgents === undefined && repoAgents === undefined) {
+    return undefined;
+  }
+  if (globalAgents === undefined) {
+    return repoAgents;
+  }
+  if (repoAgents === undefined) {
+    return globalAgents;
+  }
+
+  const merged: RepoDefaultsAgentsConfig = {
+    ...globalAgents,
+    ...repoAgents
+  };
+
+  const roles = ["implementer", "reviewer", "meta_reviewer"] as const;
+  for (const role of roles) {
+    const modelKey = `${role}_model` as const;
+    const globalAgent = globalAgents[role];
+    const repoAgent = repoAgents[role];
+    if (
+      repoAgent !== undefined &&
+      globalAgent !== undefined &&
+      repoAgent !== globalAgent &&
+      repoAgents[modelKey] === undefined
+    ) {
+      delete merged[modelKey];
+    }
+  }
+
+  return merged;
+}
+
 export function mergeRepoDefaults(
   globalDefaults?: RepoDefaultsConfig,
   repoDefaults?: RepoDefaultsConfig
@@ -560,6 +597,11 @@ export function mergeRepoDefaults(
     return globalDefaults;
   }
 
+  const agents = mergeAgentsDefaults(
+    globalDefaults.agents,
+    repoDefaults.agents
+  );
+
   return {
     ...globalDefaults,
     ...repoDefaults,
@@ -572,14 +614,7 @@ export function mergeRepoDefaults(
           }
         }
       : {}),
-    ...(globalDefaults.agents !== undefined || repoDefaults.agents !== undefined
-      ? {
-          agents: {
-            ...globalDefaults.agents,
-            ...repoDefaults.agents
-          }
-        }
-      : {}),
+    ...(agents !== undefined ? { agents } : {}),
     ...(globalDefaults.role_mcp !== undefined || repoDefaults.role_mcp !== undefined
       ? {
           role_mcp: {

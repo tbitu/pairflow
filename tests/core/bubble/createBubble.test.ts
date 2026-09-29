@@ -959,6 +959,74 @@ describe("createBubble", () => {
     });
   });
 
+  it("does not leak global model when repo defaults switch agent without specifying a model", async () => {
+    const repoPath = await createTempRepo();
+    await writeFile(
+      join(repoPath, "pairflow.toml"),
+      [
+        "[defaults.agents]",
+        'implementer = "reasonix"'
+      ].join("\n"),
+      "utf8"
+    );
+
+    const globalConfig = {
+      defaults: {
+        agents: {
+          implementer: "opencode" as const,
+          implementer_model: "lmstudio/pairflow-implementer",
+          reviewer: "opencode" as const,
+          reviewer_model: "lmstudio/pairflow-reviewer"
+        }
+      }
+    };
+
+    const result = await createBubble(
+      {
+        id: "b_create_agent_switch_no_model",
+        repoPath,
+        baseBranch: "main",
+        reviewArtifactType: "code",
+        task: "Agent switch without model",
+        cwd: repoPath
+      },
+      {
+        loadPairflowGlobalConfig: async () => globalConfig
+      }
+    );
+
+    expect(result.config.agents.implementer).toBe("reasonix");
+    expect(result.config.agents.implementer_model).toBeUndefined();
+    expect(result.config.agents.reviewer).toBe("opencode");
+    expect(result.config.agents.reviewer_model).toBe("lmstudio/pairflow-reviewer");
+  });
+
+  it("does not leak default model when explicit CLI option switches agent without specifying a model", async () => {
+    const repoPath = await createTempRepo();
+    await writeFile(
+      join(repoPath, "pairflow.toml"),
+      [
+        "[defaults.agents]",
+        'implementer = "opencode"',
+        'implementer_model = "opencode-model"'
+      ].join("\n"),
+      "utf8"
+    );
+
+    const result = await createBubble({
+      id: "b_create_cli_agent_switch",
+      repoPath,
+      baseBranch: "main",
+      reviewArtifactType: "code",
+      task: "CLI agent switch without model",
+      cwd: repoPath,
+      implementer: "reasonix"
+    });
+
+    expect(result.config.agents.implementer).toBe("reasonix");
+    expect(result.config.agents.implementer_model).toBeUndefined();
+  });
+
   it("merges explicit partial review policy field-by-field over repo defaults", async () => {
     const repoPath = await createTempRepo();
     await writeFile(

@@ -157,6 +157,25 @@ function pickResolvedString<T extends string>(input: {
   return input.explicit ?? input.repoDefault;
 }
 
+function pickResolvedRoleModel(input: {
+  explicitModel: string | undefined;
+  defaultModel: string | undefined;
+  explicitAgent: AgentName | undefined;
+  defaultAgent: AgentName | undefined;
+}): string | undefined {
+  if (input.explicitModel !== undefined) {
+    return input.explicitModel;
+  }
+  if (
+    input.explicitAgent !== undefined &&
+    input.defaultAgent !== undefined &&
+    input.explicitAgent !== input.defaultAgent
+  ) {
+    return undefined;
+  }
+  return input.defaultModel;
+}
+
 export function resolveRepoDefaultedCreateInput(input: {
   command: BubbleCreateInput;
   repoDefaults?: RepoDefaultsConfig;
@@ -174,25 +193,31 @@ export function resolveRepoDefaultedCreateInput(input: {
     explicit: input.command.implementer,
     repoDefault: defaults.agents?.implementer
   });
-  const implementerModel = pickResolvedString({
-    explicit: input.command.implementerModel,
-    repoDefault: defaults.agents?.implementer_model
+  const implementerModel = pickResolvedRoleModel({
+    explicitModel: input.command.implementerModel,
+    defaultModel: defaults.agents?.implementer_model,
+    explicitAgent: input.command.implementer,
+    defaultAgent: defaults.agents?.implementer
   });
   const reviewer = pickResolvedAgent({
     explicit: input.command.reviewer,
     repoDefault: defaults.agents?.reviewer
   });
-  const reviewerModel = pickResolvedString({
-    explicit: input.command.reviewerModel,
-    repoDefault: defaults.agents?.reviewer_model
+  const reviewerModel = pickResolvedRoleModel({
+    explicitModel: input.command.reviewerModel,
+    defaultModel: defaults.agents?.reviewer_model,
+    explicitAgent: input.command.reviewer,
+    defaultAgent: defaults.agents?.reviewer
   });
   const metaReviewer = pickResolvedAgent({
     explicit: input.command.metaReviewer,
     repoDefault: defaults.agents?.meta_reviewer
   });
-  const metaReviewerModel = pickResolvedString({
-    explicit: input.command.metaReviewerModel,
-    repoDefault: defaults.agents?.meta_reviewer_model
+  const metaReviewerModel = pickResolvedRoleModel({
+    explicitModel: input.command.metaReviewerModel,
+    defaultModel: defaults.agents?.meta_reviewer_model,
+    explicitAgent: input.command.metaReviewer,
+    defaultAgent: defaults.agents?.meta_reviewer
   });
 
   const watchdogTimeoutMinutes = pickResolvedNumber({
