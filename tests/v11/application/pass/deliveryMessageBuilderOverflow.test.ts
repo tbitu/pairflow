@@ -211,4 +211,25 @@ describe("buildTmuxDeliveryMessage OVERFLOW_2 minimal formatting for opencode re
     // Non-opencode should contain command templates
     expect(message).toContain("`pairflow agent emit");
   });
+
+  it("returns sharpened reviewer delivery action with adversarial directive for opencode reviewer", () => {
+    const message = buildTmuxDeliveryMessage({
+      envelope: createEnvelope({ type: "PASS" }),
+      messageRef: "artifact://handoff.md",
+      bubbleConfig: createBubbleConfig({
+        agents: {
+          implementer: "opencode",
+          reviewer: "opencode",
+          meta_reviewer: "opencode"
+        }
+      }),
+      roleArtifactPath: "artifacts/role-reviewer.md",
+      recipientRole: "reviewer"
+    });
+
+    expect(message).toContain("Read role instructions now: artifacts/role-reviewer.md.");
+    expect(message).toContain("Run an adversarial review for functional defects, edge cases, and test gaps");
+    // Should NOT contain the huge wall of text pasted directly into tmux
+    expect(message).not.toContain("Required reviewer output contract (machine-checkable):");
+  });
 });

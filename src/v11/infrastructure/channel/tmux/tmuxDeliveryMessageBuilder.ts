@@ -135,11 +135,11 @@ function buildImplementerDeliveryAction(input: {
   bubbleConfig: BubbleConfig;
   actorLabel: string | null;
   roleArtifactPath?: string;
-  isOpencodeRecipient?: boolean;
+  isMinimalGuidanceRecipient?: boolean;
 }): string {
-  // OVERFLOW_2: For minimal-guidance recipients (e.g. reasonix, opencode), return concise action text
+  // For minimal-guidance recipients (e.g. reasonix, opencode), return concise action text
   // with role instructions pointer without large prompt dumps.
-  if (input.isOpencodeRecipient) {
+  if (input.isMinimalGuidanceRecipient) {
     const roleInstruction =
       input.roleArtifactPath !== undefined
         ? `Read role instructions now: ${input.roleArtifactPath}.`
@@ -181,7 +181,7 @@ function buildImplementerDeliveryAction(input: {
     : actionGuidance;
 }
 
-function buildOpencodeReviewerDeliveryAction(
+function buildMinimalReviewerDeliveryAction(
   intro: string,
   reviewerTestDirective?: ReviewerTestExecutionDirective,
   isFreshContext?: boolean,
@@ -189,7 +189,9 @@ function buildOpencodeReviewerDeliveryAction(
 ): string {
   const parts = [intro];
   if (roleArtifactPath !== undefined) {
-    parts.push(`Read role instructions now: ${roleArtifactPath}.`);
+    parts.push(
+      `Read role instructions now: ${roleArtifactPath}. Run an adversarial review for functional defects, edge cases, and test gaps following the protocol in the role instructions file.`
+    );
   }
   if (reviewerTestDirective !== undefined) {
     parts.push(formatReviewerTestExecutionDirective(reviewerTestDirective));
@@ -302,7 +304,7 @@ export function buildReviewerDeliveryAction(input: {
   roleArtifactPath?: string;
 }): string {
   if (input.envelope.type === "PASS" || input.envelope.type === "TASK") {
-    const isOpencodeReviewer = isAgentNameRegistered(input.bubbleConfig.agents.reviewer)
+    const isMinimalReviewer = isAgentNameRegistered(input.bubbleConfig.agents.reviewer)
       ? getAgentRuntimeProfile(input.bubbleConfig.agents.reviewer).minimalPastedGuidance
       : false;
 
@@ -310,8 +312,8 @@ export function buildReviewerDeliveryAction(input: {
       ? "Review task received. Run a fresh review now."
       : "Implementer handoff received. Run a fresh review now.";
 
-    if (isOpencodeReviewer) {
-      return buildOpencodeReviewerDeliveryAction(
+    if (isMinimalReviewer) {
+      return buildMinimalReviewerDeliveryAction(
         intro,
         input.reviewerTestDirective,
         input.bubbleConfig.reviewer_context_mode === "fresh",
@@ -352,9 +354,8 @@ export function buildTmuxDeliveryMessage(input: {
 }): string {
   const actorLabel = resolvePayloadActor(input.envelope);
   
-  // Phase 4: Determine if workspace guidance should be included
-  // For opencode agents, omit verbose guidance to keep messages minimal
-  const shouldIncludeWorkspaceGuidance = !isOpencodeRecipient(input);
+  const isMinimalRecipient = isMinimalGuidanceRecipient(input);
+  const shouldIncludeWorkspaceGuidance = !isMinimalRecipient;
   const workspaceHint =
     !shouldIncludeWorkspaceGuidance
       ? ""
@@ -364,9 +365,6 @@ export function buildTmuxDeliveryMessage(input: {
 
   let action = "Continue protocol from this event.";
   if (input.recipientRole === "implementer") {
-    const isOpencodeRecipient = isAgentNameRegistered(input.bubbleConfig.agents.implementer)
-    ? getAgentRuntimeProfile(input.bubbleConfig.agents.implementer).minimalPastedGuidance
-    : false;
     action = buildImplementerDeliveryAction({
       envelope: input.envelope,
       bubbleConfig: input.bubbleConfig,
@@ -374,7 +372,7 @@ export function buildTmuxDeliveryMessage(input: {
       ...(input.roleArtifactPath !== undefined
         ? { roleArtifactPath: input.roleArtifactPath }
         : {}),
-      ...(isOpencodeRecipient ? { isOpencodeRecipient } : {})
+      ...(isMinimalRecipient ? { isMinimalGuidanceRecipient: true } : {})
     });
   } else if (input.recipientRole === "reviewer") {
     action = buildReviewerDeliveryAction({
@@ -395,9 +393,6 @@ export function buildTmuxDeliveryMessage(input: {
         : {})
     });
   } else if (input.recipientRole === "meta-reviewer") {
-    const isOpencodeRecipient = isAgentNameRegistered(input.bubbleConfig.agents.meta_reviewer)
-    ? getAgentRuntimeProfile(input.bubbleConfig.agents.meta_reviewer).minimalPastedGuidance
-    : false;
     const prefix = input.envelope.type === "HUMAN_REPLY"
       ? "Human response received."
       : "Meta-review task received.";
@@ -405,7 +400,7 @@ export function buildTmuxDeliveryMessage(input: {
       input.roleArtifactPath !== undefined
         ? ` Read role instructions now: ${input.roleArtifactPath}.`
         : "";
-    action = isOpencodeRecipient
+    action = isMinimalRecipient
       ? `${prefix}${roleInstruction} Produce autonomous meta-review output.`
       : `${prefix} Produce autonomous meta-review output and return only through structured submit with required report-json parity fields: \`${buildMetaReviewSubmitCommandTemplate()}\`. ${buildMetaReviewSubmitRequiredReportJsonFieldsLine()} ${buildMetaReviewSubmitApproveParityNote()}`;
   } else if (
@@ -424,13 +419,10 @@ export function buildTmuxDeliveryMessage(input: {
   return messageParts.join(" ");
 }
 
-function isOpencodeRecipient(input: {
+function isMinimalGuidanceRecipient(input: {
   bubbleConfig: BubbleConfig;
   recipientRole: DeliveryMessageRecipientRole;
 }): boolean {
-  // OVERFLOW_1/OVERFLOW_2: minimal pasted guidance applies only to agents that
-  // receive their context via CLI args (opencode). tmux-paste agents
-  // (reasonix) need the full guidance text.
   const agent =
     input.recipientRole === "implementer"
       ? input.bubbleConfig.agents.implementer

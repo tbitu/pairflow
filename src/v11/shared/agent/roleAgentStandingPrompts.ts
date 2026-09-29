@@ -1,5 +1,6 @@
 import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
 import {
+  buildMetaReviewSubmitApproveParityNote,
   buildMetaReviewSubmitAuthorityGuardLine,
   buildMetaReviewSubmitCorrectedReportJson,
   buildMetaReviewSubmitRequiredReportJsonFieldsLine
@@ -7,6 +8,10 @@ import {
 import {
   buildReviewerCanonicalCommandGateLines
 } from "../reviewer/reviewerCommandGateGuidance.js";
+import {
+  buildReviewerScoutExpansionWorkflowGuidance,
+  buildReviewerPassOutputContractGuidance
+} from "../reviewer/reviewerScoutExpansionGuidance.js";
 import { buildReviewerSeverityOntologyReminder } from "../reviewer/reviewerSeverityOntology.js";
 import {
   emitRecipeLocationLine
@@ -49,7 +54,10 @@ function buildImplementerStandingLines(): string[] {
 
 function buildReviewerStandingLines(): string[] {
   return [
-    "Your role is to review the implementation against the task's L0/L1/L2 expectations and the Pairflow severity ontology.",
+    "Your role is to perform an adversarial review of the implementation against the task's L0/L1/L2 expectations, functional correctness, edge cases, test quality, and the Pairflow severity ontology.",
+    "Actively search for bugs, regressions, unhandled edge cases, missing test coverage, and specification drift before considering convergence.",
+    buildReviewerScoutExpansionWorkflowGuidance(),
+    buildReviewerPassOutputContractGuidance(),
     "Reviewer decision gate:",
     ...buildReviewerCanonicalCommandGateLines()
   ];
@@ -58,8 +66,10 @@ function buildReviewerStandingLines(): string[] {
 function buildMetaReviewerStandingLines(): string[] {
   return [
     "Your role is to meta-review converged changes and the reviewer's findings, then submit exactly one structured result.",
+    "Autonomous verification guardrail: Never submit `recommendation: \"approve\"` without independently validating the changes. You must verify: (1) all reviewer findings have been resolved or classified properly; (2) the implementation satisfies the task requirements without regressions; (3) configured validation commands pass with concrete evidence. If any requirement is unfulfilled, test fails, or unresolved defects exist, submit `recommendation: \"rework\"` with a concrete rework target message.",
     buildMetaReviewSubmitAuthorityGuardLine(),
     buildMetaReviewSubmitRequiredReportJsonFieldsLine(),
+    buildMetaReviewSubmitApproveParityNote(),
     `Minimal clean approve payload: ${buildMetaReviewSubmitCorrectedReportJson({ recommendation: "approve" })}`,
     `Minimal rework payload: ${buildMetaReviewSubmitCorrectedReportJson({ recommendation: "rework" })}`,
     `Minimal inconclusive payload: ${buildMetaReviewSubmitCorrectedReportJson({ recommendation: "inconclusive" })}`
@@ -100,7 +110,10 @@ function buildRoleSpecificStandingLines(role: AgentRole): string[] {
     case "implementer":
       return buildImplementerStandingLines();
     case "reviewer":
-      return [...buildReviewerStandingLines(), buildReviewerSeverityOntologyReminder()];
+      return [
+        ...buildReviewerStandingLines(),
+        buildReviewerSeverityOntologyReminder({ includeFullOntology: true })
+      ];
     case "meta_reviewer":
       return buildMetaReviewerStandingLines();
   }
@@ -142,6 +155,56 @@ function buildImplementerBubbleContextSection(context?: RoleInstructionContext):
   return parts;
 }
 
+function buildReviewerBubbleContextSection(context?: RoleInstructionContext): string[] {
+  if (context === undefined) {
+    return [];
+  }
+  const parts: string[] = [];
+  if (context.bubbleConfig?.commands !== undefined) {
+    const validationGuidance = buildImplementerDeliveryValidationGuidance(
+      context.bubbleConfig.commands
+    );
+    parts.push(
+      `## Configured Validation Commands\n\nRun or verify these validation commands command-by-command before making a convergence claim:\n\n${validationGuidance}`
+    );
+  }
+  const repoPath = context.repoPath ?? context.bubbleConfig?.repo_path;
+  const bubbleId = context.bubbleId ?? context.bubbleConfig?.id;
+  if (repoPath !== undefined && bubbleId !== undefined) {
+    const passTemplate = `pairflow agent emit --kind pass --repo ${repoPath} --bubble-id ${bubbleId} --handoff-id <fresh executionContext.handoffId> --execution-id <fresh executionContext.executionId> --summary "<review summary>" --finding "<severity>:Title|artifact://ref"`;
+    const convergeTemplate = `pairflow agent emit --kind convergence --repo ${repoPath} --bubble-id ${bubbleId} --handoff-id <fresh executionContext.handoffId> --execution-id <fresh executionContext.executionId> --summary "<clean/advisory review summary>"`;
+    parts.push(
+      `## Resolved Emit Command Templates\n\n- Pass (blocker findings):\n\`${passTemplate}\`\n\n- Convergence (clean or advisory-only post-gate):\n\`${convergeTemplate}\`\n\nAlways refresh \`--handoff-id\` and \`--execution-id\` from \`executionContext\` via \`pairflow bubble status --json\` immediately before emitting.`
+    );
+  }
+  return parts;
+}
+
+function buildMetaReviewerBubbleContextSection(context?: RoleInstructionContext): string[] {
+  if (context === undefined) {
+    return [];
+  }
+  const parts: string[] = [];
+  if (context.bubbleConfig?.commands !== undefined) {
+    const validationGuidance = buildImplementerDeliveryValidationGuidance(
+      context.bubbleConfig.commands
+    );
+    parts.push(
+      `## Configured Validation Commands\n\nThe kernel executes the configured approve-gate validation commands during the approve gate. Verify these checks pass before submitting an approve recommendation:\n\n${validationGuidance}`
+    );
+  }
+  const repoPath = context.repoPath ?? context.bubbleConfig?.repo_path;
+  const bubbleId = context.bubbleId ?? context.bubbleConfig?.id;
+  if (repoPath !== undefined && bubbleId !== undefined) {
+    const submitApproveTemplate = `pairflow agent emit --kind meta_review_result --repo ${repoPath} --bubble-id ${bubbleId} --handoff-id <fresh executionContext.handoffId> --execution-id <fresh executionContext.executionId> --round <n> --recommendation approve --summary "<summary>" --report-json '${buildMetaReviewSubmitCorrectedReportJson({ recommendation: "approve" })}'`;
+    const submitReworkTemplate = `pairflow agent emit --kind meta_review_result --repo ${repoPath} --bubble-id ${bubbleId} --handoff-id <fresh executionContext.handoffId> --execution-id <fresh executionContext.executionId> --round <n> --recommendation rework --summary "<summary>" --rework-target-message "<message>" --report-json '${buildMetaReviewSubmitCorrectedReportJson({ recommendation: "rework" })}'`;
+    parts.push(
+      `## Resolved Submit Command Templates\n\n- Clean Approve:\n\`${submitApproveTemplate}\`\n\n- Rework:\n\`${submitReworkTemplate}\`\n\nAlways refresh \`--handoff-id\` and \`--execution-id\` from \`executionContext\` via \`pairflow bubble status --json\` immediately before emitting.`
+    );
+  }
+  return parts;
+}
+
 export function renderRoleInstructionMarkdown(
   role: AgentRole,
   context?: RoleInstructionContext
@@ -159,6 +222,16 @@ export function renderRoleInstructionMarkdown(
   ];
   if (role === "implementer") {
     const contextLines = buildImplementerBubbleContextSection(context);
+    if (contextLines.length > 0) {
+      sections.push("", ...contextLines);
+    }
+  } else if (role === "reviewer") {
+    const contextLines = buildReviewerBubbleContextSection(context);
+    if (contextLines.length > 0) {
+      sections.push("", ...contextLines);
+    }
+  } else if (role === "meta_reviewer") {
+    const contextLines = buildMetaReviewerBubbleContextSection(context);
     if (contextLines.length > 0) {
       sections.push("", ...contextLines);
     }

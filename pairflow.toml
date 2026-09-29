@@ -1,11 +1,18 @@
 [validation]
-required = ["typecheck"]
+required = ["lint", "typecheck", "fitness"]
 meta_review_approve_required = ["test"]
 
 [validation.commands]
-typecheck = "npx tsc --noEmit"
+lint = "pnpm lint"
+typecheck = "pnpm typecheck"
+fitness = "pnpm fitness:check:ci"
 test = "pnpm test"
 bootstrap = "pnpm install --frozen-lockfile && pnpm build"
+
+[defaults.review_policy]
+reviewer_blocking_min_severity = "P3"
+meta_review_auto_rework_min_severity = "P3"
+meta_review_consecutive_clean_runs_required = 2
 
 [defaults.agents]
 reviewer = "opencode"

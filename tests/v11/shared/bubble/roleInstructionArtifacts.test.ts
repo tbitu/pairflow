@@ -79,12 +79,16 @@ describe("roleInstructionArtifacts", () => {
       );
       expect(reviewerContent).toContain("# Pairflow Reviewer Instructions");
       expect(reviewerContent).toContain("Reviewer decision gate");
+      expect(reviewerContent).toContain("Parallel Scout Scan");
+      expect(reviewerContent).toContain("Required reviewer output contract");
+      expect(reviewerContent).toContain("Full canonical ontology");
 
       const metaReviewerContent = await readFile(
         result.roleMetaReviewerArtifactPath,
         "utf8"
       );
       expect(metaReviewerContent).toContain("# Pairflow Meta-Reviewer Instructions");
+      expect(metaReviewerContent).toContain("Autonomous verification guardrail");
       expect(metaReviewerContent).toContain("Minimal clean approve payload");
     } finally {
       await rm(tempDir, { recursive: true, force: true });
@@ -116,6 +120,23 @@ describe("roleInstructionArtifacts", () => {
       expect(implementerContent).toContain("Required PASS validation commands: build: `dotnet build`.");
       expect(implementerContent).toContain("## Resolved Handoff Command Template");
       expect(implementerContent).toContain("pairflow agent emit --kind pass --repo /repo/test --bubble-id b_ctx_01");
+
+      const reviewerContent = await readFile(
+        result.roleReviewerArtifactPath,
+        "utf8"
+      );
+      expect(reviewerContent).toContain("## Configured Validation Commands");
+      expect(reviewerContent).toContain("## Resolved Emit Command Templates");
+      expect(reviewerContent).toContain("pairflow agent emit --kind pass --repo /repo/test --bubble-id b_ctx_01");
+      expect(reviewerContent).toContain("pairflow agent emit --kind convergence --repo /repo/test --bubble-id b_ctx_01");
+
+      const metaReviewerContent = await readFile(
+        result.roleMetaReviewerArtifactPath,
+        "utf8"
+      );
+      expect(metaReviewerContent).toContain("## Configured Validation Commands");
+      expect(metaReviewerContent).toContain("## Resolved Submit Command Templates");
+      expect(metaReviewerContent).toContain("pairflow agent emit --kind meta_review_result --repo /repo/test --bubble-id b_ctx_01");
     } finally {
       await rm(tempDir, { recursive: true, force: true });
     }
