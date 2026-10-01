@@ -1140,6 +1140,61 @@ describe("emitDeliveryNotificationAck", () => {
     ).toBe(true);
   });
 
+  it("does not clear a freshly respawned reasonix pane when initialDelayMs is present", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "[pairflow] r1 PASS opencode->reasonix msg=msg_20260222_101 ref=artifact://handoff.md.",
+            "",
+            "❯ "
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      if (args[0] === "display-message") {
+        return Promise.resolve({ stdout: "12345", stderr: "", exitCode: 0 });
+      }
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    };
+
+    const sleepCalls: number[] = [];
+    await emitDeliveryNotificationAck({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          implementer: "reasonix",
+          reviewer: "reasonix",
+          meta_reviewer: "reasonix"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      envelope: createEnvelope({ recipient: "reasonix" }),
+      recipientRole: "implementer",
+      initialDelayMs: 1500,
+      deliveryTiming: {
+        sleepForDelayMs: (ms) => {
+          sleepCalls.push(ms);
+          return Promise.resolve();
+        }
+      },
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry())
+    });
+
+    // When initialDelayMs is present, the pane was freshly refreshed/spawned;
+    // it must not be disrupted by clearSession (/new).
+    expect(
+      calls.some((call) => call[0] === "send-keys" && call.includes("/new"))
+    ).toBe(false);
+    // startupPasteSettleMs (4000) was applied
+    expect(sleepCalls).toContain(4000);
+  });
+
   it("clears a live opencode pane with C-u and /new before delivery and never sends /clear", async () => {
     const calls: string[][] = [];
     const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {

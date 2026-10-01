@@ -199,7 +199,7 @@ const profiles: Record<AgentName, AgentRuntimeProfile> = {
     tmuxPasteViaBuffer: false,
     // Collapse newlines so pasted messages stay single-line and Enter sends.
     collapsePastedNewlines: true,
-    startupPasteSettleMs: 0
+    startupPasteSettleMs: 4000
   }
 };
 

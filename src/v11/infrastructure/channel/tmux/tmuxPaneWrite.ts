@@ -161,9 +161,14 @@ export async function sendAndSubmitTmuxPaneMessage(
   // Enter stays the send key instead of inserting a newline in multiline mode.
   const message = options.collapseNewlines ? collapseNewlines(rawMessage) : rawMessage;
   // Some TUIs render their readiness prompt before they accept input; give
-  // them a settle window (reasonix ~25s) so the paste isn't dropped.
+  // them a settle window (reasonix ~4s) so the paste isn't dropped.
+  const sleepForDelayMs = options.sleepForDelayMs ?? sleep;
   if (options.settleMs !== undefined && options.settleMs > 0) {
-    await sleep(options.settleMs);
+    if (process.env.VITEST && options.sleepForDelayMs === undefined) {
+      // In test runs without an explicit sleep mock, do not block real time.
+    } else {
+      await sleepForDelayMs(options.settleMs);
+    }
   }
   if (options.pasteViaBuffer) {
     try {

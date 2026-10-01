@@ -19,6 +19,7 @@ import type { BubbleConfig } from "../../../../shared/config/bubbleConfigTypes.j
 import type { ProtocolEnvelope } from "../../../../shared/protocol/protocolEnvelopeContract.js";
 import type { ReviewerTestExecutionDirective } from "../../../../shared/reviewer/testEvidence.js";
 import type { PassRecipientRole, PassSenderRole } from "../../../../domain/pass/handoff.js";
+import { shouldRetryRoleHandoffDelivery } from "../../../../shared/delivery/roleHandoffDelivery.js";
 
 export async function loadReviewerStartupPrompt(input: {
   reviewerBriefArtifactPath: string;
@@ -160,20 +161,11 @@ export function buildPassDeliveryInput(input: {
 }
 
 export function shouldRetryPassDelivery(input: {
-  executeInput: {
-    senderRole: PassSenderRole;
-    recipientRole: PassRecipientRole;
+  executeInput?: {
+    senderRole?: PassSenderRole;
+    recipientRole?: PassRecipientRole;
   };
   deliveryResult: DeliveryAck | undefined;
 }): boolean {
-  return (
-    input.executeInput.senderRole === "implementer"
-    && input.executeInput.recipientRole === "reviewer"
-    && (
-      input.deliveryResult?.reason === "no_runtime_session"
-      || 
-      input.deliveryResult?.reason === "delivery_unconfirmed"
-      || input.deliveryResult?.reason === "command_failed"
-    )
-  );
+  return shouldRetryRoleHandoffDelivery(input.deliveryResult);
 }

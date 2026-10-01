@@ -35,11 +35,7 @@ import {
   resolveDeliveryInitialDelayMs,
   shouldRetryPassDelivery
 } from "./reviewerDeliveryHelpers.js";
-import { executeImplementerHandoffDelivery } from "../../../../shared/delivery/implementerHandoffDelivery.js";
-import {
-  createEmitDeliveryOrchestrator,
-  mapDeliveryResultToDeliveryAck
-} from "../../../../shared/delivery/deliveryOrchestratorFactory.js";
+import { executeRoleHandoffDelivery } from "../../../../shared/delivery/roleHandoffDelivery.js";
 import {
   CleanupPolicy,
   ConvergencePolicy,
@@ -149,50 +145,40 @@ export async function executePassDelivery(
   const resolveMessageRef =
     dependencies.resolveDeliveryMessageRef
     ?? reviewerDeliveryDefaults.resolveDeliveryMessageRef;
-  if (input.recipientRole !== "reviewer") {
-    const deliveryInput = buildPassDeliveryInput({
-      executeInput: input,
-      reviewerBriefText: undefined,
-      reviewerFocus: undefined,
-      initialDelayMs: undefined,
-      resolveDeliveryMessageRef: resolveMessageRef
+  let reviewerBriefText: string | undefined;
+  let reviewerFocus: Awaited<ReturnType<ReadReviewerFocusArtifactPort>> | undefined;
+  let deliveryInitialDelayMs: number | undefined;
+
+  if (input.recipientRole === "reviewer") {
+    const loaded = await loadReviewerStartupPrompt({
+      reviewerBriefArtifactPath: input.reviewerBriefArtifactPath,
+      reviewerFocusArtifactPath: input.reviewerFocusArtifactPath,
+      readReviewerBriefArtifact:
+        dependencies.readReviewerBriefArtifact
+        ?? reviewerDeliveryDefaults.readReviewerBriefArtifact,
+      readReviewerFocusArtifact:
+        dependencies.readReviewerFocusArtifact
+        ?? reviewerDeliveryDefaults.readReviewerFocusArtifact
     });
-    return executeImplementerHandoffDelivery({
-      deliveryInput,
-      emitDelivery
+    reviewerBriefText = loaded.reviewerBriefText;
+    reviewerFocus = loaded.reviewerFocus;
+
+    const refreshReviewer =
+      dependencies.refreshReviewerContext
+      ?? reviewerDeliveryDefaults.refreshReviewerContext;
+
+    const reviewerStartupPrompt = composePassReviewerStartupPrompt({
+      executeInput: input,
+      reviewerBriefText,
+      reviewerFocus
+    });
+
+    deliveryInitialDelayMs = await resolveDeliveryInitialDelayMs({
+      executeInput: input,
+      reviewerStartupPrompt,
+      refreshReviewer
     });
   }
-
-  const {
-    reviewerBriefText,
-    reviewerFocus
-    // Phase 4: Do not load startup prompts; agents reconstruct based on role and metadata.
-  } = await loadReviewerStartupPrompt({
-    reviewerBriefArtifactPath: input.reviewerBriefArtifactPath,
-    reviewerFocusArtifactPath: input.reviewerFocusArtifactPath,
-    readReviewerBriefArtifact:
-      dependencies.readReviewerBriefArtifact
-      ?? reviewerDeliveryDefaults.readReviewerBriefArtifact,
-    readReviewerFocusArtifact:
-      dependencies.readReviewerFocusArtifact
-      ?? reviewerDeliveryDefaults.readReviewerFocusArtifact
-  });
-
-  const refreshReviewer =
-    dependencies.refreshReviewerContext
-    ?? reviewerDeliveryDefaults.refreshReviewerContext;
-
-  const reviewerStartupPrompt = composePassReviewerStartupPrompt({
-    executeInput: input,
-    reviewerBriefText,
-    reviewerFocus
-  });
-
-  const deliveryInitialDelayMs = await resolveDeliveryInitialDelayMs({
-    executeInput: input,
-    reviewerStartupPrompt,
-    refreshReviewer
-  });
 
   const deliveryInput = buildPassDeliveryInput({
     executeInput: input,
@@ -201,61 +187,22 @@ export async function executePassDelivery(
     initialDelayMs: deliveryInitialDelayMs,
     resolveDeliveryMessageRef: resolveMessageRef
   });
-  let deliveryResult = await createEmitDeliveryOrchestrator({ emitDelivery }).deliverToRole({
-    bubbleId: deliveryInput.bubbleId,
-    bubbleConfig: deliveryInput.bubbleConfig,
-    sessionsPath: deliveryInput.sessionsPath,
-    envelope: deliveryInput.envelope,
-    ...(deliveryInput.recipientRole !== undefined ? { role: deliveryInput.recipientRole } : {}),
-    ...(deliveryInput.messageRef !== undefined ? { messageRef: deliveryInput.messageRef } : {}),
-    ...(deliveryInput.initialDelayMs !== undefined ? { initialDelayMs: deliveryInput.initialDelayMs } : {}),
-    ...(deliveryInput.reviewerBrief !== undefined ? { reviewerBrief: deliveryInput.reviewerBrief } : {}),
-    ...(deliveryInput.reviewerFocus !== undefined ? { reviewerFocus: deliveryInput.reviewerFocus } : {}),
-    ...(deliveryInput.reviewerTestDirective !== undefined
-      ? { reviewerTestDirective: deliveryInput.reviewerTestDirective }
-      : {}),
-    strategy: StartupStrategy.PostReadinessTmux,
+
+  return executeRoleHandoffDelivery({
+    deliveryInput,
+    strategy: input.recipientRole === "reviewer"
+      ? StartupStrategy.PostReadinessTmux
+      : StartupStrategy.UpfrontCli,
+    convergencePolicy: ConvergencePolicy.Respawn,
     cleanupPolicy: CleanupPolicy.Persist,
-    convergencePolicy: ConvergencePolicy.Respawn
-  }).then((result) => mapDeliveryResultToDeliveryAck(result)).catch(() => undefined);
-  let deliveryRetried = false;
-  const shouldRetryDelivery = shouldRetryPassDelivery({
-    executeInput: input,
-    deliveryResult
+    emitDelivery,
+    onUndelivered: (deliveryResult, retried) => {
+      reportUndeliveredReviewerHandoff({
+        bubbleId: input.bubbleId,
+        envelopeId: input.envelope.id,
+        deliveryResult,
+        retried
+      });
+    }
   });
-  if (shouldRetryDelivery) {
-    deliveryRetried = true;
-    deliveryResult = await createEmitDeliveryOrchestrator({ emitDelivery }).deliverToRole({
-      bubbleId: deliveryInput.bubbleId,
-      bubbleConfig: deliveryInput.bubbleConfig,
-      sessionsPath: deliveryInput.sessionsPath,
-      envelope: deliveryInput.envelope,
-      ...(deliveryInput.recipientRole !== undefined ? { role: deliveryInput.recipientRole } : {}),
-      ...(deliveryInput.messageRef !== undefined ? { messageRef: deliveryInput.messageRef } : {}),
-      // Respawned reviewer CLIs can take a few seconds to become input-ready.
-      // Retry once with a longer warm-up window (30 seconds) before giving up.
-      initialDelayMs: 30000,
-      deliveryAttempts: 6,
-      ...(deliveryInput.reviewerBrief !== undefined ? { reviewerBrief: deliveryInput.reviewerBrief } : {}),
-      ...(deliveryInput.reviewerFocus !== undefined ? { reviewerFocus: deliveryInput.reviewerFocus } : {}),
-      ...(deliveryInput.reviewerTestDirective !== undefined
-        ? { reviewerTestDirective: deliveryInput.reviewerTestDirective }
-        : {}),
-      strategy: StartupStrategy.PostReadinessTmux,
-      cleanupPolicy: CleanupPolicy.Persist,
-      convergencePolicy: ConvergencePolicy.Respawn
-    }).then((result) => mapDeliveryResultToDeliveryAck(result)).catch(() => deliveryResult);
-  }
-
-  reportUndeliveredReviewerHandoff({
-    bubbleId: input.bubbleId,
-    envelopeId: input.envelope.id,
-    deliveryResult,
-    retried: deliveryRetried
-  });
-
-  return {
-    result: deliveryResult,
-    retried: deliveryRetried
-  };
 }

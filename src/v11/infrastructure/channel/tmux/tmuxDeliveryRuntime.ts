@@ -166,6 +166,7 @@ async function ensureLiveSessionOrRespawn(input: {
   expectedPaneAgent: AgentName | undefined;
   respawnExpectedPaneAgent?: (() => Promise<void>) | undefined;
   sleepForDelayMs?: ((delayMs: number) => Promise<void>) | undefined;
+  hasInitialDelay?: boolean | undefined;
 }): Promise<{ ok: boolean; isLiveSession: boolean }> {
   // Unregistered/legacy agents are treated as always-running (no readiness
   // probe, no respawn), preserving pre-reasonix delivery behavior.
@@ -174,6 +175,20 @@ async function ensureLiveSessionOrRespawn(input: {
     || !isAgentNameRegistered(input.expectedPaneAgent)
   ) {
     return { ok: true, isLiveSession: false };
+  }
+
+  // When initial delay is present (e.g. from an out-of-band context refresh or warm-up),
+  // the pane was already freshly respawned and warmed up. Probe readiness and treat
+  // as fresh (not a reused persistent session that needs clearSession).
+  if (input.hasInitialDelay) {
+    const isReady = await waitForAgentPaneReady(input.expectedPaneAgent, {
+      runner: input.runner,
+      targetPane: input.targetPane,
+      attempts: 3,
+      retryDelayMs: 300,
+      ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
+    });
+    return { ok: isReady, isLiveSession: false };
   }
 
   const isLive = await waitForAgentPaneReady(input.expectedPaneAgent, {
@@ -275,7 +290,8 @@ export async function attemptTmuxDelivery(input: {
   timing?: TmuxDeliveryTimingOptions | undefined;
 }): Promise<DeliveryAck> {
   try {
-    if ((input.initialDelayMs ?? 0) > 0) {
+    const hasInitialDelay = (input.initialDelayMs ?? 0) > 0;
+    if (hasInitialDelay) {
       const sleepForDelayMs = input.timing?.sleepForDelayMs ?? sleep;
       await sleepForDelayMs(input.initialDelayMs as number);
     }
@@ -285,7 +301,8 @@ export async function attemptTmuxDelivery(input: {
       targetPane: input.targetPane,
       expectedPaneAgent: input.expectedPaneAgent,
       respawnExpectedPaneAgent: input.respawnExpectedPaneAgent,
-      sleepForDelayMs: input.timing?.sleepForDelayMs
+      sleepForDelayMs: input.timing?.sleepForDelayMs,
+      hasInitialDelay
     });
 
     const ackOptions = buildAckOptions(input);
@@ -357,7 +374,8 @@ export async function attemptTmuxDelivery(input: {
       envelopeId: input.envelopeId,
       expectedPaneAgent: input.expectedPaneAgent,
       deliveryAttempts: input.deliveryAttempts,
-      timing: input.timing
+      timing: input.timing,
+      startupPasteSettleMs: !isLiveSession ? paneAgent.startupPasteSettleMs : undefined
     });
 
     if (confirmed) {
