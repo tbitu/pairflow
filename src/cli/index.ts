@@ -1202,11 +1202,11 @@ export async function runCli(argv: string[]): Promise<number> {
 if (isMainCliEntrypoint(import.meta.url, process.argv[1])) {
   runCli(process.argv.slice(2))
     .then((exitCode) => {
-      process.exitCode = exitCode;
+      process.exit(exitCode);
     })
     .catch((error: unknown) => {
       const message = error instanceof Error ? error.message : String(error);
       process.stderr.write(`${message}\n`);
-      process.exitCode = 1;
+      process.exit(1);
     });
 }

@@ -78,4 +78,31 @@ describe("confirmTmuxPaneMarkerSubmission", () => {
 
     expect(confirmed).toBe(true);
   });
+
+  it("confirms when the marker was typed and the pane goes busy with agent.isBusy", async () => {
+    // Marker sits in the composer first, then agent goes busy without an esc interrupt string (reasonix pattern).
+    const { runner } = runnerReturning((call) =>
+      call === 0 ? `❯ ${marker}` : `❯ \nworking · 0s`
+    );
+
+    const mockAgent = {
+      name: "reasonix" as const,
+      isBusy: (output: string) => output.includes("working ·"),
+      findLastPromptIndex: () => -1,
+      hasVisiblePrompt: () => true
+    } as any;
+
+    const confirmed = await confirmTmuxPaneMarkerSubmission({
+      runner,
+      targetPane: "pf:0.2",
+      marker,
+      paneAgent: mockAgent,
+      attempts: 2,
+      settleDelayMs: 0,
+      retryDelayMs: 0,
+      sleepForDelayMs: noSleep
+    });
+
+    expect(confirmed).toBe(true);
+  });
 });

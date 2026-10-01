@@ -127,7 +127,7 @@ export async function confirmTmuxPaneMarkerSubmission(
     );
     if (capture.exitCode === 0 && markerSeenInPane) {
       const lowerOutput = capture.stdout.toLowerCase();
-      if (hasInterruptPrompt(lowerOutput)) {
+      if (hasInterruptPrompt(lowerOutput) || (agent?.isBusy !== undefined && agent.isBusy(capture.stdout))) {
         return true;
       }
     }
@@ -150,6 +150,7 @@ export async function confirmTmuxPaneMarkerSubmission(
       if (
         promptCheck.exitCode !== 0
         || !agent.hasVisiblePrompt(promptCheck.stdout)
+        || (agent?.isBusy !== undefined && agent.isBusy(promptCheck.stdout))
       ) {
         // Pane is still processing previous input; wait longer instead of
         // blindly resending Enter.
