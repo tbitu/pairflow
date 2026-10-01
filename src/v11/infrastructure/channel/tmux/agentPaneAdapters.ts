@@ -219,6 +219,7 @@ const reasonixPaneAdapter: AgentPaneAdapter = {
     await sleepForDelayMs(process.env.VITEST ? 0 : 100);
     await sendTmuxPaneKeys(runner, targetPane, "Enter");
     await sleepForDelayMs(process.env.VITEST ? 0 : 200);
+    await runner(["clear-history", "-t", targetPane], { allowFailure: true });
     return waitForReasonixPaneReady({
       runner,
       targetPane,
@@ -244,7 +245,7 @@ const reasonixPaneAdapter: AgentPaneAdapter = {
   resolvePasteOptions() {
     return resolvePasteOptions("reasonix");
   },
-  supportsConcurrentPanes: true,
+  supportsConcurrentPanes: false,
   startupPromptDelivery: "none",
   trustPromptHandling: "none",
   postEmitInterruption: "none",

@@ -80,4 +80,9 @@ export async function respawnTmuxPaneCommand(
     input.cwd,
     input.command
   ]);
+  // Reset terminal state and clear history so readiness probes cannot match
+  // residual prompt text from the terminated process.
+  await runner(["send-keys", "-t", targetPane, "-R"], { allowFailure: true });
+  await runner(["clear-history", "-t", targetPane], { allowFailure: true });
 }
+

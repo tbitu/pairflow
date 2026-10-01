@@ -25,17 +25,12 @@ const respawnPane = vi.fn(async (input: {
   void input;
 });
 
-const nonConcurrentAgentAdapter = {
-  ...resolveAgentPaneAdapter("reasonix"),
-  supportsConcurrentPanes: false
-};
-
 describe("deactivateOtherRolePanes", () => {
   beforeEach(() => {
     respawnPane.mockClear();
   });
 
-  it("does not deactivate other panes when reasonix activates (concurrent panes supported)", async () => {
+  it("does not deactivate opencode reviewer/meta panes when reasonix implementer activates", async () => {
     const runner: TmuxRunner = (() => Promise.resolve({ exitCode: 0, stdout: "", stderr: "" })) as TmuxRunner;
     await deactivateOtherRolePanes({
       activateInput: {
@@ -48,14 +43,14 @@ describe("deactivateOtherRolePanes", () => {
       topologyPaneIndexForRole,
       respawnPane,
       configureRoleAgent: (role) =>
-        resolveAgentPaneAdapter(role === "implementer" ? "reasonix" : "reasonix")
+        resolveAgentPaneAdapter(role === "implementer" ? "reasonix" : "opencode")
     });
 
-    // reasonix supports concurrent panes -> no deactivation
+    // opencode reviewer/meta panes must NOT be deactivated.
     expect(respawnPane).not.toHaveBeenCalled();
   });
 
-  it("deactivates a non-concurrent pane when another non-concurrent pane activates", async () => {
+  it("deactivates a non-concurrent (reasonix) pane when another reasonix pane activates", async () => {
     const runner: TmuxRunner = (() => Promise.resolve({ exitCode: 0, stdout: "", stderr: "" })) as TmuxRunner;
     await deactivateOtherRolePanes({
       activateInput: {
@@ -63,20 +58,21 @@ describe("deactivateOtherRolePanes", () => {
         role: "reviewer",
         cwd: "/ws",
         runner,
-        paneAgent: nonConcurrentAgentAdapter
+        paneAgent: resolveAgentPaneAdapter("reasonix")
       },
       topologyPaneIndexForRole,
       respawnPane,
-      configureRoleAgent: (role) => (role === "reviewer" ? nonConcurrentAgentAdapter : nonConcurrentAgentAdapter)
+      configureRoleAgent: (role) =>
+        resolveAgentPaneAdapter(role === "reviewer" ? "reasonix" : "reasonix")
     });
 
     const calls = respawnPane.mock.calls.map((c) => c[0].paneIndex);
-    // Both other roles run non-concurrent agents -> both deactivated.
+    // Both other roles run reasonix -> both deactivated.
     expect(calls).toEqual(expect.arrayContaining([1, 3]));
     expect(calls).not.toContain(2);
   });
 
-  it("keeps the legacy blanket deactivation when configureRoleAgent is omitted and agent is non-concurrent", async () => {
+  it("keeps the legacy blanket deactivation when configureRoleAgent is omitted", async () => {
     const runner: TmuxRunner = (() => Promise.resolve({ exitCode: 0, stdout: "", stderr: "" })) as TmuxRunner;
     await deactivateOtherRolePanes({
       activateInput: {
@@ -84,7 +80,7 @@ describe("deactivateOtherRolePanes", () => {
         role: "implementer",
         cwd: "/ws",
         runner,
-        paneAgent: nonConcurrentAgentAdapter
+        paneAgent: resolveAgentPaneAdapter("reasonix")
       },
       topologyPaneIndexForRole,
       respawnPane
