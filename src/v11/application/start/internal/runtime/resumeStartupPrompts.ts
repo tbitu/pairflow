@@ -14,6 +14,10 @@ import type { BubbleCommandsConfig } from "../../../../shared/command/commandCon
 import type { BubbleReviewAutoReworkSeverity } from "../../../../shared/reviewPolicy/reviewPolicyTypes.js";
 import type { ReviewerFocusExtractionResult } from "../../../../shared/reviewer/reviewerBrief.js";
 import type { RolePromptStateSnapshot } from "../../../../shared/role/prompts/rolePromptConcernTypes.js";
+import {
+  getAgentRuntimeProfile,
+  isAgentNameRegistered
+} from "../../../../shared/agent/agentRuntimeProfiles.js";
 
 export interface ActiveResumeStartupPrompts {
   implementerStartupPrompt?: string | undefined;
@@ -157,6 +161,16 @@ export function buildActiveResumeStartupPrompts(input: {
       : {})
   };
 
+  const canLaunchImplementer = isAgentNameRegistered(bubbleConfig.agents.implementer)
+    ? getAgentRuntimeProfile(bubbleConfig.agents.implementer).supportsConcurrentPanes
+    : false;
+  const canLaunchReviewer = isAgentNameRegistered(bubbleConfig.agents.reviewer)
+    ? getAgentRuntimeProfile(bubbleConfig.agents.reviewer).supportsConcurrentPanes
+    : false;
+  const canLaunchMetaReviewer = isAgentNameRegistered(bubbleConfig.agents.meta_reviewer)
+    ? getAgentRuntimeProfile(bubbleConfig.agents.meta_reviewer).supportsConcurrentPanes
+    : false;
+
   if (activeRole === "implementer" && activeAgent === bubbleConfig.agents.implementer) {
     return {
       implementerStartupPrompt: resolveResumeImplementerStartupPrompt({
@@ -165,8 +179,8 @@ export function buildActiveResumeStartupPrompts(input: {
         validationCommands: bubbleConfig.commands
       }),
       launchImplementerAgent: true,
-      launchReviewerAgent: false,
-      launchMetaReviewerAgent: false
+      launchReviewerAgent: canLaunchReviewer,
+      launchMetaReviewerAgent: canLaunchMetaReviewer
     };
   }
 
@@ -189,9 +203,9 @@ export function buildActiveResumeStartupPrompts(input: {
           ? { reviewerBriefText: input.context.reviewerBriefText }
           : {})
       }),
-      launchImplementerAgent: false,
+      launchImplementerAgent: canLaunchImplementer,
       launchReviewerAgent: true,
-      launchMetaReviewerAgent: false
+      launchMetaReviewerAgent: canLaunchMetaReviewer
     };
   }
 
@@ -200,8 +214,8 @@ export function buildActiveResumeStartupPrompts(input: {
       metaReviewerStartupPrompt: resolveResumeMetaReviewerStartupPrompt({
         common
       }),
-      launchImplementerAgent: false,
-      launchReviewerAgent: false,
+      launchImplementerAgent: canLaunchImplementer,
+      launchReviewerAgent: canLaunchReviewer,
       launchMetaReviewerAgent: true
     };
   }
