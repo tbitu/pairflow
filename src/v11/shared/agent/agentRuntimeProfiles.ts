@@ -191,7 +191,7 @@ const profiles: Record<AgentName, AgentRuntimeProfile> = {
     paneBusyPatterns: REASONIX_PANE_BUSY_PATTERNS,
     readiness: "reasonix",
     planWatchBackend: "reasonix",
-    supportsConcurrentPanes: false,
+    supportsConcurrentPanes: true,
     tmuxPasteChunkLengthChars: 200,
     tmuxPasteChunkDelayMs: 250,
     tmuxPasteSubmitDelayMs: 1500,

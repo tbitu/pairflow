@@ -177,30 +177,19 @@ async function ensureLiveSessionOrRespawn(input: {
     return { ok: true, isLiveSession: false };
   }
 
-  // When initial delay is present (e.g. from an out-of-band context refresh or warm-up),
-  // the pane was already freshly respawned and warmed up. Probe readiness and treat
-  // as fresh (not a reused persistent session that needs clearSession).
-  if (input.hasInitialDelay) {
-    const isReady = await waitForAgentPaneReady(input.expectedPaneAgent, {
-      runner: input.runner,
-      targetPane: input.targetPane,
-      attempts: 3,
-      retryDelayMs: 300,
-      ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
-    });
-    return { ok: isReady, isLiveSession: false };
-  }
-
   const isLive = await waitForAgentPaneReady(input.expectedPaneAgent, {
     runner: input.runner,
     targetPane: input.targetPane,
-    attempts: 3,
+    attempts: input.hasInitialDelay ? 5 : 3,
     retryDelayMs: 300,
     ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
   });
 
   if (isLive) {
-    return { ok: true, isLiveSession: true };
+    // When initial delay is present (e.g. from an out-of-band context refresh or warm-up),
+    // the pane was already freshly respawned and warmed up. Treat as fresh (not a reused
+    // persistent session that needs clearSession).
+    return { ok: true, isLiveSession: !input.hasInitialDelay };
   }
 
   if (input.respawnExpectedPaneAgent === undefined) {
