@@ -231,6 +231,9 @@ function resolveConvergencePolicy(
   ) {
     return "assume_running";
   }
+  if (input.envelope.type === "HUMAN_REPLY") {
+    return "assume_running";
+  }
   return "respawn";
 }
 

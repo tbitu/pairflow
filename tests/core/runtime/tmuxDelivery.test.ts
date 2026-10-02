@@ -1243,6 +1243,53 @@ describe("emitDeliveryNotificationAck", () => {
       calls.some((call) => call[0] === "send-keys" && call.includes("/clear"))
     ).toBe(false);
   });
+
+  it("does not clear a live opencode pane with /new for HUMAN_REPLY delivery", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "Ask anything...",
+            "tab agents  ctrl+p commands",
+            submittedOpencodeReadyPaneOutput('[pairflow] r1 HUMAN_REPLY human->opencode msg=msg_20260222_101 ref=artifact://reply.md. Action: Human response: "fix it". Continue implementation using this input.')
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      if (args[0] === "display-message") {
+        return Promise.resolve({ stdout: "12345", stderr: "", exitCode: 0 });
+      }
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    };
+
+    await emitDeliveryNotificationAck({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          implementer: "opencode",
+          reviewer: "opencode",
+          meta_reviewer: "opencode"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      envelope: createEnvelope({
+        type: "HUMAN_REPLY",
+        recipient: "opencode",
+        payload: { message: "fix it" }
+      }),
+      recipientRole: "implementer",
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry())
+    });
+
+    expect(
+      calls.some((call) => call[0] === "send-keys" && call.includes("/new"))
+    ).toBe(false);
+  });
 });
 
 describe("tmux delivery T6 runtime observability baseline", () => {

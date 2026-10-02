@@ -2,8 +2,7 @@ import {
   computeWatchdogStatus,
   type WatchdogStatus
 } from "../../shared/watchdog/watchdogStatus.js";
-import {
-} from "../../shared/mutation/mutationBoundaryIO.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../shared/config/watchdogTimeoutResolution.js";
 import { toPersistedSnapshot } from "../../domain/state/snapshot/projection.js";
 import { maybeApplyPendingReworkIntent } from "./internal/pendingRework/watchdogPendingReworkIntent.js";
 import { sampleWatchdogPaneActivity } from "./internal/paneActivity/watchdogPaneActivitySampler.js";
@@ -84,9 +83,13 @@ export async function runBubbleWatchdog(
     return pendingRework;
   }
 
+  const timeoutMinutes = resolveWatchdogTimeoutMinutesForAgent(
+    resolved.bubbleConfig,
+    state.active_agent
+  );
   const watchdog = computeWatchdogStatus(
     toPersistedSnapshot(state),
-    resolved.bubbleConfig.watchdog_timeout_minutes,
+    timeoutMinutes,
     now
   );
   const paneActivity = await maybeMonitorWatchdogPaneActivity({

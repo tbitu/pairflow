@@ -3,8 +3,10 @@ import { parseArgs } from "node:util";
 import {
   throwAsResumeBubbleError as asResumeBubbleError,
   resumeBubbleCommandOrchestration as resumeBubble,
+  type ResumeBubbleDependencies,
   type ResumeBubbleResult
 } from "../../../v11/application/resume/resumeCommandOrchestration.js";
+import { replyBubbleDependencyDefaults } from "../../../v11/defaults/reply/replyCommandDefaults.js";
 
 export interface BubbleResumeCommandOptions {
   id: string;
@@ -74,7 +76,10 @@ export function parseBubbleResumeCommandOptions(
 
 export async function runBubbleResumeCommand(
   args: string[],
-  cwd: string = process.cwd()
+  cwd: string = process.cwd(),
+  dependencies: ResumeBubbleDependencies = {
+    replyDependencies: replyBubbleDependencyDefaults
+  }
 ): Promise<ResumeBubbleResult | null> {
   const options = parseBubbleResumeCommandOptions(args);
   if (options.help) {
@@ -82,11 +87,14 @@ export async function runBubbleResumeCommand(
   }
 
   try {
-    return await resumeBubble({
-      bubbleId: options.id,
-      repoPath: options.repo,
-      cwd
-    });
+    return await resumeBubble(
+      {
+        bubbleId: options.id,
+        repoPath: options.repo,
+        cwd
+      },
+      dependencies
+    );
   } catch (error) {
     asResumeBubbleError(error);
   }

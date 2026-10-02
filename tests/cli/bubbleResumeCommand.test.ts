@@ -40,4 +40,24 @@ describe("runBubbleResumeCommand", () => {
     const result = await runBubbleResumeCommand(["--help"]);
     expect(result).toBeNull();
   });
+
+  it("passes custom dependencies to resumeBubble", async () => {
+    let calledWithDeps: unknown;
+    const dummyDeps = {
+      emitHumanReply: () => {
+        calledWithDeps = dummyDeps;
+        throw new Error("stop");
+      }
+    };
+
+    await expect(
+      runBubbleResumeCommand(
+        ["--id", "b_resume_01"],
+        "/tmp",
+        dummyDeps as never
+      )
+    ).rejects.toThrow();
+
+    expect(calledWithDeps).toBe(dummyDeps);
+  });
 });

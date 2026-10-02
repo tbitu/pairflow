@@ -142,6 +142,37 @@ describe("Delivery Message Builder Comprehensive Audit", () => {
         expect(msg).toContain("Action: Human response received. Continue implementation using this input.");
         expect(msg).not.toContain("Run pairflow commands from");
       });
+
+      it("opencode implementer gets reply message when provided", () => {
+        const msg = buildTmuxDeliveryMessage({
+          envelope: createEnvelope({
+            type: "HUMAN_REPLY",
+            payload: { message: "proceed with option B" }
+          }),
+          messageRef: "artifact://reply.md",
+          bubbleConfig: createBubbleConfig(),
+          recipientRole: "implementer"
+        });
+
+        expect(msg).toContain('Action: Human response: "proceed with option B". Continue implementation using this input.');
+        expect(msg).not.toContain("Run pairflow commands from");
+      });
+
+      it("verbose implementer gets reply message when provided", () => {
+        const msg = buildTmuxDeliveryMessage({
+          envelope: createEnvelope({
+            type: "HUMAN_REPLY",
+            payload: { message: "fix edge case in parser" }
+          }),
+          messageRef: "artifact://reply.md",
+          bubbleConfig: createBubbleConfig({
+            agents: { implementer: "codex" as never, reviewer: "opencode", meta_reviewer: "opencode" }
+          }),
+          recipientRole: "implementer"
+        });
+
+        expect(msg).toContain('Human response: "fix edge case in parser". Continue implementation using this input');
+      });
     });
 
     describe("APPROVAL_DECISION (approval or rework)", () => {
@@ -268,6 +299,20 @@ describe("Delivery Message Builder Comprehensive Audit", () => {
         });
 
         expect(msg).toContain("Action: Human response received. Continue review workflow from this update.");
+      });
+
+      it("reviewer gets reply message when provided", () => {
+        const msg = buildTmuxDeliveryMessage({
+          envelope: createEnvelope({
+            type: "HUMAN_REPLY",
+            payload: { message: "focus on concurrency issues" }
+          }),
+          messageRef: "artifact://reply.md",
+          bubbleConfig: createBubbleConfig(),
+          recipientRole: "reviewer"
+        });
+
+        expect(msg).toContain('Action: Human response: "focus on concurrency issues". Continue review workflow from this update.');
       });
     });
 
@@ -480,6 +525,23 @@ describe("Delivery Message Builder Comprehensive Audit", () => {
       });
 
       expect(nonOpencodeMsg).toContain("Human response received. Produce autonomous meta-review output and return only through structured submit");
+    });
+
+    it("delivers meta-reviewer instructions with reply text on HUMAN_REPLY envelope", () => {
+      const opencodeMsg = buildTmuxDeliveryMessage({
+        envelope: createEnvelope({
+          type: "HUMAN_REPLY",
+          recipient: "opencode",
+          payload: { message: "re-check findings" }
+        }),
+        messageRef: "artifact://reply.md",
+        bubbleConfig: createBubbleConfig({
+          agents: { implementer: "opencode", reviewer: "opencode", meta_reviewer: "opencode" }
+        }),
+        recipientRole: "meta-reviewer"
+      });
+
+      expect(opencodeMsg).toContain('Human response: "re-check findings". Produce autonomous meta-review output.');
     });
   });
 });

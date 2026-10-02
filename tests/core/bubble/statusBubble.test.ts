@@ -216,6 +216,30 @@ describe("getBubbleStatus", () => {
     expect(status.watchdog.remainingSeconds).toBe(1620);
   });
 
+  it("reflects per-agent watchdog timeout for the active agent in watchdog status", async () => {
+    const repoPath = await createTempRepo();
+    const bubble = await setupRunningBubbleFixture({
+      repoPath,
+      bubbleId: "b_status_agent_timeout_01",
+      task: "Status agent timeout task"
+    });
+
+    const configPath = bubble.paths.bubbleTomlPath;
+    const configContent = await readFile(configPath, "utf8");
+    await writeFile(
+      configPath,
+      `${configContent}\n[watchdog_timeout_minutes_by_agent]\nopencode = 120\n`
+    );
+
+    const status = await getBubbleStatus({
+      bubbleId: bubble.bubbleId,
+      cwd: repoPath,
+      now: new Date("2026-02-22T14:03:00.000Z")
+    });
+
+    expect(status.watchdog.timeoutMinutes).toBe(120);
+  });
+
   it("clears pending human question count after reply", async () => {
     const repoPath = await createTempRepo();
     const bubble = await setupRunningBubbleFixture({

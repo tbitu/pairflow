@@ -23,11 +23,14 @@ export async function resumeBubbleCommandOrchestration(
 ): Promise<ResumeBubbleResult> {
   const emitReply = dependencies.emitHumanReply ?? emitHumanReply;
 
-  return emitReply({
-    bubbleId: input.bubbleId,
-    message: DEFAULT_RESUME_MESSAGE,
-    ...(input.repoPath !== undefined ? { repoPath: input.repoPath } : {}),
-    ...(input.cwd !== undefined ? { cwd: input.cwd } : {}),
-    ...(input.now !== undefined ? { now: input.now } : {})
-  });
+  return emitReply(
+    {
+      bubbleId: input.bubbleId,
+      message: DEFAULT_RESUME_MESSAGE,
+      ...(input.repoPath !== undefined ? { repoPath: input.repoPath } : {}),
+      ...(input.cwd !== undefined ? { cwd: input.cwd } : {}),
+      ...(input.now !== undefined ? { now: input.now } : {})
+    },
+    dependencies.replyDependencies
+  );
 }

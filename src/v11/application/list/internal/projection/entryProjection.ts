@@ -15,6 +15,7 @@ import {
 } from "../../../../shared/reviewPolicy/reviewPolicyRuntime.js";
 import { resolveBubbleAttention } from "../../../../shared/status/bubbleAttention.js";
 import { computeWatchdogStatus } from "../../../../shared/watchdog/watchdogStatus.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
 import type { BubbleListEntry } from "../../../../shared/read-model/list/listReadModelContract.js";
 import { runtimeSessionExpectedStates } from "../context/listReadModelContext.js";
 import type { ListReadModelDependencies } from "../../listReadModelDependencies.js";
@@ -88,17 +89,21 @@ export function buildLocalBubbleListEntry(input: {
     executionContext: input.stateLoaded.state.meta_review?.execution_context,
     runtimeDelivery: input.stateLoaded.state.meta_review?.runtime_delivery
   });
+  const timeoutMinutes = resolveWatchdogTimeoutMinutesForAgent(
+    input.config,
+    input.stateLoaded.state.active_agent
+  );
   const watchdog =
     input.stateLoaded.stateValidation === null
       ? computeWatchdogStatus(
           input.stateLoaded.state,
-          input.config.watchdog_timeout_minutes,
+          timeoutMinutes,
           input.now
         )
       : {
           monitored: false,
           monitoredAgent: input.stateLoaded.state.active_agent,
-          timeoutMinutes: input.config.watchdog_timeout_minutes,
+          timeoutMinutes,
           referenceTimestamp:
             input.stateLoaded.state.last_command_at ?? input.stateLoaded.state.active_since,
           deadlineTimestamp: null,

@@ -13,6 +13,7 @@ import { openBubbleDefaults } from "../open/openBubbleDefaults.js";
 import { processSpawnDefault } from "../process/processSpawnDefaults.js";
 import { restartBubbleDependencyDefaults } from "../restart/restartCommandDefaults.js";
 import { restartBubble } from "../../application/restart/restartCommandApi.js";
+import { replyBubbleDependencyDefaults } from "../reply/replyCommandDefaults.js";
 import { emitHumanReply } from "../../application/reply/replyCommandApi.js";
 import { resumeBubbleCommandOrchestration as resumeBubble } from "../../application/resume/resumeCommandOrchestration.js";
 import { startBubble } from "../../application/start/startCommandApi.js";
@@ -400,7 +401,10 @@ export const uiRouterDependencyDefaults = {
   emitApprove: emitApproveForUi,
   async emitHumanReply(input) {
     return mapUiHumanReplyResult(
-      await emitHumanReply(projectUiHumanReplyInputToCommandInput(input))
+      await emitHumanReply(
+        projectUiHumanReplyInputToCommandInput(input),
+        replyBubbleDependencyDefaults
+      )
     );
   },
   emitRequestRework: emitRequestReworkForUi,
@@ -429,7 +433,10 @@ export const uiRouterDependencyDefaults = {
   },
   async resumeBubble(input) {
     return mapUiHumanReplyResult(
-      await resumeBubble(projectUiInputNowToCommandNow(input))
+      await resumeBubble(
+        projectUiInputNowToCommandNow(input),
+        { replyDependencies: replyBubbleDependencyDefaults }
+      )
     );
   },
   async startBubble(input) {

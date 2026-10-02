@@ -1,4 +1,5 @@
 import type {
+  EmitHumanReplyDependencies,
   EmitHumanReplyInput,
   EmitHumanReplyResult
 } from "../reply/replyCommandContract.js";
@@ -17,6 +18,8 @@ export type ResumeBubbleResult = EmitHumanReplyResult;
 
 export interface ResumeBubbleDependencies {
   emitHumanReply?: (
-    input: EmitHumanReplyInput
+    input: EmitHumanReplyInput,
+    dependencies?: EmitHumanReplyDependencies
   ) => Promise<EmitHumanReplyResult>;
+  replyDependencies?: EmitHumanReplyDependencies;
 }

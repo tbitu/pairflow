@@ -142,6 +142,7 @@ export function buildImplementerDeliveryActionGuidance(input: {
   validationGuidance: string;
   actorLabel: string | null;
   approvalDecision?: "approve" | "rework" | undefined;
+  humanReplyMessage?: string | undefined;
   reworkOrigin: ImplementerReworkOrigin;
 }): string {
   const documentSourceEditGuard = buildDocumentBubbleSourceEditGuard();
@@ -156,9 +157,13 @@ export function buildImplementerDeliveryActionGuidance(input: {
       : `Reviewer feedback received. Implement fixes, then hand off with canonical actor emit (\`pairflow agent emit --kind pass ...\`) directly (no confirmation prompt). ${input.validationGuidance} If \`.pairflow/evidence/*.log\` files exist, include them as \`--ref\` (lint/typecheck/test). If only a subset ran, attach refs for that subset and state what was intentionally not executed.`;
   }
   if (input.event === "HUMAN_REPLY") {
+    const prefix =
+      input.humanReplyMessage !== undefined && input.humanReplyMessage.trim().length > 0
+        ? `Human response: "${input.humanReplyMessage.trim()}".`
+        : "Human response received.";
     return input.docsOnly
-      ? `Human response received for a document bubble. Continue document/task/spec refinement using this input, then hand off with canonical actor emit (\`pairflow agent emit --kind pass ...\`) directly. ${documentSourceEditGuard} ${input.validationGuidance} Primary artifact rule (docs-only): refine the referenced source task/document file directly, not only a new standalone review note. Docs-only scope: keep summary and refs consistent; skip-claim means no \`.pairflow/evidence/*.log\` refs in that PASS.`
-      : `Human response received. Continue implementation using this input, then hand off with canonical actor emit (\`pairflow agent emit --kind pass ...\`) directly. ${input.validationGuidance} Include available \`.pairflow/evidence/*.log\` refs on PASS.`;
+      ? `${prefix} Continue document/task/spec refinement using this input, then hand off with canonical actor emit (\`pairflow agent emit --kind pass ...\`) directly. ${documentSourceEditGuard} ${input.validationGuidance} Primary artifact rule (docs-only): refine the referenced source task/document file directly, not only a new standalone review note. Docs-only scope: keep summary and refs consistent; skip-claim means no \`.pairflow/evidence/*.log\` refs in that PASS.`
+      : `${prefix} Continue implementation using this input, then hand off with canonical actor emit (\`pairflow agent emit --kind pass ...\`) directly. ${input.validationGuidance} Include available \`.pairflow/evidence/*.log\` refs on PASS.`;
   }
   if (input.event === "APPROVAL_DECISION") {
     if (input.approvalDecision === "rework") {

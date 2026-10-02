@@ -82,4 +82,24 @@ describe("resumeCommandOrchestration", () => {
     });
     expect(result).toEqual(resultFixture);
   });
+
+  it("forwards replyDependencies to emitHumanReply", async () => {
+    const dummyDependencies = { custom: "deps" };
+    let passedDependencies: unknown;
+
+    await resumeBubbleCommandOrchestration(
+      {
+        bubbleId: "b_resume_01"
+      },
+      {
+        emitHumanReply: (_input, deps) => {
+          passedDependencies = deps;
+          return Promise.resolve(createResumeResultFixture());
+        },
+        replyDependencies: dummyDependencies as never
+      }
+    );
+
+    expect(passedDependencies).toBe(dummyDependencies);
+  });
 });

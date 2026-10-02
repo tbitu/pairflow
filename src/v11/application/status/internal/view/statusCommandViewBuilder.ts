@@ -1,4 +1,5 @@
 import { computeWatchdogStatus, type WatchdogStatus } from "../../../../shared/watchdog/watchdogStatus.js";
+import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
 import { type ReviewVerificationState } from "../../../../shared/reviewer/reviewVerification.js";
 import type { StateValidationDiagnostics } from "../../../../ports/stateSnapshots.js";
 import type { ReadWatchdogPaneActivityResult } from "../../../../shared/watchdog/watchdogPaneActivityStore.js";
@@ -142,17 +143,21 @@ function buildLocalBubbleStatusView(
   const lastMessage = input.transcript[input.transcript.length - 1] ?? null;
   const runtimeAlignedExecutionContext =
     toRuntimeAlignedReviewPolicyExecutionContext(input.state.execution_context);
+  const timeoutMinutes = resolveWatchdogTimeoutMinutesForAgent(
+    input.resolved.bubbleConfig,
+    input.state.active_agent
+  );
   let watchdog: WatchdogStatus;
   if (input.stateValidation !== null) {
     watchdog = buildDegradedWatchdogStatus({
       state: input.state,
-      timeoutMinutes: input.resolved.bubbleConfig.watchdog_timeout_minutes
+      timeoutMinutes
     });
   } else {
     try {
       watchdog = computeWatchdogStatus(
         input.state,
-        input.resolved.bubbleConfig.watchdog_timeout_minutes,
+        timeoutMinutes,
         input.now
       );
     } catch (error) {
@@ -162,7 +167,7 @@ function buildLocalBubbleStatusView(
       );
       watchdog = buildDegradedWatchdogStatus({
         state: input.state,
-        timeoutMinutes: input.resolved.bubbleConfig.watchdog_timeout_minutes
+        timeoutMinutes
       });
     }
   }

@@ -3,8 +3,10 @@ import { parseArgs } from "node:util";
 import {
   asHumanReplyCommandError,
   emitHumanReply,
+  type EmitHumanReplyDependencies,
   type EmitHumanReplyResult
 } from "../../../v11/application/reply/replyCommandApi.js";
+import { replyBubbleDependencyDefaults } from "../../../v11/defaults/reply/replyCommandDefaults.js";
 
 export interface BubbleReplyCommandOptions {
   id: string;
@@ -99,7 +101,8 @@ export function parseBubbleReplyCommandOptions(
 
 export async function runBubbleReplyCommand(
   args: string[],
-  cwd: string = process.cwd()
+  cwd: string = process.cwd(),
+  dependencies: EmitHumanReplyDependencies = replyBubbleDependencyDefaults
 ): Promise<EmitHumanReplyResult | null> {
   const options = parseBubbleReplyCommandOptions(args);
   if (options.help) {
@@ -107,13 +110,16 @@ export async function runBubbleReplyCommand(
   }
 
   try {
-    return await emitHumanReply({
-      bubbleId: options.id,
-      message: options.message,
-      refs: options.refs,
-      ...(options.repo !== undefined ? { repoPath: options.repo } : {}),
-      cwd
-    });
+    return await emitHumanReply(
+      {
+        bubbleId: options.id,
+        message: options.message,
+        refs: options.refs,
+        ...(options.repo !== undefined ? { repoPath: options.repo } : {}),
+        cwd
+      },
+      dependencies
+    );
   } catch (error) {
     asHumanReplyCommandError(error);
   }

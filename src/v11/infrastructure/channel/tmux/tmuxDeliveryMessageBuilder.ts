@@ -79,6 +79,18 @@ function resolveImplementerReworkOrigin(
   return "unknown";
 }
 
+function resolveHumanReplyMessageText(
+  envelope: ProtocolEnvelope
+): string | undefined {
+  if (envelope.type !== "HUMAN_REPLY") {
+    return undefined;
+  }
+  const message = (envelope.payload as { message?: unknown }).message;
+  return typeof message === "string" && message.trim().length > 0
+    ? message.trim()
+    : undefined;
+}
+
 function toImplementerDeliveryEvent(
   type: ProtocolEnvelope["type"]
 ): ImplementerDeliveryEvent {
@@ -104,8 +116,14 @@ function resolveImplementerMinimalIntro(
       return { text: "Implementation task received. Continue implementation.", terminal: false };
     case "PASS":
       return { text: "Reviewer feedback received. Implement fixes.", terminal: false };
-    case "HUMAN_REPLY":
-      return { text: "Human response received. Continue implementation using this input.", terminal: false };
+    case "HUMAN_REPLY": {
+      const replyText = resolveHumanReplyMessageText(envelope);
+      const text =
+        replyText !== undefined
+          ? `Human response: "${replyText}". Continue implementation using this input.`
+          : "Human response received. Continue implementation using this input.";
+      return { text, terminal: false };
+    }
     case "APPROVAL_DECISION": {
       if (envelope.type === "APPROVAL_DECISION" && envelope.payload.decision === "rework") {
         const origin = resolveImplementerReworkOrigin(envelope);
@@ -163,6 +181,9 @@ function buildImplementerDeliveryAction(input: {
     actorLabel: input.actorLabel,
     ...(input.envelope.type === "APPROVAL_DECISION"
       ? { approvalDecision: input.envelope.payload.decision }
+      : {}),
+    ...(input.envelope.type === "HUMAN_REPLY"
+      ? { humanReplyMessage: resolveHumanReplyMessageText(input.envelope) }
       : {}),
     reworkOrigin: resolveImplementerReworkOrigin(input.envelope)
   });
@@ -331,7 +352,10 @@ export function buildReviewerDeliveryAction(input: {
     });
   }
   if (input.envelope.type === "HUMAN_REPLY") {
-    return "Human response received. Continue review workflow from this update.";
+    const replyText = resolveHumanReplyMessageText(input.envelope);
+    return replyText !== undefined
+      ? `Human response: "${replyText}". Continue review workflow from this update.`
+      : "Human response received. Continue review workflow from this update.";
   }
   if (input.envelope.type === "APPROVAL_REQUEST") {
     return input.actorLabel === "meta-reviewer"
@@ -393,8 +417,11 @@ export function buildTmuxDeliveryMessage(input: {
         : {})
     });
   } else if (input.recipientRole === "meta-reviewer") {
+    const replyText = resolveHumanReplyMessageText(input.envelope);
     const prefix = input.envelope.type === "HUMAN_REPLY"
-      ? "Human response received."
+      ? (replyText !== undefined
+          ? `Human response: "${replyText}".`
+          : "Human response received.")
       : "Meta-review task received.";
     const roleInstruction =
       input.roleArtifactPath !== undefined

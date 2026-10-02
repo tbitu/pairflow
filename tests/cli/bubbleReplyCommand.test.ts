@@ -49,4 +49,24 @@ describe("runBubbleReplyCommand", () => {
     const result = await runBubbleReplyCommand(["--help"]);
     expect(result).toBeNull();
   });
+
+  it("passes custom dependencies to emitHumanReply", async () => {
+    let calledWithDeps: unknown;
+    const dummyDeps = {
+      resolveBubbleById: () => {
+        calledWithDeps = dummyDeps;
+        throw new Error("stop");
+      }
+    };
+
+    await expect(
+      runBubbleReplyCommand(
+        ["--id", "b_reply_01", "--message", "hello"],
+        "/tmp",
+        dummyDeps as never
+      )
+    ).rejects.toThrow();
+
+    expect(calledWithDeps).toBe(dummyDeps);
+  });
 });
