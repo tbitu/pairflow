@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { confirmTmuxPaneMarkerSubmission } from "../../../../../src/v11/infrastructure/channel/tmux/tmuxPaneMarkerConfirmation.js";
 import type { TmuxRunner, TmuxRunResult } from "../../../../../src/v11/ports/tmuxSessions.js";
+import type { AgentPaneAdapter } from "../../../../../src/v11/shared/agent/agentPaneAdapter.js";
+import { resolveAgentPaneAdapter } from "../../../../../src/v11/infrastructure/channel/tmux/agentPaneAdapters.js";
 
 const marker = "[pairflow] bubble=b_confirm_01";
 
@@ -85,12 +87,12 @@ describe("confirmTmuxPaneMarkerSubmission", () => {
       call === 0 ? `❯ ${marker}` : `❯ \nworking · 0s`
     );
 
-    const mockAgent = {
-      name: "reasonix" as const,
+    const mockAgent: AgentPaneAdapter = {
+      ...resolveAgentPaneAdapter("reasonix"),
       isBusy: (output: string) => output.includes("working ·"),
       findLastPromptIndex: () => -1,
       hasVisiblePrompt: () => true
-    } as any;
+    };
 
     const confirmed = await confirmTmuxPaneMarkerSubmission({
       runner,
@@ -98,6 +100,61 @@ describe("confirmTmuxPaneMarkerSubmission", () => {
       marker,
       paneAgent: mockAgent,
       attempts: 2,
+      settleDelayMs: 0,
+      retryDelayMs: 0,
+      sleepForDelayMs: noSleep
+    });
+
+    expect(confirmed).toBe(true);
+  });
+
+  it("confirms when envelopeId marker is truncated in agent TUI but [pairflow] is visible above prompt", async () => {
+    // Reasonix TUI collapses and truncates long headers:
+    // "[1] [pairflow] r2 PASS reasonix->reasonix msg=msg_2…\n❯ "
+    const envelopeId = "msg_20261002_004";
+    const { runner } = runnerReturning(
+      `[1] [pairflow] r2 PASS reasonix->reasonix msg=msg_2…\n❯ `
+    );
+
+    const mockAgent: AgentPaneAdapter = {
+      ...resolveAgentPaneAdapter("reasonix"),
+      findLastPromptIndex: (lines) => lines.findIndex((l) => l.startsWith("❯")),
+      hasVisiblePrompt: () => true
+    };
+
+    const confirmed = await confirmTmuxPaneMarkerSubmission({
+      runner,
+      targetPane: "pf:0.2",
+      marker: envelopeId,
+      paneAgent: mockAgent,
+      attempts: 1,
+      settleDelayMs: 0,
+      retryDelayMs: 0,
+      sleepForDelayMs: noSleep
+    });
+
+    expect(confirmed).toBe(true);
+  });
+
+  it("confirms when envelopeId marker is truncated in agent TUI and agent is busy", async () => {
+    const envelopeId = "msg_20261002_004";
+    const { runner } = runnerReturning(
+      `[1] [pairflow] r2 PASS reasonix->reasonix msg=msg_2…\nworking · 10s\n❯ `
+    );
+
+    const mockAgent: AgentPaneAdapter = {
+      ...resolveAgentPaneAdapter("reasonix"),
+      isBusy: (output: string) => output.includes("working ·"),
+      findLastPromptIndex: (lines) => lines.findIndex((l) => l.startsWith("❯")),
+      hasVisiblePrompt: () => true
+    };
+
+    const confirmed = await confirmTmuxPaneMarkerSubmission({
+      runner,
+      targetPane: "pf:0.2",
+      marker: envelopeId,
+      paneAgent: mockAgent,
+      attempts: 1,
       settleDelayMs: 0,
       retryDelayMs: 0,
       sleepForDelayMs: noSleep

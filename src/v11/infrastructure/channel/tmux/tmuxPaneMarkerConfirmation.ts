@@ -9,6 +9,7 @@ export interface ConfirmTmuxPaneMarkerSubmissionInput {
   runner: TmuxRunner;
   targetPane: string;
   marker: string;
+  fallbackMarker?: string | undefined;
   attempts?: number;
   settleDelayMs?: number;
   retryDelayMs?: number;
@@ -31,7 +32,8 @@ export async function checkTmuxPaneMarkerStatus(
   runner: TmuxRunner,
   targetPane: string,
   marker: string,
-  paneAgent?: AgentPaneAdapter
+  paneAgent?: AgentPaneAdapter,
+  fallbackMarker?: string
 ): Promise<TmuxPaneMarkerStatus> {
   const agent = paneAgent ?? resolveAgentPaneAdapter(undefined);
   const capture = await runner(
@@ -43,7 +45,13 @@ export async function checkTmuxPaneMarkerStatus(
   }
 
   const output = capture.stdout;
-  if (!output.includes(marker)) {
+  const activeMarker = output.includes(marker)
+    ? marker
+    : fallbackMarker !== undefined && output.includes(fallbackMarker)
+      ? fallbackMarker
+      : undefined;
+
+  if (activeMarker === undefined) {
     return "not_found";
   }
 
@@ -57,12 +65,12 @@ export async function checkTmuxPaneMarkerStatus(
   }
 
   const promptAndAfter = lines.slice(lastPromptIdx).join("\n");
-  if (promptAndAfter.includes(marker)) {
+  if (promptAndAfter.includes(activeMarker)) {
     return "stuck_in_input";
   }
 
   const beforePrompt = lines.slice(0, lastPromptIdx).join("\n");
-  if (beforePrompt.includes(marker)) {
+  if (beforePrompt.includes(activeMarker)) {
     return "submitted";
   }
 
@@ -87,6 +95,51 @@ function hasInterruptPrompt(output: string): boolean {
   return false;
 }
 
+function isPaneConfirmedBusyOrInterrupt(input: {
+  captureOutput: string;
+  agent?: AgentPaneAdapter;
+  markerSeenInPane: boolean;
+  marker: string;
+  fallbackMarker?: string | undefined;
+}): boolean {
+  const isAgentBusy = input.agent?.isBusy !== undefined && input.agent.isBusy(input.captureOutput);
+  const isInterrupt = hasInterruptPrompt(input.captureOutput.toLowerCase());
+  if (!isInterrupt && !isAgentBusy) {
+    return false;
+  }
+  if (input.markerSeenInPane) {
+    return true;
+  }
+  return input.captureOutput.includes(input.marker)
+    || (input.fallbackMarker !== undefined && input.captureOutput.includes(input.fallbackMarker));
+}
+
+async function retryStuckInputEnter(input: {
+  runner: TmuxRunner;
+  targetPane: string;
+  agent: AgentPaneAdapter;
+  retryDelayMs: number;
+  sleepForDelayMs: (delayMs: number) => Promise<void>;
+}): Promise<void> {
+  const promptCheck = await input.runner(
+    ["capture-pane", "-p", "-S", "-200", "-t", input.targetPane],
+    { allowFailure: true }
+  );
+
+  const isBusy = input.agent?.isBusy !== undefined && input.agent.isBusy(promptCheck.stdout);
+  if (promptCheck.exitCode !== 0 || !input.agent.hasVisiblePrompt(promptCheck.stdout) || isBusy) {
+    if (input.retryDelayMs > 0) {
+      await input.sleepForDelayMs(input.retryDelayMs);
+    }
+    return;
+  }
+
+  if (input.retryDelayMs > 0) {
+    await input.sleepForDelayMs(input.retryDelayMs);
+  }
+  await submitTmuxPaneInput(input.runner, input.targetPane);
+}
+
 /**
  * Poll until a pasted marker is confirmed submitted. Presses Enter for a marker
  * still sitting in the composer once the pane shows an input surface.
@@ -94,15 +147,12 @@ function hasInterruptPrompt(output: string): boolean {
 export async function confirmTmuxPaneMarkerSubmission(
   input: ConfirmTmuxPaneMarkerSubmissionInput
 ): Promise<boolean> {
-  // Agent TUIs can take many seconds to echo a submitted message (model load on
-  // first prompt), so the window must outlast the echo or delivery gets resent.
   const agent = input.paneAgent ?? resolveAgentPaneAdapter(undefined);
   const attempts = Math.max(1, input.attempts ?? 8);
   const settleDelayMs = input.settleDelayMs ?? 800;
   const retryDelayMs = input.retryDelayMs ?? 1500;
   const sleepForDelayMs = input.sleepForDelayMs ?? sleep;
-  // A busy pane only proves submission once the marker itself was seen; a pane
-  // can be mid-turn for reasons unrelated to this delivery.
+  const fallbackMarker = input.fallbackMarker ?? (input.marker !== "[pairflow]" ? "[pairflow]" : undefined);
   let markerSeenInPane = false;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -113,7 +163,8 @@ export async function confirmTmuxPaneMarkerSubmission(
       input.runner,
       input.targetPane,
       input.marker,
-      agent
+      agent,
+      fallbackMarker
     );
     if (status === "submitted") {
       return true;
@@ -125,46 +176,33 @@ export async function confirmTmuxPaneMarkerSubmission(
       ["capture-pane", "-p", "-t", input.targetPane],
       { allowFailure: true }
     );
-    if (capture.exitCode === 0 && markerSeenInPane) {
-      const lowerOutput = capture.stdout.toLowerCase();
-      if (hasInterruptPrompt(lowerOutput) || (agent?.isBusy !== undefined && agent.isBusy(capture.stdout))) {
-        return true;
-      }
+    if (
+      capture.exitCode === 0 &&
+      isPaneConfirmedBusyOrInterrupt({
+        captureOutput: capture.stdout,
+        agent,
+        markerSeenInPane,
+        marker: input.marker,
+        fallbackMarker
+      })
+    ) {
+      return true;
     }
     if (attempt < attempts - 1) {
-      // Only press Enter for a marker still sitting in the composer; a blind
-      // Enter elsewhere injects stray input into the agent's turn.
       if (status !== "stuck_in_input") {
         if (retryDelayMs > 0) {
           await sleepForDelayMs(retryDelayMs);
         }
-
         continue;
       }
 
-      const promptCheck = await input.runner(
-        ["capture-pane", "-p", "-S", "-200", "-t", input.targetPane],
-        { allowFailure: true }
-      );
-
-      if (
-        promptCheck.exitCode !== 0
-        || !agent.hasVisiblePrompt(promptCheck.stdout)
-        || (agent?.isBusy !== undefined && agent.isBusy(promptCheck.stdout))
-      ) {
-        // Pane is still processing previous input; wait longer instead of
-        // blindly resending Enter.
-        if (retryDelayMs > 0) {
-          await sleepForDelayMs(retryDelayMs);
-        }
-
-        continue;
-      }
-
-      if (retryDelayMs > 0) {
-        await sleepForDelayMs(retryDelayMs);
-      }
-      await submitTmuxPaneInput(input.runner, input.targetPane);
+      await retryStuckInputEnter({
+        runner: input.runner,
+        targetPane: input.targetPane,
+        agent,
+        retryDelayMs,
+        sleepForDelayMs
+      });
     }
   }
 

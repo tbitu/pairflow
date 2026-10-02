@@ -32,8 +32,7 @@ import type { PassRecipientRole, PassSenderRole } from "../../../../domain/pass/
 import {
   buildPassDeliveryInput,
   loadReviewerStartupPrompt,
-  resolveDeliveryInitialDelayMs,
-  shouldRetryPassDelivery
+  resolveDeliveryInitialDelayMs
 } from "./reviewerDeliveryHelpers.js";
 import { executeRoleHandoffDelivery } from "../../../../shared/delivery/roleHandoffDelivery.js";
 import {

@@ -245,7 +245,7 @@ const reasonixPaneAdapter: AgentPaneAdapter = {
   resolvePasteOptions() {
     return resolvePasteOptions("reasonix");
   },
-  supportsConcurrentPanes: false,
+  supportsConcurrentPanes: true,
   startupPromptDelivery: "none",
   trustPromptHandling: "none",
   postEmitInterruption: "none",

@@ -20,7 +20,7 @@ describe("agentRuntimeProfiles", () => {
     expect(profile.supportsConcurrentPanes).toBe(true);
   });
 
-  it("declares the reasonix profile for non-concurrent operation with file-based role instructions", () => {
+  it("declares the reasonix profile for concurrent operation with file-based role instructions", () => {
     const profile = getAgentRuntimeProfile("reasonix");
     expect(profile.startupPromptDelivery).toBe("none");
     // Short kickoff (minimal guidance) so the pasted message stays tiny and
@@ -35,8 +35,8 @@ describe("agentRuntimeProfiles", () => {
     expect(profile.trustPromptHandling).toBe("none");
     expect(profile.readiness).toBe("reasonix");
     expect(profile.planWatchBackend).toBe("reasonix");
-    // Machine-wide single active interactive session -> no concurrent panes.
-    expect(profile.supportsConcurrentPanes).toBe(false);
+    // reasonix supports concurrent interactive sessions across panes/roles.
+    expect(profile.supportsConcurrentPanes).toBe(true);
   });
 
   it("throws a stable-code error for unknown agents", () => {

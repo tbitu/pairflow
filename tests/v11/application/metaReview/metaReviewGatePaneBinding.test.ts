@@ -715,7 +715,7 @@ describe("metaReviewGatePaneBinding", () => {
     expect(notifySubmissionRequest).not.toHaveBeenCalled();
   });
 
-  it("deactivates other non-concurrent panes and pastes prompt via tmux when meta-reviewer is reasonix", async () => {
+  it("pastes prompt via tmux when meta-reviewer is reasonix without deactivating other panes", async () => {
     const paneRunner = vi.fn();
     const respawnPaneCommand = vi.fn(async () => undefined);
     const deactivateOtherRolePanes = vi.fn(async () => undefined);
@@ -765,7 +765,7 @@ describe("metaReviewGatePaneBinding", () => {
       configureRoleAgent: (role) => (role === "implementer" ? "reasonix" : "opencode")
     });
 
-    expect(deactivateOtherRolePanes).toHaveBeenCalledTimes(1);
+    expect(deactivateOtherRolePanes).not.toHaveBeenCalled();
     expect(respawnPaneCommand).toHaveBeenCalledTimes(1);
     expect(waitForPaneReady).toHaveBeenCalledWith("reasonix", expect.objectContaining({
       targetPane: "pf-b_meta_review_gate_reasonix_01:0.3"
@@ -847,7 +847,7 @@ describe("metaReviewGatePaneBinding", () => {
       metaReviewerMcpPolicy: "enabled"
     });
 
-    expect(deactivateOtherRolePanes).toHaveBeenCalledTimes(1);
+    expect(deactivateOtherRolePanes).not.toHaveBeenCalled();
     expect(respawnPaneCommand).toHaveBeenCalledTimes(1);
     expect(waitForPaneReady).toHaveBeenCalledTimes(1);
     expect(sendSubmissionRequestMessage).not.toHaveBeenCalled();

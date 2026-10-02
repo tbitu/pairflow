@@ -33,7 +33,12 @@ const commandInvariantDefinitions: readonly CommandInvariantDefinition[] = [
   {
     command: "pass",
     folderScopes: ["application", "shared"],
-    adapterNames: ["emitDeliveryNotificationAck", "emitTmuxDeliveryNotification", "deliverToRole"],
+    adapterNames: [
+      "emitDeliveryNotificationAck",
+      "emitTmuxDeliveryNotification",
+      "deliverToRole",
+      "executeRoleHandoffDelivery"
+    ],
     resultPropertyNames: ["delivery"],
     acceptedOutcomePropertyNames: ["delivered", "status", "failure", "error", "reason_code", "reasonCode"]
   },

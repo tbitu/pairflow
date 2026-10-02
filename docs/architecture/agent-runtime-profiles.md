@@ -27,7 +27,7 @@ Supported agents today:
 | `paneBusyPatterns` | `esc interrupt` | `(working|checking|...) · <n>` + spinner + `esc interrupt` |
 | `readiness` | `opencode` | `reasonix` |
 | `planWatchBackend` | `opencode` | `reasonix` |
-| `supportsConcurrentPanes` | `true` | `false` |
+| `supportsConcurrentPanes` | `true` | `true` |
 
 ## opencode-scoped behaviors (kept opencode-only)
 
@@ -95,20 +95,13 @@ the result has been persisted.
   through `npm exec reason` -> `sh` -> `node/MainThread` -> `reasonix`). Process-alive checks
   match `reasonix`, `node`, `mainthread`, `npm`, `sh`. Fail-closed on known startup errors
   ("session is in use by another Reasonix", missing provider API key, "not a terminal").
-- **Single-active-session constraint**: the reasonix interactive TUI refuses to
-  start while another reasonix session is active machine-wide
-  ("this session is in use by another Reasonix window or process"),
-  independent of `--dir`. Consequences:
-  - At fresh bubble start only the initially active implementer pane launches;
-    reviewer/meta-reviewer panes start with a placeholder and respawn lazily on
-    their first delivery.
-  - Before activating a role pane (delivery, watchdog respawn, reviewer/
-    implementer context activation), the other role panes are **deactivated**
-    (respawned with a placeholder shell) when the activated agent is
-    non-concurrent (`deactivateOtherRolePanes` in
-    `src/v11/shared/channel/rolePaneLifecycle.ts`), releasing the session lock.
-  - The plan-watch runner backend uses headless `reasonix run --events-jsonl`,
-    which is NOT blocked by the interactive session lock.
+- **Concurrent interactive sessions**: reasonix supports concurrent interactive
+  sessions across panes and roles. Each fresh launch (`reasonix code --dir ...`)
+  mints a distinct session ID, allowing implementer, reviewer, and meta-reviewer
+  panes to launch and warm up concurrently at bubble start. The session lock
+  ("this session is in use by another Reasonix window or process") applies only
+  when attempting to resume an existing session ID with `--continue` or `--resume`,
+  which Pairflow does not use.
 - **Plan-watch backend** (`src/v11/infrastructure/executor/planWatch/reasonix/**`):
   `reasonix run --events-jsonl --permission-mode danger-full-access --dir <repo> <prompt>`; the prompt asks the
   runner to end with exactly one JSON object matching the pairflow

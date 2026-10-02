@@ -366,13 +366,8 @@ function buildRespawnPaneAgentAction(input: {
   const roleName = input.expectedAgentRole;
   const agentName = input.expectedPaneAgent;
   return async (): Promise<void> => {
-    const roleModel = resolveRoleModel({
-      role: roleName,
-      bubbleConfig: input.bubbleConfig
-    });
-    const roleMcpPolicy =
-      input.bubbleConfig.role_mcp?.[roleName]
-      ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE[roleName];
+    const roleModel = resolveRoleModel({ role: roleName, bubbleConfig: input.bubbleConfig });
+    const roleMcpPolicy = input.bubbleConfig.role_mcp?.[roleName] ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE[roleName];
     const respawnCommand = buildAgentCommand({
       agentName,
       roleName,
@@ -382,11 +377,7 @@ function buildRespawnPaneAgentAction(input: {
       workspacePath: input.workspacePath,
       pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile,
       ...(input.bubbleConfig.executor?.type === "ssh"
-        ? {
-            remoteWorkspaceAuthority: {
-              workspaceRoot: input.workspacePath
-            }
-          }
+        ? { remoteWorkspaceAuthority: { workspaceRoot: input.workspacePath } }
         : {})
     });
     await respawnTmuxPaneCommand({
@@ -420,14 +411,8 @@ async function deactivateNonConcurrentAgentPanes(input: {
     },
     topologyPaneIndexForRole: getSharedTopologySlotPaneIndexForRole,
     respawnPane: (respawnInput) => respawnTmuxPaneCommand(respawnInput),
-    // Only ever deactivate panes that run another non-concurrent (reasonix)
-    // agent. opencode reviewer/meta-reviewer panes must not be turned into
-    // placeholders just because the reasonix implementer is active.
     configureRoleAgent: (role) => resolveAgentPaneAdapter(
-      resolveConfiguredAgentForRole({
-        agents: input.bubbleConfig.agents,
-        role
-      })
+      resolveConfiguredAgentForRole({ agents: input.bubbleConfig.agents, role })
     )
   });
 }
@@ -478,12 +463,21 @@ export async function retryStuckAgentInput(
     return { retried: false, reason: "not_stuck" };
   }
 
+  const expectedPaneAgent = options.bubbleConfig !== undefined
+    ? resolveConfiguredAgentForRole({
+        agents: options.bubbleConfig.agents,
+        role: options.activeRole
+      })
+    : undefined;
+  const paneAgent = resolveAgentPaneAdapter(expectedPaneAgent);
+
   // Check if the [pairflow] marker is stuck in the input buffer
   // (after the last prompt line) rather than in the output area.
   const markerStatus = await checkTmuxPaneMarkerStatus(
     runner,
     targetPane,
-    "[pairflow]"
+    "[pairflow]",
+    paneAgent
   );
   if (markerStatus !== "stuck_in_input") {
     // Marker is either already submitted or not present in the live input area.
