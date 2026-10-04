@@ -234,10 +234,14 @@ describe("getBubbleStatus", () => {
     const status = await getBubbleStatus({
       bubbleId: bubble.bubbleId,
       cwd: repoPath,
-      now: new Date("2026-02-22T14:03:00.000Z")
+      now: new Date("2026-02-21T13:00:00.000Z")
     });
 
     expect(status.watchdog.timeoutMinutes).toBe(120);
+    expect(status.watchdog.referenceTimestamp).toBe("2026-02-21T12:00:00.000Z");
+    expect(status.watchdog.deadlineTimestamp).toBe("2026-02-21T14:00:00.000Z");
+    expect(status.watchdog.remainingSeconds).toBe(3600);
+    expect(status.watchdog.expired).toBe(false);
   });
 
   it("clears pending human question count after reply", async () => {

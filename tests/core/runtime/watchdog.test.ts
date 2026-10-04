@@ -279,4 +279,39 @@ describe("computeWatchdogStatus", () => {
     expect(status.remainingSeconds).toBe(0);
     expect(status.expired).toBe(true);
   });
+
+  it("dynamically resolves deadline from execution_context started_at using resolved watchdogTimeoutMinutes", () => {
+    const executionContext = {
+      active_role: "implementer" as const,
+      awaited_output_type: "pass_result" as const,
+      handoff_id: "handoff_01",
+      execution_id: "exec_01",
+      round: 1,
+      started_at: "2026-02-22T12:00:00.000Z",
+      // Stale deadline previously minted with 30m
+      deadline_at: "2026-02-22T12:30:00.000Z",
+      attempt: 1
+    };
+
+    // When 45 minutes have elapsed, a 30m deadline would be expired, but with
+    // resolved watchdogTimeoutMinutes = 120, it should have 75 minutes remaining and not be expired.
+    const status = computeWatchdogStatus(
+      createState({
+        state: "RUNNING",
+        active_agent: "opencode",
+        active_role: "implementer",
+        active_since: "2026-02-22T12:00:00.000Z",
+        execution_context: executionContext
+      }),
+      120,
+      new Date("2026-02-22T12:45:00.000Z")
+    );
+
+    expect(status.monitored).toBe(true);
+    expect(status.timeoutMinutes).toBe(120);
+    expect(status.referenceTimestamp).toBe("2026-02-22T12:00:00.000Z");
+    expect(status.deadlineTimestamp).toBe("2026-02-22T14:00:00.000Z");
+    expect(status.remainingSeconds).toBe(75 * 60);
+    expect(status.expired).toBe(false);
+  });
 });

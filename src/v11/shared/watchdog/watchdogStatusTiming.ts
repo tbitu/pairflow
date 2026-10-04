@@ -109,12 +109,18 @@ export function resolveWatchdogStatusTiming(
     return buildInvalidReferenceWatchdogStatusTiming(referenceTimestamp);
   }
 
+  const timeoutMs = input.watchdogTimeoutMinutes * 60_000;
+  if (!Number.isFinite(timeoutMs) || input.watchdogTimeoutMinutes <= 0) {
+    return buildInvalidDeadlineWatchdogStatusTiming(
+      referenceTimestamp,
+      deadlineTimestamp
+    );
+  }
+
   const resolvedDeadlineTimestamp =
-    deadlineTimestamp === null
-      ? new Date(
-          referenceMs + input.watchdogTimeoutMinutes * 60_000
-        ).toISOString()
-      : deadlineTimestamp;
+    input.state.active_agent !== null
+      ? new Date(referenceMs + timeoutMs).toISOString()
+      : (deadlineTimestamp ?? new Date(referenceMs + timeoutMs).toISOString());
   const deadlineMs = Date.parse(resolvedDeadlineTimestamp);
   if (Number.isNaN(deadlineMs)) {
     return buildInvalidDeadlineWatchdogStatusTiming(
@@ -122,7 +128,6 @@ export function resolveWatchdogStatusTiming(
       deadlineTimestamp
     );
   }
-
   const remainingMs = deadlineMs - input.now.getTime();
   const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1_000));
 
