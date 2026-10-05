@@ -1,0 +1,37 @@
+{
+  "name": "Pairflow Devcontainer",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "runArgs": [
+    "--add-host=host.docker.internal:host-gateway"
+  ],
+  "mounts": [
+    "source=pairflow-reasonix-state,target=/home/vscode/.reasonix,type=volume",
+    "source=pairflow-opencode-state,target=/home/vscode/.config/opencode,type=volume",
+    "source=pairflow-npm-cache,target=/home/vscode/.npm,type=volume",
+    "source=pairflow-pnpm-store,target=/home/vscode/.local/share/pnpm,type=volume"
+  ],
+  "containerEnv": {
+    "UPSTREAM_URL": "${localEnv:PAIRFLOW_OPENAI_ENDPOINT:http://host.docker.internal:11434/v1}",
+    "TARGET_MODEL": "${localEnv:PAIRFLOW_TARGET_MODEL:qwen3.8-27b:q8_0}",
+    "BACKEND": "${localEnv:PAIRFLOW_BACKEND:ollama}",
+    "UPSTREAM_API_KEY": "${localEnv:PAIRFLOW_UPSTREAM_API_KEY:}",
+    "DEEPSEEK_API_KEY": "${localEnv:DEEPSEEK_API_KEY:}",
+    "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY:}"
+  },
+  "postCreateCommand": "/usr/local/bin/init-container.sh",
+  "postStartCommand": "/usr/local/bin/start-services.sh",
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  }
+}
