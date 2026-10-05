@@ -14,12 +14,22 @@ npx --yes reasonix --version >/dev/null 2>&1 || true
 
 # 2. Pairflow CLI Setup
 echo "[2/4] Ensuring Pairflow CLI is available..."
+mkdir -p "${USER_HOME}/.npm-global/bin"
+
 if [ -f "/workspace/package.json" ] && grep -q '"name": "@pairflow/cli"' "/workspace/package.json"; then
-    echo "Detected Pairflow source repository. Linking workspace CLI..."
-    (cd /workspace && pnpm install --frozen-lockfile && pnpm build && pnpm link --global) || {
-        echo "Warning: Local build failed, falling back to npm install @pairflow/cli..."
+    echo "Detected Pairflow source repository."
+    if [ -f "/workspace/dist/cli/index.js" ]; then
+        echo "Found workspace dist/cli/index.js. Linking CLI wrapper..."
+        cat <<'EOF' > "${USER_HOME}/.npm-global/bin/pairflow"
+#!/usr/bin/env bash
+exec node /workspace/dist/cli/index.js "$@"
+EOF
+        chmod +x "${USER_HOME}/.npm-global/bin/pairflow"
+        echo "✓ Linked workspace Pairflow CLI to ${USER_HOME}/.npm-global/bin/pairflow"
+    else
+        echo "dist/cli/index.js not present; installing global fallback..."
         npm install -g @pairflow/cli@latest
-    }
+    fi
 else
     echo "Installing @pairflow/cli@latest..."
     npm install -g @pairflow/cli@latest

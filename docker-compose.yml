@@ -4,10 +4,11 @@ services:
     container_name: pairflow-devcontainer
     restart: unless-stopped
     stdin_open: true
-    tty: true
+    security_opt:
+      - label:disable
     volumes:
-      # Mount repository into workspace
-      - .:/workspace:cached
+      # Mount repository into workspace (:z for SELinux container volume relabeling)
+      - .:/workspace:z
       # Persist agent configurations, credentials, and package caches
       - pairflow-reasonix-state:/home/vscode/.reasonix
       - pairflow-opencode-state:/home/vscode/.config/opencode

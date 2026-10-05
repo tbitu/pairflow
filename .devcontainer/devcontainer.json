@@ -2,7 +2,8 @@
   "name": "Pairflow Devcontainer",
   "image": "ghcr.io/tbitu/pairflow-devcontainer:latest",
   "runArgs": [
-    "--add-host=host.docker.internal:host-gateway"
+    "--add-host=host.docker.internal:host-gateway",
+    "--security-opt", "label=disable"
   ],
   "mounts": [
     "source=pairflow-reasonix-state,target=/home/vscode/.reasonix,type=volume",
