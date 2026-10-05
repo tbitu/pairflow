@@ -1,22 +1,23 @@
-# Pairflow Devcontainer
+# Pairflow Devcontainer & Docker Compose
 
 A portable containerized development environment for Pairflow, Opencode, and Reasonix paired with local or remote LLM inference.
 
 ## Key Architecture
 
+- **Prebuilt Image via GHCR**: `devcontainer.json` pulls the prebuilt multi-arch image `ghcr.io/tbitu/pairflow-devcontainer:latest`, requiring zero local build time.
 - **`tcpproxy` Background Service**: Listens inside the container on `127.0.0.1:1235`. It transparently proxies OpenAI requests to your host's inference engine (`Ollama`, `LM Studio`, `vLLM`), maps Pairflow virtual model roles (`pairflow-implementer`, `pairflow-reviewer`, `pairflow-meta-reviewer`), and injects role-specific sampling hyperparameters.
 - **Runtime Tool Updates**: Opencode, Reasonix, and Pairflow CLI are fetched/updated at container creation rather than frozen into the base image.
 - **State & Credential Persistence**:
   - `pairflow-reasonix-state`: Persists `~/.reasonix/.env` (API keys), provider config, and history.
   - `pairflow-opencode-state`: Persists Opencode settings and plugins.
   - `pairflow-npm-cache`: Caches package downloads so runtime startup is fast.
-- **Automated GHCR CI/CD**: The GitHub Actions workflow (`.github/workflows/devcontainer.yml`) automatically builds multi-arch (`linux/amd64`, `linux/arm64`) images on push to `main` and publishes them to the GitHub Container Registry (`ghcr.io`).
+- **Automated GHCR CI/CD**: The GitHub Actions workflow (`.github/workflows/devcontainer.yml`) builds multi-arch (`linux/amd64`, `linux/arm64`) images in parallel and publishes unified manifest lists to `ghcr.io/tbitu/pairflow-devcontainer`.
 
 ---
 
 ## Configuration Parameters
 
-Parameters can be passed as host environment variables or edited in `devcontainer.json`:
+Parameters can be passed as host environment variables, in `docker-compose.yml`, or edited in `devcontainer.json`:
 
 | Environment Variable | Default Value | Description |
 |----------------------|---------------|-------------|
@@ -29,64 +30,46 @@ Parameters can be passed as host environment variables or edited in `devcontaine
 
 ---
 
-## Usage
+## Usage Modes
 
-### 1. Host Inference Setup
+### Mode A: VS Code Dev Containers (Pulls Prebuilt Image)
 
-Ensure your host inference engine is running and bound to `0.0.0.0` or accessible to containers:
+1. Ensure your host inference engine is running (e.g. `OLLAMA_HOST=0.0.0.0:11434 ollama serve` or LM Studio local server).
+2. Open the repository in VS Code and select **Dev Containers: Reopen in Container**.
+3. VS Code pulls `ghcr.io/tbitu/pairflow-devcontainer:latest` directly and launches into the workspace.
 
-- **Ollama**:
-  ```bash
-  OLLAMA_HOST=0.0.0.0:11434 ollama serve
-  ```
-- **LM Studio**:
-  Enable the local server and check **Serve on local network** (port 1234).
-  Set host variables:
-  ```bash
-  export PAIRFLOW_OPENAI_ENDPOINT="http://host.docker.internal:1234/v1"
-  export PAIRFLOW_TARGET_MODEL="qwen3.8-27b@q8_0"
-  export PAIRFLOW_BACKEND="lmstudio"
-  ```
+### Mode B: Standalone Docker Compose (Terminal / Headless)
 
-### 2. Launch Devcontainer
-
-- **In VS Code**: Open the repository and select **Dev Containers: Reopen in Container**.
-- **Using Devcontainer CLI**:
-  ```bash
-  devcontainer up --workspace-folder .
-  devcontainer exec --workspace-folder . bash
-  ```
-
-### 3. Inside the Container
-
-All agents connect through `http://127.0.0.1:1235/v1` automatically:
+Run the environment directly via Docker Compose on any machine:
 
 ```bash
-# Pairflow bubble orchestration
-pairflow bubble start ...
+# Start Pairflow container in background
+docker compose up -d
 
-# Interactive agents
-opencode
-npx reasonix code
+# Open a shell in the container
+docker compose exec -it pairflow bash
+
+# Optional: Also run a local Ollama container if host has no LLM installed
+docker compose --profile with-ollama up -d
 ```
 
 ---
 
-## Building & Publishing to GHCR
+## Building Locally & Publishing to GHCR
 
 ### Automated (GitHub Actions)
 Whenever changes are pushed to `main` under `.devcontainer/**`, GitHub Actions builds multi-architecture images and pushes them to:
 ```text
-ghcr.io/<owner>/<repo>/pairflow-devcontainer:latest
-ghcr.io/<owner>/<repo>/pairflow-devcontainer:<sha>
+ghcr.io/tbitu/pairflow-devcontainer:latest
+ghcr.io/tbitu/pairflow-devcontainer:<sha>
 ```
 
 ### Local Build Script
-Build locally with Docker, Podman, or Devcontainer CLI:
+If you want to modify the base `Dockerfile` and build locally:
 ```bash
 # Build local image
 pnpm devcontainer:build
 
-# Or build and push directly to a custom registry:
-bash scripts/build-devcontainer.sh --tag=ghcr.io/myuser/pairflow-devcontainer:latest --push
+# Or build and push directly to GHCR:
+bash scripts/build-devcontainer.sh --tag=ghcr.io/tbitu/pairflow-devcontainer:latest --push
 ```

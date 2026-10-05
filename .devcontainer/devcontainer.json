@@ -1,9 +1,6 @@
 {
   "name": "Pairflow Devcontainer",
-  "build": {
-    "dockerfile": "Dockerfile",
-    "context": "."
-  },
+  "image": "ghcr.io/tbitu/pairflow-devcontainer:latest",
   "runArgs": [
     "--add-host=host.docker.internal:host-gateway"
   ],
