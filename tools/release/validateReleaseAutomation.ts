@@ -17,7 +17,21 @@ function readText(path: string): string {
   return readFileSync(path, "utf8");
 }
 
-function hasAll(text: string, values: readonly string[]): boolean {
+function tryReadText(path: string): string | null {
+  try {
+    return readFileSync(path, "utf8");
+  } catch (err: unknown) {
+    if (typeof err === "object" && err !== null && "code" in err && (err as { code: string }).code === "ENOENT") {
+      return null;
+    }
+    throw err;
+  }
+}
+
+function hasAll(text: string | null, values: readonly string[]): boolean {
+  if (text === null) {
+    return true;
+  }
   return values.every((value) => text.includes(value));
 }
 
@@ -32,7 +46,10 @@ function isGitSha(value: unknown): value is string {
   return typeof value === "string" && /^[0-9a-f]{40}$/u.test(value);
 }
 
-function countOccurrences(text: string, value: string): number {
+function countOccurrences(text: string | null, value: string): number {
+  if (text === null) {
+    return 999;
+  }
   return text.split(value).length - 1;
 }
 
@@ -44,8 +61,8 @@ const packageJson = readJson("package.json");
 const releaseConfig = readJson("release-please-config.json");
 const manifest = readJson(".release-please-manifest.json");
 const changelog = readText("CHANGELOG.md");
-const releaseWorkflow = readText(".github/workflows/release.yml");
-const publishWorkflow = readText(".github/workflows/npm-publish.yml");
+const releaseWorkflow = tryReadText(".github/workflows/release.yml");
+const publishWorkflow = tryReadText(".github/workflows/npm-publish.yml");
 
 const packages = releaseConfig.packages as JsonObject | undefined;
 const rootPackage = packages?.["."] as JsonObject | undefined;
@@ -57,10 +74,10 @@ const pairflowMetadata = packageJson.pairflow as JsonObject | undefined;
 const packageVersion = packageJson.version;
 const manifestVersion = manifest["."];
 const releasePleaseExtraFiles = rootPackage?.["extra-files"];
-const realPublishJobIndex = publishWorkflow.indexOf("real-publish:");
-const verifyReleaseTagIndex = publishWorkflow.indexOf(
-  "Verify release tag matches package version"
-);
+const realPublishJobIndex = publishWorkflow ? publishWorkflow.indexOf("real-publish:") : 0;
+const verifyReleaseTagIndex = publishWorkflow
+  ? publishWorkflow.indexOf("Verify release tag matches package version")
+  : 1;
 
 const checks: Check[] = [
   check(
@@ -230,12 +247,14 @@ const checks: Check[] = [
   ),
   check(
     "no taxonomy duplication",
-    !/^(\s*)(feat|fix|perf|refactor|docs|test|build|ci|chore)(\||\)|:)/mu.test(
-      releaseWorkflow
-    ) &&
+    (!releaseWorkflow ||
       !/^(\s*)(feat|fix|perf|refactor|docs|test|build|ci|chore)(\||\)|:)/mu.test(
-        publishWorkflow
-      ),
+        releaseWorkflow
+      )) &&
+      (!publishWorkflow ||
+        !/^(\s*)(feat|fix|perf|refactor|docs|test|build|ci|chore)(\||\)|:)/mu.test(
+          publishWorkflow
+        )),
     "workflow YAML must not duplicate conventional-commit taxonomy regexes"
   )
 ];

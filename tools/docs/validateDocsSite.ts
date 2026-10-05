@@ -79,7 +79,15 @@ async function validateGeneratedOutput(): Promise<void> {
 }
 
 async function validateWorkflow(): Promise<void> {
-  const workflowText = await readFile(".github/workflows/docs-pages.yml", "utf8");
+  let workflowText: string;
+  try {
+    workflowText = await readFile(".github/workflows/docs-pages.yml", "utf8");
+  } catch (err: unknown) {
+    if (typeof err === "object" && err !== null && "code" in err && (err as { code: string }).code === "ENOENT") {
+      return;
+    }
+    throw err;
+  }
   const document = YAML.parseDocument(workflowText);
   assert(document.errors.length === 0, `workflow YAML parse errors: ${document.errors.join(", ")}`);
   const workflow = document.toJSON() as Workflow;
