@@ -9,9 +9,12 @@ services:
     volumes:
       # Mount repository into workspace (:z for SELinux container volume relabeling)
       - .:/workspace:z
+      # Persist bubble git worktrees outside repo tree
+      - pairflow-worktrees:/.pairflow-worktrees
       # Persist agent configurations, credentials, and package caches
       - pairflow-reasonix-state:/home/vscode/.reasonix
       - pairflow-opencode-state:/home/vscode/.config/opencode
+      - pairflow-opencode-home:/home/vscode/.opencode
       - pairflow-npm-cache:/home/vscode/.npm
       - pairflow-pnpm-store:/home/vscode/.local/share/pnpm
     extra_hosts:
@@ -39,8 +42,10 @@ services:
       - pairflow-ollama-models:/root/.ollama
 
 volumes:
+  pairflow-worktrees:
   pairflow-reasonix-state:
   pairflow-opencode-state:
+  pairflow-opencode-home:
   pairflow-npm-cache:
   pairflow-pnpm-store:
   pairflow-ollama-models:

@@ -8,8 +8,10 @@ services:
       - label:disable
     volumes:
       - ..:/workspace:z
+      - pairflow-worktrees:/.pairflow-worktrees
       - pairflow-reasonix-state:/home/vscode/.reasonix
       - pairflow-opencode-state:/home/vscode/.config/opencode
+      - pairflow-opencode-home:/home/vscode/.opencode
       - pairflow-npm-cache:/home/vscode/.npm
       - pairflow-pnpm-store:/home/vscode/.local/share/pnpm
     extra_hosts:
@@ -34,8 +36,10 @@ services:
       - pairflow-ollama-models:/root/.ollama
 
 volumes:
+  pairflow-worktrees:
   pairflow-reasonix-state:
   pairflow-opencode-state:
+  pairflow-opencode-home:
   pairflow-npm-cache:
   pairflow-pnpm-store:
   pairflow-ollama-models:

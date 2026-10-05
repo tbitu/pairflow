@@ -6,8 +6,10 @@
     "--security-opt", "label=disable"
   ],
   "mounts": [
+    "source=pairflow-worktrees,target=/.pairflow-worktrees,type=volume",
     "source=pairflow-reasonix-state,target=/home/vscode/.reasonix,type=volume",
     "source=pairflow-opencode-state,target=/home/vscode/.config/opencode,type=volume",
+    "source=pairflow-opencode-home,target=/home/vscode/.opencode,type=volume",
     "source=pairflow-npm-cache,target=/home/vscode/.npm,type=volume",
     "source=pairflow-pnpm-store,target=/home/vscode/.local/share/pnpm,type=volume"
   ],

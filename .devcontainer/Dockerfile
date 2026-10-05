@@ -47,9 +47,11 @@ ENV PATH="/home/vscode/.npm-global/bin:${PNPM_HOME}:${PATH}"
 RUN mkdir -p /home/vscode/.npm-global/bin \
              /home/vscode/.local/share/pnpm \
              /home/vscode/.npm \
+             /home/vscode/.opencode \
              /home/vscode/.reasonix \
              /home/vscode/.config/opencode \
-    && chown -R vscode:vscode /home/vscode
+             /.pairflow-worktrees \
+    && chown -R vscode:vscode /home/vscode /.pairflow-worktrees
 
 # 5. Git safe directory config for mounted workspaces
 RUN git config --system --add safe.directory "*"

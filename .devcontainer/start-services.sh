@@ -33,4 +33,16 @@ else
     echo "   Ensure host LLM (Ollama/LM Studio/vLLM) is running and bound to 0.0.0.0 or accessible to containers."
 fi
 
+# 4. Check agent skills availability
+USER_HOME="${HOME:-/home/vscode}"
+PAIRFLOW_BIN="${USER_HOME}/.npm-global/bin/pairflow"
+if [ -x "${PAIRFLOW_BIN}" ] && [ ! -d "${USER_HOME}/.opencode/skills/UsePairflow" ]; then
+    echo "Installing missing agent skills..."
+    "${PAIRFLOW_BIN}" skills install --skills all --target-dir .opencode --link-other --force || true
+    if [ -d "${USER_HOME}/.opencode/skills" ]; then
+        mkdir -p "${USER_HOME}/.config/opencode"
+        ln -sfn "${USER_HOME}/.opencode/skills" "${USER_HOME}/.config/opencode/skills"
+    fi
+fi
+
 echo "=== Services Ready ==="
