@@ -177,6 +177,7 @@ export async function refreshReviewerContext(
     ...(reviewerModel !== undefined ? { model: reviewerModel } : {}),
     bubbleId: input.bubbleId,
     workspacePath,
+    repoPath: input.bubbleConfig.repo_path,
     pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile,
     ...(input.bubbleConfig.executor?.type === "ssh"
       ? {

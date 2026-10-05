@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
 import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
 import type {
@@ -43,6 +44,7 @@ function buildAgentLaunchArgs(input: {
   model: string | undefined;
   startupPrompt: string | undefined;
   workspacePath: string;
+  repoPath?: string | undefined;
 }): string[] {
   const profile = getAgentRuntimeProfile(input.agentName);
   const args: string[] = [];
@@ -60,6 +62,15 @@ function buildAgentLaunchArgs(input: {
     // reasonix: code-mode TUI pinned to the workspace. Role identity is
     // delivered via file-based role instructions in the workspace artifacts.
     args.push("code", "--dir", input.workspacePath);
+
+    const trimmedRepoPath = input.repoPath?.trim();
+    if (
+      trimmedRepoPath !== undefined &&
+      trimmedRepoPath.length > 0 &&
+      resolve(trimmedRepoPath) !== resolve(input.workspacePath)
+    ) {
+      args.push("--add-dir", trimmedRepoPath);
+    }
 
     if ((input.model?.trim().length ?? 0) > 0) {
       args.push("--model", trimAndStripTrailingSlashes(input.model as string));
@@ -104,44 +115,23 @@ function buildMissingBinaryMessage(agentName: AgentName, bubbleId: string): stri
 /**
  * reasonix is file-configured (reasonix.toml in the workspace root, else the
  * user-level ~/.reasonix/config.toml). The user-level config commonly sets
- * `[permissions] mode = "ask"` and `[sandbox] bash = "enforce"`, which gates
- * pairflow's `agent emit` writes and prompts unattended even with
- * `--permission-mode danger-full-access`. Mirroring OPENCODE_CONFIG_CONTENT, a
- * per-bubble `reasonix.toml` is written into the workspace before launch so
- * bubble agents run pass-through permission-wise and can write under the
- * worktree (including `.pairflow/`) and, for git-worktree bubbles, the shared
- * repo's `.git` metadata (so their raw `git` operations are not blocked).
+ * `[sandbox] bash = "enforce"`. Mirroring OPENCODE_CONFIG_CONTENT, a per-bubble
+ * `reasonix.toml` is written into the workspace before launch so bubble agents
+ * can write under the worktree (including `.pairflow/`). External writable
+ * paths (such as the host repo containing live `.pairflow/` state and `.git/`)
+ * cannot be permitted in a project-level `reasonix.toml` (which ignores external
+ * paths in `allow_write`); they are granted via `--add-dir` on the CLI instead.
  */
 function buildReasonixPreparation(input: {
   workspacePath: string;
-  repoPath?: string;
 }): string[] {
   const workspacePath = input.workspacePath;
-  // Bubble agents using raw `git` in a worktree (gitdir file -> shared repo
-  // .git) also need to write the shared git metadata (refs, HEAD, index,
-  // reflog, lockfiles). Allow the shared repo's .git directory so commits
-  // inside the bubble's branch are not blocked by the sandbox.
-  const sharedGitDir = input.repoPath !== undefined
-    ? `${input.repoPath}/.git`
-    : undefined;
-  // The bubble's LIVE pairflow state (bubbles/, runtime/, evidence/, locks/)
-  // lives under the HOST repo's `.pairflow`, not the worktree's. `agent emit`
-  // and bubble lifecycle commands write there, so the sandbox must allow it or
-  // reasonix blocks every emit with an interactive permission prompt.
-  const hostPairflowDir = input.repoPath !== undefined
-    ? `${input.repoPath}/.pairflow`
-    : undefined;
   const configToml = [
-    "[permissions]",
-    // Writer fallback when no rule matches; pairflow loop agents run without
-    // human prompting. Precedence: deny > ask > allow > fallback.
-    'mode = "allow"',
-    "",
     "[sandbox]",
     // Anchor the sandbox to the bubble worktree and permit writes under it,
-    // including .pairflow (agent emit writes the transcript/state).
+    // including .pairflow.
     `workspace_root = ${JSON.stringify(workspacePath)}`,
-    `allow_write = [${JSON.stringify(`${workspacePath}/.pairflow`)}, ${JSON.stringify(workspacePath)}${sharedGitDir !== undefined ? `, ${JSON.stringify(sharedGitDir)}` : ""}${hostPairflowDir !== undefined ? `, ${JSON.stringify(hostPairflowDir)}` : ""}]`,
+    `allow_write = [${JSON.stringify(`${workspacePath}/.pairflow`)}, ${JSON.stringify(workspacePath)}]`,
     'bash = "enforce"',
     "network = true"
   ].join("\n");
@@ -176,7 +166,8 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
     roleName: input.roleName,
     model: input.model,
     startupPrompt: input.startupPrompt,
-    workspacePath
+    workspacePath,
+    repoPath: input.repoPath
   });
   const pairflowBootstrap = buildPairflowCommandBootstrap(
     workspacePath,
@@ -194,10 +185,7 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
         ? buildOpencodePreparation()
         : agentName === "reasonix"
           ? buildReasonixPreparation({
-              workspacePath,
-              ...(input.repoPath !== undefined
-                ? { repoPath: input.repoPath }
-                : {})
+              workspacePath
             })
           : [],
     missingBinaryMessage,

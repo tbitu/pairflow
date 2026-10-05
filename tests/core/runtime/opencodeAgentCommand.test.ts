@@ -123,7 +123,7 @@ describe("buildAgentCommand for reasonix", () => {
     expect(cmd).toContain("reasonix (via npx) exited (code");
   });
 
-  it("writes a per-bubble reasonix.toml that permits pairflow's agent writes", () => {
+  it("writes a per-bubble reasonix.toml and passes --add-dir for the host repo", () => {
     const cmd = buildAgentCommand({
       agentName: "reasonix",
       roleName: "implementer",
@@ -132,23 +132,43 @@ describe("buildAgentCommand for reasonix", () => {
       repoPath: "/tmp/repo"
     });
 
-    // Permission fallback allows writes so `pairflow agent emit` does not prompt.
+    // Project-level reasonix.toml must not set mode = "allow" (only user config sets this).
     expect(cmd).toContain("reasonix.toml");
-    expect(cmd).toContain('mode = "allow"');
-    // Sandbox anchors to the worktree and allows .pairflow writes.
+    expect(cmd).not.toContain('mode = "allow"');
+    // Sandbox anchors to the worktree and allows .pairflow writes under the worktree.
     expect(cmd).toContain("workspace_root = \"/tmp/worktree/reasonix-test\"");
     expect(cmd).toContain("/tmp/worktree/reasonix-test/.pairflow");
-    // Git-worktree bubbles need the shared repo .git metadata for raw git ops.
-    expect(cmd).toContain("/tmp/repo/.git");
-    // Bubble LIVE pairflow state (bubbles/, runtime/, evidence/) lives under the
-    // HOST repo's .pairflow, so it must also be writable or reasonix blocks every
-    // `agent emit` with an interactive sandbox permission prompt.
-    expect(cmd).toContain("/tmp/repo/.pairflow");
+    // Host repo (including .git and .pairflow) is granted via --add-dir so the Reasonix
+    // OS sandbox permits agent emit and git commits without EROFS blocks.
+    expect(cmd).toContain("--add-dir");
+    expect(cmd).toContain("/tmp/repo");
+    // External paths must not be placed in project reasonix.toml allow_write (which ignores them).
+    expect(cmd).not.toContain("/tmp/repo/.git");
+    expect(cmd).not.toContain("/tmp/repo/.pairflow");
     // The config write happens before the launch (guard: only when absent).
     const configLineIndex = cmd.indexOf("reasonix.toml");
     const launchIndex = cmd.indexOf("command -v reasonix");
     expect(configLineIndex).toBeGreaterThan(-1);
     expect(launchIndex).toBeGreaterThan(configLineIndex);
+  });
+
+  it("does not pass --add-dir when repoPath is undefined or identical to workspacePath", () => {
+    const cmdNoRepo = buildAgentCommand({
+      agentName: "reasonix",
+      roleName: "implementer",
+      bubbleId: "b_reasonix_test_06b",
+      workspacePath: "/tmp/worktree/reasonix-test"
+    });
+    expect(cmdNoRepo).not.toContain("--add-dir");
+
+    const cmdSameRepo = buildAgentCommand({
+      agentName: "reasonix",
+      roleName: "implementer",
+      bubbleId: "b_reasonix_test_06c",
+      workspacePath: "/tmp/worktree/reasonix-test",
+      repoPath: "/tmp/worktree/reasonix-test"
+    });
+    expect(cmdSameRepo).not.toContain("--add-dir");
   });
 
   it("starts reasonix fresh on every launch — never resumes a prior session", () => {

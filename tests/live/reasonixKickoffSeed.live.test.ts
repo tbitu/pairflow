@@ -209,13 +209,10 @@ async function bootReasonixPane(): Promise<LiveReasonixPane> {
   const targetPane = `${sessionName}:0.0`;
 
   // Mirror buildReasonixPreparation (agentCommand.ts): per-workspace config so
-  // the booted reasonix passes permissions and can write under its sandbox.
+  // the booted reasonix can write under its sandbox.
   await writeFile(
     join(workspacePath, "reasonix.toml"),
     [
-      "[permissions]",
-      'mode = "allow"',
-      "",
       "[sandbox]",
       `workspace_root = ${JSON.stringify(workspacePath)}`,
       `allow_write = [${JSON.stringify(workspacePath)}]`,

@@ -122,6 +122,7 @@ async function trySendWatchdogNudge(input: NudgeInput): Promise<"ok" | "pane_not
         ...(roleModel !== undefined ? { model: roleModel } : {}),
         bubbleId: input.bubbleId,
         workspacePath,
+        repoPath: input.bubbleConfig.repo_path,
         pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile
       });
       const paneIndex = resolveWatchdogTargetPaneIndex(input.activeRole);

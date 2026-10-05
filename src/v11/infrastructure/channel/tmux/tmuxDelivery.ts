@@ -378,6 +378,7 @@ function buildRespawnPaneAgentAction(input: {
       ...(roleModel !== undefined ? { model: roleModel } : {}),
       bubbleId: input.bubbleId,
       workspacePath: input.workspacePath,
+      repoPath: input.bubbleConfig.repo_path,
       pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile,
       ...(input.bubbleConfig.executor?.type === "ssh"
         ? { remoteWorkspaceAuthority: { workspaceRoot: input.workspacePath } }
