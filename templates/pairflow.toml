@@ -53,8 +53,36 @@ base_branch = "main"
 # ------------------------------------------------------------------------------
 # 2. Agent Assignments [defaults.agents]
 # ------------------------------------------------------------------------------
-[defaults.agents]
 # Supported agent runtimes: "reasonix" or "opencode"
+#
+# CONNECTED MODEL PATTERNS:
+#
+# Pattern A: Reasonix with Host Local Models (Devcontainer tcpproxy default)
+#   implementer = "reasonix"
+#   implementer_model = "local/pairflow-implementer"
+#   reviewer = "reasonix"
+#   reviewer_model = "local/pairflow-reviewer"
+#   meta_reviewer = "reasonix"
+#   meta_reviewer_model = "local/pairflow-meta-reviewer"
+#
+# Pattern B: Reasonix with DeepSeek Cloud API (using DEEPSEEK_API_KEY)
+#   implementer = "reasonix"
+#   implementer_model = "deepseek/deepseek-flash"
+#   reviewer = "reasonix"
+#   reviewer_model = "deepseek/deepseek-flash"
+#   meta_reviewer = "reasonix"
+#   meta_reviewer_model = "deepseek/deepseek-flash"
+#
+# Pattern C: Opencode with Host Local Models (Devcontainer tcpproxy lmstudio provider)
+#   implementer = "opencode"
+#   implementer_model = "lmstudio/pairflow-implementer"
+#   reviewer = "opencode"
+#   reviewer_model = "lmstudio/pairflow-reviewer"
+#   meta_reviewer = "opencode"
+#   meta_reviewer_model = "lmstudio/pairflow-meta-reviewer"
+#   (Note: opencode local LLMs are typically slower; consider watchdog override below)
+# ------------------------------------------------------------------------------
+[defaults.agents]
 implementer = "reasonix"
 implementer_model = "local/pairflow-implementer"
 

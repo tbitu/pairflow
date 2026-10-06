@@ -84,6 +84,42 @@ Provides fallback values for `pairflow bubble create` when CLI arguments are omi
 
 *Note: Trailing slashes on model names (e.g. `gpt-5/`) are automatically stripped.*
 
+##### Connected Model Configurations & Environments:
+1. **Reasonix + Host Local Models (`tcpproxy` default in devcontainer)**:
+   ```toml
+   [defaults.agents]
+   implementer = "reasonix"
+   implementer_model = "local/pairflow-implementer"
+   reviewer = "reasonix"
+   reviewer_model = "local/pairflow-reviewer"
+   meta_reviewer = "reasonix"
+   meta_reviewer_model = "local/pairflow-meta-reviewer"
+   ```
+2. **Reasonix + DeepSeek Cloud API** (configured with `DEEPSEEK_API_KEY` in `~/.reasonix/.env`):
+   ```toml
+   [defaults.agents]
+   implementer = "reasonix"
+   implementer_model = "deepseek/deepseek-flash"
+   reviewer = "reasonix"
+   reviewer_model = "deepseek/deepseek-flash"
+   meta_reviewer = "reasonix"
+   meta_reviewer_model = "deepseek/deepseek-flash"
+   ```
+3. **Opencode + Host Local Models (`tcpproxy` lmstudio provider in devcontainer)**:
+   ```toml
+   [defaults.agents]
+   implementer = "opencode"
+   implementer_model = "lmstudio/pairflow-implementer"
+   reviewer = "opencode"
+   reviewer_model = "lmstudio/pairflow-reviewer"
+   meta_reviewer = "opencode"
+   meta_reviewer_model = "lmstudio/pairflow-meta-reviewer"
+
+   [defaults.watchdog_timeout_minutes_by_agent]
+   opencode = 120
+   reasonix = 30
+   ```
+
 #### Sub-table: `[defaults.watchdog_timeout_minutes_by_agent]`
 
 Allows assigning distinct watchdog timeouts to different agent runtimes:
