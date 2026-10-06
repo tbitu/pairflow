@@ -1,0 +1,57 @@
+# ==============================================================================
+# Pairflow Repository Configuration Template
+# Place this file as 'pairflow.toml' in the root of your project repository.
+# ==============================================================================
+
+[defaults]
+# Default base branch for bubbles (e.g., main or master)
+base_branch = "main"
+
+[defaults.agents]
+# Coding agent selection: "reasonix" or "opencode"
+implementer = "reasonix"
+implementer_model = "local/pairflow-implementer"
+reviewer = "reasonix"
+reviewer_model = "local/pairflow-reviewer"
+meta_reviewer = "reasonix"
+meta_reviewer_model = "local/pairflow-meta-reviewer"
+
+[defaults.review_policy]
+# Severity threshold that blocks approval: "P1", "P2", "P3", "P4"
+reviewer_blocking_min_severity = "P3"
+meta_review_auto_rework_min_severity = "P3"
+meta_review_consecutive_clean_runs_required = 2
+
+[validation]
+# Commands required for a reviewer pass
+required = ["lint", "typecheck"]
+# Additional commands required for meta-review approval
+meta_review_approve_required = ["test"]
+
+[validation.commands]
+# Adapt these validation commands to match your project's build toolchain:
+# Node.js:
+#   bootstrap = "npm install"
+#   lint = "npm run lint"
+#   typecheck = "npm run typecheck"
+#   test = "npm test"
+# Python:
+#   bootstrap = "pip install -r requirements.txt"
+#   lint = "flake8"
+#   typecheck = "mypy ."
+#   test = "pytest"
+# Go:
+#   bootstrap = "go mod download"
+#   lint = "golangci-lint run"
+#   typecheck = "go vet ./..."
+#   test = "go test ./..."
+# Rust:
+#   bootstrap = "cargo fetch"
+#   lint = "cargo clippy"
+#   typecheck = "cargo check"
+#   test = "cargo test"
+
+bootstrap = "echo 'Bootstrapping workspace...'"
+lint = "echo 'Linting...'"
+typecheck = "echo 'Typechecking...'"
+test = "echo 'Testing...'"

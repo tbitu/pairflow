@@ -25,19 +25,21 @@ To use Pairflow in your own project repository:
 
 ### Option A: VS Code Dev Containers
 
-1. Copy the template from [`templates/devcontainer/devcontainer.json`](../templates/devcontainer/devcontainer.json) into your target project:
+1. Copy the template from [`templates/devcontainer/devcontainer.json`](../templates/devcontainer/devcontainer.json) and [`templates/pairflow.toml`](../templates/pairflow.toml) into your target project:
    ```bash
    mkdir -p <your-project>/.devcontainer
    cp templates/devcontainer/devcontainer.json <your-project>/.devcontainer/devcontainer.json
+   cp templates/pairflow.toml <your-project>/pairflow.toml
    ```
 2. Ensure your host inference engine is running (e.g. `OLLAMA_HOST=0.0.0.0:11434 ollama serve` or LM Studio local server).
 3. Open your project in VS Code and select **Dev Containers: Reopen in Container**.
 
 ### Option B: Standalone Docker Compose (Terminal / Headless)
 
-1. Copy the template from [`templates/devcontainer/docker-compose.yml`](../templates/devcontainer/docker-compose.yml) into your target project:
+1. Copy the template from [`templates/devcontainer/docker-compose.yml`](../templates/devcontainer/docker-compose.yml) and [`templates/pairflow.toml`](../templates/pairflow.toml) into your target project:
    ```bash
    cp templates/devcontainer/docker-compose.yml <your-project>/docker-compose.yml
+   cp templates/pairflow.toml <your-project>/pairflow.toml
    ```
 2. Start the container in the background:
    ```bash
