@@ -111,11 +111,30 @@ describe("buildAgentCommand for reasonix", () => {
     // Bash sandbox must be off so commands execute unconfined without requiring bubblewrap.
     expect(cmd).toContain('bash = "off"');
     expect(cmd).not.toContain('bash = "enforce"');
+    // Pre-acknowledges YOLO mode in Reasonix home before launch.
+    expect(cmd).toContain("yolo-acknowledged.json");
+    expect(cmd).toContain('rx_home="${REASONIX_HOME:-$HOME/.reasonix}"');
     // The config write happens before the launch (guard: only when absent).
     const configLineIndex = cmd.indexOf("reasonix.toml");
     const launchIndex = cmd.indexOf("'reasonix'");
     expect(configLineIndex).toBeGreaterThan(-1);
     expect(launchIndex).toBeGreaterThan(configLineIndex);
+  });
+
+  it("pre-acknowledges reasonix YOLO mode in Reasonix home before launch", () => {
+    const cmd = buildAgentCommand({
+      agentName: "reasonix",
+      roleName: "implementer",
+      bubbleId: "b_reasonix_test_06_yolo",
+      workspacePath: "/tmp/worktree/reasonix-test"
+    });
+
+    expect(cmd).toContain("yolo-acknowledged.json");
+    expect(cmd).toContain('rx_home="${REASONIX_HOME:-$HOME/.reasonix}"');
+    const yoloIndex = cmd.indexOf("yolo-acknowledged.json");
+    const launchIndex = cmd.indexOf("'reasonix'");
+    expect(yoloIndex).toBeGreaterThan(-1);
+    expect(launchIndex).toBeGreaterThan(yoloIndex);
   });
 
   it("does not pass --add-dir when repoPath is undefined or identical to workspacePath", () => {

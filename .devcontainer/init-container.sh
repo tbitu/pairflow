@@ -61,6 +61,13 @@ if [ -n "${OPENAI_API_KEY:-}" ] && ! grep -q "^OPENAI_API_KEY=" "${REASONIX_ENV}
     echo "✓ Populated OPENAI_API_KEY into ${REASONIX_ENV}"
 fi
 
+# Pre-acknowledge YOLO mode so autonomous loop agents never prompt interactively
+REASONIX_YOLO="${USER_HOME}/.reasonix/yolo-acknowledged.json"
+if [ ! -f "${REASONIX_YOLO}" ]; then
+    printf '{"acknowledged_at":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo 2026-01-01T00:00:00Z)" > "${REASONIX_YOLO}"
+    echo "✓ Pre-acknowledged Reasonix YOLO mode in ${REASONIX_YOLO}"
+fi
+
 REASONIX_CONFIG="${USER_HOME}/.reasonix/config.toml"
 if [ ! -f "${REASONIX_CONFIG}" ]; then
     cat <<'EOF' > "${REASONIX_CONFIG}"

@@ -197,6 +197,10 @@ async function resolveBootHome(cleanupPaths: string[]): Promise<string | undefin
     join(rxHome, ".env"),
     FAKE_HOME_API_KEY.length > 0 ? `DEEPSEEK_API_KEY=${FAKE_HOME_API_KEY}\n` : ""
   );
+  await writeFile(
+    join(rxHome, "yolo-acknowledged.json"),
+    JSON.stringify({ acknowledged_at: new Date().toISOString() }) + "\n"
+  );
   return homeDir;
 }
 
