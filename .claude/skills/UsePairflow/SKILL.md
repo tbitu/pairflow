@@ -1,6 +1,6 @@
 ---
 name: UsePairflow
-description: Manage pairflow bubble lifecycle with strict state-aware routing, per-case `pairflow agent emit` recipes, and optional evidence bootstrap planning. USE WHEN create/start bubble OR intervene/troubleshoot active bubbles OR an agent emit fails/is rejected or the emit command is unclear (`--kind pass|convergence|human_question|meta_review_result`, handoff/execution authority, `--intent`, `--finding`, `--report-json`) OR check what an agent emitted (emit-history / emit-log) OR review for approval OR close/approve/rework/commit/merge OR cleanup/recovery OR bootstrap evidence.
+description: Manage pairflow bubble lifecycle with strict state-aware routing, per-case `pairflow agent emit` recipes, and optional evidence bootstrap planning. USE WHEN create/start bubble OR intervene/troubleshoot active bubbles OR configure/initialize repository pairflow.toml (`pairflow.toml` in repo root) OR an agent emit fails/is rejected or the emit command is unclear (`--kind pass|convergence|human_question|meta_review_result`, handoff/execution authority, `--intent`, `--finding`, `--report-json`) OR check what an agent emitted (emit-history / emit-log) OR review for approval OR close/approve/rework/commit/merge OR cleanup/recovery OR bootstrap evidence.
 ---
 
 # UsePairflow
@@ -19,6 +19,7 @@ This skill exists to avoid lifecycle mistakes (wrong command in wrong state, los
 
 | Workflow | Trigger | File |
 |----------|---------|------|
+| **ConfigureRepo** | "configure pairflow", "init pairflow", "setup pairflow", "build pairflow.toml", "create pairflow.toml", "pairflow config" | `Workflows/ConfigureRepo.md` |
 | **CreateBubble** | "create bubble", "start bubble", "kick off bubble", "ideation kickoff" | `Workflows/CreateBubble.md` |
 | **InterveneBubble** | "bubble stuck", "watchdog", "waiting human", "continue loop", "pass to implementer/reviewer" | `Workflows/InterveneBubble.md` |
 | **TroubleshootBubble** | "pairflow issue", "something is odd", "status mismatch", "why command failed" | `Workflows/TroubleshootBubble.md` |

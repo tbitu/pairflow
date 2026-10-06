@@ -1,57 +1,234 @@
 # ==============================================================================
-# Pairflow Repository Configuration Template
+# Pairflow Repository Configuration Template (pairflow.toml)
 # Place this file as 'pairflow.toml' in the root of your project repository.
+#
+# PURPOSE:
+#   This file defines repository-level defaults and validation policies for
+#   Pairflow bubbles. When a bubble is created (`pairflow bubble create`),
+#   Pairflow resolves defaults from this file to populate the bubble's initial
+#   `bubble.toml`.
+#
+# IMPORTANT SYNTAX RULES (Strict TOML Parser):
+#   1. NO DOTTED KEYS: Dotted keys like `defaults.base_branch = "main"` are NOT
+#      supported. Always use explicit table headers, e.g.:
+#        [defaults]
+#        base_branch = "main"
+#   2. NO MULTILINE STRINGS: Multiline string quotes (""" or ''') are NOT supported.
+#      All strings must be single-line and enclosed in double ("") or single ('') quotes.
+#   3. NO ARRAY-OF-TABLES: `[[section]]` syntax is NOT supported.
+#   4. IDENTIFIERS: Validation command IDs and target IDs must match:
+#        ^[a-z][a-z0-9_-]{0,63}$
+#      and must not collide with reserved names (e.g. meta_review_approve_required).
 # ==============================================================================
 
+# ------------------------------------------------------------------------------
+# 1. Bubble Creation Defaults [defaults]
+# ------------------------------------------------------------------------------
 [defaults]
-# Default base branch for bubbles (e.g., main or master)
+# Default base git branch for new bubbles (e.g. "main" or "master").
+# Required if --base is not passed explicitly to `pairflow bubble create`.
 base_branch = "main"
 
+# Default watchdog timeout in minutes before an idle or stuck loop triggers intervention.
+# Optional. Default: 30 minutes.
+# watchdog_timeout_minutes = 30
+
+# Maximum number of review rounds before the bubble halts.
+# Optional. Default: 10 rounds.
+# max_rounds = 10
+
+# Round at which reviewer severity gate filtering begins. Must be an integer >= 4.
+# Optional. Default: 4.
+# severity_gate_round = 4
+
+# Pairflow command profile for loop execution.
+# Allowed values: "external" (default), "self_host"
+# pairflow_command_profile = "external"
+
+# Context retention policy for reviewers across loop rounds.
+# Allowed values: "fresh" (reset context each round; recommended), "persistent"
+# reviewer_context_mode = "fresh"
+
+
+# ------------------------------------------------------------------------------
+# 2. Agent Assignments [defaults.agents]
+# ------------------------------------------------------------------------------
 [defaults.agents]
-# Coding agent selection: "reasonix" or "opencode"
+# Supported agent runtimes: "reasonix" or "opencode"
 implementer = "reasonix"
 implementer_model = "local/pairflow-implementer"
+
 reviewer = "reasonix"
 reviewer_model = "local/pairflow-reviewer"
+
 meta_reviewer = "reasonix"
 meta_reviewer_model = "local/pairflow-meta-reviewer"
 
+
+# ------------------------------------------------------------------------------
+# 3. Per-Agent Watchdog Overrides [defaults.watchdog_timeout_minutes_by_agent]
+# ------------------------------------------------------------------------------
+# Useful when one agent runtime (e.g. opencode with local LLMs) requires more
+# wall-clock time than another (e.g. reasonix). Falls back to flat watchdog timeout
+# for agents not explicitly listed here.
+#
+# [defaults.watchdog_timeout_minutes_by_agent]
+# opencode = 120
+# reasonix = 30
+
+
+# ------------------------------------------------------------------------------
+# 4. MCP Tool Policies [defaults.role_mcp]
+# ------------------------------------------------------------------------------
+# Control Model Context Protocol (MCP) tool availability per role.
+# Allowed values: "disabled", "enabled"
+#
+# [defaults.role_mcp]
+# implementer = "disabled"
+# reviewer = "enabled"
+# meta_reviewer = "disabled"
+
+
+# ------------------------------------------------------------------------------
+# 5. Review & Auto-Rework Policy [defaults.review_policy]
+# ------------------------------------------------------------------------------
 [defaults.review_policy]
-# Severity threshold that blocks approval: "P1", "P2", "P3", "P4"
+# Review loop mode:
+#   "full"      - implementer -> reviewer -> meta-reviewer loop (default)
+#   "meta_only" - implementer -> meta-reviewer loop (reviewer skipped)
+# review_loop_mode = "full"
+
+# Minimum severity threshold that blocks approval / triggers auto-rework:
+#   "P1" - Block only on Critical blockers
+#   "P2" - Block on P1 and Major issues
+#   "P3" - Block on P1, P2, and Moderate issues (default)
+# Note: "P4" (cosmetic/nit) is informational only and CANNOT be used as a blocking threshold.
 reviewer_blocking_min_severity = "P3"
 meta_review_auto_rework_min_severity = "P3"
+
+# Number of consecutive clean (finding-free) meta-review runs required for approval.
+# Must be an integer >= 1. Default: 2.
 meta_review_consecutive_clean_runs_required = 2
 
+
+# ------------------------------------------------------------------------------
+# 6. Document Contract Gates [defaults.doc_contract_gates]
+# ------------------------------------------------------------------------------
+# For document-mode bubbles (review_artifact_type = "document"):
+# Controls after which round document contract strictness rules activate.
+# Optional. Must be an integer >= 0.
+#
+# [defaults.doc_contract_gates]
+# round_gate_applies_after = 2
+
+
+# ------------------------------------------------------------------------------
+# 7. Repository Validation Gating [validation]
+# ------------------------------------------------------------------------------
 [validation]
-# Commands required for a reviewer pass
+# Commands required for a normal reviewer PASS (`pairflow agent emit --kind pass`).
+# Keep this set fast (lint, typecheck) so inner loops remain rapid.
 required = ["lint", "typecheck"]
-# Additional commands required for meta-review approval
+
+# Commands required before meta-review APPROVAL can be granted.
+# These can include heavier test suites. Every command listed here MUST either
+# be defined in [validation.commands] (or target commands) or be a built-in ID
+# ("bootstrap", "lint", "typecheck", "test").
 meta_review_approve_required = ["test"]
 
-[validation.commands]
-# Adapt these validation commands to match your project's build toolchain:
-# Node.js:
-#   bootstrap = "npm install"
+
+# ------------------------------------------------------------------------------
+# 8. Validation Commands [validation.commands]
+# ------------------------------------------------------------------------------
+# Shell commands executed inside the bubble worktree.
+# Built-in IDs: "bootstrap", "lint", "typecheck", "test"
+# Custom IDs: Any identifier matching ^[a-z][a-z0-9_-]{0,63}$ (e.g. "fitness", "audit")
+#
+# COMMON TOOLCHAIN RECIPES:
+#
+# Node.js / TypeScript (pnpm):
+#   bootstrap = "pnpm install --frozen-lockfile && pnpm build"
+#   lint = "pnpm lint"
+#   typecheck = "pnpm typecheck"
+#   test = "pnpm test"
+#
+# Node.js / TypeScript (npm):
+#   bootstrap = "npm ci"
 #   lint = "npm run lint"
 #   typecheck = "npm run typecheck"
 #   test = "npm test"
-# Python:
+#
+# Python (pip + venv):
 #   bootstrap = "pip install -r requirements.txt"
-#   lint = "flake8"
+#   lint = "ruff check ."
 #   typecheck = "mypy ."
 #   test = "pytest"
+#
+# Python (poetry):
+#   bootstrap = "poetry install"
+#   lint = "poetry run ruff check ."
+#   typecheck = "poetry run mypy ."
+#   test = "poetry run pytest"
+#
 # Go:
 #   bootstrap = "go mod download"
 #   lint = "golangci-lint run"
 #   typecheck = "go vet ./..."
 #   test = "go test ./..."
+#
 # Rust:
 #   bootstrap = "cargo fetch"
-#   lint = "cargo clippy"
-#   typecheck = "cargo check"
+#   lint = "cargo clippy --all-targets -- -D warnings"
+#   typecheck = "cargo check --all-targets"
 #   test = "cargo test"
-
+# ------------------------------------------------------------------------------
+[validation.commands]
 bootstrap = "echo 'Bootstrapping workspace...'"
 lint = "echo 'Linting...'"
 typecheck = "echo 'Typechecking...'"
 test = "echo 'Testing...'"
+
+
+# ------------------------------------------------------------------------------
+# 9. Monorepo / Multi-Target Validation (Optional) [validation.targets.<id>]
+# ------------------------------------------------------------------------------
+# For monorepos or repositories with independent packages/subdirectories,
+# validation targets allow defining targeted command suites.
+#
+# Target fields:
+#   default  - boolean. At most one target may set default = true.
+#   cwd      - relative directory inside the worktree (e.g. "apps/web").
+#   paths    - glob patterns mapping changed files to this target.
+#   required - list of validation command IDs required for this target.
+#   commands - map of command IDs to shell commands for this target.
+#
+# Example:
+# [validation.targets.web]
+# default = true
+# cwd = "apps/web"
+# paths = ["apps/web/**", "packages/ui/**"]
+# required = ["lint", "typecheck", "test"]
+#
+# [validation.targets.web.commands]
+# lint = "pnpm --filter web lint"
+# typecheck = "pnpm --filter web typecheck"
+# test = "pnpm --filter web test"
+#
+# [validation.targets.api]
+# cwd = "apps/api"
+# paths = ["apps/api/**", "packages/shared/**"]
+# required = ["lint", "test"]
+#
+# [validation.targets.api.commands]
+# lint = "cargo clippy"
+# test = "cargo test"
+
+
+# ------------------------------------------------------------------------------
+# 10. Autonomous Plan-Watch Runner (Optional) [plan_watch.runner]
+# ------------------------------------------------------------------------------
+# Configuration for the background `pairflow plan watch` execution daemon.
+#
+# [plan_watch.runner]
+# backend = "reasonix"         # Agent backend: "reasonix" or "opencode"
+# idle_timeout_seconds = 1800  # Max idle duration before runner stops (<= 2147483)

@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -683,5 +683,20 @@ required = []
     expect(resolvePairflowRepoConfigPath(repoPath)).toBe(
       join(repoPath, "pairflow.toml")
     );
+  });
+
+  it("validates templates/pairflow.toml against repo config schema", async () => {
+    const templatePath = join(process.cwd(), "templates", "pairflow.toml");
+    const templateContent = await readFile(templatePath, "utf8");
+    const parsed = parsePairflowRepoConfigToml(templateContent);
+
+    expect(parsed.defaults?.base_branch).toBe("main");
+    expect(parsed.defaults?.agents?.implementer).toBe("reasonix");
+    expect(parsed.defaults?.agents?.reviewer).toBe("reasonix");
+    expect(parsed.defaults?.agents?.meta_reviewer).toBe("reasonix");
+    expect(parsed.defaults?.review_policy?.reviewer_blocking_min_severity).toBe("P3");
+    expect(parsed.validation?.required).toEqual(["lint", "typecheck"]);
+    expect(parsed.validation?.meta_review_approve_required).toEqual(["test"]);
+    expect(parsed.validation?.commands).toBeDefined();
   });
 });
