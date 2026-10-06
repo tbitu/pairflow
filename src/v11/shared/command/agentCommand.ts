@@ -115,12 +115,15 @@ function buildMissingBinaryMessage(agentName: AgentName, bubbleId: string): stri
 /**
  * reasonix is file-configured (reasonix.toml in the workspace root, else the
  * user-level ~/.reasonix/config.toml). The user-level config commonly sets
- * `[sandbox] bash = "enforce"`. Mirroring OPENCODE_CONFIG_CONTENT, a per-bubble
- * `reasonix.toml` is written into the workspace before launch so bubble agents
- * can write under the worktree (including `.pairflow/`). External writable
- * paths (such as the host repo containing live `.pairflow/` state and `.git/`)
- * cannot be permitted in a project-level `reasonix.toml` (which ignores external
- * paths in `allow_write`); they are granted via `--add-dir` on the CLI instead.
+ * `[sandbox] bash = "enforce"`, which requires bubblewrap ('bwrap') on Linux.
+ * In containerized or unconfined environments without bwrap, `bash = "enforce"`
+ * refuses shell execution. Mirroring OPENCODE_CONFIG_CONTENT, a per-bubble
+ * `reasonix.toml` is written into the workspace before launch with `bash = "off"`
+ * so bubble agents run unconfined without requiring host bubblewrap, and can write
+ * under the worktree (including `.pairflow/`). External writable paths (such as
+ * the host repo containing live `.pairflow/` state and `.git/`) cannot be permitted
+ * in a project-level `reasonix.toml` (which ignores external paths in `allow_write`);
+ * they are granted via `--add-dir` on the CLI instead.
  */
 function buildReasonixPreparation(input: {
   workspacePath: string;
@@ -132,7 +135,7 @@ function buildReasonixPreparation(input: {
     // including .pairflow.
     `workspace_root = ${JSON.stringify(workspacePath)}`,
     `allow_write = [${JSON.stringify(`${workspacePath}/.pairflow`)}, ${JSON.stringify(workspacePath)}]`,
-    'bash = "enforce"',
+    'bash = "off"',
     "network = true"
   ].join("\n");
   return [

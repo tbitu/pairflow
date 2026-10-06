@@ -216,7 +216,7 @@ async function bootReasonixPane(): Promise<LiveReasonixPane> {
       "[sandbox]",
       `workspace_root = ${JSON.stringify(workspacePath)}`,
       `allow_write = [${JSON.stringify(workspacePath)}]`,
-      'bash = "enforce"',
+      'bash = "off"',
       "network = true"
     ].join("\n")
   );

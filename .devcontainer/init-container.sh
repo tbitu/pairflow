@@ -52,7 +52,7 @@ default_model = "local/pairflow-implementer"
 mode = "allow"
 
 [sandbox]
-bash = "enforce"
+bash = "off"
 network = true
 
 [[providers]]
@@ -69,6 +69,9 @@ model = "deepseek-flash"
 api_key_env = "DEEPSEEK_API_KEY"
 EOF
     echo "✓ Generated default ${REASONIX_CONFIG}"
+elif grep -q 'bash = "enforce"' "${REASONIX_CONFIG}"; then
+    sed -i 's/bash = "enforce"/bash = "off"/g' "${REASONIX_CONFIG}"
+    echo "✓ Updated ${REASONIX_CONFIG} sandbox bash to \"off\""
 fi
 
 # 3. Setup Opencode Persistent Configuration

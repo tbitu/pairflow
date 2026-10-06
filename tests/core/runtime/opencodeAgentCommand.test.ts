@@ -145,6 +145,9 @@ describe("buildAgentCommand for reasonix", () => {
     // External paths must not be placed in project reasonix.toml allow_write (which ignores them).
     expect(cmd).not.toContain("/tmp/repo/.git");
     expect(cmd).not.toContain("/tmp/repo/.pairflow");
+    // Bash sandbox must be off so commands execute unconfined without requiring bubblewrap.
+    expect(cmd).toContain('bash = "off"');
+    expect(cmd).not.toContain('bash = "enforce"');
     // The config write happens before the launch (guard: only when absent).
     const configLineIndex = cmd.indexOf("reasonix.toml");
     const launchIndex = cmd.indexOf("command -v reasonix");
