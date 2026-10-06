@@ -23,7 +23,7 @@ services:
       - UPSTREAM_API_KEY=${PAIRFLOW_UPSTREAM_API_KEY:-}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-    command: /bin/bash -c "/usr/local/bin/init-container.sh && /usr/local/bin/start-services.sh && sleep infinity"
+    command: /bin/bash -c "if [ -f /workspace/.devcontainer/init-container.sh ]; then bash /workspace/.devcontainer/init-container.sh; else /usr/local/bin/init-container.sh; fi && if [ -f /workspace/.devcontainer/start-services.sh ]; then bash /workspace/.devcontainer/start-services.sh; else /usr/local/bin/start-services.sh; fi && sleep infinity"
 
   ollama:
     image: ollama/ollama:latest

@@ -1,45 +1,72 @@
-FROM ubuntu:24.04
+# ==============================================================================
+# Stage 1: Build Pairflow CLI and package distribution tarball
+# ==============================================================================
+FROM node:22-bookworm-slim AS builder
+
+WORKDIR /build
+
+# Install build dependencies and pinned pnpm matching repository packageManager
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    build-essential \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && npm install -g pnpm@10.8.1
+
+# Copy package manifests for optimal layer caching
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY ui/package.json ui/pnpm-lock.yaml ./ui/
+
+# Install dependencies using frozen lockfiles
+RUN pnpm install --frozen-lockfile \
+    && pnpm --dir ui install --frozen-lockfile
+
+# Copy source trees and configurations
+COPY tsconfig*.json ./
+COPY src/ ./src/
+COPY scripts/ ./scripts/
+COPY ui/ ./ui/
+COPY .claude/skills/ ./.claude/skills/
+COPY README.md ./
+
+# Build Pairflow CLI + UI and produce distribution package
+RUN pnpm build \
+    && npm pack \
+    && mv pairflow-cli-*.tgz /build/pairflow-cli.tgz
+
+# ==============================================================================
+# Stage 2: Runtime devcontainer environment for general-purpose development
+# ==============================================================================
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV SHELL=/bin/bash
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
-# 1. Base tools: git, tmux, python3, build tools, curl, jq, procps, sudo
+# 1. General development tools: build tools (gcc, g++, make), Python 3, tmux, procps, lsof, jq
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    wget \
-    git \
-    tmux \
+    build-essential \
     python3 \
     python3-pip \
-    build-essential \
-    ca-certificates \
+    python3-venv \
+    tmux \
     jq \
     procps \
     lsof \
-    sudo \
+    curl \
+    wget \
+    ca-certificates \
     locales \
     && rm -rf /var/lib/apt/lists/*
 
-# 2. Node.js 22 LTS & pnpm
+# 2. Node.js 22 LTS & exact pnpm version matching package.json (10.8.1)
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
-    && npm install -g pnpm \
+    && npm install -g pnpm@10.8.1 \
     && rm -rf /var/lib/apt/lists/*
 
-# 3. Setup non-root vscode user (UID 1000) with passwordless sudo.
-# Ubuntu 24.04 noble includes a default "ubuntu" user with UID 1000.
-RUN if id -u ubuntu >/dev/null 2>&1; then \
-        usermod -l vscode -d /home/vscode -m ubuntu && \
-        groupmod -n vscode ubuntu; \
-    elif ! id -u vscode >/dev/null 2>&1; then \
-        useradd -m -s /bin/bash -u 1000 vscode; \
-    fi \
-    && echo "vscode ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/nopasswd \
-    && chmod 0440 /etc/sudoers.d/nopasswd
-
-# 4. Configure user-space npm global prefix and pnpm directories so vscode user can install without sudo
+# 3. Configure user-space npm global prefix and pnpm directories for vscode user
 ENV NPM_CONFIG_PREFIX=/home/vscode/.npm-global
 ENV PNPM_HOME=/home/vscode/.local/share/pnpm
 ENV PATH="/home/vscode/.npm-global/bin:${PNPM_HOME}:${PATH}"
@@ -53,13 +80,28 @@ RUN mkdir -p /home/vscode/.npm-global/bin \
              /.pairflow-worktrees \
     && chown -R vscode:vscode /home/vscode /.pairflow-worktrees
 
-# 5. Git safe directory config for mounted workspaces
+# 4. Git safe directory config for mounted workspaces
 RUN git config --system --add safe.directory "*"
 
-# 6. Copy proxy and lifecycle scripts
-COPY tcpproxy.py /usr/local/bin/tcpproxy.py
-COPY init-container.sh /usr/local/bin/init-container.sh
-COPY start-services.sh /usr/local/bin/start-services.sh
+# 5. Install Coding Agents (Opencode & Reasonix) globally
+RUN npm install -g opencode-ai@latest reasonix@latest
+
+# 6. Install baked-in Pairflow CLI package from builder stage
+COPY --from=builder /build/pairflow-cli.tgz /tmp/pairflow-cli.tgz
+RUN npm install -g /tmp/pairflow-cli.tgz \
+    && rm /tmp/pairflow-cli.tgz
+
+# 7. Pre-install Pairflow skills into global agent roots as vscode user
+USER vscode
+RUN pairflow skills install --skills all --target-dir .opencode --link-other --force \
+    && mkdir -p /home/vscode/.config/opencode \
+    && ln -sfn /home/vscode/.opencode/skills /home/vscode/.config/opencode/skills
+USER root
+
+# 8. Copy proxy and lifecycle scripts
+COPY .devcontainer/tcpproxy.py /usr/local/bin/tcpproxy.py
+COPY .devcontainer/init-container.sh /usr/local/bin/init-container.sh
+COPY .devcontainer/start-services.sh /usr/local/bin/start-services.sh
 RUN chmod +x /usr/local/bin/tcpproxy.py /usr/local/bin/init-container.sh /usr/local/bin/start-services.sh
 
 USER vscode

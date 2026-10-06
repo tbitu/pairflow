@@ -16,39 +16,26 @@ elif command -v sudo >/dev/null 2>&1; then
     sudo chown -R vscode:vscode /.pairflow-worktrees 2>/dev/null || true
 fi
 
-# 1. Update / Install Coding Agents (Opencode & Reasonix)
-echo "[1/5] Fetching latest opencode-ai and reasonix..."
-npm install -g opencode-ai@latest reasonix@latest
-
-# 2. Pairflow CLI Setup
-echo "[2/5] Ensuring Pairflow CLI is available..."
-mkdir -p "${USER_HOME}/.npm-global/bin"
-
-if [ -f "/workspace/package.json" ] && grep -q '"name": "@pairflow/cli"' "/workspace/package.json"; then
-    echo "Detected Pairflow source repository."
-    if [ ! -f "/workspace/dist/cli/index.js" ]; then
-        echo "dist/cli/index.js not present; building from workspace source..."
-        (cd /workspace && pnpm install --frozen-lockfile && pnpm build) || {
-            echo "Local build failed or skipped; installing global fallback..."
-            npm install -g @pairflow/cli@latest
-        }
-    fi
-    if [ -f "/workspace/dist/cli/index.js" ]; then
-        echo "Found workspace dist/cli/index.js. Linking CLI wrapper..."
-        cat <<'EOF' > "${USER_HOME}/.npm-global/bin/pairflow"
+# 1. Verify Pairflow CLI availability (with optional local workspace override)
+echo "[1/4] Checking Pairflow CLI..."
+if [ -f "/workspace/package.json" ] && grep -q '"name": "@pairflow/cli"' "/workspace/package.json" 2>/dev/null && [ -f "/workspace/dist/cli/index.js" ]; then
+    mkdir -p "${USER_HOME}/.npm-global/bin"
+    cat <<'EOF' > "${USER_HOME}/.npm-global/bin/pairflow"
 #!/usr/bin/env bash
 exec node /workspace/dist/cli/index.js "$@"
 EOF
-        chmod +x "${USER_HOME}/.npm-global/bin/pairflow"
-        echo "✓ Linked workspace Pairflow CLI to ${USER_HOME}/.npm-global/bin/pairflow"
-    fi
-else
-    echo "Installing @pairflow/cli@latest..."
-    npm install -g @pairflow/cli@latest
+    chmod +x "${USER_HOME}/.npm-global/bin/pairflow"
+    echo "✓ Linked workspace Pairflow CLI override: ${USER_HOME}/.npm-global/bin/pairflow -> /workspace/dist/cli/index.js"
 fi
 
-# 3. Setup Reasonix Persistent State & API Keys
-echo "[3/5] Initializing Reasonix configuration and credentials..."
+if ! command -v pairflow >/dev/null 2>&1 && [ ! -x "${USER_HOME}/.npm-global/bin/pairflow" ]; then
+    echo "ERROR: Pairflow CLI is not installed in the devcontainer image." >&2
+    exit 1
+fi
+echo "✓ Pairflow CLI is ready: $(command -v pairflow || echo "${USER_HOME}/.npm-global/bin/pairflow")"
+
+# 2. Setup Reasonix Persistent State & API Keys
+echo "[2/4] Initializing Reasonix configuration and credentials..."
 mkdir -p "${USER_HOME}/.reasonix"
 REASONIX_ENV="${USER_HOME}/.reasonix/.env"
 touch "${REASONIX_ENV}"
@@ -94,8 +81,8 @@ EOF
     echo "✓ Generated default ${REASONIX_CONFIG}"
 fi
 
-# 4. Setup Opencode Persistent Configuration
-echo "[4/5] Initializing Opencode configuration..."
+# 3. Setup Opencode Persistent Configuration
+echo "[3/4] Initializing Opencode configuration..."
 mkdir -p "${USER_HOME}/.config/opencode"
 OPENCODE_CONFIG="${USER_HOME}/.config/opencode/opencode.jsonc"
 if [ ! -f "${OPENCODE_CONFIG}" ]; then
@@ -126,21 +113,19 @@ EOF
     echo "✓ Generated default ${OPENCODE_CONFIG}"
 fi
 
-# 5. Install Pairflow Agent Skills (Opencode, Reasonix, Claude, Gemini, etc.)
-echo "[5/5] Installing Pairflow agent skills into agent global roots..."
-PAIRFLOW_BIN="${USER_HOME}/.npm-global/bin/pairflow"
-if [ -x "${PAIRFLOW_BIN}" ]; then
-    "${PAIRFLOW_BIN}" skills install --skills all --target-dir .opencode --link-other --force || {
-        echo "⚠️ Warning: pairflow skills install exited with non-zero status."
-    }
-    # Ensure Opencode canonical global config root also discovers the skills
-    if [ -d "${USER_HOME}/.opencode/skills" ]; then
-        mkdir -p "${USER_HOME}/.config/opencode"
-        ln -sfn "${USER_HOME}/.opencode/skills" "${USER_HOME}/.config/opencode/skills"
-        echo "✓ Linked canonical Opencode skills: ${USER_HOME}/.config/opencode/skills -> ${USER_HOME}/.opencode/skills"
-    fi
+# 4. Ensure Pairflow Agent Skills (Opencode, Reasonix, Claude, Gemini, etc.)
+echo "[4/4] Ensuring Pairflow agent skills are present in agent global roots..."
+if [ ! -d "${USER_HOME}/.opencode/skills/UsePairflow" ]; then
+    pairflow skills install --skills all --target-dir .opencode --link-other --force
+fi
+
+if [ -d "${USER_HOME}/.opencode/skills" ]; then
+    mkdir -p "${USER_HOME}/.config/opencode"
+    ln -sfn "${USER_HOME}/.opencode/skills" "${USER_HOME}/.config/opencode/skills"
+    echo "✓ Linked canonical Opencode skills: ${USER_HOME}/.config/opencode/skills -> ${USER_HOME}/.opencode/skills"
 else
-    echo "⚠️ Pairflow CLI not found at ${PAIRFLOW_BIN}; skipping skills installation."
+    echo "ERROR: Pairflow skills missing at ${USER_HOME}/.opencode/skills after installation." >&2
+    exit 1
 fi
 
 echo "=========================================================="

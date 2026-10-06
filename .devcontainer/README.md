@@ -4,18 +4,16 @@ A portable containerized development environment for Pairflow, Opencode, and Rea
 
 ## Key Architecture
 
-- **Prebuilt Image via GHCR**: `devcontainer.json` pulls the prebuilt multi-arch image `ghcr.io/tbitu/pairflow-devcontainer:latest`, requiring zero local build time.
+- **Prebuilt Image via GHCR**: `devcontainer.json` pulls the prebuilt multi-arch image `ghcr.io/tbitu/pairflow-devcontainer:latest`, based on `mcr.microsoft.com/devcontainers/base:ubuntu-24.04` with `build-essential`, Python 3, Node.js 22, `pnpm@10.8.1`, and coding agents (`opencode-ai`, `reasonix`).
 - **`tcpproxy` Background Service**: Listens inside the container on `127.0.0.1:1235`. It transparently proxies OpenAI requests to your host's inference engine (`Ollama`, `LM Studio`, `vLLM`), maps Pairflow virtual model roles (`pairflow-implementer`, `pairflow-reviewer`, `pairflow-meta-reviewer`), and injects role-specific sampling hyperparameters.
-- **Runtime Tool Updates**: Opencode, Reasonix, and Pairflow CLI are fetched/updated at container creation rather than frozen into the base image.
+- **Baked-in Pairflow & Tools**: The Pairflow CLI is compiled and packaged directly from this repository during image build, pre-installing `pairflow` and all skills (`UsePairflow`, `CreatePairflowSpec`, `ExecutePairflowPlan`) into global agent roots. Any project repository can use this image immediately with zero setup or build delay.
 - **State & Credential Persistence**:
   - `pairflow-worktrees`: Persists git worktrees created during bubble execution at `/.pairflow-worktrees` outside the workspace mount.
   - `pairflow-reasonix-state`: Persists `~/.reasonix/.env` (API keys), provider config, and history.
   - `pairflow-opencode-state`: Persists Opencode settings and plugins at `~/.config/opencode`.
   - `pairflow-opencode-home`: Persists `~/.opencode` (installed skills and symlinks).
   - `pairflow-npm-cache`: Caches package downloads so runtime startup is fast.
-- **Agent Skill Installation**:
-  Pairflow agent skills (`UsePairflow`, `CreatePairflowSpec`, `ExecutePairflowPlan`) are automatically installed at container startup into global agent roots (`~/.opencode/skills`, `~/.reasonix/skills`, `~/.config/opencode/skills`, `~/.claude/skills`, `~/.gemini/config/skills`), enabling agents in bubbles to immediately discover and use workflow tools.
-- **Automated GHCR CI/CD**: The GitHub Actions workflow (`.github/workflows/devcontainer.yml`) builds multi-arch (`linux/amd64`, `linux/arm64`) images in parallel and publishes unified manifest lists to `ghcr.io/tbitu/pairflow-devcontainer`.
+- **Automated GHCR CI/CD**: The GitHub Actions workflow (`.github/workflows/devcontainer.yml`) builds multi-arch (`linux/amd64`, `linux/arm64`) images from the repository and publishes unified manifest lists to `ghcr.io/tbitu/pairflow-devcontainer`.
 
 ---
 

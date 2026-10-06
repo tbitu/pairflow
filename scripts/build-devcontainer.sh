@@ -48,7 +48,7 @@ if [ "$BUILD_SUCCESS" -eq 0 ] && command -v docker >/dev/null 2>&1 && docker inf
     docker build \
         -f "$WORKSPACE_ROOT/.devcontainer/Dockerfile" \
         -t "$IMAGE_TAG" \
-        "$WORKSPACE_ROOT/.devcontainer"
+        "$WORKSPACE_ROOT"
     BUILD_SUCCESS=1
     ENGINE="docker"
 fi
@@ -59,7 +59,7 @@ if [ "$BUILD_SUCCESS" -eq 0 ] && command -v podman >/dev/null 2>&1; then
     podman build \
         -f "$WORKSPACE_ROOT/.devcontainer/Dockerfile" \
         -t "$IMAGE_TAG" \
-        "$WORKSPACE_ROOT/.devcontainer"
+        "$WORKSPACE_ROOT"
     BUILD_SUCCESS=1
     ENGINE="podman"
 fi
