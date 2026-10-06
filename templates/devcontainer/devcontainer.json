@@ -23,17 +23,14 @@
     "DEEPSEEK_API_KEY": "${localEnv:DEEPSEEK_API_KEY:}",
     "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY:}"
   },
-  "postCreateCommand": "bash -c 'if [ -f /workspace/.devcontainer/init-container.sh ]; then bash /workspace/.devcontainer/init-container.sh; elif [ -f .devcontainer/init-container.sh ]; then bash .devcontainer/init-container.sh; else /usr/local/bin/init-container.sh; fi'",
-  "postStartCommand": "bash -c 'if [ -f /workspace/.devcontainer/start-services.sh ]; then bash /workspace/.devcontainer/start-services.sh; elif [ -f .devcontainer/start-services.sh ]; then bash .devcontainer/start-services.sh; else /usr/local/bin/start-services.sh; fi'",
+  "postCreateCommand": "/usr/local/bin/init-container.sh",
+  "postStartCommand": "/usr/local/bin/start-services.sh",
   "remoteUser": "vscode",
   "customizations": {
     "vscode": {
       "settings": {
         "terminal.integrated.defaultProfile.linux": "bash"
-      },
-      "extensions": [
-        "dbaeumer.vscode-eslint"
-      ]
+      }
     }
   }
 }

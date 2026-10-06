@@ -157,7 +157,7 @@ docker run --rm -it \
   pairflow-dev bash
 ```
 
-For VS Code/Codespaces, use `.devcontainer/devcontainer.json` ("Reopen in Container").
+To use Pairflow inside other repositories via a devcontainer, see [Pairflow Devcontainer](.devcontainer/README.md) and [`templates/devcontainer/`](templates/devcontainer/).
 
 Important for macOS/Linux mixed workflows:
 1. Do not run container-side `pnpm install` against host-mounted `node_modules`.

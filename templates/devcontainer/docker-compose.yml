@@ -7,7 +7,7 @@ services:
     security_opt:
       - label:disable
     volumes:
-      # Mount repository into workspace (:z for SELinux container volume relabeling)
+      # Mount workspace repository into container (:z for SELinux volume relabeling)
       - .:/workspace:z
       # Persist bubble git worktrees outside repo tree
       - pairflow-worktrees:/.pairflow-worktrees
@@ -27,7 +27,7 @@ services:
       - UPSTREAM_API_KEY=${PAIRFLOW_UPSTREAM_API_KEY:-}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-    command: /bin/bash -c "if [ -f /workspace/.devcontainer/init-container.sh ]; then bash /workspace/.devcontainer/init-container.sh; else /usr/local/bin/init-container.sh; fi && if [ -f /workspace/.devcontainer/start-services.sh ]; then bash /workspace/.devcontainer/start-services.sh; else /usr/local/bin/start-services.sh; fi && sleep infinity"
+    command: /bin/bash -c "/usr/local/bin/init-container.sh && /usr/local/bin/start-services.sh && sleep infinity"
 
   # Optional local Ollama inference service for machines without host Ollama installed
   # Run with: docker compose --profile with-ollama up -d

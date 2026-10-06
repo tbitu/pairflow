@@ -16,18 +16,8 @@ elif command -v sudo >/dev/null 2>&1; then
     sudo chown -R vscode:vscode /.pairflow-worktrees 2>/dev/null || true
 fi
 
-# 1. Verify Pairflow CLI availability (with optional local workspace override)
+# 1. Verify Pairflow CLI availability
 echo "[1/4] Checking Pairflow CLI..."
-if [ -f "/workspace/package.json" ] && grep -q '"name": "@pairflow/cli"' "/workspace/package.json" 2>/dev/null && [ -f "/workspace/dist/cli/index.js" ]; then
-    mkdir -p "${USER_HOME}/.npm-global/bin"
-    cat <<'EOF' > "${USER_HOME}/.npm-global/bin/pairflow"
-#!/usr/bin/env bash
-exec node /workspace/dist/cli/index.js "$@"
-EOF
-    chmod +x "${USER_HOME}/.npm-global/bin/pairflow"
-    echo "✓ Linked workspace Pairflow CLI override: ${USER_HOME}/.npm-global/bin/pairflow -> /workspace/dist/cli/index.js"
-fi
-
 if ! command -v pairflow >/dev/null 2>&1 && [ ! -x "${USER_HOME}/.npm-global/bin/pairflow" ]; then
     echo "ERROR: Pairflow CLI is not installed in the devcontainer image." >&2
     exit 1
