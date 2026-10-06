@@ -24,8 +24,10 @@
     "OPENAI_API_KEY": "${localEnv:OPENAI_API_KEY:}"
   },
   "postCreateCommand": "/usr/local/bin/init-container.sh",
-  "postStartCommand": "/usr/local/bin/start-services.sh",
-  "remoteUser": "vscode",
+  // Container user: "vscode" for standard (rootful) Docker.
+  // For Rootless Docker, set to "root" (or export DEVCONTAINER_USER=root) because
+  // in rootless Docker, container root (UID 0) maps directly to your host user.
+  "remoteUser": "${localEnv:DEVCONTAINER_USER:vscode}",
   "customizations": {
     "vscode": {
       "settings": {

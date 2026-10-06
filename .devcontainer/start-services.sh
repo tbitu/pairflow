@@ -13,6 +13,23 @@ if [[ "$TARGET_MODEL" == "qwen3.8-27b" || -z "$TARGET_MODEL" ]]; then
 fi
 BACKEND="${BACKEND:-ollama}"
 
+# 0. Ensure workspace and state directories are accessible
+if [ "$(id -u)" -eq 0 ]; then
+    mkdir -p /root/.config
+    [ -L /root/.reasonix ] || ln -sfn /home/vscode/.reasonix /root/.reasonix 2>/dev/null || true
+    [ -L /root/.config/opencode ] || ln -sfn /home/vscode/.config/opencode /root/.config/opencode 2>/dev/null || true
+    [ -L /root/.opencode ] || ln -sfn /home/vscode/.opencode /root/.opencode 2>/dev/null || true
+fi
+
+if [ -d "/workspace" ] && [ ! -w "/workspace" ]; then
+    echo "⚠️  /workspace is not writable by current user ($(id -un)). Granting write permissions..."
+    if [ "$(id -u)" -eq 0 ]; then
+        chmod -R u+rwX,g+rwX,o+rwX /workspace 2>/dev/null || true
+    elif command -v sudo >/dev/null 2>&1; then
+        sudo chmod -R u+rwX,g+rwX,o+rwX /workspace 2>/dev/null || true
+    fi
+fi
+
 # 1. Start tcpproxy if not already running
 if pgrep -f "tcpproxy.py" >/dev/null 2>&1; then
     echo "✓ tcpproxy is already active on 127.0.0.1:1235"

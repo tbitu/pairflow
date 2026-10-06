@@ -7,13 +7,32 @@ echo "=========================================================="
 
 USER_HOME="${HOME:-/home/vscode}"
 
-# 0. Ensure bubble worktree root is writable
+# 0. Ensure bubble worktree root and persistent volumes are writable
 if [ "$(id -u)" -eq 0 ]; then
     mkdir -p /.pairflow-worktrees
-    chown -R vscode:vscode /.pairflow-worktrees 2>/dev/null || true
+    chmod 777 /.pairflow-worktrees 2>/dev/null || true
+
+    # In Rootless Docker or when running as root, link /root state to the persistent volumes under /home/vscode
+    mkdir -p /home/vscode/.reasonix /home/vscode/.config/opencode /home/vscode/.opencode /home/vscode/.npm /home/vscode/.local/share/pnpm
+    chmod -R a+rwx /home/vscode 2>/dev/null || true
+
+    mkdir -p /root/.config
+    [ -L /root/.reasonix ] || ln -sfn /home/vscode/.reasonix /root/.reasonix
+    [ -L /root/.config/opencode ] || ln -sfn /home/vscode/.config/opencode /root/.config/opencode
+    [ -L /root/.opencode ] || ln -sfn /home/vscode/.opencode /root/.opencode
 elif command -v sudo >/dev/null 2>&1; then
     sudo mkdir -p /.pairflow-worktrees
-    sudo chown -R vscode:vscode /.pairflow-worktrees 2>/dev/null || true
+    sudo chmod 777 /.pairflow-worktrees 2>/dev/null || sudo chown -R vscode:vscode /.pairflow-worktrees 2>/dev/null || true
+fi
+
+# Ensure /workspace is writable by current user
+if [ -d "/workspace" ] && [ ! -w "/workspace" ]; then
+    echo "⚠️  /workspace is not writable by current user ($(id -un)). Granting write permissions..."
+    if [ "$(id -u)" -eq 0 ]; then
+        chmod -R u+rwX,g+rwX,o+rwX /workspace 2>/dev/null || true
+    elif command -v sudo >/dev/null 2>&1; then
+        sudo chmod -R u+rwX,g+rwX,o+rwX /workspace 2>/dev/null || true
+    fi
 fi
 
 # 1. Verify Pairflow CLI availability

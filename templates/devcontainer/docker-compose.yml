@@ -6,6 +6,10 @@ services:
     stdin_open: true
     security_opt:
       - label:disable
+    # User mapping:
+    # For Rootless Docker: uncomment 'user: root' (container root maps 1:1 to host user).
+    # For standard (rootful) Docker: default image user is 'vscode' (UID 1000).
+    # user: root
     volumes:
       # Mount workspace repository into container (:z for SELinux volume relabeling)
       - .:/workspace:z
