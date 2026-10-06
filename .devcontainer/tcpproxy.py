@@ -18,6 +18,10 @@ from urllib.parse import urlparse
 # PARAMETERS & ENVIRONMENT CONFIGURATION
 # ==============================================================================
 UPSTREAM_URL = os.environ.get("UPSTREAM_URL", "http://host.docker.internal:11434/v1")
+# Guard against @devcontainers/cli colon-splitting bug truncating "http://..." to "http" or empty string
+if not UPSTREAM_URL or UPSTREAM_URL in ("http", "https"):
+    UPSTREAM_URL = "http://host.docker.internal:11434/v1"
+
 parsed = urlparse(UPSTREAM_URL)
 UPSTREAM_SCHEME = (parsed.scheme or "http").lower()
 UPSTREAM_HOST = parsed.hostname or "host.docker.internal"
@@ -29,6 +33,10 @@ BACKEND = os.environ.get("BACKEND", "ollama").lower()
 MANAGE_MODELS = (BACKEND == "lmstudio")
 
 DEFAULT_MODEL = os.environ.get("TARGET_MODEL", "qwen3.8-27b:q8_0")
+# Guard against @devcontainers/cli truncating model tags at colon (e.g. "qwen3.8-27b:q8_0" -> "qwen3.8-27b")
+if not DEFAULT_MODEL or DEFAULT_MODEL == "qwen3.8-27b":
+    DEFAULT_MODEL = "qwen3.8-27b:q8_0"
+
 MODEL_MAP = {
     "pairflow-implementer": os.environ.get("IMPLEMENTER_MODEL", DEFAULT_MODEL),
     "pairflow-reviewer": os.environ.get("REVIEWER_MODEL", DEFAULT_MODEL),

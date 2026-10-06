@@ -4,7 +4,13 @@ set -euo pipefail
 echo "=== Starting Pairflow Background Services ==="
 
 UPSTREAM_URL="${UPSTREAM_URL:-http://host.docker.internal:11434/v1}"
+if [[ "$UPSTREAM_URL" == "http" || "$UPSTREAM_URL" == "https" || -z "$UPSTREAM_URL" ]]; then
+    UPSTREAM_URL="http://host.docker.internal:11434/v1"
+fi
 TARGET_MODEL="${TARGET_MODEL:-qwen3.8-27b:q8_0}"
+if [[ "$TARGET_MODEL" == "qwen3.8-27b" || -z "$TARGET_MODEL" ]]; then
+    TARGET_MODEL="qwen3.8-27b:q8_0"
+fi
 BACKEND="${BACKEND:-ollama}"
 
 # 1. Start tcpproxy if not already running
