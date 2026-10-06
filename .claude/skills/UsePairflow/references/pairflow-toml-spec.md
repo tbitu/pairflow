@@ -85,27 +85,10 @@ Provides fallback values for `pairflow bubble create` when CLI arguments are omi
 *Note: Trailing slashes on model names (e.g. `gpt-5/`) are automatically stripped.*
 
 ##### Connected Model Configurations & Environments:
-1. **Reasonix + Host Local Models (`tcpproxy` default in devcontainer)**:
-   ```toml
-   [defaults.agents]
-   implementer = "reasonix"
-   implementer_model = "local/pairflow-implementer"
-   reviewer = "reasonix"
-   reviewer_model = "local/pairflow-reviewer"
-   meta_reviewer = "reasonix"
-   meta_reviewer_model = "local/pairflow-meta-reviewer"
-   ```
-2. **Reasonix + DeepSeek Cloud API** (configured with `DEEPSEEK_API_KEY` in `~/.reasonix/.env`):
-   ```toml
-   [defaults.agents]
-   implementer = "reasonix"
-   implementer_model = "deepseek/deepseek-flash"
-   reviewer = "reasonix"
-   reviewer_model = "deepseek/deepseek-flash"
-   meta_reviewer = "reasonix"
-   meta_reviewer_model = "deepseek/deepseek-flash"
-   ```
-3. **Opencode + Host Local Models (`tcpproxy` lmstudio provider in devcontainer)**:
+> [!IMPORTANT]
+> **Agent-Model Pairing Rule**: Local LLMs are **always** run with `opencode` (`lmstudio/pairflow-*`). `reasonix` is used exclusively for cloud models (e.g. `deepseek/deepseek-flash`). A combination of local LLMs and `reasonix` is never used.
+
+1. **Local LLMs -> Opencode** (Host inference via Devcontainer tcpproxy -> LM Studio / Ollama):
    ```toml
    [defaults.agents]
    implementer = "opencode"
@@ -118,6 +101,16 @@ Provides fallback values for `pairflow bubble create` when CLI arguments are omi
    [defaults.watchdog_timeout_minutes_by_agent]
    opencode = 120
    reasonix = 30
+   ```
+2. **Cloud Models -> Reasonix** (DeepSeek API via `DEEPSEEK_API_KEY` in `~/.reasonix/.env`):
+   ```toml
+   [defaults.agents]
+   implementer = "reasonix"
+   implementer_model = "deepseek/deepseek-flash"
+   reviewer = "reasonix"
+   reviewer_model = "deepseek/deepseek-flash"
+   meta_reviewer = "reasonix"
+   meta_reviewer_model = "deepseek/deepseek-flash"
    ```
 
 #### Sub-table: `[defaults.watchdog_timeout_minutes_by_agent]`

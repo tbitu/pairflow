@@ -53,56 +53,48 @@ base_branch = "main"
 # ------------------------------------------------------------------------------
 # 2. Agent Assignments [defaults.agents]
 # ------------------------------------------------------------------------------
-# Supported agent runtimes: "reasonix" or "opencode"
+# Supported agent runtimes: "opencode" (for local LLMs) or "reasonix" (for cloud models)
 #
-# CONNECTED MODEL PATTERNS:
+# RULE: Local LLMs are ALWAYS paired with Opencode. Reasonix is used for cloud
+# models (e.g. DeepSeek). A combination of local LLMs and Reasonix is not supported.
 #
-# Pattern A: Reasonix with Host Local Models (Devcontainer tcpproxy default)
-#   implementer = "reasonix"
-#   implementer_model = "local/pairflow-implementer"
-#   reviewer = "reasonix"
-#   reviewer_model = "local/pairflow-reviewer"
-#   meta_reviewer = "reasonix"
-#   meta_reviewer_model = "local/pairflow-meta-reviewer"
-#
-# Pattern B: Reasonix with DeepSeek Cloud API (using DEEPSEEK_API_KEY)
-#   implementer = "reasonix"
-#   implementer_model = "deepseek/deepseek-flash"
-#   reviewer = "reasonix"
-#   reviewer_model = "deepseek/deepseek-flash"
-#   meta_reviewer = "reasonix"
-#   meta_reviewer_model = "deepseek/deepseek-flash"
-#
-# Pattern C: Opencode with Host Local Models (Devcontainer tcpproxy lmstudio provider)
+# Pattern A: Local LLMs (Host Inference via Devcontainer tcpproxy -> LM Studio / Ollama)
+#   Always uses opencode:
 #   implementer = "opencode"
 #   implementer_model = "lmstudio/pairflow-implementer"
 #   reviewer = "opencode"
 #   reviewer_model = "lmstudio/pairflow-reviewer"
 #   meta_reviewer = "opencode"
 #   meta_reviewer_model = "lmstudio/pairflow-meta-reviewer"
-#   (Note: opencode local LLMs are typically slower; consider watchdog override below)
+#
+# Pattern B: Cloud Models (DeepSeek API via DEEPSEEK_API_KEY)
+#   Uses reasonix:
+#   implementer = "reasonix"
+#   implementer_model = "deepseek/deepseek-flash"
+#   reviewer = "reasonix"
+#   reviewer_model = "deepseek/deepseek-flash"
+#   meta_reviewer = "reasonix"
+#   meta_reviewer_model = "deepseek/deepseek-flash"
 # ------------------------------------------------------------------------------
 [defaults.agents]
-implementer = "reasonix"
-implementer_model = "local/pairflow-implementer"
+implementer = "opencode"
+implementer_model = "lmstudio/pairflow-implementer"
 
-reviewer = "reasonix"
-reviewer_model = "local/pairflow-reviewer"
+reviewer = "opencode"
+reviewer_model = "lmstudio/pairflow-reviewer"
 
-meta_reviewer = "reasonix"
-meta_reviewer_model = "local/pairflow-meta-reviewer"
+meta_reviewer = "opencode"
+meta_reviewer_model = "lmstudio/pairflow-meta-reviewer"
 
 
 # ------------------------------------------------------------------------------
 # 3. Per-Agent Watchdog Overrides [defaults.watchdog_timeout_minutes_by_agent]
 # ------------------------------------------------------------------------------
-# Useful when one agent runtime (e.g. opencode with local LLMs) requires more
-# wall-clock time than another (e.g. reasonix). Falls back to flat watchdog timeout
-# for agents not explicitly listed here.
-#
-# [defaults.watchdog_timeout_minutes_by_agent]
-# opencode = 120
-# reasonix = 30
+# Opencode with local LLMs typically requires longer round timeouts (e.g. 120m),
+# while Reasonix with cloud models stays fast (e.g. 30m).
+[defaults.watchdog_timeout_minutes_by_agent]
+opencode = 120
+reasonix = 30
 
 
 # ------------------------------------------------------------------------------

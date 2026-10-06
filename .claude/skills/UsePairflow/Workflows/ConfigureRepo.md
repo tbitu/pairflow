@@ -91,24 +91,21 @@ If independent packages have distinct build/test loops, consider defining `[vali
 
 - Check available CLI agents (`which reasonix`, `which opencode`).
 - Determine default agent assignments and connected model strings:
-  1. **Reasonix + Host Local Models** (Devcontainer tcpproxy default):
-     - `implementer = "reasonix"`, `implementer_model = "local/pairflow-implementer"`
-     - `reviewer = "reasonix"`, `reviewer_model = "local/pairflow-reviewer"`
-     - `meta_reviewer = "reasonix"`, `meta_reviewer_model = "local/pairflow-meta-reviewer"`
-  2. **Reasonix + DeepSeek Cloud API** (`DEEPSEEK_API_KEY`):
-     - `implementer = "reasonix"`, `implementer_model = "deepseek/deepseek-flash"`
-     - `reviewer = "reasonix"`, `reviewer_model = "deepseek/deepseek-flash"`
-     - `meta_reviewer = "reasonix"`, `meta_reviewer_model = "deepseek/deepseek-flash"`
-  3. **Opencode + Host Local Models** (Devcontainer tcpproxy lmstudio provider):
+  - **Rule**: Local LLMs are **always** run with `opencode`. `reasonix` is used for cloud models (e.g. `deepseek/deepseek-flash`). Local LLMs and `reasonix` are never combined.
+  1. **Local LLMs -> Opencode** (Host inference via Devcontainer tcpproxy -> LM Studio / Ollama):
      - `implementer = "opencode"`, `implementer_model = "lmstudio/pairflow-implementer"`
      - `reviewer = "opencode"`, `reviewer_model = "lmstudio/pairflow-reviewer"`
      - `meta_reviewer = "opencode"`, `meta_reviewer_model = "lmstudio/pairflow-meta-reviewer"`
-     - Configure per-agent watchdog timeout overrides (local opencode inference is often slower):
+     - Set per-agent watchdog timeout overrides (local opencode LLMs are slower):
        ```toml
        [defaults.watchdog_timeout_minutes_by_agent]
        opencode = 120
        reasonix = 30
        ```
+  2. **Cloud Models -> Reasonix** (DeepSeek API via `DEEPSEEK_API_KEY`):
+     - `implementer = "reasonix"`, `implementer_model = "deepseek/deepseek-flash"`
+     - `reviewer = "reasonix"`, `reviewer_model = "deepseek/deepseek-flash"`
+     - `meta_reviewer = "reasonix"`, `meta_reviewer_model = "deepseek/deepseek-flash"`
 
 ### 6. Synthesize `pairflow.toml`
 
@@ -119,12 +116,16 @@ Construct the TOML content using explicit table headers:
 base_branch = "main"
 
 [defaults.agents]
-implementer = "reasonix"
-implementer_model = "local/pairflow-implementer"
-reviewer = "reasonix"
-reviewer_model = "local/pairflow-reviewer"
-meta_reviewer = "reasonix"
-meta_reviewer_model = "local/pairflow-meta-reviewer"
+implementer = "opencode"
+implementer_model = "lmstudio/pairflow-implementer"
+reviewer = "opencode"
+reviewer_model = "lmstudio/pairflow-reviewer"
+meta_reviewer = "opencode"
+meta_reviewer_model = "lmstudio/pairflow-meta-reviewer"
+
+[defaults.watchdog_timeout_minutes_by_agent]
+opencode = 120
+reasonix = 30
 
 [defaults.review_policy]
 reviewer_blocking_min_severity = "P3"

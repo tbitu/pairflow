@@ -691,9 +691,11 @@ required = []
     const parsed = parsePairflowRepoConfigToml(templateContent);
 
     expect(parsed.defaults?.base_branch).toBe("main");
-    expect(parsed.defaults?.agents?.implementer).toBe("reasonix");
-    expect(parsed.defaults?.agents?.reviewer).toBe("reasonix");
-    expect(parsed.defaults?.agents?.meta_reviewer).toBe("reasonix");
+    expect(parsed.defaults?.agents?.implementer).toBe("opencode");
+    expect(parsed.defaults?.agents?.reviewer).toBe("opencode");
+    expect(parsed.defaults?.agents?.meta_reviewer).toBe("opencode");
+    expect(parsed.defaults?.agents?.implementer_model).toBe("lmstudio/pairflow-implementer");
+    expect(parsed.defaults?.watchdog_timeout_minutes_by_agent?.opencode).toBe(120);
     expect(parsed.defaults?.review_policy?.reviewer_blocking_min_severity).toBe("P3");
     expect(parsed.validation?.required).toEqual(["lint", "typecheck"]);
     expect(parsed.validation?.meta_review_approve_required).toEqual(["test"]);
