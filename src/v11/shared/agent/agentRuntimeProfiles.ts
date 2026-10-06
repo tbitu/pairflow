@@ -9,7 +9,7 @@ import type { AgentName } from "../../../contracts/kernel/agentIdentity.js";
  * expressed here instead of as scattered `agentName === "opencode"` checks.
  *
  * opencode's profile reproduces today's behavior verbatim; reasonix gets its
- * own profile (launch via `npx reasonix code`, npm `reasonix` package).
+ * own profile (launch via `reasonix code`, npm `reasonix` package).
  *
  * ## Delivery Policy (Standing Instructions + Work Guidance)
  *

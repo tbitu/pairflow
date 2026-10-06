@@ -136,7 +136,7 @@ Optional but recommended:
 
 - `cursor` (default editor for `bubble open`)
 - `codex` and `claude` binaries in PATH (for tmux agent panes)
-- `opencode` and/or `reasonix` binaries in PATH (Pairflow bubble agents; reasonix can also run through `npx reasonix`)
+- `opencode` and/or `reasonix` binaries in PATH (Pairflow bubble agents)
 - One of these macOS terminals for `bubble attach`: [iTerm2](https://iterm2.com/), [Ghostty](https://ghostty.org/), [Warp](https://www.warp.dev/), or Terminal.app (`auto` mode falls back to `copy` when no GUI launcher is available)
 
 ## Containerized Development (No Local Node/pnpm)

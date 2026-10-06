@@ -107,7 +107,7 @@ function buildOpencodePreparation(): string[] {
 
 function buildMissingBinaryMessage(agentName: AgentName, bubbleId: string): string {
   if (agentName === "reasonix") {
-    return `reasonix CLI not found in PATH for bubble ${bubbleId}. Install reasonix (npm i -g reasonix) or run through npx.`;
+    return `reasonix CLI not found in PATH for bubble ${bubbleId}. Install reasonix (npm i -g reasonix).`;
   }
   return `opencode CLI not found in PATH for bubble ${bubbleId}. Install opencode.`;
 }
@@ -147,9 +147,8 @@ function buildReasonixPreparation(input: {
 /**
  * Build the shell script that launches an agent in a bubble pane.
  *
- * For reasonix, the launch prefers the `reasonix` binary on PATH and falls
- * back to `npx --yes reasonix` (the documented `npx reasonix code` path)
- * before reporting the binary as missing.
+ * Launches the agent executable (`opencode` or `reasonix`) directly with its
+ * profile arguments, reporting the binary as missing if not found in PATH.
  */
 export function buildAgentCommand(input: BuildAgentCommandInput): string {
   const agentName = input.agentName;
@@ -163,7 +162,6 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
   const missingBinaryMessage = buildMissingBinaryMessage(agentName, bubbleId);
   const worktreePinningMessage = `Failed to pin agent root to workspace ${workspacePath} for bubble ${bubbleId}.`;
 
-  const profile = getAgentRuntimeProfile(agentName);
   const launchArgs = buildAgentLaunchArgs({
     agentName,
     roleName: input.roleName,
@@ -191,8 +189,7 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
               workspacePath
             })
           : [],
-    missingBinaryMessage,
-    profile
+    missingBinaryMessage
   });
 
   const script = [
@@ -213,40 +210,16 @@ function buildAgentLaunchBlock(input: {
   launchArgs: string[];
   profilePreparation: string[];
   missingBinaryMessage: string;
-  profile: ReturnType<typeof getAgentRuntimeProfile>;
 }): string[] {
-  const { agentName, bubbleId, launchArgs, profilePreparation, missingBinaryMessage, profile } = input;
+  const { agentName, bubbleId, launchArgs, profilePreparation, missingBinaryMessage } = input;
   const droppedShellLine = `printf '${agentName} exited (code %s). Dropping to interactive shell.\\n' "$agent_exit_code"`;
 
-  if (profile.startupPromptDelivery === "cli_arg") {
-    // opencode: single binary launch path.
-    return [
-      `if command -v ${agentName} >/dev/null 2>&1; then`,
-      ...profilePreparation,
-      `  ${renderLaunchCommand(agentName, launchArgs)}`,
-      "  agent_exit_code=$?",
-      `  ${droppedShellLine}`,
-      "  exec bash -i",
-      "fi",
-      `printf '%s\\n' ${shellQuote(missingBinaryMessage)}`,
-      "exec bash -i"
-    ];
-  }
-
-  // reasonix: prefer the PATH binary, fall back to npx (documented
-  // `npx reasonix code` path), then report missing. Prepend the per-bubble
-  // reasonix.toml preparation so permissions allow pairflow's agent write.
   return [
-    ...profilePreparation,
     `if command -v ${agentName} >/dev/null 2>&1; then`,
+    ...profilePreparation,
     `  ${renderLaunchCommand(agentName, launchArgs)}`,
     "  agent_exit_code=$?",
     `  ${droppedShellLine}`,
-    "  exec bash -i",
-    "elif command -v npx >/dev/null 2>&1; then",
-    `  ${renderLaunchCommand("npx", ["--yes", agentName, ...launchArgs])}`,
-    "  agent_exit_code=$?",
-    "  printf 'reasonix (via npx) exited (code %s). Dropping to interactive shell.\\n' \"$agent_exit_code\"",
     "  exec bash -i",
     "fi",
     `printf '%s\\n' ${shellQuote(missingBinaryMessage)}`,

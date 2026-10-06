@@ -1,5 +1,5 @@
 // Supported pairflow coding agents. opencode remains the default; reasonix is
-// supported alongside it (launch via `npx reasonix code`). Agent-specific
+// supported alongside it (launch via `reasonix code`). Agent-specific
 // runtime behavior lives in the per-agent profiles under
 // src/v11/shared/agent/agentRuntimeProfiles.ts — do not add agent-specific
 // conditionals outside that registry.

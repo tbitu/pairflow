@@ -72,7 +72,7 @@ describe("buildAgentCommand for reasonix", () => {
     expect(cmd).toContain("deepseek-flash");
   });
 
-  it("falls back to npx --yes reasonix when the binary is missing from PATH", () => {
+  it("checks for reasonix executable in PATH directly and does not fall back to npx", () => {
     const cmd = buildAgentCommand({
       agentName: "reasonix",
       roleName: "implementer",
@@ -81,46 +81,9 @@ describe("buildAgentCommand for reasonix", () => {
     });
 
     expect(cmd).toContain("command -v reasonix");
-    expect(cmd).toContain("command -v npx");
-    // The npx fallback branch passes --yes through to npx (tokens are
-    // shell-quoted and the outer wrapper re-escapes inner quotes).
-    expect(cmd).toContain("--yes");
+    expect(cmd).not.toContain("command -v npx");
+    expect(cmd).not.toContain("npx");
     expect(cmd).toContain("reasonix CLI not found in PATH");
-  });
-
-  it("keeps reasonix as the npx package name so 'code' stays a subcommand (regression)", () => {
-    const cmd = buildAgentCommand({
-      agentName: "reasonix",
-      roleName: "implementer",
-      bubbleId: "b_reasonix_test_05",
-      workspacePath: "/tmp/worktree/reasonix-test"
-    });
-
-    // The npx fallback must be `npx --yes reasonix code --dir ...`, never
-    // `npx --yes code ...` (which would make npm fetch the unrelated `code`
-    // package and fail with "could not determine executable to run").
-    const npxInvocation = cmd
-      .split("\n")
-      .find((line) => line.includes("npx") && line.includes("code"));
-    expect(npxInvocation).toBeDefined();
-    if (npxInvocation === undefined) {
-      throw new Error("npx invocation line missing from launch script");
-    }
-    expect(npxInvocation).toContain("reasonix");
-    expect(npxInvocation.indexOf("reasonix")).toBeLessThan(
-      npxInvocation.indexOf("code")
-    );
-  });
-
-  it("renders a distinct dropped-shell message for the npx fallback", () => {
-    const cmd = buildAgentCommand({
-      agentName: "reasonix",
-      roleName: "implementer",
-      bubbleId: "b_reasonix_test_04",
-      workspacePath: "/tmp/worktree/reasonix-test"
-    });
-
-    expect(cmd).toContain("reasonix (via npx) exited (code");
   });
 
   it("writes a per-bubble reasonix.toml and passes --add-dir for the host repo", () => {
@@ -150,7 +113,7 @@ describe("buildAgentCommand for reasonix", () => {
     expect(cmd).not.toContain('bash = "enforce"');
     // The config write happens before the launch (guard: only when absent).
     const configLineIndex = cmd.indexOf("reasonix.toml");
-    const launchIndex = cmd.indexOf("command -v reasonix");
+    const launchIndex = cmd.indexOf("'reasonix'");
     expect(configLineIndex).toBeGreaterThan(-1);
     expect(launchIndex).toBeGreaterThan(configLineIndex);
   });

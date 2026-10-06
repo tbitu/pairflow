@@ -81,7 +81,7 @@
           "id": "agent-command-shared-command-policy",
           "kind": "allow-ownership-signal",
           "owner": "architecture/runtime",
-          "reason": "agentCommand is shared command-construction policy used by start, meta-review, watchdog respawn, defaults, and tmux reviewer/implementer contexts. It builds the per-agent runtime profile launch argv (opencode CLI-arg delivery, reasonix code-mode TUI with npx fallback), opencode-only env preparation, and missing-binary messaging; moving it into infrastructure would force application/defaults callers through an infrastructure-owned command builder.",
+          "reason": "agentCommand is shared command-construction policy used by start, meta-review, watchdog respawn, defaults, and tmux reviewer/implementer contexts. It builds the per-agent runtime profile launch argv (opencode CLI-arg delivery, reasonix code-mode TUI direct binary launch), opencode-only env preparation, and missing-binary messaging; moving it into infrastructure would force application/defaults callers through an infrastructure-owned command builder.",
           "from": "src/v11/shared/command/agentCommand.ts"
         },
         {

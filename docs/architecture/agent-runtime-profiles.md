@@ -12,9 +12,8 @@ Supported agents today:
 - `opencode` — the original bubble agent (launched as `opencode ...`, startup
   prompt via CLI args).
 - `reasonix` — npm `reasonix`, launched as `reasonix code --dir <workspace>`
-  (or `npx --yes reasonix code ...` fallback). reasonix has no `--agent` and no
-  `--prompt` flag, so role identity and startup prompts are delivered through
-  tmux paste.
+  directly. reasonix has no `--agent` and no `--prompt` flag, so role identity
+  and startup prompts are delivered through tmux paste.
 
 ## Profile fields
 
@@ -85,7 +84,7 @@ the result has been persisted.
 - **Launch**: `reasonix code --dir <workspace> [--model <model>]
   --permission-mode danger-full-access` (autonomous loop agents run in YOLO mode
   without human prompting, mirroring opencode's `permission: allow`). Missing binary
-  falls back to `npx --yes reasonix`.
+  reports missing executable and drops to interactive shell.
 - **Startup prompt delivery**: `shouldSubmitStartupPrompt` returns `true` for
   `tmux_paste` agents; the seed pastes the startup prompt text into the pane
   (instead of a bare Enter).
