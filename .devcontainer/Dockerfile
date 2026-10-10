@@ -45,7 +45,7 @@ ENV SHELL=/bin/bash
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 
-# 1. General development tools: build tools (gcc, g++, make), Python 3, tmux, procps, lsof, jq
+# 1. General development tools: build tools (gcc, g++, make), Python 3, tmux, procps, lsof, jq, clipboard utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3 \
@@ -59,6 +59,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     ca-certificates \
     locales \
+    wl-clipboard \
+    xclip \
     && rm -rf /var/lib/apt/lists/*
 
 # 2. Node.js 22 LTS & exact pnpm version matching package.json (10.8.1)
@@ -84,8 +86,9 @@ RUN mkdir -p /home/vscode/.npm-global/bin \
 # 4. Git safe directory config for mounted workspaces
 RUN git config --system --add safe.directory "*"
 
-# 5. Install Coding Agents (Opencode & Reasonix) globally
-RUN npm install -g opencode-ai@latest reasonix@latest
+# 5. Install Coding Agents (Opencode & Reasonix) and TypeScript tooling globally
+RUN npm install -g opencode-ai@latest reasonix@latest typescript tsx \
+    && pnpm config set package-import-method copy --global
 
 # 6. Install baked-in Pairflow CLI package from builder stage
 COPY --from=builder /build/pairflow-cli.tgz /tmp/pairflow-cli.tgz

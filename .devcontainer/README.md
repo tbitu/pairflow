@@ -6,7 +6,7 @@ This repository builds and publishes the devcontainer image so that other softwa
 
 ## Key Architecture
 
-- **Prebuilt Multi-Arch Image via GHCR**: Built on `mcr.microsoft.com/devcontainers/base:ubuntu-24.04` with `build-essential`, Python 3, Node.js 22, pinned `pnpm@10.8.1`, and coding agents (`opencode-ai`, `reasonix`).
+- **Prebuilt Multi-Arch Image via GHCR**: Built on `mcr.microsoft.com/devcontainers/base:ubuntu-24.04` with `build-essential`, Python 3, Node.js 22, pinned `pnpm@10.8.1`, global TypeScript/tsx compiler tooling, clipboard utilities (`wl-clipboard`, `xclip`), and coding agents (`opencode-ai`, `reasonix`).
 - **`tcpproxy` Background Service**: Listens inside the container on `127.0.0.1:1235`. It transparently proxies OpenAI requests to your host's inference engine (`Ollama`, `LM Studio`, `vLLM`), maps Pairflow virtual model roles (`pairflow-implementer`, `pairflow-reviewer`, `pairflow-meta-reviewer`), and injects role-specific sampling hyperparameters.
 - **Pre-baked Pairflow & Agent Skills**: The Pairflow CLI is compiled and packaged directly from this repository during image build, pre-installing `@pairflow/cli` and all agent skills (`UsePairflow`, `CreatePairflowSpec`, `ExecutePairflowPlan`) into global agent roots.
 - **State & Credential Persistence**:
@@ -15,6 +15,7 @@ This repository builds and publishes the devcontainer image so that other softwa
   - `pairflow-opencode-state`: Persists Opencode settings and plugins at `~/.config/opencode`.
   - `pairflow-opencode-home`: Persists `~/.opencode` (installed skills and symlinks).
   - `pairflow-npm-cache`: Caches package downloads so runtime startup is fast.
+  - `pairflow-pnpm-store`: Persists pnpm content-addressable store across container runs.
 - **Automated GHCR CI/CD**: The GitHub Actions workflow (`.github/workflows/devcontainer.yml`) builds multi-arch (`linux/amd64`, `linux/arm64`) images from this repository and publishes unified manifest lists to `ghcr.io/tbitu/pairflow-devcontainer`.
 
 ---

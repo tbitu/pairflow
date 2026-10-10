@@ -169,13 +169,13 @@ meta_review_approve_required = ["test"]
 # Node.js / TypeScript (pnpm):
 #   bootstrap = "pnpm install --frozen-lockfile && pnpm build"
 #   lint = "pnpm lint"
-#   typecheck = "pnpm typecheck"
+#   typecheck = "pnpm typecheck" # or: "pnpm exec tsc --noEmit" / "tsc --noEmit"
 #   test = "pnpm test"
 #
 # Node.js / TypeScript (npm):
 #   bootstrap = "npm ci"
 #   lint = "npm run lint"
-#   typecheck = "npm run typecheck"
+#   typecheck = "npm run typecheck" # or: "tsc --noEmit" / "npx --yes -p typescript tsc --noEmit"
 #   test = "npm test"
 #
 # Python (pip + venv):

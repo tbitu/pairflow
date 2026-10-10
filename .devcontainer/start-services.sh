@@ -15,10 +15,13 @@ BACKEND="${BACKEND:-ollama}"
 
 # 0. Ensure workspace and state directories are accessible
 if [ "$(id -u)" -eq 0 ]; then
-    mkdir -p /root/.config
+    mkdir -p /root/.config /root/.local/share
     [ -L /root/.reasonix ] || ln -sfn /home/vscode/.reasonix /root/.reasonix 2>/dev/null || true
     [ -L /root/.config/opencode ] || ln -sfn /home/vscode/.config/opencode /root/.config/opencode 2>/dev/null || true
     [ -L /root/.opencode ] || ln -sfn /home/vscode/.opencode /root/.opencode 2>/dev/null || true
+    [ -L /root/.local/share/pnpm ] || ln -sfn /home/vscode/.local/share/pnpm /root/.local/share/pnpm 2>/dev/null || true
+    [ -L /root/.npm ] || ln -sfn /home/vscode/.npm /root/.npm 2>/dev/null || true
+    [ -L /root/.npm-global ] || ln -sfn /home/vscode/.npm-global /root/.npm-global 2>/dev/null || true
 fi
 
 if [ -d "/workspace" ] && [ ! -w "/workspace" ]; then

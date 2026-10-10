@@ -13,13 +13,16 @@ if [ "$(id -u)" -eq 0 ]; then
     chmod 777 /.pairflow-worktrees 2>/dev/null || true
 
     # In Rootless Docker or when running as root, link /root state to the persistent volumes under /home/vscode
-    mkdir -p /home/vscode/.reasonix /home/vscode/.config/opencode /home/vscode/.opencode /home/vscode/.npm /home/vscode/.local/share/pnpm
+    mkdir -p /home/vscode/.reasonix /home/vscode/.config/opencode /home/vscode/.opencode /home/vscode/.npm /home/vscode/.local/share/pnpm /home/vscode/.npm-global
     chmod -R a+rwx /home/vscode 2>/dev/null || true
 
-    mkdir -p /root/.config
+    mkdir -p /root/.config /root/.local/share
     [ -L /root/.reasonix ] || ln -sfn /home/vscode/.reasonix /root/.reasonix
     [ -L /root/.config/opencode ] || ln -sfn /home/vscode/.config/opencode /root/.config/opencode
     [ -L /root/.opencode ] || ln -sfn /home/vscode/.opencode /root/.opencode
+    [ -L /root/.local/share/pnpm ] || ln -sfn /home/vscode/.local/share/pnpm /root/.local/share/pnpm
+    [ -L /root/.npm ] || ln -sfn /home/vscode/.npm /root/.npm
+    [ -L /root/.npm-global ] || ln -sfn /home/vscode/.npm-global /root/.npm-global
 elif command -v sudo >/dev/null 2>&1; then
     sudo mkdir -p /.pairflow-worktrees
     sudo chmod 777 /.pairflow-worktrees 2>/dev/null || sudo chown -R vscode:vscode /.pairflow-worktrees 2>/dev/null || true
@@ -35,13 +38,36 @@ if [ -d "/workspace" ] && [ ! -w "/workspace" ]; then
     fi
 fi
 
-# 1. Verify Pairflow CLI availability
-echo "[1/4] Checking Pairflow CLI..."
+# 1. Verify Pairflow CLI and Developer Tooling availability
+echo "[1/4] Checking Pairflow CLI and TypeScript tooling..."
 if ! command -v pairflow >/dev/null 2>&1 && [ ! -x "${USER_HOME}/.npm-global/bin/pairflow" ]; then
     echo "ERROR: Pairflow CLI is not installed in the devcontainer image." >&2
     exit 1
 fi
 echo "✓ Pairflow CLI is ready: $(command -v pairflow || echo "${USER_HOME}/.npm-global/bin/pairflow")"
+
+if ! command -v tsc >/dev/null 2>&1 || ! command -v tsx >/dev/null 2>&1; then
+    echo "Installing missing global TypeScript tooling (typescript, tsx)..."
+    npm install -g typescript tsx 2>/dev/null || true
+fi
+if command -v tsc >/dev/null 2>&1; then
+    echo "✓ TypeScript compiler ready: $(command -v tsc)"
+fi
+
+# Ensure clipboard utilities (wl-clipboard, xclip) are available
+if ! command -v wl-copy >/dev/null 2>&1 && ! command -v xclip >/dev/null 2>&1; then
+    if [ "$(id -u)" -eq 0 ]; then
+        apt-get update -y && apt-get install -y --no-install-recommends wl-clipboard xclip && rm -rf /var/lib/apt/lists/* 2>/dev/null || true
+    elif command -v sudo >/dev/null 2>&1; then
+        sudo apt-get update -y && sudo apt-get install -y --no-install-recommends wl-clipboard xclip && sudo rm -rf /var/lib/apt/lists/* 2>/dev/null || true
+    fi
+fi
+if command -v wl-copy >/dev/null 2>&1 || command -v xclip >/dev/null 2>&1; then
+    echo "✓ Clipboard tooling ready: $(command -v wl-copy || command -v xclip)"
+fi
+
+# Ensure pnpm handles cross-volume links gracefully inside containers
+pnpm config set package-import-method copy 2>/dev/null || true
 
 # 2. Setup Reasonix Persistent State & API Keys
 echo "[2/4] Initializing Reasonix configuration and credentials..."

@@ -66,8 +66,8 @@ Examine the codebase to determine the appropriate commands for:
 
 | Ecosystem | Indicators | Common Bootstrap | Common Lint | Common Typecheck | Common Test |
 |---|---|---|---|---|---|
-| **Node.js (pnpm)** | `pnpm-lock.yaml` | `pnpm install --frozen-lockfile` | `pnpm lint` | `pnpm typecheck` or `pnpm exec tsc --noEmit` | `pnpm test` |
-| **Node.js (npm)** | `package-lock.json` | `npm ci` | `npm run lint` | `npm run typecheck` or `npx tsc --noEmit` | `npm test` |
+| **Node.js (pnpm)** | `pnpm-lock.yaml` | `pnpm install --frozen-lockfile` | `pnpm lint` | `pnpm typecheck` or `pnpm exec tsc --noEmit` (or `tsc --noEmit`) | `pnpm test` |
+| **Node.js (npm)** | `package-lock.json` | `npm ci` | `npm run lint` | `npm run typecheck` or `tsc --noEmit` (or `npx --yes -p typescript tsc --noEmit`) | `npm test` |
 | **Node.js (yarn)** | `yarn.lock` | `yarn install --immutable` | `yarn lint` | `yarn typecheck` | `yarn test` |
 | **Node.js (bun)** | `bun.lockb` / `bun.lock` | `bun install --frozen-lockfile` | `bun run lint` | `bun run typecheck` | `bun test` |
 | **Python (uv)** | `uv.lock` | `uv sync` | `uv run ruff check .` | `uv run mypy .` | `uv run pytest` |
