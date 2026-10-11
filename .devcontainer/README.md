@@ -10,7 +10,7 @@ This repository builds and publishes the devcontainer image so that other softwa
 - **`tcpproxy` Background Service**: Listens inside the container on `127.0.0.1:1235`. It transparently proxies OpenAI requests to your host's inference engine (`Ollama`, `LM Studio`, `vLLM`), maps Pairflow virtual model roles (`pairflow-implementer`, `pairflow-reviewer`, `pairflow-meta-reviewer`), and injects role-specific sampling hyperparameters.
 - **Pre-baked Pairflow & Agent Skills**: The Pairflow CLI is compiled and packaged directly from this repository during image build, pre-installing `@pairflow/cli` and all agent skills (`UsePairflow`, `CreatePairflowSpec`, `ExecutePairflowPlan`) into global agent roots.
 - **State & Credential Persistence**:
-  - `pairflow-worktrees`: Persists git worktrees created during bubble execution at `/.pairflow-worktrees` outside the workspace mount.
+  - `../.pairflow-worktrees`: Bind-mounts the host sibling `.pairflow-worktrees` directory so bubble worktrees reside directly on the host filesystem alongside your project repository (matching the exact non-containerized directory layout).
   - `pairflow-reasonix-state`: Persists `~/.reasonix/.env` (API keys), provider config, and history.
   - `pairflow-opencode-state`: Persists Opencode settings and plugins at `~/.config/opencode`.
   - `pairflow-opencode-home`: Persists `~/.opencode` (installed skills and symlinks).
@@ -73,7 +73,7 @@ Parameters can be passed as host environment variables or edited in your project
 In **Rootless Docker**, the container engine runs in a user namespace where your host user (e.g. UID `1000`) is mapped to container `root` (UID `0`), while container non-root users (like `vscode`, UID `1000`) map to subordinate unprivileged UIDs on the host.
 
 ### Symptoms in Rootless Environments
-- Files mounted from the host at `/workspace` appear inside the container as owned by `root:root`.
+- Files mounted from the host at `/workspaces` appear inside the container as owned by `root:root`.
 - When running as user `vscode`, agents like `reasonix` fail with:
   `all workspace files are owned as root, so cant be written as vscode user`.
 
@@ -86,7 +86,7 @@ In **Rootless Docker**, the container engine runs in a user namespace where your
    The devcontainer initialization scripts automatically link persistent state and credentials (`.reasonix`, `.config/opencode`, `.opencode`) between `/home/vscode` and `/root`.
 
 2. **Run as `vscode` (Standard for Rootful Docker)**:
-   In standard rootful Docker on Linux/macOS/Windows, `remoteUser: "vscode"` avoids creating root-owned files on the host. If `/workspace` files ever lack write permissions, `init-container.sh` and `start-services.sh` automatically attempt to grant `a+rwX` permissions.
+   In standard rootful Docker on Linux/macOS/Windows, `remoteUser: "vscode"` avoids creating root-owned files on the host. If workspace files ever lack write permissions, `init-container.sh` and `start-services.sh` automatically attempt to grant `a+rwX` permissions.
 
 ---
 

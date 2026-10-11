@@ -80,8 +80,12 @@ RUN mkdir -p /home/vscode/.npm-global/bin \
              /home/vscode/.opencode \
              /home/vscode/.reasonix \
              /home/vscode/.config/opencode \
+             /workspaces/.pairflow-worktrees \
              /.pairflow-worktrees \
-    && chown -R vscode:vscode /home/vscode /.pairflow-worktrees
+             /workspaces \
+             /workspace \
+    && chmod 777 /workspaces/.pairflow-worktrees /.pairflow-worktrees \
+    && chown -R vscode:vscode /home/vscode /.pairflow-worktrees /workspaces /workspace
 
 # 4. Git safe directory config for mounted workspaces
 RUN git config --system --add safe.directory "*"
@@ -109,4 +113,4 @@ COPY .devcontainer/start-services.sh /usr/local/bin/start-services.sh
 RUN chmod +x /usr/local/bin/tcpproxy.py /usr/local/bin/init-container.sh /usr/local/bin/start-services.sh
 
 USER vscode
-WORKDIR /workspace
+WORKDIR /workspaces

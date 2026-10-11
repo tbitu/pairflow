@@ -12,9 +12,9 @@ services:
     # user: root
     volumes:
       # Mount workspace repository into container (:z for SELinux volume relabeling)
-      - .:/workspace:z
-      # Persist bubble git worktrees outside repo tree
-      - pairflow-worktrees:/.pairflow-worktrees
+      - .:/workspaces/${COMPOSE_PROJECT_NAME:-workspace}:z
+      # Bind-mount host sibling .pairflow-worktrees so worktrees exist directly on the host filesystem
+      - ../.pairflow-worktrees:/workspaces/.pairflow-worktrees:z
       # Persist agent configurations, credentials, and package caches
       - pairflow-reasonix-state:/home/vscode/.reasonix
       - pairflow-opencode-state:/home/vscode/.config/opencode
@@ -46,7 +46,6 @@ services:
       - pairflow-ollama-models:/root/.ollama
 
 volumes:
-  pairflow-worktrees:
   pairflow-reasonix-state:
   pairflow-opencode-state:
   pairflow-opencode-home:

@@ -24,14 +24,16 @@ if [ "$(id -u)" -eq 0 ]; then
     [ -L /root/.npm-global ] || ln -sfn /home/vscode/.npm-global /root/.npm-global 2>/dev/null || true
 fi
 
-if [ -d "/workspace" ] && [ ! -w "/workspace" ]; then
-    echo "⚠️  /workspace is not writable by current user ($(id -un)). Granting write permissions..."
-    if [ "$(id -u)" -eq 0 ]; then
-        chmod -R u+rwX,g+rwX,o+rwX /workspace 2>/dev/null || true
-    elif command -v sudo >/dev/null 2>&1; then
-        sudo chmod -R u+rwX,g+rwX,o+rwX /workspace 2>/dev/null || true
+for ws_dir in "/workspaces" "/workspace"; do
+    if [ -d "$ws_dir" ] && [ ! -w "$ws_dir" ]; then
+        echo "⚠️  $ws_dir is not writable by current user ($(id -un)). Granting write permissions..."
+        if [ "$(id -u)" -eq 0 ]; then
+            chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
+        elif command -v sudo >/dev/null 2>&1; then
+            sudo chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
+        fi
     fi
-fi
+done
 
 # 1. Start tcpproxy if not already running
 if pgrep -f "tcpproxy.py" >/dev/null 2>&1; then

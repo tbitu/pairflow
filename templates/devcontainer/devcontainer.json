@@ -1,14 +1,15 @@
 {
   "name": "Pairflow Devcontainer",
   "image": "ghcr.io/tbitu/pairflow-devcontainer:latest",
-  "workspaceFolder": "/workspace",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
+  "initializeCommand": "mkdir -p \"${localWorkspaceFolder}/../.pairflow-worktrees\"",
   "runArgs": [
     "--add-host=host.docker.internal:host-gateway",
     "--security-opt", "label=disable"
   ],
   "mounts": [
-    "source=pairflow-worktrees,target=/.pairflow-worktrees,type=volume",
+    "source=${localWorkspaceFolder}/../.pairflow-worktrees,target=/workspaces/.pairflow-worktrees,type=bind,consistency=cached",
     "source=pairflow-reasonix-state,target=/home/vscode/.reasonix,type=volume",
     "source=pairflow-opencode-state,target=/home/vscode/.config/opencode,type=volume",
     "source=pairflow-opencode-home,target=/home/vscode/.opencode,type=volume",

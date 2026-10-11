@@ -9,8 +9,16 @@ USER_HOME="${HOME:-/home/vscode}"
 
 # 0. Ensure bubble worktree root and persistent volumes are writable
 if [ "$(id -u)" -eq 0 ]; then
-    mkdir -p /.pairflow-worktrees
-    chmod 777 /.pairflow-worktrees 2>/dev/null || true
+    mkdir -p /workspaces/.pairflow-worktrees /workspaces
+    chmod 777 /workspaces/.pairflow-worktrees 2>/dev/null || true
+    # For backward compatibility if repo is mounted at /workspace:
+    if [ ! -L /.pairflow-worktrees ]; then
+        if [ ! -d /.pairflow-worktrees ] || [ -z "$(ls -A /.pairflow-worktrees 2>/dev/null)" ]; then
+            rm -rf /.pairflow-worktrees 2>/dev/null || true
+            ln -sfn /workspaces/.pairflow-worktrees /.pairflow-worktrees 2>/dev/null || true
+        fi
+    fi
+    [ -d /.pairflow-worktrees ] && chmod 777 /.pairflow-worktrees 2>/dev/null || true
 
     # In Rootless Docker or when running as root, link /root state to the persistent volumes under /home/vscode
     mkdir -p /home/vscode/.reasonix /home/vscode/.config/opencode /home/vscode/.opencode /home/vscode/.npm /home/vscode/.local/share/pnpm /home/vscode/.npm-global
@@ -24,19 +32,28 @@ if [ "$(id -u)" -eq 0 ]; then
     [ -L /root/.npm ] || ln -sfn /home/vscode/.npm /root/.npm
     [ -L /root/.npm-global ] || ln -sfn /home/vscode/.npm-global /root/.npm-global
 elif command -v sudo >/dev/null 2>&1; then
-    sudo mkdir -p /.pairflow-worktrees
-    sudo chmod 777 /.pairflow-worktrees 2>/dev/null || sudo chown -R vscode:vscode /.pairflow-worktrees 2>/dev/null || true
+    sudo mkdir -p /workspaces/.pairflow-worktrees /workspaces 2>/dev/null || true
+    sudo chmod 777 /workspaces/.pairflow-worktrees 2>/dev/null || sudo chown -R vscode:vscode /workspaces/.pairflow-worktrees 2>/dev/null || true
+    if [ ! -L /.pairflow-worktrees ]; then
+        if [ ! -d /.pairflow-worktrees ] || [ -z "$(sudo ls -A /.pairflow-worktrees 2>/dev/null)" ]; then
+            sudo rm -rf /.pairflow-worktrees 2>/dev/null || true
+            sudo ln -sfn /workspaces/.pairflow-worktrees /.pairflow-worktrees 2>/dev/null || true
+        fi
+    fi
+    [ -d /.pairflow-worktrees ] && (sudo chmod 777 /.pairflow-worktrees 2>/dev/null || true)
 fi
 
-# Ensure /workspace is writable by current user
-if [ -d "/workspace" ] && [ ! -w "/workspace" ]; then
-    echo "⚠️  /workspace is not writable by current user ($(id -un)). Granting write permissions..."
-    if [ "$(id -u)" -eq 0 ]; then
-        chmod -R u+rwX,g+rwX,o+rwX /workspace 2>/dev/null || true
-    elif command -v sudo >/dev/null 2>&1; then
-        sudo chmod -R u+rwX,g+rwX,o+rwX /workspace 2>/dev/null || true
+# Ensure workspace directories are writable by current user
+for ws_dir in "/workspaces" "/workspace"; do
+    if [ -d "$ws_dir" ] && [ ! -w "$ws_dir" ]; then
+        echo "⚠️  $ws_dir is not writable by current user ($(id -un)). Granting write permissions..."
+        if [ "$(id -u)" -eq 0 ]; then
+            chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
+        elif command -v sudo >/dev/null 2>&1; then
+            sudo chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
+        fi
     fi
-fi
+done
 
 # 1. Verify Pairflow CLI and Developer Tooling availability
 echo "[1/4] Checking Pairflow CLI and TypeScript tooling..."
