@@ -84,9 +84,8 @@ RUN mkdir -p /home/vscode/.npm-global/bin \
              /workspaces/.pairflow-worktrees \
              /.pairflow-worktrees \
              /workspaces \
-             /workspace \
     && chmod 777 /workspaces/.pairflow-worktrees /.pairflow-worktrees \
-    && chown -R vscode:vscode /home/vscode /.pairflow-worktrees /workspaces /workspace
+    && chown -R vscode:vscode /home/vscode /.pairflow-worktrees /workspaces
 
 # 4. Git safe directory config for mounted workspaces
 RUN git config --system --add safe.directory "*"
