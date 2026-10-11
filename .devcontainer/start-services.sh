@@ -25,12 +25,14 @@ if [ "$(id -u)" -eq 0 ]; then
 fi
 
 for ws_dir in "/workspaces" "/workspace"; do
-    if [ -d "$ws_dir" ] && [ ! -w "$ws_dir" ]; then
-        echo "⚠️  $ws_dir is not writable by current user ($(id -un)). Granting write permissions..."
-        if [ "$(id -u)" -eq 0 ]; then
-            chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
-        elif command -v sudo >/dev/null 2>&1; then
-            sudo chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
+    if [ -d "$ws_dir" ]; then
+        if [ ! -w "$ws_dir" ] || find "$ws_dir" -maxdepth 2 ! -writable 2>/dev/null | grep -q .; then
+            echo "⚠️  $ws_dir contains files not writable by current user ($(id -un)). Granting write permissions..."
+            if [ "$(id -u)" -eq 0 ]; then
+                chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
+            elif command -v sudo >/dev/null 2>&1; then
+                sudo chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
+            fi
         fi
     fi
 done

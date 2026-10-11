@@ -10,7 +10,7 @@ USER_HOME="${HOME:-/home/vscode}"
 # 0. Ensure bubble worktree root and persistent volumes are writable
 if [ "$(id -u)" -eq 0 ]; then
     mkdir -p /workspaces/.pairflow-worktrees /workspaces
-    chmod 777 /workspaces/.pairflow-worktrees 2>/dev/null || true
+    chmod -R a+rwX /workspaces/.pairflow-worktrees 2>/dev/null || true
     # For backward compatibility if repo is mounted at /workspace:
     if [ ! -L /.pairflow-worktrees ]; then
         if [ ! -d /.pairflow-worktrees ] || [ -z "$(ls -A /.pairflow-worktrees 2>/dev/null)" ]; then
@@ -18,7 +18,7 @@ if [ "$(id -u)" -eq 0 ]; then
             ln -sfn /workspaces/.pairflow-worktrees /.pairflow-worktrees 2>/dev/null || true
         fi
     fi
-    [ -d /.pairflow-worktrees ] && chmod 777 /.pairflow-worktrees 2>/dev/null || true
+    [ -d /.pairflow-worktrees ] && chmod -R a+rwX /.pairflow-worktrees 2>/dev/null || true
 
     # In Rootless Docker or when running as root, link /root state to the persistent volumes under /home/vscode
     mkdir -p /home/vscode/.reasonix /home/vscode/.config/opencode /home/vscode/.opencode /home/vscode/.npm /home/vscode/.local/share/pnpm /home/vscode/.npm-global
@@ -33,27 +33,32 @@ if [ "$(id -u)" -eq 0 ]; then
     [ -L /root/.npm-global ] || ln -sfn /home/vscode/.npm-global /root/.npm-global
 elif command -v sudo >/dev/null 2>&1; then
     sudo mkdir -p /workspaces/.pairflow-worktrees /workspaces 2>/dev/null || true
-    sudo chmod 777 /workspaces/.pairflow-worktrees 2>/dev/null || sudo chown -R vscode:vscode /workspaces/.pairflow-worktrees 2>/dev/null || true
+    sudo chmod -R a+rwX /workspaces/.pairflow-worktrees 2>/dev/null || sudo chown -R vscode:vscode /workspaces/.pairflow-worktrees 2>/dev/null || true
     if [ ! -L /.pairflow-worktrees ]; then
         if [ ! -d /.pairflow-worktrees ] || [ -z "$(sudo ls -A /.pairflow-worktrees 2>/dev/null)" ]; then
             sudo rm -rf /.pairflow-worktrees 2>/dev/null || true
             sudo ln -sfn /workspaces/.pairflow-worktrees /.pairflow-worktrees 2>/dev/null || true
         fi
     fi
-    [ -d /.pairflow-worktrees ] && (sudo chmod 777 /.pairflow-worktrees 2>/dev/null || true)
+    [ -d /.pairflow-worktrees ] && (sudo chmod -R a+rwX /.pairflow-worktrees 2>/dev/null || true)
 fi
 
-# Ensure workspace directories are writable by current user
+# Ensure workspace and worktree directories are fully writable by current user
 for ws_dir in "/workspaces" "/workspace"; do
-    if [ -d "$ws_dir" ] && [ ! -w "$ws_dir" ]; then
-        echo "⚠️  $ws_dir is not writable by current user ($(id -un)). Granting write permissions..."
-        if [ "$(id -u)" -eq 0 ]; then
-            chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
-        elif command -v sudo >/dev/null 2>&1; then
-            sudo chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
+    if [ -d "$ws_dir" ]; then
+        if [ ! -w "$ws_dir" ] || find "$ws_dir" -maxdepth 2 ! -writable 2>/dev/null | grep -q .; then
+            echo "⚠️  $ws_dir contains files not writable by current user ($(id -un)). Granting write permissions..."
+            if [ "$(id -u)" -eq 0 ]; then
+                chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
+            elif command -v sudo >/dev/null 2>&1; then
+                sudo chmod -R u+rwX,g+rwX,o+rwX "$ws_dir" 2>/dev/null || true
+            fi
         fi
     fi
 done
+
+# Ensure system /tmp is fully open for scratch work (e.g. Reasonix base-check folders)
+chmod 1777 /tmp 2>/dev/null || true
 
 # 1. Verify Pairflow CLI and Developer Tooling availability
 echo "[1/4] Checking Pairflow CLI and TypeScript tooling..."
@@ -91,7 +96,7 @@ echo "[2/4] Initializing Reasonix configuration and credentials..."
 mkdir -p "${USER_HOME}/.reasonix"
 REASONIX_ENV="${USER_HOME}/.reasonix/.env"
 touch "${REASONIX_ENV}"
-chmod 600 "${REASONIX_ENV}"
+chmod 666 "${REASONIX_ENV}"
 
 # Forward host API keys into ~/.reasonix/.env if provided and not yet present
 if [ -n "${DEEPSEEK_API_KEY:-}" ] && ! grep -q "^DEEPSEEK_API_KEY=" "${REASONIX_ENV}"; then
@@ -142,6 +147,7 @@ elif grep -q 'bash = "enforce"' "${REASONIX_CONFIG}"; then
     sed -i 's/bash = "enforce"/bash = "off"/g' "${REASONIX_CONFIG}"
     echo "✓ Updated ${REASONIX_CONFIG} sandbox bash to \"off\""
 fi
+chmod -R a+rwX "${USER_HOME}/.reasonix" /home/vscode/.reasonix 2>/dev/null || true
 
 # 3. Setup Opencode Persistent Configuration
 echo "[3/4] Initializing Opencode configuration..."
@@ -174,6 +180,7 @@ if [ ! -f "${OPENCODE_CONFIG}" ]; then
 EOF
     echo "✓ Generated default ${OPENCODE_CONFIG}"
 fi
+chmod -R a+rwX "${USER_HOME}/.config/opencode" /home/vscode/.config/opencode 2>/dev/null || true
 
 # 4. Ensure Pairflow Agent Skills (Opencode, Reasonix, Claude, Gemini, etc.)
 echo "[4/4] Ensuring Pairflow agent skills are present in agent global roots..."
