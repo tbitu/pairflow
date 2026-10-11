@@ -14,7 +14,8 @@
     "source=pairflow-opencode-state,target=/home/vscode/.config/opencode,type=volume",
     "source=pairflow-opencode-home,target=/home/vscode/.opencode,type=volume",
     "source=pairflow-npm-cache,target=/home/vscode/.npm,type=volume",
-    "source=pairflow-pnpm-store,target=/home/vscode/.local/share/pnpm,type=volume"
+    "source=pairflow-pnpm-store,target=/home/vscode/.local/share/pnpm,type=volume",
+    "source=pairflow-antigravity-state,target=/home/vscode/.gemini,type=volume"
   ],
   "containerEnv": {
     "UPSTREAM_URL": "${localEnv:PAIRFLOW_OPENAI_ENDPOINT:http://host.docker.internal:11434/v1}",

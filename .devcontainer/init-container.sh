@@ -21,13 +21,14 @@ if [ "$(id -u)" -eq 0 ]; then
     [ -d /.pairflow-worktrees ] && chmod -R a+rwX /.pairflow-worktrees 2>/dev/null || true
 
     # In Rootless Docker or when running as root, link /root state to the persistent volumes under /home/vscode
-    mkdir -p /home/vscode/.reasonix /home/vscode/.config/opencode /home/vscode/.opencode /home/vscode/.npm /home/vscode/.local/share/pnpm /home/vscode/.npm-global
+    mkdir -p /home/vscode/.reasonix /home/vscode/.config/opencode /home/vscode/.opencode /home/vscode/.gemini /home/vscode/.npm /home/vscode/.local/share/pnpm /home/vscode/.npm-global
     chmod -R a+rwx /home/vscode 2>/dev/null || true
 
     mkdir -p /root/.config /root/.local/share
     [ -L /root/.reasonix ] || ln -sfn /home/vscode/.reasonix /root/.reasonix
     [ -L /root/.config/opencode ] || ln -sfn /home/vscode/.config/opencode /root/.config/opencode
     [ -L /root/.opencode ] || ln -sfn /home/vscode/.opencode /root/.opencode
+    [ -L /root/.gemini ] || ln -sfn /home/vscode/.gemini /root/.gemini
     [ -L /root/.local/share/pnpm ] || ln -sfn /home/vscode/.local/share/pnpm /root/.local/share/pnpm
     [ -L /root/.npm ] || ln -sfn /home/vscode/.npm /root/.npm
     [ -L /root/.npm-global ] || ln -sfn /home/vscode/.npm-global /root/.npm-global
@@ -88,12 +89,27 @@ if command -v wl-copy >/dev/null 2>&1 || command -v xclip >/dev/null 2>&1; then
     echo "✓ Clipboard tooling ready: $(command -v wl-copy || command -v xclip)"
 fi
 
+# Ensure Antigravity CLI (agy) is available
+if ! command -v agy >/dev/null 2>&1; then
+    echo "Installing missing Antigravity CLI (agy)..."
+    if [ "$(id -u)" -eq 0 ]; then
+        curl -fsSL https://antigravity.google/cli/install.sh | bash -s -- --dir /usr/local/bin 2>/dev/null || true
+    elif command -v sudo >/dev/null 2>&1; then
+        curl -fsSL https://antigravity.google/cli/install.sh | sudo bash -s -- --dir /usr/local/bin 2>/dev/null || true
+    else
+        curl -fsSL https://antigravity.google/cli/install.sh | bash -s -- --dir "${USER_HOME}/.local/bin" 2>/dev/null || true
+    fi
+fi
+if command -v agy >/dev/null 2>&1; then
+    echo "✓ Antigravity CLI ready: $(command -v agy)"
+fi
+
 # Ensure pnpm handles cross-volume links gracefully inside containers
 pnpm config set package-import-method copy 2>/dev/null || true
 
 # 2. Setup Reasonix Persistent State & API Keys
 echo "[2/4] Initializing Reasonix configuration and credentials..."
-mkdir -p "${USER_HOME}/.reasonix"
+mkdir -p "${USER_HOME}/.reasonix" "${USER_HOME}/.gemini"
 REASONIX_ENV="${USER_HOME}/.reasonix/.env"
 touch "${REASONIX_ENV}"
 chmod 666 "${REASONIX_ENV}"
@@ -120,7 +136,7 @@ REASONIX_CONFIG="${USER_HOME}/.reasonix/config.toml"
 if [ ! -f "${REASONIX_CONFIG}" ]; then
     cat <<'EOF' > "${REASONIX_CONFIG}"
 # Reasonix configuration for Pairflow Devcontainer
-default_model = "local/pairflow-implementer"
+default_model = "deepseek-flash"
 
 [permissions]
 mode = "allow"
@@ -147,7 +163,16 @@ elif grep -q 'bash = "enforce"' "${REASONIX_CONFIG}"; then
     sed -i 's/bash = "enforce"/bash = "off"/g' "${REASONIX_CONFIG}"
     echo "✓ Updated ${REASONIX_CONFIG} sandbox bash to \"off\""
 fi
-chmod -R a+rwX "${USER_HOME}/.reasonix" /home/vscode/.reasonix 2>/dev/null || true
+
+# Ensure existing Reasonix configs use deepseek-flash as default model
+for cfg in "${USER_HOME}/.reasonix/config.toml" "/home/vscode/.reasonix/config.toml"; do
+    if [ -f "$cfg" ] && grep -q 'default_model = ".*pairflow-implementer.*"' "$cfg"; then
+        sed -i 's/default_model = ".*pairflow-implementer.*"/default_model = "deepseek-flash"/g' "$cfg"
+        echo "✓ Updated $cfg default_model to \"deepseek-flash\""
+    fi
+done
+
+chmod -R a+rwX "${USER_HOME}/.reasonix" /home/vscode/.reasonix "${USER_HOME}/.gemini" /home/vscode/.gemini 2>/dev/null || true
 
 # 3. Setup Opencode Persistent Configuration
 echo "[3/4] Initializing Opencode configuration..."

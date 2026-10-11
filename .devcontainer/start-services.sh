@@ -22,6 +22,7 @@ if [ "$(id -u)" -eq 0 ]; then
     [ -L /root/.local/share/pnpm ] || ln -sfn /home/vscode/.local/share/pnpm /root/.local/share/pnpm 2>/dev/null || true
     [ -L /root/.npm ] || ln -sfn /home/vscode/.npm /root/.npm 2>/dev/null || true
     [ -L /root/.npm-global ] || ln -sfn /home/vscode/.npm-global /root/.npm-global 2>/dev/null || true
+    [ -L /root/.gemini ] || ln -sfn /home/vscode/.gemini /root/.gemini 2>/dev/null || true
 fi
 
 for ws_dir in "/workspaces" "/workspace"; do

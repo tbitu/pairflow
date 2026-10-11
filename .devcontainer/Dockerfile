@@ -80,6 +80,7 @@ RUN mkdir -p /home/vscode/.npm-global/bin \
              /home/vscode/.opencode \
              /home/vscode/.reasonix \
              /home/vscode/.config/opencode \
+             /home/vscode/.gemini \
              /workspaces/.pairflow-worktrees \
              /.pairflow-worktrees \
              /workspaces \
@@ -90,9 +91,10 @@ RUN mkdir -p /home/vscode/.npm-global/bin \
 # 4. Git safe directory config for mounted workspaces
 RUN git config --system --add safe.directory "*"
 
-# 5. Install Coding Agents (Opencode & Reasonix) and TypeScript tooling globally
+# 5. Install Coding Agents (Opencode & Reasonix), TypeScript tooling, and Antigravity CLI globally
 RUN npm install -g opencode-ai@latest reasonix@latest typescript tsx \
-    && pnpm config set package-import-method copy --global
+    && pnpm config set package-import-method copy --global \
+    && curl -fsSL https://antigravity.google/cli/install.sh | bash -s -- --dir /usr/local/bin
 
 # 6. Install baked-in Pairflow CLI package from builder stage
 COPY --from=builder /build/pairflow-cli.tgz /tmp/pairflow-cli.tgz
