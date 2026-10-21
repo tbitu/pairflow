@@ -189,9 +189,10 @@ export async function executePassDelivery(
 
   return executeRoleHandoffDelivery({
     deliveryInput,
-    strategy: input.recipientRole === "reviewer"
-      ? StartupStrategy.PostReadinessTmux
-      : StartupStrategy.UpfrontCli,
+    strategy: isAgentNameRegistered(input.bubbleConfig.agents.reviewer)
+      && getAgentRuntimeProfile(input.bubbleConfig.agents.reviewer).startupPromptDelivery === "cli_arg"
+        ? StartupStrategy.UpfrontCli
+        : StartupStrategy.PostReadinessTmux,
     convergencePolicy: ConvergencePolicy.Respawn,
     cleanupPolicy: CleanupPolicy.Persist,
     emitDelivery,

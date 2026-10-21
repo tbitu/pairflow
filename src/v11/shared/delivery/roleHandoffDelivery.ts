@@ -14,6 +14,26 @@ import {
   createEmitDeliveryOrchestrator,
   mapDeliveryResultToDeliveryAck
 } from "./deliveryOrchestratorFactory.js";
+import {
+  getAgentRuntimeProfile,
+  isAgentNameRegistered
+} from "../agent/agentRuntimeProfiles.js";
+import { resolveConfiguredAgentForRole } from "../../domain/agentIdentity/agentIdentity.js";
+import type { AgentRole } from "../../../contracts/kernel/agentIdentity.js";
+import type { DeliveryTargetRole } from "./deliveryTargetMetadataContract.js";
+
+function resolveRecipientRoleToAgentRole(role: DeliveryTargetRole): AgentRole {
+  switch (role) {
+    case "implementer":
+      return "implementer";
+    case "reviewer":
+      return "reviewer";
+    case "meta_reviewer":
+      return "meta_reviewer";
+    default:
+      return "reviewer";
+  }
+}
 
 export interface ExecuteRoleHandoffDeliveryInput {
   deliveryInput: EmitDeliveryNotificationInput;
@@ -63,11 +83,22 @@ export async function executeRoleHandoffDelivery(
         ? { emitDelivery: input.emitDelivery }
         : {}
     );
+  const recipientRole = input.deliveryInput.recipientRole;
+  const agents = input.deliveryInput.bubbleConfig?.agents;
+  const recipientAgent = recipientRole !== undefined && agents !== undefined
+    ? resolveConfiguredAgentForRole({
+        agents,
+        role: resolveRecipientRoleToAgentRole(recipientRole)
+      })
+    : undefined;
+  const isCliArgRecipient = recipientAgent !== undefined && isAgentNameRegistered(recipientAgent)
+    && getAgentRuntimeProfile(recipientAgent).startupPromptDelivery === "cli_arg";
+
   const strategy =
     input.strategy ??
-    (input.deliveryInput.recipientRole === "reviewer"
-      ? StartupStrategy.PostReadinessTmux
-      : StartupStrategy.UpfrontCli);
+    (isCliArgRecipient
+      ? StartupStrategy.UpfrontCli
+      : StartupStrategy.PostReadinessTmux);
   const cleanupPolicy = input.cleanupPolicy ?? CleanupPolicy.Persist;
   const convergencePolicy = input.convergencePolicy ?? ConvergencePolicy.Respawn;
 

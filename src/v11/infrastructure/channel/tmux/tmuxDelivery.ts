@@ -3,13 +3,10 @@ import { getBubblePaths } from "../../../shared/bubble/bubblePaths.js";
 import { DEFAULT_ROLE_MCP_POLICY_BY_ROLE } from "../../../../config/defaults.js";
 import { buildAgentCommand } from "../../../shared/command/agentCommand.js";
 import type { AgentRole } from "../../../../contracts/kernel/agentIdentity.js";
-import {
-  isAgentNameRegistered
-} from "../../../shared/agent/agentRuntimeProfiles.js";
+import { getAgentRuntimeProfile, isAgentNameRegistered } from "../../../shared/agent/agentRuntimeProfiles.js";
 import { getSharedTopologySlotPaneIndexForRole } from "../../../shared/topology/topologySlotPaneProjection.js";
 import { deactivateOtherRolePanes } from "../../../shared/channel/rolePaneLifecycle.js";
-import { runTmux, type TmuxRunner } from "./tmuxManager.js";
-import { respawnTmuxPaneCommand } from "./tmuxManager.js";
+import { respawnTmuxPaneCommand, runTmux, type TmuxRunner } from "./tmuxManager.js";
 import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
 import { checkTmuxPaneMarkerStatus } from "./tmuxPaneMarkerConfirmation.js";
 import { submitTmuxPaneInput } from "./tmuxPaneWrite.js";
@@ -20,21 +17,10 @@ import {
   type TmuxDeliveryTimingOptions
 } from "./tmuxDeliveryRuntime.js";
 import { ensureRoleInstructionArtifacts } from "../../../shared/bubble/roleInstructionArtifacts.js";
-import {
-  buildTmuxDeliveryMessage,
-} from "./tmuxDeliveryMessageBuilder.js";
-import {
-  buildTranscriptFallbackRef,
-  resolveDeliveryMessageRef
-} from "./tmuxDeliveryRefs.js";
-import {
-  resolveEnvelopeRecipientRole,
-  resolveEnvelopeTargetPane
-} from "./tmuxDeliveryTargeting.js";
-import {
-  resolveConfiguredAgentForRole,
-  resolveConfiguredModelForRole
-} from "../../../domain/agentIdentity/agentIdentity.js";
+import { buildTmuxDeliveryMessage } from "./tmuxDeliveryMessageBuilder.js";
+import { buildTranscriptFallbackRef, resolveDeliveryMessageRef } from "./tmuxDeliveryRefs.js";
+import { resolveEnvelopeRecipientRole, resolveEnvelopeTargetPane } from "./tmuxDeliveryTargeting.js";
+import { resolveConfiguredAgentForRole, resolveConfiguredModelForRole } from "../../../domain/agentIdentity/agentIdentity.js";
 import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
 import {
   resolveWatchdogTargetPaneIndex
@@ -317,7 +303,8 @@ export async function emitDeliveryNotificationAck(
     workspacePath,
     sessionName,
     targetPaneIndex,
-    runner
+    runner,
+    startupPrompt: workspaceMessage
   });
   // Deactivate other role panes for single-session agents (reasonix).
   await deactivateNonConcurrentAgentPanes({
@@ -357,6 +344,7 @@ function buildRespawnPaneAgentAction(input: {
   sessionName: string;
   targetPaneIndex: number;
   runner: TmuxRunner;
+  startupPrompt?: string | undefined;
 }): (() => Promise<void>) | undefined {
   if (
     input.expectedPaneAgent === undefined ||
@@ -371,6 +359,10 @@ function buildRespawnPaneAgentAction(input: {
   return async (): Promise<void> => {
     const roleModel = resolveRoleModel({ role: roleName, bubbleConfig: input.bubbleConfig });
     const roleMcpPolicy = input.bubbleConfig.role_mcp?.[roleName] ?? DEFAULT_ROLE_MCP_POLICY_BY_ROLE[roleName];
+    const startupPrompt =
+      getAgentRuntimeProfile(agentName).startupPromptDelivery === "cli_arg"
+        ? input.startupPrompt
+        : undefined;
     const respawnCommand = buildAgentCommand({
       agentName,
       roleName,
@@ -380,6 +372,7 @@ function buildRespawnPaneAgentAction(input: {
       workspacePath: input.workspacePath,
       repoPath: input.bubbleConfig.repo_path,
       pairflowCommandProfile: input.bubbleConfig.pairflow_command_profile,
+      ...(startupPrompt !== undefined ? { startupPrompt } : {}),
       ...(input.bubbleConfig.executor?.type === "ssh"
         ? { remoteWorkspaceAuthority: { workspaceRoot: input.workspacePath } }
         : {})

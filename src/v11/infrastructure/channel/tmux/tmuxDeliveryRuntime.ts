@@ -180,7 +180,7 @@ async function ensureLiveSessionOrRespawn(input: {
   const isLive = await waitForAgentPaneReady(input.expectedPaneAgent, {
     runner: input.runner,
     targetPane: input.targetPane,
-    attempts: input.hasInitialDelay ? 5 : 3,
+    attempts: input.hasInitialDelay ? 90 : 3,
     retryDelayMs: 300,
     ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
   });
