@@ -1,5 +1,8 @@
 import type { WatchdogPaneActivityRecord } from "../../../../ports/watchdogPaneActivity.js";
-import type { WatchdogRuntimeContext } from "../flow/watchdogCommandFlow.js";
+import type { BubbleStateSnapshot } from "../../../../domain/state/snapshot/bubbleStateSnapshot.js";
+import { resolveTurnStartMs } from "../../../../shared/watchdog/watchdogTurnTiming.js";
+
+export { resolveTurnStartMs };
 
 export type NudgeEligibility =
   | { eligible: false }
@@ -15,15 +18,8 @@ function parseIsoTimestamp(value: string | undefined): number | null {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
-function resolveTurnStartMs(state: WatchdogRuntimeContext["state"]): number {
-  const startedAtMs = parseIsoTimestamp(state.execution_context?.started_at);
-  const lastCommandAtMs = parseIsoTimestamp(state.last_command_at ?? undefined);
-  const activeSinceMs = parseIsoTimestamp(state.active_since ?? undefined);
-  return Math.max(startedAtMs ?? 0, lastCommandAtMs ?? 0, activeSinceMs ?? 0);
-}
-
 function isSameExecutionStep(
-  state: WatchdogRuntimeContext["state"],
+  state: BubbleStateSnapshot,
   record: WatchdogPaneActivityRecord | null
 ): boolean {
   const currentExecutionId = state.execution_context?.execution_id;
@@ -43,7 +39,7 @@ function isSameExecutionStep(
  * Determines whether a watchdog nudge should be attempted, using early returns.
  */
 export function shouldAttemptNudge(input: {
-  state: WatchdogRuntimeContext["state"];
+  state: BubbleStateSnapshot;
   currentRecord: WatchdogPaneActivityRecord | null;
   hasEscInterrupt: boolean;
   now: Date;

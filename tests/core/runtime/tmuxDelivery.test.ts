@@ -4364,4 +4364,152 @@ describe("retryStuckAgentInput", () => {
       })
     ).rejects.toBeInstanceOf(BubbleWatchdogError);
   });
+
+  it("does not retry when the pane agent is busy", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "Claude Code is thinking...",
+            "esc interrupt",
+            "❯ [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md."
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    };
+
+    const result = await retryStuckAgentInput({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: baseConfig,
+      sessionsPath: "/tmp/sessions.json",
+      activeRole: "reviewer",
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry())
+    });
+
+    expect(result).toMatchObject({ retried: false, reason: "not_stuck" });
+    const enterCalls = calls.filter((c) => c[0] === "send-keys" && c[3] === "Enter");
+    expect(enterCalls).toHaveLength(0);
+  });
+
+  it("does not retry when prompt is not visible", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "Reasonix starting up...",
+            "[pairflow] r1 PASS opencode->reasonix msg=msg_123 ref=handoff.md."
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    };
+
+    const reasonixConfig: BubbleConfig = {
+      ...baseConfig,
+      agents: {
+        ...baseConfig.agents,
+        reviewer: "reasonix"
+      }
+    };
+
+    const result = await retryStuckAgentInput({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: reasonixConfig,
+      sessionsPath: "/tmp/sessions.json",
+      activeRole: "reviewer",
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry())
+    });
+
+    expect(result).toMatchObject({ retried: false, reason: "not_stuck" });
+    const enterCalls = calls.filter((c) => c[0] === "send-keys" && c[3] === "Enter");
+    expect(enterCalls).toHaveLength(0);
+  });
+
+  it("does not retry when pane content is unstable between samples", async () => {
+    const calls: string[][] = [];
+    let captureCount = 0;
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "capture-pane") {
+        captureCount += 1;
+        if (captureCount === 1) {
+          return Promise.resolve({
+            stdout: [
+              "Reasonix ready.",
+              "❯ [pairflow] r1 PASS chunk 1"
+            ].join("\n"),
+            stderr: "",
+            exitCode: 0
+          });
+        }
+        return Promise.resolve({
+          stdout: [
+            "Reasonix ready.",
+            "❯ [pairflow] r1 PASS chunk 1 and chunk 2 typed"
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    };
+
+    const result = await retryStuckAgentInput({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: baseConfig,
+      sessionsPath: "/tmp/sessions.json",
+      activeRole: "reviewer",
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry())
+    });
+
+    expect(result).toMatchObject({ retried: false, reason: "not_stuck" });
+    const enterCalls = calls.filter((c) => c[0] === "send-keys" && c[3] === "Enter");
+    expect(enterCalls).toHaveLength(0);
+  });
+
+  it("invokes sleepForDelayMs during stability check when provided", async () => {
+    const sleepCalls: number[] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "Claude Code is ready.",
+            "",
+            "❯ [pairflow] r1 PASS opencode->opencode msg=msg_123 ref=handoff.md."
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    };
+
+    const result = await retryStuckAgentInput({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: baseConfig,
+      sessionsPath: "/tmp/sessions.json",
+      activeRole: "reviewer",
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry()),
+      sleepForDelayMs: (ms) => {
+        sleepCalls.push(ms);
+        return Promise.resolve();
+      }
+    });
+
+    expect(result.retried).toBe(true);
+    expect(sleepCalls).toEqual([300]);
+  });
 });

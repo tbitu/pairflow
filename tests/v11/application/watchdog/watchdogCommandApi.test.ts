@@ -489,6 +489,66 @@ describe("watchdogCommandApi", () => {
     expect(result.stuckRetried).toBeUndefined();
   });
 
+  it("skips retryStuckAgentInput during the 45-second turn grace period", async () => {
+    const repoPath = await createTempRepo();
+    const bubble = await setupWatchdogRunningBubbleFixture({
+      repoPath,
+      bubbleId: "b_watchdog_v11_retry_grace_period_01",
+      task: "Watchdog v11 should skip retry during turn grace period",
+      startedAt: "2026-02-22T12:00:00.000Z"
+    });
+
+    let retryCalls = 0;
+    const result = await runBubbleWatchdog(
+      {
+        bubbleId: bubble.bubbleId,
+        cwd: repoPath,
+        now: new Date("2026-02-22T12:00:20.000Z")
+      },
+      baseDependencies({
+        retryStuckAgentInput: async () => {
+          retryCalls += 1;
+          return { retried: true };
+        }
+      })
+    );
+
+    expect(retryCalls).toBe(0);
+    expect(result.escalated).toBe(false);
+    expect(result.reason).toBe("not_expired");
+    expect(result.stuckRetried).toBeUndefined();
+  });
+
+  it("invokes retryStuckAgentInput after the 45-second turn grace period has passed", async () => {
+    const repoPath = await createTempRepo();
+    const bubble = await setupWatchdogRunningBubbleFixture({
+      repoPath,
+      bubbleId: "b_watchdog_v11_retry_grace_passed_01",
+      task: "Watchdog v11 should invoke retry after turn grace period",
+      startedAt: "2026-02-22T12:00:00.000Z"
+    });
+
+    let retryCalls = 0;
+    const result = await runBubbleWatchdog(
+      {
+        bubbleId: bubble.bubbleId,
+        cwd: repoPath,
+        now: new Date("2026-02-22T12:00:50.000Z")
+      },
+      baseDependencies({
+        retryStuckAgentInput: async () => {
+          retryCalls += 1;
+          return { retried: true };
+        }
+      })
+    );
+
+    expect(retryCalls).toBe(1);
+    expect(result.escalated).toBe(false);
+    expect(result.reason).toBe("not_expired");
+    expect(result.stuckRetried).toBe(true);
+  });
+
   it("keeps RUNNING bubble active after timeout when pane changed recently", async () => {
     const repoPath = await createTempRepo();
     const startedAt = "2026-02-22T12:00:00.000Z";

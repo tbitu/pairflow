@@ -8,8 +8,6 @@ import { getSharedTopologySlotPaneIndexForRole } from "../../../shared/topology/
 import { deactivateOtherRolePanes } from "../../../shared/channel/rolePaneLifecycle.js";
 import { respawnTmuxPaneCommand, runTmux, type TmuxRunner } from "./tmuxManager.js";
 import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
-import { checkTmuxPaneMarkerStatus } from "./tmuxPaneMarkerConfirmation.js";
-import { submitTmuxPaneInput } from "./tmuxPaneWrite.js";
 import {
   attemptTmuxDelivery,
   createRejectedDeliveryAck,
@@ -22,14 +20,9 @@ import { buildTranscriptFallbackRef, resolveDeliveryMessageRef } from "./tmuxDel
 import { resolveEnvelopeRecipientRole, resolveEnvelopeTargetPane } from "./tmuxDeliveryTargeting.js";
 import { resolveConfiguredAgentForRole, resolveConfiguredModelForRole } from "../../../domain/agentIdentity/agentIdentity.js";
 import type { AgentName } from "../../../../contracts/kernel/agentIdentity.js";
-import {
-  resolveWatchdogTargetPaneIndex
-} from "../../../shared/watchdog/watchdogPaneTargeting.js";
 import type {
   DeliveryAck,
-  EmitDeliveryNotificationInput,
-  RetryStuckAgentInputOptions,
-  RetryStuckAgentInputResult,
+  EmitDeliveryNotificationInput
 } from "../../../shared/delivery/tmuxDeliveryContract.js";
 
 interface EmitDeliveryNotificationRuntimeDependencies {
@@ -40,14 +33,6 @@ interface EmitDeliveryNotificationRuntimeDependencies {
 
 export type EmitDeliveryNotificationRuntimeInput =
   EmitDeliveryNotificationInput & EmitDeliveryNotificationRuntimeDependencies;
-
-interface RetryStuckAgentInputRuntimeDependencies {
-  runner?: TmuxRunner;
-  readSessionsRegistry?: typeof readRuntimeSessionsRegistry;
-}
-
-type RetryStuckAgentInputRuntimeOptions = RetryStuckAgentInputOptions &
-  RetryStuckAgentInputRuntimeDependencies;
 
 export type {
   AcceptedDeliveryAck,
@@ -414,74 +399,8 @@ async function deactivateNonConcurrentAgentPanes(input: {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Stuck-input retry — called periodically by the watchdog loop
-// ---------------------------------------------------------------------------
-/**
- * Check whether the active role's tmux pane has a pairflow message stuck
- * in its input buffer (text visible after the prompt but not submitted).
- * If so, press Enter to unstick it.
- *
- * Designed to be called from the watchdog loop (every ~2 s) as a
- * best-effort safety net for delivery failures.
- */
-export async function retryStuckAgentInput(
-  options: RetryStuckAgentInputRuntimeOptions
-): Promise<RetryStuckAgentInputResult> {
-  const runner = options.runner ?? runTmux;
-  const readSessions = options.readSessionsRegistry ?? readRuntimeSessionsRegistry;
-
-  let sessionName: string | undefined;
-  try {
-    const sessions = await readSessions(options.sessionsPath, {
-      allowMissing: true
-    });
-    sessionName = sessions[options.bubbleId]?.tmuxSessionName;
-  } catch {
-    return { retried: false, reason: "no_session" };
-  }
-
-  if (sessionName === undefined) {
-    return { retried: false, reason: "no_session" };
-  }
-
-  const paneIndex = resolveWatchdogTargetPaneIndex(options.activeRole);
-
-  const targetPane = `${sessionName}:0.${paneIndex}`;
-  const capture = await runner(["capture-pane", "-pt", targetPane], {
-    allowFailure: true
-  });
-  if (capture.exitCode !== 0) {
-    return { retried: false, reason: "pane_read_failed" };
-  }
-
-  const output = capture.stdout;
-  if (!output.includes("[pairflow]")) {
-    return { retried: false, reason: "not_stuck" };
-  }
-
-  const expectedPaneAgent = options.bubbleConfig !== undefined
-    ? resolveConfiguredAgentForRole({
-        agents: options.bubbleConfig.agents,
-        role: options.activeRole
-      })
-    : undefined;
-  const paneAgent = resolveAgentPaneAdapter(expectedPaneAgent);
-
-  // Check if the [pairflow] marker is stuck in the input buffer
-  // (after the last prompt line) rather than in the output area.
-  const markerStatus = await checkTmuxPaneMarkerStatus(
-    runner,
-    targetPane,
-    "[pairflow]",
-    paneAgent
-  );
-  if (markerStatus !== "stuck_in_input") {
-    // Marker is either already submitted or not present in the live input area.
-    return { retried: false, reason: "not_stuck" };
-  }
-
-  // Marker only appears after the prompt → stuck in input buffer.
-  await submitTmuxPaneInput(runner, targetPane);
-  return { retried: true };
-}
+export {
+  retryStuckAgentInput,
+  type RetryStuckAgentInputRuntimeDependencies,
+  type RetryStuckAgentInputRuntimeOptions
+} from "./tmuxRetryStuckInput.js";

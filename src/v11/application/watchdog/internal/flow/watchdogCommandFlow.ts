@@ -26,6 +26,7 @@ import type {
 } from "../../../../ports/stateSnapshots.js";
 import { BubbleWatchdogError } from "../error/watchdogCommandRuntime.js";
 import { resolveWatchdogTimeoutMinutesForAgent } from "../../../../shared/config/watchdogTimeoutResolution.js";
+import { resolveTurnStartMs } from "../../../../shared/watchdog/watchdogTurnTiming.js";
 
 function buildEscalationQuestion(
   bubbleId: string,
@@ -59,12 +60,22 @@ export interface WatchdogRuntimeContext {
   ) => Promise<RestartBubbleResult>;
 }
 
+export const WATCHDOG_RETRY_STUCK_INPUT_GRACE_PERIOD_MS = 45_000;
+
 export async function maybeRetryStuckAgentInput(
   context: WatchdogRuntimeContext
 ): Promise<boolean> {
   // Best-effort: if a pairflow message is stuck in the active role's
   // input buffer (Enter didn't register during delivery), retry it now.
   if (context.state.state === "RUNNING" && context.state.active_role !== null) {
+    const turnStartMs = resolveTurnStartMs(context.state);
+    if (
+      turnStartMs > 0
+      && context.now.getTime() - turnStartMs < WATCHDOG_RETRY_STUCK_INPUT_GRACE_PERIOD_MS
+    ) {
+      return false;
+    }
+
     let retryResult:
       | Awaited<ReturnType<WatchdogRuntimeContext["retryStuckAgentInput"]>>
       | undefined;
