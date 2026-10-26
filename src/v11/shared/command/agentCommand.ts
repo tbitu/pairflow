@@ -107,7 +107,10 @@ function buildOpencodePreparation(model?: string): string[] {
         providers: {
           lmstudio: {
             settings: {
-              baseURL: "http://127.0.0.1:1235/v1"
+              baseURL: "http://127.0.0.1:1235/v1",
+              headerTimeout: 600_000,
+              chunkTimeout: 1_800_000,
+              timeout: 3_600_000
             }
           }
         }

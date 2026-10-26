@@ -48,6 +48,9 @@ describe("buildAgentCommand for opencode", () => {
     expect(cmd).toContain('"provider":');
     expect(cmd).toContain('"providers":');
     expect(cmd).toContain('"permission":"allow"');
+    expect(cmd).toContain(
+      '"providers":{"lmstudio":{"settings":{"baseURL":"http://127.0.0.1:1235/v1","headerTimeout":600000,"chunkTimeout":1800000,"timeout":3600000}}}'
+    );
   });
 });
 
