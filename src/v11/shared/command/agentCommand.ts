@@ -51,10 +51,6 @@ function buildAgentLaunchArgs(input: {
   const hasStartupPrompt = (input.startupPrompt?.trim().length ?? 0) > 0;
 
   if (profile.startupPromptDelivery === "cli_arg") {
-    if ((input.model?.trim().length ?? 0) > 0) {
-      args.push("--model", trimAndStripTrailingSlashes(input.model as string));
-    }
-
     if (hasStartupPrompt) {
       args.push("--prompt", input.startupPrompt as string);
     }
@@ -84,12 +80,16 @@ function buildAgentLaunchArgs(input: {
   return args;
 }
 
-function buildOpencodePreparation(): string[] {
+function buildOpencodePreparation(model?: string): string[] {
+  const trimmedModel = model?.trim();
   return [
     `export OPENCODE_CONFIG_CONTENT=${shellQuote(
       JSON.stringify({
         $schema: "https://opencode.ai/config.json",
         permission: "allow",
+        ...(trimmedModel !== undefined && trimmedModel.length > 0
+          ? { model: trimAndStripTrailingSlashes(trimmedModel) }
+          : {}),
         provider: {
           lmstudio: {
             options: {
@@ -196,7 +196,7 @@ export function buildAgentCommand(input: BuildAgentCommandInput): string {
     launchArgs,
     profilePreparation:
       agentName === "opencode"
-        ? buildOpencodePreparation()
+        ? buildOpencodePreparation(input.model)
         : agentName === "reasonix"
           ? buildReasonixPreparation({
               workspacePath

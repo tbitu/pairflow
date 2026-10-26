@@ -18,7 +18,7 @@ describe("buildAgentCommand for opencode", () => {
     expect(cmd).toContain("Test startup prompt");
   });
 
-  it("passes model through with --model option without --agent PF-* flags", () => {
+  it("configures model via OPENCODE_CONFIG_CONTENT without --model CLI flag for opencode", () => {
     const cmd = buildAgentCommand({
       agentName: "opencode",
       roleName: "implementer",
@@ -30,8 +30,8 @@ describe("buildAgentCommand for opencode", () => {
     expect(cmd).toContain("opencode");
     expect(cmd).not.toContain("--agent");
     expect(cmd).not.toContain("PF-implementer");
-    expect(cmd).toContain("--model");
-    expect(cmd).toContain("lmstudio/pairflow-reviewer");
+    expect(cmd).not.toContain("--model");
+    expect(cmd).toContain('"model":"lmstudio/pairflow-reviewer"');
   });
 
   it("exports OPENCODE_CONFIG_CONTENT compatible with both OpenCode 1.x and 2.x", () => {
