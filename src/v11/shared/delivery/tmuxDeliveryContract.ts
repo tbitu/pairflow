@@ -10,6 +10,11 @@ import type {
 } from "../protocol/protocolEnvelopeContract.js";
 import type { ReviewerTestExecutionDirective } from "../reviewer/testEvidence.js";
 import type { ReviewerFocusExtractionResult } from "../reviewer/reviewerBrief.js";
+import type {
+  CleanupPolicy,
+  ConvergencePolicy,
+  StartupStrategy
+} from "./unifiedDeliveryOrchestrator.js";
 
 interface EmitDeliveryNotificationInputBase {
   bubbleId: string;
@@ -23,7 +28,9 @@ interface EmitDeliveryNotificationInputBase {
   messageRef?: string;
   initialDelayMs?: number;
   deliveryAttempts?: number;
-  convergencePolicy?: "respawn" | "assume_running";
+  convergencePolicy?: ConvergencePolicy | "respawn" | "assume_running";
+  strategy?: StartupStrategy;
+  cleanupPolicy?: CleanupPolicy;
 }
 
 export type EmitDeliveryNotificationInput = EmitDeliveryNotificationInputBase;

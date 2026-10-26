@@ -7,8 +7,7 @@ import type {
 } from "../../ports/unifiedDeliveryOrchestrator.js";
 import {
   CleanupPolicy,
-  ConvergencePolicy,
-  StartupStrategy
+  ConvergencePolicy
 } from "./unifiedDeliveryOrchestrator.js";
 import {
   executeRoleHandoffDelivery,
@@ -33,7 +32,6 @@ export async function executeImplementerHandoffDelivery(input: {
 }): Promise<ExecuteImplementerHandoffDeliveryResult> {
   const deliveryResult = await executeRoleHandoffDelivery({
     deliveryInput: input.deliveryInput,
-    strategy: StartupStrategy.UpfrontCli,
     cleanupPolicy: CleanupPolicy.Persist,
     convergencePolicy: ConvergencePolicy.Respawn,
     ...(input.orchestrator !== undefined ? { orchestrator: input.orchestrator } : {}),

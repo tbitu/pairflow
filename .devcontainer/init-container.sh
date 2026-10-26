@@ -200,6 +200,19 @@ if [ ! -f "${OPENCODE_CONFIG}" ]; then
         "pairflow-meta-reviewer": { "name": "Pairflow Meta Reviewer" }
       }
     }
+  },
+  "providers": {
+    "lmstudio": {
+      "name": "Host Local Inference",
+      "settings": {
+        "baseURL": "http://127.0.0.1:1235/v1"
+      },
+      "models": {
+        "pairflow-implementer": { "name": "Pairflow Implementer" },
+        "pairflow-reviewer": { "name": "Pairflow Reviewer" },
+        "pairflow-meta-reviewer": { "name": "Pairflow Meta Reviewer" }
+      }
+    }
   }
 }
 EOF

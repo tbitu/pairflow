@@ -148,6 +148,56 @@ describe("roleHandoffDelivery", () => {
     expect(result.result?.status).toBe("rejected");
   });
 
+  it("automatically derives StartupStrategy.UpfrontCli for a cli_arg recipient when strategy is omitted", async () => {
+    const calls: Parameters<UnifiedDeliveryOrchestrator["deliverToRole"]>[0][] = [];
+    const input = createDeliveryInput("implementer");
+    input.bubbleConfig.agents.implementer = "opencode";
+
+    await executeRoleHandoffDelivery({
+      deliveryInput: input,
+      orchestrator: {
+        deliverToRole: async (callInput) => {
+          calls.push(callInput);
+          return {
+            ok: true,
+            resultCode: "delivery_ok",
+            message: "ok",
+            sessionName: "pf_bubble",
+            targetPaneIndex: 1
+          };
+        }
+      }
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.strategy).toBe(StartupStrategy.UpfrontCli);
+  });
+
+  it("automatically derives StartupStrategy.PostReadinessTmux for a non-cli_arg recipient when strategy is omitted", async () => {
+    const calls: Parameters<UnifiedDeliveryOrchestrator["deliverToRole"]>[0][] = [];
+    const input = createDeliveryInput("implementer");
+    input.bubbleConfig.agents.implementer = "reasonix";
+
+    await executeRoleHandoffDelivery({
+      deliveryInput: input,
+      orchestrator: {
+        deliverToRole: async (callInput) => {
+          calls.push(callInput);
+          return {
+            ok: true,
+            resultCode: "delivery_ok",
+            message: "ok",
+            sessionName: "pf_bubble",
+            targetPaneIndex: 1
+          };
+        }
+      }
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.strategy).toBe(StartupStrategy.PostReadinessTmux);
+  });
+
   it("identifies retryable error reasons correctly", () => {
     expect(shouldRetryRoleHandoffDelivery({
       status: "rejected",

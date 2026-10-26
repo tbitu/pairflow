@@ -37,8 +37,7 @@ import {
 import { executeRoleHandoffDelivery } from "../../../../shared/delivery/roleHandoffDelivery.js";
 import {
   CleanupPolicy,
-  ConvergencePolicy,
-  StartupStrategy
+  ConvergencePolicy
 } from "../../../../shared/delivery/unifiedDeliveryOrchestrator.js";
 import {
   reviewerDeliveryDefaults
@@ -189,10 +188,6 @@ export async function executePassDelivery(
 
   return executeRoleHandoffDelivery({
     deliveryInput,
-    strategy: isAgentNameRegistered(input.bubbleConfig.agents.reviewer)
-      && getAgentRuntimeProfile(input.bubbleConfig.agents.reviewer).startupPromptDelivery === "cli_arg"
-        ? StartupStrategy.UpfrontCli
-        : StartupStrategy.PostReadinessTmux,
     convergencePolicy: ConvergencePolicy.Respawn,
     cleanupPolicy: CleanupPolicy.Persist,
     emitDelivery,

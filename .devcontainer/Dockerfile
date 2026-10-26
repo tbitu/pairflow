@@ -91,7 +91,7 @@ RUN mkdir -p /home/vscode/.npm-global/bin \
 RUN git config --system --add safe.directory "*"
 
 # 5. Install Coding Agents (Opencode & Reasonix), TypeScript tooling, and Antigravity CLI globally
-RUN npm install -g opencode-ai@latest reasonix@latest typescript tsx \
+RUN npm install -g @opencode/cli@latest reasonix@latest typescript tsx \
     && pnpm config set package-import-method copy --global \
     && curl -fsSL https://antigravity.google/cli/install.sh | bash -s -- --dir /usr/local/bin
 

@@ -14,6 +14,7 @@ import { resolveAgentPaneAdapter } from "./agentPaneAdapters.js";
 import {
   isAgentNameRegistered
 } from "../../../shared/agent/agentRuntimeProfiles.js";
+import { StartupStrategy } from "../../../shared/delivery/unifiedDeliveryOrchestrator.js";
 import type { TmuxRunner } from "../../../ports/tmuxSessions.js";
 
 export interface DeliverySessionContext {
@@ -97,9 +98,7 @@ export function createAcceptedDeliveryAck(input: {
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolvePromise) => {
-    setTimeout(resolvePromise, ms);
-  });
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export interface TmuxDeliveryTimingOptions {
@@ -123,23 +122,15 @@ export async function ensureAgentPaneReady(input: {
   forceRespawn?: boolean | undefined;
 }): Promise<boolean> {
   const quickProbe = await waitForAgentPaneReady(input.expectedPaneAgent, {
-    runner: input.runner,
-    targetPane: input.targetPane,
-    attempts: 3,
-    retryDelayMs: 300,
-    ...(input.sleepForDelayMs !== undefined
-      ? { sleepForDelayMs: input.sleepForDelayMs }
-      : {})
+    runner: input.runner, targetPane: input.targetPane, attempts: 3, retryDelayMs: 300,
+    ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
   });
 
   if (quickProbe) {
     if (input.forceRespawn) {
-      // Clear the conversation of the already running session
       const paneAgent = resolveAgentPaneAdapter(input.expectedPaneAgent);
       await paneAgent.clearSession(input.runner, input.targetPane, {
-        ...(input.sleepForDelayMs !== undefined
-          ? { sleepForDelayMs: input.sleepForDelayMs }
-          : {})
+        ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
       });
     }
     return true;
@@ -151,12 +142,8 @@ export async function ensureAgentPaneReady(input: {
 
   await input.respawnExpectedPaneAgent();
   return await waitForAgentPaneReady(input.expectedPaneAgent, {
-    runner: input.runner,
-    targetPane: input.targetPane,
-    attempts: 90, // Give it up to 27 seconds for a fresh container launch
-    ...(input.sleepForDelayMs !== undefined
-      ? { sleepForDelayMs: input.sleepForDelayMs }
-      : {})
+    runner: input.runner, targetPane: input.targetPane, attempts: 90,
+    ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
   });
 }
 
@@ -164,6 +151,8 @@ async function ensureLiveSessionOrRespawn(input: {
   runner: TmuxRunner;
   targetPane: string;
   expectedPaneAgent: AgentName | undefined;
+  convergencePolicy?: "respawn" | "assume_running" | undefined;
+  strategy?: StartupStrategy | undefined;
   respawnExpectedPaneAgent?: (() => Promise<void>) | undefined;
   sleepForDelayMs?: ((delayMs: number) => Promise<void>) | undefined;
   hasInitialDelay?: boolean | undefined;
@@ -177,19 +166,48 @@ async function ensureLiveSessionOrRespawn(input: {
     return { ok: true, isLiveSession: false };
   }
 
+  // When initial delay is present (e.g. from an out-of-band context refresh or warm-up),
+  // the pane was already freshly respawned and warmed up. Treat as fresh (not a reused
+  // persistent session that needs clearSession).
+  if (input.hasInitialDelay) {
+    const ready = await waitForAgentPaneReady(input.expectedPaneAgent, {
+      runner: input.runner,
+      targetPane: input.targetPane,
+      attempts: 90,
+      retryDelayMs: 300,
+      ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
+    });
+    return { ok: ready, isLiveSession: false };
+  }
+
+  const isUpfrontCli = input.strategy === StartupStrategy.UpfrontCli;
+  const shouldRespawnForUpfrontCli =
+    isUpfrontCli
+    && input.convergencePolicy !== "assume_running"
+    && input.respawnExpectedPaneAgent !== undefined;
+
+  if (shouldRespawnForUpfrontCli) {
+    await input.respawnExpectedPaneAgent!();
+    const ready = await waitForAgentPaneReady(input.expectedPaneAgent, {
+      runner: input.runner,
+      targetPane: input.targetPane,
+      attempts: 90,
+      retryDelayMs: 300,
+      ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
+    });
+    return { ok: ready, isLiveSession: false };
+  }
+
   const isLive = await waitForAgentPaneReady(input.expectedPaneAgent, {
     runner: input.runner,
     targetPane: input.targetPane,
-    attempts: input.hasInitialDelay ? 90 : 3,
+    attempts: 3,
     retryDelayMs: 300,
     ...(input.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.sleepForDelayMs } : {})
   });
 
   if (isLive) {
-    // When initial delay is present (e.g. from an out-of-band context refresh or warm-up),
-    // the pane was already freshly respawned and warmed up. Treat as fresh (not a reused
-    // persistent session that needs clearSession).
-    return { ok: true, isLiveSession: !input.hasInitialDelay };
+    return { ok: true, isLiveSession: true };
   }
 
   if (input.respawnExpectedPaneAgent === undefined) {
@@ -232,34 +250,72 @@ export async function deliverHandoffMessage(input: {
   await sendAndSubmitTmuxPaneMessage(input.runner, input.targetPane, input.message, {
     requireSuccess: input.requireSuccess ?? true,
     ...paneAgent.resolvePasteOptions(),
-    ...(input.timing?.submitDelayMs !== undefined
-      ? { submitDelayMs: input.timing.submitDelayMs }
-      : {}),
-    ...(input.timing?.sleepForDelayMs !== undefined
-      ? { sleepForDelayMs: input.timing.sleepForDelayMs }
-      : {}),
+    ...(input.timing?.submitDelayMs !== undefined ? { submitDelayMs: input.timing.submitDelayMs } : {}),
+    ...(input.timing?.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.timing.sleepForDelayMs } : {}),
     ...(input.startupPasteSettleMs !== undefined && input.startupPasteSettleMs > 0
-      ? { settleMs: input.startupPasteSettleMs }
-      : {})
+      ? { settleMs: input.startupPasteSettleMs } : {})
   });
 
   return confirmTmuxPaneMarkerSubmission({
-    runner: input.runner,
-    targetPane: input.targetPane,
-    marker: input.envelopeId,
-    paneAgent,
-    ...(input.deliveryAttempts !== undefined
-      ? { attempts: input.deliveryAttempts }
-      : {}),
-    ...(input.timing?.markerSettleDelayMs !== undefined
-      ? { settleDelayMs: input.timing.markerSettleDelayMs }
-      : {}),
-    ...(input.timing?.markerRetryDelayMs !== undefined
-      ? { retryDelayMs: input.timing.markerRetryDelayMs }
-      : {}),
-    ...(input.timing?.sleepForDelayMs !== undefined
-      ? { sleepForDelayMs: input.timing.sleepForDelayMs }
-      : {})
+    runner: input.runner, targetPane: input.targetPane, marker: input.envelopeId, paneAgent,
+    ...(input.deliveryAttempts !== undefined ? { attempts: input.deliveryAttempts } : {}),
+    ...(input.timing?.markerSettleDelayMs !== undefined ? { settleDelayMs: input.timing.markerSettleDelayMs } : {}),
+    ...(input.timing?.markerRetryDelayMs !== undefined ? { retryDelayMs: input.timing.markerRetryDelayMs } : {}),
+    ...(input.timing?.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.timing.sleepForDelayMs } : {})
+  });
+}
+
+async function ensureAgentPaneIdle(input: {
+  expectedPaneAgent: AgentName | undefined;
+  runner: TmuxRunner;
+  targetPane: string;
+  timing?: TmuxDeliveryTimingOptions | undefined;
+}): Promise<boolean> {
+  const skipIdleWait =
+    process.env.VITEST === "skip-idle-wait"
+    || input.timing?.skipIdleWait === true;
+  if (skipIdleWait) {
+    return true;
+  }
+  return waitForAgentPaneIdle(input.expectedPaneAgent, {
+    runner: input.runner, targetPane: input.targetPane,
+    ...(input.timing?.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.timing.sleepForDelayMs } : {}),
+    ...(input.timing?.idleWaitAttempts !== undefined ? { attempts: input.timing.idleWaitAttempts } : {}),
+    ...(input.timing?.idleWaitRetryDelayMs !== undefined ? { retryDelayMs: input.timing.idleWaitRetryDelayMs } : {})
+  });
+}
+
+async function executeDeliveryHandoff(input: {
+  runner: TmuxRunner;
+  targetPane: string;
+  message: string;
+  envelopeId: string;
+  expectedPaneAgent: AgentName | undefined;
+  paneAgent: ReturnType<typeof resolveAgentPaneAdapter>;
+  strategy?: StartupStrategy | undefined;
+  isLiveSession: boolean;
+  deliveryAttempts?: number | undefined;
+  timing?: TmuxDeliveryTimingOptions | undefined;
+}): Promise<boolean> {
+  const isUpfrontCliFresh = input.strategy === StartupStrategy.UpfrontCli && !input.isLiveSession;
+  if (isUpfrontCliFresh && input.paneAgent.trustPromptHandling === "opencode") {
+    await input.paneAgent.acceptTrustPrompt(input.runner, input.targetPane).catch(() => undefined);
+  }
+
+  if (isUpfrontCliFresh) {
+    return confirmTmuxPaneMarkerSubmission({
+      runner: input.runner, targetPane: input.targetPane, marker: input.envelopeId, paneAgent: input.paneAgent,
+      ...(input.deliveryAttempts !== undefined ? { attempts: input.deliveryAttempts } : {}),
+      ...(input.timing?.markerSettleDelayMs !== undefined ? { settleDelayMs: input.timing.markerSettleDelayMs } : {}),
+      ...(input.timing?.markerRetryDelayMs !== undefined ? { retryDelayMs: input.timing.markerRetryDelayMs } : {}),
+      ...(input.timing?.sleepForDelayMs !== undefined ? { sleepForDelayMs: input.timing.sleepForDelayMs } : {})
+    });
+  }
+
+  return deliverHandoffMessage({
+    runner: input.runner, targetPane: input.targetPane, message: input.message, envelopeId: input.envelopeId,
+    expectedPaneAgent: input.expectedPaneAgent, deliveryAttempts: input.deliveryAttempts, timing: input.timing,
+    startupPasteSettleMs: !input.isLiveSession ? input.paneAgent.startupPasteSettleMs : undefined
   });
 }
 
@@ -274,6 +330,7 @@ export async function attemptTmuxDelivery(input: {
   targetPaneIndex: number;
   expectedPaneAgent?: AgentName | undefined;
   convergencePolicy?: "respawn" | "assume_running" | undefined;
+  strategy?: StartupStrategy | undefined;
   respawnExpectedPaneAgent?: (() => Promise<void>) | undefined;
   deliveryTargetReasonCode?: DeliveryTargetReasonCode | undefined;
   timing?: TmuxDeliveryTimingOptions | undefined;
@@ -289,6 +346,8 @@ export async function attemptTmuxDelivery(input: {
       runner: input.runner,
       targetPane: input.targetPane,
       expectedPaneAgent: input.expectedPaneAgent,
+      convergencePolicy: input.convergencePolicy,
+      strategy: input.strategy,
       respawnExpectedPaneAgent: input.respawnExpectedPaneAgent,
       sleepForDelayMs: input.timing?.sleepForDelayMs,
       hasInitialDelay
@@ -307,33 +366,21 @@ export async function attemptTmuxDelivery(input: {
       });
     }
 
-    const skipIdleWait =
-      process.env.VITEST === "skip-idle-wait"
-      || input.timing?.skipIdleWait === true;
-    if (!skipIdleWait) {
-      const paneIdle = await waitForAgentPaneIdle(input.expectedPaneAgent, {
-        runner: input.runner,
-        targetPane: input.targetPane,
-        ...(input.timing?.sleepForDelayMs !== undefined
-          ? { sleepForDelayMs: input.timing.sleepForDelayMs }
-          : {}),
-        ...(input.timing?.idleWaitAttempts !== undefined
-          ? { attempts: input.timing.idleWaitAttempts }
-          : {}),
-        ...(input.timing?.idleWaitRetryDelayMs !== undefined
-          ? { retryDelayMs: input.timing.idleWaitRetryDelayMs }
-          : {})
+    const paneIdle = await ensureAgentPaneIdle({
+      expectedPaneAgent: input.expectedPaneAgent,
+      runner: input.runner,
+      targetPane: input.targetPane,
+      timing: input.timing
+    });
+    if (!paneIdle) {
+      console.error(
+        `[tmux delivery] pane still busy for target_pane=${input.targetPane} envelope=${input.envelopeId}; handoff not delivered.`
+      );
+      return createRejectedDeliveryAck({
+        reason: "pane_busy",
+        message: input.message,
+        ...ackOptions
       });
-      if (!paneIdle) {
-        console.error(
-          `[tmux delivery] pane still busy for target_pane=${input.targetPane} envelope=${input.envelopeId}; handoff not delivered.`
-        );
-        return createRejectedDeliveryAck({
-          reason: "pane_busy",
-          message: input.message,
-          ...ackOptions
-        });
-      }
     }
 
     const paneAgent = resolveAgentPaneAdapter(input.expectedPaneAgent);
@@ -354,17 +401,17 @@ export async function attemptTmuxDelivery(input: {
       }
     }
 
-    // Accept trust prompt (if any), deliver the handoff via send-keys, and
-    // confirm the marker was submitted.
-    const confirmed = await deliverHandoffMessage({
+    const confirmed = await executeDeliveryHandoff({
       runner: input.runner,
       targetPane: input.targetPane,
       message: input.message,
       envelopeId: input.envelopeId,
       expectedPaneAgent: input.expectedPaneAgent,
+      paneAgent,
+      strategy: input.strategy,
+      isLiveSession,
       deliveryAttempts: input.deliveryAttempts,
-      timing: input.timing,
-      startupPasteSettleMs: !isLiveSession ? paneAgent.startupPasteSettleMs : undefined
+      timing: input.timing
     });
 
     if (confirmed) {

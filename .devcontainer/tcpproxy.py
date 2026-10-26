@@ -49,22 +49,24 @@ LOG_FILE = os.environ.get("LOG_FILE", "/tmp/tcpproxy.log")
 
 LOG = open(LOG_FILE, "a", buffering=1)
 
-# Role-specific sampling parameters (Qwen recommended defaults)
+# Role-specific sampling parameters (Qwen 3.8 Flash-Next Coder thinking-mode defaults)
+# Official Hugging Face ISTA-DASLab & Unsloth recommendations for Flash-Next reasoning:
+# temperature=1.0, top_p=0.95, top_k=20
 ROLE_PARAMS = {
     "implementer": {
-        "temperature": float(os.environ.get("PARAM_IMPL_TEMP", 0.6)),
-        "top_p": 0.95,
-        "top_k": 20,
+        "temperature": float(os.environ.get("PARAM_IMPL_TEMP", 1.0)),
+        "top_p": float(os.environ.get("PARAM_IMPL_TOP_P", 0.95)),
+        "top_k": int(os.environ.get("PARAM_IMPL_TOP_K", 20)),
     },
     "reviewer": {
         "temperature": float(os.environ.get("PARAM_REV_TEMP", 1.0)),
-        "top_p": 0.95,
-        "top_k": 20,
+        "top_p": float(os.environ.get("PARAM_REV_TOP_P", 0.95)),
+        "top_k": int(os.environ.get("PARAM_REV_TOP_K", 20)),
     },
     "meta_reviewer": {
-        "temperature": float(os.environ.get("PARAM_META_TEMP", 0.7)),
-        "top_p": 0.95,
-        "top_k": 20,
+        "temperature": float(os.environ.get("PARAM_META_TEMP", 1.0)),
+        "top_p": float(os.environ.get("PARAM_META_TOP_P", 0.95)),
+        "top_k": int(os.environ.get("PARAM_META_TOP_K", 20)),
     },
 }
 

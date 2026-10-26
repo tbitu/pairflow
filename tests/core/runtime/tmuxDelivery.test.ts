@@ -47,6 +47,7 @@ import {
 } from "../../../src/v11/shared/delivery/deliveryTargetMetadataContract.js";
 import type { LegacyMetaReviewerProtocolRecipient } from "../../../src/v11/shared/protocol/legacyMetaReviewerRecipientContract.js";
 import type { ProtocolEnvelope } from "../../../src/v11/shared/protocol/protocolEnvelopeContract.js";
+import { StartupStrategy } from "../../../src/v11/shared/delivery/unifiedDeliveryOrchestrator.js";
 
 const baseConfig: BubbleConfig = {
   id: "b_delivery_01",
@@ -1289,6 +1290,53 @@ describe("emitDeliveryNotificationAck", () => {
     expect(
       calls.some((call) => call[0] === "send-keys" && call.includes("/new"))
     ).toBe(false);
+  });
+
+  it("respawns pane with embedded CLI prompt and skips send-keys paste when strategy is UpfrontCli", async () => {
+    const calls: string[][] = [];
+    const runner: TmuxRunner = (args): Promise<TmuxRunResult> => {
+      calls.push(args);
+      if (args[0] === "capture-pane") {
+        return Promise.resolve({
+          stdout: [
+            "Ask anything...",
+            "tab agents  ctrl+p commands",
+            submittedOpencodeReadyPaneOutput("[pairflow] r1 PASS reasonix->opencode msg=msg_20260222_101 ref=artifact://handoff.md.")
+          ].join("\n"),
+          stderr: "",
+          exitCode: 0
+        });
+      }
+      if (args[0] === "display-message") {
+        return Promise.resolve({ stdout: "12345", stderr: "", exitCode: 0 });
+      }
+      return Promise.resolve({ stdout: "", stderr: "", exitCode: 0 });
+    };
+
+    const result = await emitDeliveryNotificationAck({
+      bubbleId: "b_delivery_01",
+      bubbleConfig: {
+        ...baseConfig,
+        agents: {
+          implementer: "opencode",
+          reviewer: "reasonix",
+          meta_reviewer: "opencode"
+        }
+      },
+      sessionsPath: "/tmp/repo/.pairflow/runtime/sessions.json",
+      envelope: createEnvelope({ sender: "reasonix", recipient: "opencode" }),
+      recipientRole: "implementer",
+      strategy: StartupStrategy.UpfrontCli,
+      runner,
+      readSessionsRegistry: () => Promise.resolve(createRegistry())
+    });
+
+    expect(result.status).toBe("accepted");
+    const respawnCall = calls.find((call) => call[0] === "respawn-pane");
+    expect(respawnCall).toBeDefined();
+    expect(respawnCall?.some((arg) => arg.includes("--prompt"))).toBe(true);
+    expect(calls.some((call) => call[0] === "send-keys" && call.includes("/new"))).toBe(false);
+    expect(calls.some((call) => call[0] === "send-keys" && call.includes("-l"))).toBe(false);
   });
 });
 

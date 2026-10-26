@@ -167,6 +167,10 @@ export function createEmitDeliveryOrchestrator(
           : {}),
         ...(input.convergencePolicy !== undefined
           ? { convergencePolicy: input.convergencePolicy }
+          : {}),
+        ...(input.strategy !== undefined ? { strategy: input.strategy } : {}),
+        ...(input.cleanupPolicy !== undefined
+          ? { cleanupPolicy: input.cleanupPolicy }
           : {})
       }).then((deliveryAck) => mapDeliveryAckToDeliveryResult({
         deliveryAck,

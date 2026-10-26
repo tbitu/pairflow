@@ -33,6 +33,20 @@ describe("buildAgentCommand for opencode", () => {
     expect(cmd).toContain("--model");
     expect(cmd).toContain("lmstudio/pairflow-reviewer");
   });
+
+  it("exports OPENCODE_CONFIG_CONTENT compatible with both OpenCode 1.x and 2.x", () => {
+    const cmd = buildAgentCommand({
+      agentName: "opencode",
+      roleName: "implementer",
+      bubbleId: "b_opencode_test_03",
+      workspacePath: "/tmp/worktree/opencode-test"
+    });
+
+    expect(cmd).toContain("OPENCODE_CONFIG_CONTENT=");
+    expect(cmd).toContain('"provider":');
+    expect(cmd).toContain('"providers":');
+    expect(cmd).toContain('"permission":"allow"');
+  });
 });
 
 describe("buildAgentCommand for reasonix", () => {

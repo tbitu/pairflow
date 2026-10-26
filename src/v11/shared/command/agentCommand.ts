@@ -99,6 +99,13 @@ function buildOpencodePreparation(): string[] {
               timeout: 3_600_000
             }
           }
+        },
+        providers: {
+          lmstudio: {
+            settings: {
+              baseURL: "http://127.0.0.1:1235/v1"
+            }
+          }
         }
       })
     )}`

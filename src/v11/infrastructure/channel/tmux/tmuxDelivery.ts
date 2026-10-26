@@ -313,6 +313,7 @@ export async function emitDeliveryNotificationAck(
     deliveryAttempts: input.deliveryAttempts,
     expectedPaneAgent,
     convergencePolicy,
+    strategy: input.strategy,
     respawnExpectedPaneAgent,
     timing: deliveryTiming,
     deliveryTargetReasonCode: targetResolution.deliveryTargetReasonCode
