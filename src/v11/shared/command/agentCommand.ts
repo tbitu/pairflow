@@ -87,6 +87,13 @@ function buildAgentLaunchArgs(input: {
 function buildOpencodePreparation(model?: string): string[] {
   const trimmedModel = model?.trim();
   return [
+    `export OPENCODE_CLI_CONFIG_CONTENT=${shellQuote(
+      JSON.stringify({
+        tabs: {
+          mode: "off"
+        }
+      })
+    )}`,
     `export OPENCODE_CONFIG_CONTENT=${shellQuote(
       JSON.stringify({
         $schema: "https://opencode.ai/config.json",

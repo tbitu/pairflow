@@ -36,7 +36,7 @@ describe("buildAgentCommand for opencode", () => {
     expect(cmd).toContain('"model":"lmstudio/pairflow-reviewer"');
   });
 
-  it("exports OPENCODE_CONFIG_CONTENT compatible with both OpenCode 1.x and 2.x", () => {
+  it("exports OPENCODE_CONFIG_CONTENT and OPENCODE_CLI_CONFIG_CONTENT compatible with both OpenCode 1.x and 2.x", () => {
     const cmd = buildAgentCommand({
       agentName: "opencode",
       roleName: "implementer",
@@ -44,6 +44,8 @@ describe("buildAgentCommand for opencode", () => {
       workspacePath: "/tmp/worktree/opencode-test"
     });
 
+    expect(cmd).toContain("OPENCODE_CLI_CONFIG_CONTENT=");
+    expect(cmd).toContain('{"tabs":{"mode":"off"}}');
     expect(cmd).toContain("OPENCODE_CONFIG_CONTENT=");
     expect(cmd).toContain('"provider":');
     expect(cmd).toContain('"providers":');
