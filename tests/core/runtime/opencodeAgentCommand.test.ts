@@ -12,7 +12,7 @@ describe("buildAgentCommand for opencode", () => {
     });
 
     expect(cmd).toContain("opencode");
-    expect(cmd).toContain("--standalone");
+    expect(cmd).not.toContain("--standalone");
     expect(cmd).not.toContain("--agent");
     expect(cmd).not.toContain("PF-meta-reviewer");
     expect(cmd).toContain("--prompt");
@@ -29,7 +29,7 @@ describe("buildAgentCommand for opencode", () => {
     });
 
     expect(cmd).toContain("opencode");
-    expect(cmd).toContain("--standalone");
+    expect(cmd).not.toContain("--standalone");
     expect(cmd).not.toContain("--agent");
     expect(cmd).not.toContain("PF-implementer");
     expect(cmd).not.toContain("--model");

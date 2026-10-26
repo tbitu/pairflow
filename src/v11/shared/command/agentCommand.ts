@@ -51,10 +51,6 @@ function buildAgentLaunchArgs(input: {
   const hasStartupPrompt = (input.startupPrompt?.trim().length ?? 0) > 0;
 
   if (profile.startupPromptDelivery === "cli_arg") {
-    // opencode: run with a private server (--standalone) to isolate sessions per pane
-    // and prevent cross-pane tab synchronization via the shared background daemon.
-    args.push("--standalone");
-
     if (hasStartupPrompt) {
       args.push("--prompt", input.startupPrompt as string);
     }
